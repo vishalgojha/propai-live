@@ -33,6 +33,7 @@ export default function SmartFeed() {
         const matchesSearch = 
           property.building_name?.toLowerCase().includes(searchLower) ||
           property.location_id?.toLowerCase().includes(searchLower) ||
+          property.pocket?.toLowerCase().includes(searchLower) ||
           property.description?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
@@ -78,91 +79,97 @@ export default function SmartFeed() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-      {/* Hero Section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-6 h-6 text-blue-500" />
-          <h1 className="text-3xl font-bold text-slate-900">SmartFeed</h1>
-        </div>
-        <p className="text-slate-600">
-          AI-curated properties in Mumbai. Verified listings with transparent pricing.
-        </p>
-      </div>
-
-      {/* Filters */}
-      <PropertyFilters
-        filters={filters}
-        onFilterChange={setFilters}
-        onClearFilters={clearFilters}
-      />
-
-      {/* Results Count */}
-      <div className="mb-6">
-        <p className="text-sm text-slate-600">
-          Showing <span className="font-semibold text-slate-900">{filteredProperties.length}</span> properties
-        </p>
-      </div>
-
-      {/* Error State */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load properties. Please try again later.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-              <Skeleton className="h-48 w-full mb-4 rounded-xl" />
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2 mb-4" />
-              <div className="flex gap-2">
-                <Skeleton className="h-10 flex-1" />
-                <Skeleton className="h-10 w-10" />
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/20 to-teal-50/30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+        {/* Hero Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-blue-500 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Properties Grid */}
-      {!isLoading && filteredProperties.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.map((property) => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              onViewDetails={setSelectedProperty}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && filteredProperties.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-slate-400" />
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">SmartFeed</h1>
+              <p className="text-sm text-slate-600">AI-curated properties • Transparent pricing</p>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No properties found</h3>
-          <p className="text-slate-600 mb-6">
-            Try adjusting your filters or search criteria
+        </div>
+
+        {/* Filters */}
+        <PropertyFilters
+          filters={filters}
+          onFilterChange={setFilters}
+          onClearFilters={clearFilters}
+        />
+
+        {/* Results Count */}
+        <div className="mb-6">
+          <p className="text-sm text-slate-600">
+            Showing <span className="font-semibold text-slate-900">{filteredProperties.length}</span> {filteredProperties.length === 1 ? 'property' : 'properties'}
           </p>
         </div>
-      )}
 
-      {/* Property Details Modal */}
-      <PropertyDetailsModal
-        property={selectedProperty}
-        isOpen={!!selectedProperty}
-        onClose={() => setSelectedProperty(null)}
-      />
+        {/* Error State */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load properties. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <Skeleton className="h-44 w-full mb-4 rounded-xl" />
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-4" />
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Properties Grid */}
+        {!isLoading && filteredProperties.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProperties.map((property) => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                onViewDetails={setSelectedProperty}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredProperties.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No properties found</h3>
+            <p className="text-slate-600 mb-6">
+              Try adjusting your filters or search criteria
+            </p>
+          </div>
+        )}
+
+        {/* Property Details Modal */}
+        <PropertyDetailsModal
+          property={selectedProperty}
+          isOpen={!!selectedProperty}
+          onClose={() => setSelectedProperty(null)}
+        />
+      </div>
     </div>
   );
 }
