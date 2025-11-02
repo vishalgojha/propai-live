@@ -2,13 +2,22 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     // Set global meta tags
@@ -51,18 +60,26 @@ export default function Layout({ children, currentPageName }) {
     // Check if user is logged in and get user data
     const loadUser = async () => {
       try {
-        // Assuming 'base44' is globally available or imported in a real application context
-        // For this example, if base44 is not defined, this will throw an error.
-        // In a real app, you'd ensure base44 is properly imported or handled.
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me(); 
         setUser(currentUser);
       } catch (error) {
         console.error("Failed to load user:", error);
         setUser(null);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
   }, [location.pathname]);
+
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(window.location.pathname);
+  };
+
+  const handleLogout = () => {
+    base44.auth.logout();
+  };
 
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
@@ -111,6 +128,44 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              {/* User Menu / Login Button */}
+              {!isLoadingUser && (
+                <>
+                  {user ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="ml-2 gap-2 rounded-2xl">
+                          <User className="w-4 h-4" />
+                          <span className="text-sm font-semibold">{user.full_name || user.email}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <div className="px-2 py-2">
+                          <p className="text-sm font-semibold">{user.full_name || 'User'}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                          {user.role === 'admin' && (
+                            <p className="text-xs text-[#FFD300] font-bold mt-1">Admin</p>
+                          )}
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      onClick={handleLogin}
+                      className="ml-2 bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold rounded-2xl"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Login
+                    </Button>
+                  )}
+                </>
+              )}
             </nav>
 
             {/* Mobile Hamburger Button */}
@@ -151,6 +206,45 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              {/* Mobile User Menu */}
+              {!isLoadingUser && (
+                <div className="pt-4 border-t border-gray-200">
+                  {user ? (
+                    <>
+                      <div className="px-4 py-2 mb-2">
+                        <p className="text-sm font-semibold">{user.full_name || 'User'}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                        {user.role === 'admin' && (
+                          <p className="text-xs text-[#FFD300] font-bold mt-1">Admin</p>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => {
+                          handleLogout();
+                          setMobileMenuOpen(false);
+                        }}
+                        variant="outline"
+                        className="w-full justify-start gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        handleLogin();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold rounded-2xl"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Login
+                    </Button>
+                  )}
+                </div>
+              )}
             </nav>
           </div>
         )}
