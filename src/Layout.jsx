@@ -71,11 +71,10 @@ export default function Layout({ children, currentPageName }) {
     { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
   ];
 
-  // Only show admin links if user is admin
+  // Only show admin link if user is admin
   if (user?.role === 'admin') {
     navItems.push(
-      { name: "Brokers", icon: Settings, path: createPageUrl("AdminBrokers") },
-      { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
+      { name: "Admin", icon: Settings, path: createPageUrl("Admin") }
     );
   }
 
