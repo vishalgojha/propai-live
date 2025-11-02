@@ -58,24 +58,24 @@ export default function Home() {
 
   const features = [
     {
-      icon: Brain,
-      title: "AI Parser",
-      description: "Extracts every detail from chat — from BHK to facing to building name"
+      icon: MessageCircle,
+      title: "WhatsApp-First",
+      description: "No forms, no portals. Just text us what you need and we'll handle the rest"
     },
     {
       icon: Sparkles,
-      title: "SmartFeed",
-      description: "Learns your style, your zones, your clientele for perfect matches"
+      title: "AI-Curated Matches",
+      description: "Smart algorithms scan Mumbai daily, we hand-pick what actually fits you"
     },
     {
-      icon: MessageCircle,
-      title: "WhatsApp-First",
-      description: "Everything you do stays synced with WhatsApp. No duplicate work"
+      icon: Shield,
+      title: "Verified & Real",
+      description: "Every listing checked by our team. No fake photos, no bait-and-switch"
     },
     {
-      icon: Target,
-      title: "Mumbai-Only Focus",
-      description: "Local precision = sharper recommendations, faster matches"
+      icon: TrendingUp,
+      title: "Live SmartFeed",
+      description: "Your personalized feed updates as new properties hit the market"
     }
   ];
 
@@ -88,9 +88,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - Dark Gray instead of Pure Black */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxs-cnVpZT0iZXZlbm9kZCI+PGcgZmlsbD0iI0ZGRDMwMCIgZmlsbC1vcGFjaXR5PSIwLjA1Ij48cGF0aCBkPSJNMzYgMTZ2OEgyNHYtOGgxMnpNMzYgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9zdmc+')] opacity-50"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -100,20 +100,20 @@ export default function Home() {
             className="text-center mb-12"
           >
             <Badge className="mb-6 bg-[#FFD300] text-black border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-lg shadow-[#FFD300]/30">
-              THE FUTURE OF MUMBAI REAL ESTATE
+              MUMBAI'S SMARTEST WAY TO FIND HOMES
             </Badge>
             
             <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
-              Where Mumbai's Listings
+              Find Your Perfect Home.
               <br />
-              Meet <span className="text-[#FFD300]">AI Clarity.</span>
+              <span className="text-[#FFD300]">Effortlessly.</span>
             </h1>
             
             <p className="text-xl text-gray-300 mb-3 max-w-2xl mx-auto leading-relaxed font-light">
-              Real homes. Real data. Real-time — directly from WhatsApp.
+              AI precision. Human warmth.
             </p>
             <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-light">
-              No spam, no fake listings. Just verified properties powered by AI.
+              We match you with verified homes in Mumbai — no spam, no stress, just results.
             </p>
 
             {/* Search Bar */}
@@ -147,7 +147,7 @@ export default function Home() {
                 className="bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-lg border-0"
               >
                 <Building2 className="w-5 h-5 mr-2" />
-                Explore Live Listings
+                Browse Properties
               </Button>
               <Button
                 onClick={() => handleWhatsApp("Vishal")}
@@ -156,7 +156,7 @@ export default function Home() {
                 className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white h-14 px-8 rounded-2xl font-semibold"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
-                Contact on WhatsApp
+                Chat with Us
               </Button>
             </div>
           </motion.div>
@@ -187,7 +187,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h2 className="text-4xl font-bold text-[#111111] mb-2 tracking-tight">Featured Properties</h2>
-                <p className="text-gray-600 text-lg">Hand-picked luxury homes in Mumbai's finest locations</p>
+                <p className="text-gray-600 text-lg">Verified homes, ready for viewing</p>
               </div>
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
@@ -212,7 +212,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* How It Works - 3 Bold Steps */}
+      {/* How It Works - Client-Focused */}
       <section className="py-20 bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -220,26 +220,31 @@ export default function Home() {
               How It Works
             </h2>
             <p className="text-lg text-gray-600 font-light max-w-2xl mx-auto">
-              Simple, smart, and built for Mumbai realtors who mean business
+              Effortless property discovery, powered by people who actually know Mumbai
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               {
                 step: "1",
-                title: "You Post or Forward a Listing",
-                description: "On WhatsApp or directly into Chariot AI. The system parses every word — BHK, rent, amenities, vibe — everything."
+                title: "Tell Us What You Need",
+                description: "Message us on WhatsApp — your budget, area, bedrooms, and vibe. That's it. No forms, no logins, no spam."
               },
               {
                 step: "2",
-                title: "Our AI Cleans, Tags & Generates",
-                description: "It creates a clean card with title, description, price, and even captions like \"Modern 2BHK with balcony near Pali Hill.\""
+                title: "We Curate Options",
+                description: "Our AI scans the latest listings. Our advisors hand-pick what actually fits you — real homes, not recycled junk."
               },
               {
                 step: "3",
-                title: "You Get Live Cards & SmartFeed",
-                description: "Auto-updating, shareable, SEO-friendly cards that can be sent on WhatsApp, linked in bios, or embedded anywhere."
+                title: "You Get Your SmartFeed",
+                description: "A live feed of verified homes with details and instant contact. Updates automatically when new matches appear."
+              },
+              {
+                step: "4",
+                title: "Visit & Move In",
+                description: "We handle scheduling and coordination. You just walk in, check the place, and focus on the decision."
               }
             ].map((item, index) => (
               <motion.div
@@ -248,25 +253,26 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative text-center"
+                className="text-center"
               >
-                <div className="w-20 h-20 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl flex items-center justify-center text-3xl font-bold text-black mx-auto mb-6 shadow-xl shadow-[#FFD300]/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl flex items-center justify-center text-2xl font-bold text-black mx-auto mb-4 shadow-xl shadow-[#FFD300]/30">
                   {item.step}
                 </div>
-                <h3 className="text-2xl font-bold text-[#111111] mb-3">{item.title}</h3>
-                <p className="text-gray-600 leading-relaxed font-light">{item.description}</p>
-                {index < 2 && (
-                  <div className="hidden md:block absolute top-10 -right-6 text-[#FFD300]/30">
-                    <ArrowRight className="w-10 h-10" />
-                  </div>
-                )}
+                <h3 className="text-xl font-bold text-[#111111] mb-3">{item.title}</h3>
+                <p className="text-gray-600 leading-relaxed font-light text-sm">{item.description}</p>
               </motion.div>
             ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-sm text-gray-500 italic">
+              Like having your own property manager inside WhatsApp.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Why Chariot Exists - White Background */}
+      {/* Why Choose Chariot - Client Pain Points */}
       <section className="py-20 bg-white border-y border-gray-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
@@ -276,47 +282,47 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-[#111111]">
-              Because Mumbai Real Estate
+              Because House-Hunting in Mumbai
               <br />
-              <span className="text-[#FFD300]">Deserved Better Tech.</span>
+              <span className="text-[#FFD300]">Shouldn't Be This Hard.</span>
             </h2>
             
             <div className="space-y-6 text-lg text-gray-600 leading-relaxed font-light">
               <p>
-                Every broker WhatsApps. Every buyer scrolls listings.
+                You scroll through 50 fake listings. Half the photos are stolen from Pinterest.
                 <br />
-                But the tools never caught up — messy chats, repeated data, fake numbers, half-baked portals.
+                The "broker" doesn't pick up. The address doesn't exist.
               </p>
               
               <p className="text-xl text-[#111111] font-normal">
-                So we built Chariot Realty:
+                We built Chariot to fix that.
                 <br />
-                An AI-driven, WhatsApp-first platform built for Mumbai brokers who mean business.
+                Every listing verified. Every detail real. Every conversation honest.
               </p>
               
               <div className="inline-block bg-[#FFD300] text-black px-8 py-4 rounded-3xl my-4">
                 <p className="text-2xl font-bold">
-                  We don't automate you — we amplify you.
+                  AI does the scanning. Humans do the vetting.
                 </p>
               </div>
               
               <p>
-                Every chat → every property → structured, verified, and ready to share.
+                You get clean property cards, transparent pricing, and advisors who actually respond.
               </p>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Our Edge - Feature Grid */}
+      {/* Features Grid - Client Benefits */}
       <section className="py-20 bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-[#FFD300] text-black border-0 font-bold shadow-lg shadow-[#FFD300]/30">
-              OUR EDGE
+              THE CHARIOT ADVANTAGE
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-4 tracking-tight">
-              What Makes Us Different
+              Why Clients Choose Us
             </h2>
           </div>
 
@@ -341,7 +347,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Us - Not a Portal, A Movement */}
+      {/* About Us - Human + AI */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
@@ -351,29 +357,33 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[#111111] tracking-tight">
-              Not a portal.
+              Not Robots.
               <br />
-              <span className="text-[#FFD300]">A movement for realtors who play smart.</span>
+              <span className="text-[#FFD300]">Real People Who Know Mumbai.</span>
             </h2>
             
             <div className="space-y-6 text-lg text-gray-600 leading-relaxed font-light">
               <p>
-                Founded in Bandra, run by realtors, and powered by AI —
+                Chariot Realty is Vishal and Kapil — two advisors who've spent years navigating Mumbai's property chaos.
                 <br />
-                Chariot Realty blends <span className="font-semibold text-[#111111]">street sense with system sense.</span>
+                We know Bandra like the back of our hand. We know when brokers are lying.
               </p>
               
               <p>
-                We build for the agent who's too busy hustling to fill forms.
+                We use AI to scan thousands of listings so you don't have to.
                 <br />
-                We believe the future of Indian real estate isn't corporate — <span className="font-semibold text-[#111111]">it's connected.</span>
+                But <span className="font-semibold text-[#111111]">we review every match before it reaches you.</span>
+              </p>
+              
+              <p className="text-xl text-[#111111] font-normal">
+                Think of us as your property concierge — tech-powered, human-delivered.
               </p>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* CTA Section - Yellow with Better Contrast */}
+      {/* CTA Section */}
       <section className="py-20 bg-gradient-to-br from-[#FFD300] to-[#FFC700]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -381,17 +391,17 @@ export default function Home() {
               <div className="flex items-center gap-3 mb-6">
                 <Zap className="w-12 h-12 text-black" />
                 <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">
-                  Go Live in 10 Seconds
+                  Ready to Find Home?
                 </h2>
               </div>
               <p className="text-black/70 text-xl mb-8 leading-relaxed font-medium">
-                Send your next property on WhatsApp.
+                Tell us what you're looking for.
                 <br />
-                We'll do the rest.
+                We'll send you matches within hours.
               </p>
               
               <div className="space-y-4">
-                {['Instant AI parsing & structuring', 'Professional property cards', 'Direct client connections'].map((item, i) => (
+                {['No fake listings', 'Instant WhatsApp responses', 'Only verified properties'].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 text-black">
                     <Check className="w-5 h-5 flex-shrink-0 font-bold" />
                     <span className="font-semibold">{item}</span>
@@ -407,7 +417,7 @@ export default function Home() {
                   V
                 </div>
                 <h3 className="text-2xl font-bold mb-2 text-[#111111]">Vishal</h3>
-                <p className="text-gray-600 text-sm mb-6">Co-Founder & Property Expert</p>
+                <p className="text-gray-600 text-sm mb-6">Property Advisor</p>
                 
                 <div className="space-y-3 mb-6">
                   <a href="tel:+919819471310" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
@@ -421,7 +431,7 @@ export default function Home() {
                   className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-lg border-0"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Send Listing
+                  Chat with Vishal
                 </Button>
               </div>
 
@@ -431,7 +441,7 @@ export default function Home() {
                   K
                 </div>
                 <h3 className="text-2xl font-bold mb-2 text-[#111111]">Kapil</h3>
-                <p className="text-gray-600 text-sm mb-6">Co-Founder & Property Expert</p>
+                <p className="text-gray-600 text-sm mb-6">Property Advisor</p>
                 
                 <div className="space-y-3 mb-6">
                   <a href="tel:+919773757759" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
@@ -445,7 +455,7 @@ export default function Home() {
                   className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-lg border-0"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Send Listing
+                  Chat with Kapil
                 </Button>
               </div>
             </div>
