@@ -502,9 +502,9 @@ export default function Home() {
               className="w-full max-w-lg mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
             >
               <MessageCircle className="w-6 h-6" />
-              <div>
-                <p className="text-lg font-bold">Connect with WhatsApp AI</p>
-                <p className="text-xs text-white/80">Start your property search now</p>
+              <div className="text-left">
+                <p className="text-lg font-bold">Chariot Realty AI</p>
+                <p className="text-xs text-white/80">WhatsApp AI Assistant</p>
               </div>
             </Button>
 
