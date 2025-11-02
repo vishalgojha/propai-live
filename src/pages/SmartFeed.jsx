@@ -22,14 +22,23 @@ export default function SmartFeed() {
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
 
-  // Read search query from URL parameters
+  // Read all filters from URL parameters on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const searchParam = urlParams.get('search');
-    if (searchParam) {
-      setFilters(prev => ({ ...prev, search: searchParam }));
-    }
-  }, []);
+    // Initialize newFilters with current state to ensure default values are used
+    // if not present in URL, and then merge URL params
+    const newFilters = { ...filters }; 
+    
+    if (urlParams.get('search')) newFilters.search = urlParams.get('search');
+    if (urlParams.get('bhk')) newFilters.bhk = urlParams.get('bhk');
+    if (urlParams.get('listingType')) newFilters.listingType = urlParams.get('listingType');
+    if (urlParams.get('propertyCategory')) newFilters.propertyCategory = urlParams.get('propertyCategory');
+    if (urlParams.get('furnishing')) newFilters.furnishing = urlParams.get('furnishing');
+    if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
+    if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
+    
+    setFilters(newFilters);
+  }, []); // Empty dependency array means this effect runs once on mount
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
