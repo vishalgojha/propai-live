@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +12,8 @@ import SEO from "../components/SEO";
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
     search: "",
-    bhk: "all",
+    bhk_multi: [],
+    location_multi: [],
     listingType: "all",
     propertyCategory: "all",
     furnishing: "all",
@@ -22,15 +22,12 @@ export default function SmartFeed() {
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
 
-  // Read all filters from URL parameters on mount
+  // Read filters from URL parameters on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    // Initialize newFilters with current state to ensure default values are used
-    // if not present in URL, and then merge URL params
-    const newFilters = { ...filters }; 
+    const newFilters = { ...filters };
     
     if (urlParams.get('search')) newFilters.search = urlParams.get('search');
-    if (urlParams.get('bhk')) newFilters.bhk = urlParams.get('bhk');
     if (urlParams.get('listingType')) newFilters.listingType = urlParams.get('listingType');
     if (urlParams.get('propertyCategory')) newFilters.propertyCategory = urlParams.get('propertyCategory');
     if (urlParams.get('furnishing')) newFilters.furnishing = urlParams.get('furnishing');
@@ -38,7 +35,7 @@ export default function SmartFeed() {
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
     
     setFilters(newFilters);
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []);
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
@@ -48,6 +45,7 @@ export default function SmartFeed() {
 
   const filteredProperties = useMemo(() => {
     return properties.filter(property => {
+      // Text search
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSearch = 
@@ -56,27 +54,38 @@ export default function SmartFeed() {
           property.location_id?.toLowerCase().includes(searchLower) ||
           property.pocket?.toLowerCase().includes(searchLower) ||
           property.city?.toLowerCase().includes(searchLower) ||
+          property.ai_title?.toLowerCase().includes(searchLower) ||
+          property.ai_description?.toLowerCase().includes(searchLower) ||
           property.description?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
 
-      // New filter condition for propertyCategory
+      // Multi-select BHK
+      if (filters.bhk_multi && filters.bhk_multi.length > 0) {
+        if (!filters.bhk_multi.includes(property.bhk)) return false;
+      }
+
+      // Multi-select Location
+      if (filters.location_multi && filters.location_multi.length > 0) {
+        if (!filters.location_multi.includes(property.location)) return false;
+      }
+
+      // Property Category
       if (filters.propertyCategory && filters.propertyCategory !== "all") {
         if (property.property_category !== filters.propertyCategory) return false;
       }
 
-      if (filters.bhk && filters.bhk !== "all") {
-        if (property.bhk !== filters.bhk) return false;
-      }
-
+      // Listing Type
       if (filters.listingType && filters.listingType !== "all") {
         if (property.listing_type !== filters.listingType) return false;
       }
 
+      // Furnishing
       if (filters.furnishing && filters.furnishing !== "all") {
         if (property.furnishing !== filters.furnishing) return false;
       }
 
+      // Budget
       if (filters.minPrice || filters.maxPrice) {
         const priceInLakhs = property.price_unit === "crores" 
           ? property.price * 100 
@@ -93,7 +102,8 @@ export default function SmartFeed() {
   const clearFilters = () => {
     setFilters({
       search: "",
-      bhk: "all",
+      bhk_multi: [],
+      location_multi: [],
       listingType: "all",
       propertyCategory: "all",
       furnishing: "all",
@@ -149,6 +159,7 @@ export default function SmartFeed() {
           filters={filters}
           onFilterChange={setFilters}
           onClearFilters={clearFilters}
+          allProperties={properties}
         />
 
         {/* Results Count */}

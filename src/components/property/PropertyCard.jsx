@@ -249,9 +249,9 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
 
         {/* Core Info Section */}
         <div className="p-6">
-          {/* AI Title */}
+          {/* AI Title - NO TRUNCATION */}
           {property.ai_title && (
-            <h3 className="text-lg font-bold text-stone-900 mb-3 leading-tight line-clamp-2">
+            <h3 className="text-lg font-bold text-stone-900 mb-3 leading-tight">
               {property.ai_title}
             </h3>
           )}
@@ -266,12 +266,12 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             </p>
           </div>
 
-          {/* AI Description */}
+          {/* AI Description - NO TRUNCATION (4 lines max) */}
           {property.ai_description && (
             <div className="mb-5 p-3 bg-white/60 rounded-2xl border border-stone-200/50">
               <div className="flex items-start gap-2">
                 <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-stone-700 leading-relaxed line-clamp-3">
+                <p className="text-sm text-stone-700 leading-relaxed line-clamp-4">
                   {property.ai_description}
                 </p>
               </div>
