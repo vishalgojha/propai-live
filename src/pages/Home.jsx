@@ -74,7 +74,7 @@ export default function Home() {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
@@ -96,7 +96,7 @@ export default function Home() {
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-stone-400">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-stone-400">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
                 <span>AI-Verified Data</span>
