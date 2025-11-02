@@ -12,18 +12,18 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     filters.furnishing || filters.listingType !== "all" || filters.search;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-[22px] shadow-sm border-2 border-[#F7F7F7] p-6 mb-8">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-slate-600" />
-          <h3 className="font-semibold text-slate-900">Filters</h3>
+          <SlidersHorizontal className="w-5 h-5 text-[#111111]" />
+          <h3 className="font-bold text-[#111111] text-lg">Filters</h3>
         </div>
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-slate-500 hover:text-slate-900"
+            className="text-[#3B3B3B] hover:text-[#111111] hover:bg-[#F7F7F7]"
           >
             <X className="w-4 h-4 mr-1" />
             Clear all
@@ -34,12 +34,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Search */}
         <div className="lg:col-span-2 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
           <Input
             placeholder="Search location, building..."
             value={filters.search || ""}
             onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
-            className="pl-9"
+            className="pl-11 border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
           />
         </div>
 
@@ -48,7 +48,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           value={filters.listingType || "all"}
           onValueChange={(value) => onFilterChange({ ...filters, listingType: value })}
         >
-          <SelectTrigger>
+          <SelectTrigger className="border-[#3B3B3B]/20 h-11 rounded-xl font-semibold">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
@@ -64,7 +64,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           value={filters.bhk || "all"}
           onValueChange={(value) => onFilterChange({ ...filters, bhk: value })}
         >
-          <SelectTrigger>
+          <SelectTrigger className="border-[#3B3B3B]/20 h-11 rounded-xl font-semibold">
             <SelectValue placeholder="BHK" />
           </SelectTrigger>
           <SelectContent>
@@ -80,7 +80,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           value={filters.furnishing || "all"}
           onValueChange={(value) => onFilterChange({ ...filters, furnishing: value })}
         >
-          <SelectTrigger>
+          <SelectTrigger className="border-[#3B3B3B]/20 h-11 rounded-xl font-semibold">
             <SelectValue placeholder="Furnishing" />
           </SelectTrigger>
           <SelectContent>
@@ -100,6 +100,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder="Min Price (Lakhs)"
             value={filters.minPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
+            className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -108,30 +109,31 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder="Max Price (Lakhs)"
             value={filters.maxPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
+            className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
           />
         </div>
       </div>
 
       {/* Active Filters Display */}
       {hasActiveFilters && (
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
+        <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-[#F7F7F7]">
           {filters.bhk && filters.bhk !== "all" && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+            <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
               {filters.bhk}
             </Badge>
           )}
           {filters.furnishing && filters.furnishing !== "all" && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+            <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
               {filters.furnishing}
             </Badge>
           )}
           {filters.listingType && filters.listingType !== "all" && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+            <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
               {filters.listingType}
             </Badge>
           )}
           {(filters.minPrice || filters.maxPrice) && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+            <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
               ₹{filters.minPrice || "0"}L - ₹{filters.maxPrice || "∞"}L
             </Badge>
           )}
