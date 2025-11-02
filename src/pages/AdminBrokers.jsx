@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import {
   Users, MessageCircle, Phone, Star, Search, Filter,
-  Eye, CheckCircle2, Edit2, Download, MapPin, Shield
+  Eye, CheckCircle2, Edit2, Download, MapPin, Shield, Building2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -35,6 +35,7 @@ export default function AdminBrokers() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedBroker, setSelectedBroker] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [viewPropertiesModalOpen, setViewPropertiesModalOpen] = useState(false); // New state for properties modal
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -67,10 +68,18 @@ export default function AdminBrokers() {
     enabled: isAuthorized,
   });
 
+  const { data: allProperties = [] } = useQuery({
+    queryKey: ['all-properties'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    initialData: [],
+    enabled: isAuthorized,
+  });
+
   const updateBrokerMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Broker.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brokers'] });
+      queryClient.invalidateQueries({ queryKey: ['all-properties'] }); // Invalidate properties too if relevant
       setEditModalOpen(false);
       setSelectedBroker(null);
     },
@@ -88,22 +97,48 @@ export default function AdminBrokers() {
     return matchesSearch && matchesStatus;
   });
 
+  const getBrokerProperties = (brokerId) => {
+    return allProperties.filter(p => p.broker_id === brokerId);
+  };
+
   const stats = {
     total: brokers.length,
     active: brokers.filter(b => b.status === "Active").length,
     verified: brokers.filter(b => b.verified).length,
     blacklisted: brokers.filter(b => b.status === "Blacklisted").length,
     totalListings: brokers.reduce((sum, b) => sum + (b.total_listings_count || 0), 0),
-    activeListings: brokers.reduce((sum, b) => sum + (b.active_listings_count || 0), 0),
+    // Using filtered properties for active listings count in stats
+    activeListings: allProperties.filter(p => p.status === "Active").length,
   };
 
   const handleWhatsApp = (broker) => {
-    const message = `Hi ${broker.name}, this is Chariot Realty. Can we discuss current property listings?`;
+    const properties = getBrokerProperties(broker.id);
+    
+    let message = `Hi ${broker.name}, this is Chariot Realty.\n\n`;
+    
+    if (properties.length > 0) {
+      message += `Regarding your ${properties.length} listing${properties.length > 1 ? 's' : ''}:\n\n`;
+      properties.slice(0, 3).forEach((prop, idx) => {
+        message += `${idx + 1}. ${prop.bhk || 'Property'} in ${prop.location || 'Mumbai'}\n`;
+        message += `   ${prop.building_name ? `${prop.building_name}, ` : ''}`;
+        message += `₹${prop.price}${prop.price_unit === 'crores' ? ' Cr' : 'L'}\n`;
+        if (prop.custom_id) message += `   ID: ${prop.custom_id}\n`;
+        message += '\n';
+      });
+      if (properties.length > 3) {
+        message += `...and ${properties.length - 3} more listing${properties.length - 3 > 1 ? 's' : ''}\n\n`;
+      }
+      message += `Can we discuss these listings? Need updated photos, availability, and viewing schedule.`;
+    } else {
+      message += `Can we discuss potential property listings in ${broker.areas_covered?.join(', ') || 'your areas'}?`;
+    }
+    
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleViewListings = (broker) => {
-    window.location.href = createPageUrl("SmartFeed") + `?broker=${broker.id}`;
+    setSelectedBroker(broker);
+    setViewPropertiesModalOpen(true);
   };
 
   const handleExportCSV = () => {
@@ -115,7 +150,7 @@ export default function AdminBrokers() {
         b.phone,
         b.agency_name || '',
         b.total_listings_count || 0,
-        b.active_listings_count || 0,
+        getBrokerProperties(b.id).length, // Use actual active listings from allProperties
         b.status,
         b.reliability_rating || '',
         (b.areas_covered || []).join('; ')
@@ -128,6 +163,105 @@ export default function AdminBrokers() {
     a.href = url;
     a.download = `chariot-brokers-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
+  };
+
+  const BrokerPropertiesModal = () => {
+    if (!selectedBroker) return null;
+    const properties = getBrokerProperties(selectedBroker.id);
+
+    return (
+      <Dialog open={viewPropertiesModalOpen} onOpenChange={setViewPropertiesModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedBroker.name}'s Listings ({properties.length})
+            </DialogTitle>
+          </DialogHeader>
+
+          {properties.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-[#3B3B3B]">No properties found for this broker.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {properties.map((property) => (
+                <div
+                  key={property.id}
+                  className="p-4 bg-[#F7F7F7] rounded-2xl border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
+                          {property.bhk || 'N/A'}
+                        </Badge>
+                        <Badge variant="outline" className={
+                          property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
+                          "bg-gray-500/20 text-gray-700 border-gray-500"
+                        }>
+                          {property.status}
+                        </Badge>
+                        {property.custom_id && (
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {property.custom_id}
+                          </Badge>
+                        )}
+                      </div>
+                      <h4 className="text-lg font-bold text-[#111111] mb-2">
+                        {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Location</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            {property.location || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Price</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Type</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            {property.listing_type}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Area</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            {property.carpet_area || 'N/A'} sq.ft
+                          </p>
+                        </div>
+                      </div>
+                      {property.building_name && (
+                        <p className="text-sm text-[#3B3B3B] mb-2">
+                          <Building2 className="w-3 h-3 inline mr-1" />
+                          {property.building_name}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => {
+                        setViewPropertiesModalOpen(false); // Close current modal
+                        navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+                      }}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   const BrokerEditModal = () => {
@@ -331,136 +465,146 @@ export default function AdminBrokers() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredBrokers.map((broker) => (
-              <motion.div
-                key={broker.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">
-                      <Users className="w-6 h-6 text-[#FFD300]" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-[#111111]">{broker.name}</h3>
-                        {broker.verified && (
-                          <Badge className="bg-green-500/20 text-green-700 border-green-500">
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Verified
-                          </Badge>
-                        )}
+            {filteredBrokers.map((broker) => {
+              const brokerProps = getBrokerProperties(broker.id);
+              
+              return (
+                <motion.div
+                  key={broker.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">
+                        <Users className="w-6 h-6 text-[#FFD300]" />
                       </div>
-                      {broker.custom_id && (
-                        <p className="text-xs text-[#3B3B3B]/60 font-mono mb-2">{broker.custom_id}</p>
-                      )}
-                      {broker.agency_name && (
-                        <p className="text-sm text-[#3B3B3B] mb-2">{broker.agency_name}</p>
-                      )}
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {broker.status}
-                        </Badge>
-                        {broker.response_time && broker.response_time !== "Unknown" && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-bold text-[#111111]">{broker.name}</h3>
+                          {broker.verified && (
+                            <Badge className="bg-green-500/20 text-green-700 border-green-500">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Verified
+                            </Badge>
+                          )}
+                        </div>
+                        {broker.custom_id && (
+                          <p className="text-xs text-[#3B3B3B]/60 font-mono mb-2">{broker.custom_id}</p>
+                        )}
+                        {broker.agency_name && (
+                          <p className="text-sm text-[#3B3B3B] mb-2">{broker.agency_name}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
                           <Badge variant="outline" className="text-xs">
-                            {broker.response_time} Response
+                            {broker.status}
                           </Badge>
-                        )}
-                        {broker.reliability_rating && (
-                          <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
-                            <Star className="w-3 h-3 mr-1" fill="currentColor" />
-                            {broker.reliability_rating}/5
-                          </Badge>
-                        )}
+                          {broker.response_time && broker.response_time !== "Unknown" && (
+                            <Badge variant="outline" className="text-xs">
+                              {broker.response_time} Response
+                            </Badge>
+                          )}
+                          {broker.reliability_rating && (
+                            <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
+                              <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                              {broker.reliability_rating}/5
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setSelectedBroker(broker);
-                      setEditModalOpen(true);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-[#3B3B3B]/60 mb-1">Contact</p>
-                    <div className="flex items-center gap-1 text-sm text-[#111111]">
-                      <Phone className="w-3 h-3" />
-                      {broker.phone}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#3B3B3B]/60 mb-1">Total Listings</p>
-                    <p className="text-sm font-bold text-[#111111]">{broker.total_listings_count || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#3B3B3B]/60 mb-1">Active Listings</p>
-                    <p className="text-sm font-bold text-green-600">{broker.active_listings_count || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#3B3B3B]/60 mb-1">Last Activity</p>
-                    <p className="text-sm text-[#111111]">
-                      {broker.last_activity ? format(new Date(broker.last_activity), "MMM dd, yyyy") : "Never"}
-                    </p>
-                  </div>
-                </div>
-
-                {broker.areas_covered && broker.areas_covered.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs text-[#3B3B3B]/60 mb-2">Areas Covered</p>
-                    <div className="flex flex-wrap gap-2">
-                      {broker.areas_covered.map((area, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {area}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {broker.notes && (
-                  <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
-                    <p className="text-xs text-[#3B3B3B]/60 mb-1">Notes</p>
-                    <p className="text-sm text-[#111111]">{broker.notes}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleWhatsApp(broker)}
-                    className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
-                    size="sm"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    WhatsApp
-                  </Button>
-                  {(broker.total_listings_count || 0) > 0 && (
                     <Button
-                      onClick={() => handleViewListings(broker)}
-                      variant="outline"
+                      onClick={() => {
+                        setSelectedBroker(broker);
+                        setEditModalOpen(true);
+                      }}
+                      variant="ghost"
                       size="sm"
                     >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View {broker.active_listings_count || broker.total_listings_count} Listings
+                      <Edit2 className="w-4 h-4" />
                     </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Contact</p>
+                      <div className="flex items-center gap-1 text-sm text-[#111111]">
+                        <Phone className="w-3 h-3" />
+                        {broker.phone}
+                      </div>
+                      {broker.alternate_phones && broker.alternate_phones.length > 0 && (
+                        <div className="text-xs text-[#3B3B3B]/60 mt-1">
+                          +{broker.alternate_phones.length} alt number{broker.alternate_phones.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Total Listings</p>
+                      <p className="text-sm font-bold text-[#111111]">{broker.total_listings_count || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Active Listings</p>
+                      <p className="text-sm font-bold text-green-600">{brokerProps.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Last Activity</p>
+                      <p className="text-sm text-[#111111]">
+                        {broker.last_activity ? format(new Date(broker.last_activity), "MMM dd, yyyy") : "Never"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {broker.areas_covered && broker.areas_covered.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-[#3B3B3B]/60 mb-2">Areas Covered</p>
+                      <div className="flex flex-wrap gap-2">
+                        {broker.areas_covered.map((area, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {area}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </div>
-              </motion.div>
-            ))}
+
+                  {broker.notes && (
+                    <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Notes</p>
+                      <p className="text-sm text-[#111111]">{broker.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleWhatsApp(broker)}
+                      className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                      size="sm"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      WhatsApp {brokerProps.length > 0 && `(${brokerProps.length})`}
+                    </Button>
+                    {brokerProps.length > 0 && (
+                      <Button
+                        onClick={() => handleViewListings(broker)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View {brokerProps.length} Listing{brokerProps.length > 1 ? 's' : ''}
+                      </Button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
 
       <BrokerEditModal />
+      <BrokerPropertiesModal />
     </div>
   );
 }
