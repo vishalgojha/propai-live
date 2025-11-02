@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Camera, Sparkles, Home as HomeIcon, Clock, Instagram, Facebook, Twitter, Copy } from "lucide-react";
+import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Sparkles, Home as HomeIcon, Clock, Instagram, Facebook, Twitter, Link as LinkIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -19,7 +19,7 @@ import {
 
 export default function PropertyCard({ property, onViewDetails, isAdmin = false }) {
   const [copied, setCopied] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const formatPrice = () => {
     if (property.price_unit === "crores") {
@@ -53,37 +53,47 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     return `Check out this property: ${title}\n${formatPrice()}\n\nView on Chariot Realty`;
   };
 
-  const handleShare = () => {
-    setShowShareModal(true);
-  };
-
-  const handleShareFacebook = () => {
-    const url = encodeURIComponent(getShareUrl());
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-    setShowShareModal(false);
-  };
-
-  const handleShareTwitter = () => {
-    const url = encodeURIComponent(getShareUrl());
-    const text = encodeURIComponent(getShareText());
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-    setShowShareModal(false);
-  };
-
-  const handleShareWhatsApp = () => {
-    const message = encodeURIComponent(`${getShareText()}\n${getShareUrl()}`);
-    window.open(`https://wa.me/?text=${message}`, '_blank');
-    setShowShareModal(false);
+  const handleShare = async () => {
+    // Try native share first
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: property.ai_title || `${property.bhk} in ${property.location}`,
+          text: getShareText(),
+          url: getShareUrl()
+        });
+        return;
+      } catch (err) {
+        // User cancelled or error, fall through to modal
+      }
+    }
+    // Open share modal
+    setShareModalOpen(true);
   };
 
   const copyShareLink = () => {
-    const url = getShareUrl();
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(getShareUrl());
     setCopied(true);
     setTimeout(() => {
       setCopied(false);
-      setShowShareModal(false);
+      setShareModalOpen(false);
     }, 2000);
+  };
+
+  const shareToFacebook = () => {
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
+  };
+
+  const shareToTwitter = () => {
+    const text = encodeURIComponent(getShareText());
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
+  };
+
+  const shareToWhatsApp = () => {
+    const text = encodeURIComponent(`${getShareText()}\n\n${getShareUrl()}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const handleInstagram = () => {
@@ -105,15 +115,6 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     if (daysOld <= 2) return { text: `${daysOld}d ago`, color: "bg-green-500", icon: "🟢" };
     if (daysOld <= 7) return { text: `${daysOld}d ago`, color: "bg-orange-500", icon: "🟠" };
     return { text: "Older Listing", color: "bg-gray-400", icon: "⚪" };
-  };
-
-  const getAISummary = () => {
-    if (property.ai_description) {
-      // Extract first sentence or create short summary
-      const sentences = property.ai_description.split('.');
-      return sentences[0] + '.';
-    }
-    return `${property.bhk} with modern amenities in ${property.location}`;
   };
 
   const freshnessTag = getFreshnessTag();
@@ -180,8 +181,15 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </div>
         </div>
 
-        {/* Core Info Section */}
+        {/* Core Info Section - No Images, More Space for Content */}
         <div className="p-6">
+          {/* AI Title */}
+          {property.ai_title && (
+            <h3 className="text-lg font-bold text-stone-900 mb-3 leading-tight line-clamp-2">
+              {property.ai_title}
+            </h3>
+          )}
+
           {/* Price */}
           <div className="mb-5">
             <p className="text-4xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-2">
@@ -192,13 +200,13 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             </p>
           </div>
 
-          {/* AI Summary */}
+          {/* AI Description */}
           {property.ai_description && (
             <div className="mb-5 p-3 bg-white/60 rounded-2xl border border-stone-200/50">
               <div className="flex items-start gap-2">
                 <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-stone-700 leading-relaxed line-clamp-2">
-                  {getAISummary()}
+                <p className="text-sm text-stone-700 leading-relaxed line-clamp-3">
+                  {property.ai_description}
                 </p>
               </div>
             </div>
@@ -359,29 +367,29 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
       </motion.div>
 
       {/* Share Modal */}
-      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
-        <DialogContent className="max-w-md rounded-3xl">
+      <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#111111]">Share Property</DialogTitle>
+            <DialogTitle>Share Property</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-3">
             <Button
-              onClick={handleShareWhatsApp}
-              className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl justify-start"
+              onClick={shareToWhatsApp}
+              className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white justify-start"
             >
               <MessageCircle className="w-5 h-5 mr-3" />
               Share on WhatsApp
             </Button>
             <Button
-              onClick={handleShareFacebook}
-              className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white font-bold h-12 rounded-2xl justify-start"
+              onClick={shareToFacebook}
+              className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white justify-start"
             >
               <Facebook className="w-5 h-5 mr-3" />
               Share on Facebook
             </Button>
             <Button
-              onClick={handleShareTwitter}
-              className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA] text-white font-bold h-12 rounded-2xl justify-start"
+              onClick={shareToTwitter}
+              className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA] text-white justify-start"
             >
               <Twitter className="w-5 h-5 mr-3" />
               Share on Twitter
@@ -389,9 +397,9 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             <Button
               onClick={copyShareLink}
               variant="outline"
-              className="w-full border-stone-300 hover:bg-stone-50 text-stone-700 font-bold h-12 rounded-2xl justify-start"
+              className="w-full justify-start"
             >
-              <Copy className="w-5 h-5 mr-3" />
+              <LinkIcon className="w-5 h-5 mr-3" />
               {copied ? "Link Copied!" : "Copy Link"}
             </Button>
           </div>

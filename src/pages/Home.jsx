@@ -54,6 +54,10 @@ export default function Home() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleInstagram = () => {
+    window.open('https://instagram.com/chariotrealty.in', '_blank');
+  };
+
   const features = [
     {
       icon: Shield,

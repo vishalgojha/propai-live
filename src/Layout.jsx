@@ -290,7 +290,7 @@ export default function Layout({ children, currentPageName }) {
               {/* Social Icons */}
               <div className="flex items-center gap-3">
                 <a 
-                  href="https://instagram.com/chariotrealtors" 
+                  href="https://instagram.com/chariotrealty.in" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-white/5 hover:bg-[#d4af37] rounded-xl flex items-center justify-center transition-all group"
