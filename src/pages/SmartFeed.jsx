@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -39,7 +40,10 @@ export default function SmartFeed() {
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active" }, "-created_date"),
+    queryFn: () => base44.entities.Property.filter({ 
+      status: "Active",
+      is_duplicate: false  // Exclude duplicate properties
+    }, "-created_date"),
     initialData: [],
   });
 
