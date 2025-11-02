@@ -155,8 +155,8 @@ export default function Blogs() {
           </motion.div>
         )}
 
-        {/* Category Tabs */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+        {/* Category Tabs - Stacked Vertically on Mobile, Grid on Desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
           {categories.map((cat) => {
             const Icon = cat.icon;
             return (
@@ -164,7 +164,7 @@ export default function Blogs() {
                 key={cat.value}
                 onClick={() => setSelectedCategory(cat.value)}
                 variant={selectedCategory === cat.value ? "default" : "outline"}
-                className={`flex items-center gap-2 whitespace-nowrap rounded-2xl font-semibold ${
+                className={`flex items-center justify-start gap-2 rounded-2xl font-semibold h-12 w-full ${
                   selectedCategory === cat.value
                     ? "bg-[#FFD300] text-black border-0 shadow-md"
                     : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7]"
