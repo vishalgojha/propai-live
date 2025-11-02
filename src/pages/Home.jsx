@@ -93,7 +93,7 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -127,24 +127,24 @@ export default function Home() {
                 <span className="text-sm text-gray-300 font-medium">AI-Powered Search</span>
               </div>
 
-              {/* Search Input */}
+              {/* Search Input - BIGGER */}
               <div className="relative mb-4">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   placeholder="Try: 3 BHK in Bandra, sea view, furnished under 3 cr"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-14 pr-4 bg-white/10 border border-white/20 hover:border-[#FFD300]/50 h-14 text-white placeholder:text-gray-400 text-base focus-visible:ring-2 focus-visible:ring-[#FFD300] rounded-2xl backdrop-blur-xl"
+                  className="pl-14 pr-4 bg-white/10 border border-white/20 hover:border-[#FFD300]/50 h-16 text-white placeholder:text-gray-400 text-base focus-visible:ring-2 focus-visible:ring-[#FFD300] rounded-2xl backdrop-blur-xl"
                 />
               </div>
 
-              {/* Search Button - Below and Smaller */}
+              {/* Search Button - Below and SMALLER */}
               <Button
                 onClick={handleSearch}
-                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-8 h-12 rounded-xl shadow-lg shadow-[#FFD300]/20 border-0"
+                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-6 h-10 rounded-xl shadow-lg shadow-[#FFD300]/20 border-0 text-sm"
               >
-                <Search className="w-4 h-4 mr-2" />
+                <Search className="w-3.5 h-3.5 mr-2" />
                 Search Properties
               </Button>
             </div>
