@@ -54,6 +54,11 @@ export default function Home() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleWhatsAppAI = () => {
+    const whatsappURL = base44.agents.getWhatsAppConnectURL('chariot_master');
+    window.open(whatsappURL, '_blank');
+  };
+
   const handleInstagram = () => {
     window.open('https://instagram.com/chariotrealty.in', '_blank');
   };
@@ -238,46 +243,26 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Primary CTAs - Vishal & Kapil */}
+            {/* WhatsApp AI Agent CTA */}
             <div className="max-w-2xl mx-auto mb-8">
-              <p className="text-stone-300 text-sm mb-4 font-light">Or speak directly with our team:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Vishal CTA */}
-                <Button
-                  onClick={() => handleWhatsApp("Vishal")}
-                  size="lg"
-                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-6 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-3"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
-                      V
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold">Chat with Vishal</p>
-                      <p className="text-xs text-white/80">+91 98194 71310</p>
-                    </div>
+              <p className="text-stone-300 text-sm mb-4 font-light">Or connect instantly with our AI assistant:</p>
+              
+              <Button
+                onClick={handleWhatsAppAI}
+                size="lg"
+                className="w-full max-w-md mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-6 h-6" />
                   </div>
-                  <MessageCircle className="w-5 h-5" />
-                </Button>
-
-                {/* Kapil CTA */}
-                <Button
-                  onClick={() => handleWhatsApp("Kapil")}
-                  size="lg"
-                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-6 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-3"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
-                      K
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold">Chat with Kapil</p>
-                      <p className="text-xs text-white/80">+91 97737 57759</p>
-                    </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold">Connect with WhatsApp AI</p>
+                    <p className="text-xs text-white/80">Instant property search & recommendations</p>
                   </div>
-                  <MessageCircle className="w-5 h-5" />
-                </Button>
-              </div>
+                </div>
+                <MessageCircle className="w-6 h-6" />
+              </Button>
             </div>
 
             {/* Secondary Action */}
@@ -487,78 +472,46 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-[#FFD300] to-[#FFC700]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <div className="flex items-center gap-3 mb-8">
-                <MessageCircle className="w-12 h-12 text-black" />
-                <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">
-                  Ready to Start?
-                </h2>
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-black" />
               </div>
-              <p className="text-black/70 text-xl mb-10 leading-relaxed font-medium">
-                Tell us what you're looking for.
-                <br />
-                We'll send you matches within hours.
-              </p>
-              
-              <div className="space-y-5">
-                {['No spam calls', 'Only verified properties', 'Personal advisors who care'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 text-black">
-                    <Check className="w-5 h-5 flex-shrink-0 font-bold" />
-                    <span className="font-semibold">{item}</span>
-                  </div>
-                ))}
-              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">
+                Ready to Start?
+              </h2>
+            </div>
+            <p className="text-black/70 text-xl mb-10 leading-relaxed font-medium">
+              Connect with our AI assistant on WhatsApp.
+              <br />
+              Get personalized property matches within minutes.
+            </p>
+            
+            <div className="space-y-5 max-w-md mx-auto mb-10">
+              {['Instant AI responses', 'Only verified properties', 'No spam calls'].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-black">
+                  <Check className="w-5 h-5 flex-shrink-0 font-bold" />
+                  <span className="font-semibold">{item}</span>
+                </div>
+              ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Vishal Card */}
-              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-md">
-                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-5 text-white">
-                  V
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-[#111111]">Vishal</h3>
-                <p className="text-gray-600 text-sm mb-8">Your Property Advisor</p>
-                
-                <div className="space-y-4 mb-8">
-                  <a href="tel:+919819471310" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
-                    <Phone className="w-4 h-4" />
-                    +91 98194 71310
-                  </a>
-                </div>
-
-                <Button
-                  onClick={() => handleWhatsApp("Vishal")}
-                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-sm border-0"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message Vishal
-                </Button>
+            <Button
+              onClick={handleWhatsAppAI}
+              size="lg"
+              className="w-full max-w-lg mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
+            >
+              <MessageCircle className="w-6 h-6" />
+              <div>
+                <p className="text-lg font-bold">Connect with WhatsApp AI</p>
+                <p className="text-xs text-white/80">Start your property search now</p>
               </div>
+            </Button>
 
-              {/* Kapil Card */}
-              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-md">
-                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-5 text-white">
-                  K
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-[#111111]">Kapil</h3>
-                <p className="text-gray-600 text-sm mb-8">Your Property Advisor</p>
-                
-                <div className="space-y-4 mb-8">
-                  <a href="tel:+919773757759" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
-                    <Phone className="w-4 h-4" />
-                    +91 97737 57759
-                  </a>
-                </div>
-
-                <Button
-                  onClick={() => handleWhatsApp("Kapil")}
-                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-sm border-0"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message Kapil
-                </Button>
-              </div>
+            <div className="mt-8">
+              <p className="text-sm text-black/60">
+                Need human help? Call Vishal (+91 98194 71310) or Kapil (+91 97737 57759)
+              </p>
             </div>
           </div>
         </div>
