@@ -113,7 +113,7 @@ export default function Home() {
             </h1>
             
             <p className="text-xl text-gray-300 mb-3 max-w-2xl mx-auto leading-relaxed font-light">
-              No spam calls. No endless scrolling. No broker drama.
+              No spam calls. No endless scrolling. No fake listings.
             </p>
             <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-light">
               Just honest guidance, curated options, and a team that listens before showing.
