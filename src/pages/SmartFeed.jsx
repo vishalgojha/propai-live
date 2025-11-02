@@ -14,6 +14,7 @@ export default function SmartFeed() {
     search: "",
     bhk: "all",
     listingType: "all",
+    propertyCategory: "all", // Added propertyCategory filter
     furnishing: "all",
     minPrice: "",
     maxPrice: ""
@@ -38,6 +39,11 @@ export default function SmartFeed() {
           property.city?.toLowerCase().includes(searchLower) ||
           property.description?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
+      }
+
+      // New filter condition for propertyCategory
+      if (filters.propertyCategory && filters.propertyCategory !== "all") {
+        if (property.property_category !== filters.propertyCategory) return false;
       }
 
       if (filters.bhk && filters.bhk !== "all") {
@@ -70,6 +76,7 @@ export default function SmartFeed() {
       search: "",
       bhk: "all",
       listingType: "all",
+      propertyCategory: "all", // Added propertyCategory to clearFilters
       furnishing: "all",
       minPrice: "",
       maxPrice: ""

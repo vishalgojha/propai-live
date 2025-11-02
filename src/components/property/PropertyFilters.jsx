@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
   const bhkOptions = ["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5+ BHK"];
 
   const hasActiveFilters = filters.bhk || filters.minPrice || filters.maxPrice || 
-    filters.furnishing || filters.listingType !== "all" || filters.search;
+    filters.furnishing || filters.listingType !== "all" || filters.search || 
+    filters.propertyCategory !== "all";
 
   return (
     <div className="bg-white rounded-[22px] shadow-sm border-2 border-[#F7F7F7] p-6 mb-8">
@@ -31,7 +33,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
         {/* Search */}
         <div className="lg:col-span-2 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
@@ -42,6 +44,21 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             className="pl-11 border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
           />
         </div>
+
+        {/* Property Category */}
+        <Select
+          value={filters.propertyCategory || "all"}
+          onValueChange={(value) => onFilterChange({ ...filters, propertyCategory: value })}
+        >
+          <SelectTrigger className="border-[#3B3B3B]/20 h-11 rounded-xl font-semibold">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Properties</SelectItem>
+            <SelectItem value="Residential">Residential</SelectItem>
+            <SelectItem value="Commercial">Commercial</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* Listing Type */}
         <Select
@@ -117,6 +134,11 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-[#F7F7F7]">
+          {filters.propertyCategory && filters.propertyCategory !== "all" && (
+            <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
+              {filters.propertyCategory}
+            </Badge>
+          )}
           {filters.bhk && filters.bhk !== "all" && (
             <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
               {filters.bhk}

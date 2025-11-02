@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -68,7 +69,7 @@ export default function Layout({ children, currentPageName }) {
                 <span className="text-2xl font-bold text-white tracking-tight">Chariot Realty</span>
               </div>
               <p className="text-gray-400 text-sm font-light leading-relaxed">
-                Mumbai's trusted partner for luxury and premium properties
+                Mumbai's trusted partner for residential & commercial properties
               </p>
               <p className="text-gray-500 text-sm mt-6">
                 Mumbai, Maharashtra<br />

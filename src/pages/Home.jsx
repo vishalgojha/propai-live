@@ -103,11 +103,11 @@ export default function Home() {
             className="text-center mb-12"
           >
             <Badge className="mb-6 bg-[#FFD300] text-black border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-lg shadow-[#FFD300]/30">
-              MUMBAI'S MOST HUMAN HOME SEARCH
+              RESIDENTIAL & COMMERCIAL PROPERTIES
             </Badge>
             
             <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
-              Finding a Home
+              Finding Your Space
               <br />
               <span className="text-[#FFD300]">Shouldn't Feel Like a Job.</span>
             </h1>
@@ -116,7 +116,7 @@ export default function Home() {
               No spam calls. No endless scrolling. No fake listings.
             </p>
             <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-light">
-              Just honest guidance, curated options, and a team that listens before showing.
+              Whether it's a home or an office, we deliver honest guidance and verified options.
             </p>
 
             {/* Search Bar - Larger Size */}
@@ -324,13 +324,13 @@ export default function Home() {
             
             <div className="space-y-6 text-lg text-gray-600 leading-relaxed font-light">
               <p className="text-2xl text-[#111111] font-normal">
-                Finding a home in Mumbai shouldn't feel like a job.
+                Finding your space in Mumbai shouldn't feel like a job.
               </p>
               
               <p>
-                Chariot Realty is a new-age real estate service built around you.
+                Chariot Realty serves residential and commercial real estate with a focus on you.
                 <br />
-                No spam calls, no endless scrolling, no broker drama.
+                No spam calls, no endless scrolling, no fake listings.
                 <br />
                 Just honest guidance, curated options, and a team that listens before showing.
               </p>
@@ -343,7 +343,7 @@ export default function Home() {
               
               <div className="pt-6">
                 <p className="text-xl text-[#111111] font-medium italic">
-                  "We're not here to sell you a flat.
+                  "We're not here to sell you a property.
                   <br />
                   We're here to help you find your space in the city."
                 </p>
