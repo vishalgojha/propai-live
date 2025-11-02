@@ -95,40 +95,40 @@ export default function Home() {
       <section className="relative bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] text-white overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <Badge className="mb-6 bg-[#FFD300] text-black border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-lg shadow-[#FFD300]/30">
+            <Badge className="mb-8 bg-[#FFD300] text-black border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-sm">
               RESIDENTIAL & COMMERCIAL PROPERTIES
             </Badge>
             
-            <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
+            <h1 className="text-4xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
               Finding Your Space
               <br />
               <span className="text-[#FFD300]">Shouldn't Feel Like a Job.</span>
             </h1>
             
-            <p className="text-xl text-gray-300 mb-3 max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="text-xl text-gray-300 mb-4 max-w-2xl mx-auto leading-relaxed font-light">
               No spam calls. No endless scrolling. No fake listings.
             </p>
-            <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-light">
+            <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto font-light">
               Whether it's a home or an office, we deliver honest guidance and verified options.
             </p>
 
             {/* Search Bar - Redesigned */}
-            <div className="max-w-2xl mx-auto mb-10">
+            <div className="max-w-2xl mx-auto mb-12">
               {/* AI Powered Badge */}
-              <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="flex items-center justify-center gap-2 mb-4">
                 <Sparkles className="w-4 h-4 text-[#FFD300]" />
                 <span className="text-sm text-gray-300 font-medium">AI-Powered Search</span>
               </div>
 
-              {/* Search Input - BIGGER */}
-              <div className="relative mb-4">
+              {/* Search Input */}
+              <div className="relative mb-5">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   placeholder="Try: 3 BHK in Bandra, sea view, furnished under 3 cr"
@@ -139,10 +139,10 @@ export default function Home() {
                 />
               </div>
 
-              {/* Search Button - Below and SMALLER */}
+              {/* Search Button */}
               <Button
                 onClick={handleSearch}
-                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-6 h-10 rounded-xl shadow-lg shadow-[#FFD300]/20 border-0 text-sm"
+                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-6 h-10 rounded-xl shadow-sm border-0 text-sm"
               >
                 <Search className="w-3.5 h-3.5 mr-2" />
                 Search Properties
@@ -154,7 +154,7 @@ export default function Home() {
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="w-full bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-lg border-0"
+                className="w-full bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-sm border-0"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Browse All Properties
@@ -162,7 +162,7 @@ export default function Home() {
               <Button
                 onClick={handleWhatsAppAI}
                 size="lg"
-                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-lg border-0"
+                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-sm border-0"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Connect via WhatsApp AI
@@ -175,7 +175,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20"
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-24"
           >
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
@@ -191,11 +191,11 @@ export default function Home() {
 
       {/* Featured Properties */}
       {(featuredProperties.length > 0 || recentProperties.length > 0) && (
-        <section className="py-20 bg-white">
+        <section className="py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-4xl font-bold text-[#111111] mb-2 tracking-tight">Featured Properties</h2>
+                <h2 className="text-4xl font-bold text-[#111111] mb-3 tracking-tight">Featured Properties</h2>
                 <p className="text-gray-600 text-lg">Verified homes, ready for viewing</p>
               </div>
               <Button
@@ -221,11 +221,11 @@ export default function Home() {
         </section>
       )}
 
-      {/* How It Works - Simple & Personal */}
-      <section className="py-20 bg-[#F7F7F7]">
+      {/* How It Works */}
+      <section className="py-24 bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-4 tracking-tight">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-5 tracking-tight">
               How It Works
             </h2>
             <p className="text-lg text-gray-600 font-light max-w-2xl mx-auto">
@@ -233,7 +233,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             {[
               {
                 step: "1",
@@ -264,10 +264,10 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl flex items-center justify-center text-2xl font-bold text-black mx-auto mb-4 shadow-xl shadow-[#FFD300]/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl flex items-center justify-center text-2xl font-bold text-black mx-auto mb-6 shadow-sm">
                   {item.step}
                 </div>
-                <h3 className="text-xl font-bold text-[#111111] mb-3">{item.title}</h3>
+                <h3 className="text-xl font-bold text-[#111111] mb-4">{item.title}</h3>
                 <p className="text-gray-600 leading-relaxed font-light text-sm">{item.description}</p>
               </motion.div>
             ))}
@@ -276,10 +276,10 @@ export default function Home() {
       </section>
 
       {/* Why Choose Chariot */}
-      <section className="py-20 bg-white border-y border-gray-100">
+      <section className="py-24 bg-white border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-6 tracking-tight">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-8 tracking-tight">
               Why Choose Chariot
             </h2>
             <p className="text-xl text-gray-600 font-light max-w-2xl mx-auto">
@@ -287,7 +287,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -295,18 +295,18 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-3xl p-8 border-2 border-gray-100 hover:border-[#FFD300] hover:shadow-xl transition-all"
+                className="bg-white rounded-3xl p-8 border-2 border-gray-100 hover:border-[#FFD300] hover:shadow-lg transition-all"
               >
-                <div className="w-14 h-14 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-[#FFD300]/20">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-2xl flex items-center justify-center mb-6 shadow-sm">
                   <feature.icon className="w-7 h-7 text-black" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-[#111111]">{feature.title}</h3>
+                <h3 className="text-xl font-bold mb-4 text-[#111111]">{feature.title}</h3>
                 <p className="text-[#3B3B3B] text-sm leading-relaxed font-light">{feature.description}</p>
               </motion.div>
             ))}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             <div className="inline-block bg-[#FFD300] text-black px-8 py-4 rounded-3xl">
               <p className="text-lg font-bold">
                 Chariot Realty — Where AI ends, and actual care begins.
@@ -316,8 +316,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Chariot - Human Story */}
-      <section className="py-20 bg-[#F7F7F7]">
+      {/* About Chariot */}
+      <section className="py-24 bg-[#F7F7F7]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -325,11 +325,11 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-[#111111] tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-bold mb-10 text-[#111111] tracking-tight">
               About Chariot Realty
             </h2>
             
-            <div className="space-y-6 text-lg text-gray-600 leading-relaxed font-light">
+            <div className="space-y-8 text-lg text-gray-600 leading-relaxed font-light">
               <p className="text-2xl text-[#111111] font-normal">
                 Finding your space in Mumbai shouldn't feel like a job.
               </p>
@@ -348,7 +348,7 @@ export default function Home() {
                 but in front, <span className="font-semibold text-[#111111]">you'll only feel calm, clarity, and care.</span>
               </p>
               
-              <div className="pt-6">
+              <div className="pt-8">
                 <p className="text-xl text-[#111111] font-medium italic">
                   "We're not here to sell you a property.
                   <br />
@@ -361,23 +361,23 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-[#FFD300] to-[#FFC700]">
+      <section className="py-24 bg-gradient-to-br from-[#FFD300] to-[#FFC700]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-8">
                 <MessageCircle className="w-12 h-12 text-black" />
                 <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">
                   Ready to Start?
                 </h2>
               </div>
-              <p className="text-black/70 text-xl mb-8 leading-relaxed font-medium">
+              <p className="text-black/70 text-xl mb-10 leading-relaxed font-medium">
                 Tell us what you're looking for.
                 <br />
                 We'll send you matches within hours.
               </p>
               
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {['No spam calls', 'Only verified properties', 'Personal advisors who care'].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 text-black">
                     <Check className="w-5 h-5 flex-shrink-0 font-bold" />
@@ -387,16 +387,16 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Vishal Card */}
-              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-xl">
-                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 text-white">
+              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-md">
+                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-5 text-white">
                   V
                 </div>
                 <h3 className="text-2xl font-bold mb-2 text-[#111111]">Vishal</h3>
-                <p className="text-gray-600 text-sm mb-6">Your Property Advisor</p>
+                <p className="text-gray-600 text-sm mb-8">Your Property Advisor</p>
                 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-4 mb-8">
                   <a href="tel:+919819471310" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
                     <Phone className="w-4 h-4" />
                     +91 98194 71310
@@ -405,7 +405,7 @@ export default function Home() {
 
                 <Button
                   onClick={() => handleWhatsApp("Vishal")}
-                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-lg border-0"
+                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-sm border-0"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Message Vishal
@@ -413,14 +413,14 @@ export default function Home() {
               </div>
 
               {/* Kapil Card */}
-              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-xl">
-                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 text-white">
+              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-md">
+                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-5 text-white">
                   K
                 </div>
                 <h3 className="text-2xl font-bold mb-2 text-[#111111]">Kapil</h3>
-                <p className="text-gray-600 text-sm mb-6">Your Property Advisor</p>
+                <p className="text-gray-600 text-sm mb-8">Your Property Advisor</p>
                 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-4 mb-8">
                   <a href="tel:+919773757759" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
                     <Phone className="w-4 h-4" />
                     +91 97737 57759
@@ -429,7 +429,7 @@ export default function Home() {
 
                 <Button
                   onClick={() => handleWhatsApp("Kapil")}
-                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-lg border-0"
+                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-sm border-0"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Message Kapil

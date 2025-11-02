@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,13 +112,13 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden border border-stone-200/50"
+      className="group bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-stone-200/50"
     >
-      {/* Header Section - Property Type & Location */}
-      <div className="relative bg-gradient-to-r from-stone-100 to-stone-50 px-5 pt-5 pb-3 border-b border-stone-200/30">
+      {/* Header Section */}
+      <div className="relative bg-gradient-to-r from-stone-100 to-stone-50 px-6 pt-6 pb-4 border-b border-stone-200/30">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <Badge className="bg-black text-white font-bold text-xs px-3 py-1 rounded-full border-0">
                 {property.bhk}
               </Badge>
@@ -133,7 +134,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
               )}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-stone-600">
-              <MapPin className="w-3.5 h-3.5 text-[#FFD300]" />
+              <MapPin className="w-3.5 h-3.5 text-stone-500" />
               <span className="font-medium">{property.location || property.location_id?.split(',')[0] || "Mumbai"}</span>
               {property.pocket && (
                 <>
@@ -168,7 +169,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
         </div>
       </div>
 
-      {/* Image Section - Smart Display */}
+      {/* Image Section */}
       {property.images && property.images.length > 0 ? (
         <div className="relative h-56 bg-gradient-to-br from-stone-200 to-stone-300">
           <img
@@ -178,7 +179,6 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
           
-          {/* Image Count Badge */}
           {imageCount > 1 && (
             <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
               <Camera className="w-3.5 h-3.5" />
@@ -186,9 +186,8 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             </div>
           )}
 
-          {/* Featured Badge */}
           {property.featured && (
-            <div className="absolute top-3 left-3 bg-[#FFD300] text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1">
+            <div className="absolute top-3 left-3 bg-[#FFD300] text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
               <Sparkles className="w-3.5 h-3.5" />
               Featured
             </div>
@@ -206,11 +205,11 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
         </div>
       )}
 
-      {/* Core Info Section */}
-      <div className="p-5">
-        {/* Price - Bold Display */}
-        <div className="mb-4">
-          <p className="text-4xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-1">
+      {/* Core Info Section - More Padding */}
+      <div className="p-6">
+        {/* Price */}
+        <div className="mb-5">
+          <p className="text-4xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-2">
             {formatPrice()}
           </p>
           <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">
@@ -218,9 +217,9 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </p>
         </div>
 
-        {/* AI Summary Line */}
+        {/* AI Summary */}
         {property.ai_description && (
-          <div className="mb-4 p-3 bg-white/60 rounded-2xl border border-stone-200/50">
+          <div className="mb-5 p-3 bg-white/60 rounded-2xl border border-stone-200/50">
             <div className="flex items-start gap-2">
               <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-stone-700 leading-relaxed line-clamp-2">
@@ -230,8 +229,8 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </div>
         )}
 
-        {/* Details Grid - Clean Chips */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        {/* Details Grid */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
           <div className="bg-white/70 rounded-xl p-3 text-center border border-stone-200/50">
             <div className="flex items-center justify-center mb-1">
               <Maximize2 className="w-4 h-4 text-stone-600" />
@@ -261,7 +260,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
 
         {/* Highlights Chips */}
         {(property.view || property.floor || property.amenities?.length > 0) && (
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-5">
             {property.view && (
               <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50 rounded-full">
                 {property.view}
@@ -281,7 +280,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
         )}
 
         {/* Footer Metadata */}
-        <div className="flex items-center justify-between text-xs text-stone-500 mb-4 pb-4 border-b border-stone-200">
+        <div className="flex items-center justify-between text-xs text-stone-500 mb-5 pb-5 border-b border-stone-200">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Eye className="w-3 h-3" />
@@ -297,12 +296,12 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </span>
         </div>
 
-        {/* CTA Section - Bottom Bar */}
-        <div className="space-y-2">
-          {/* Primary CTA - WhatsApp */}
+        {/* CTA Section */}
+        <div className="space-y-3">
+          {/* Primary CTA */}
           <Button
             onClick={handleWhatsApp}
-            className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white gap-2 shadow-lg shadow-[#25D366]/20 font-bold h-12 rounded-2xl"
+            className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white gap-2 shadow-sm font-bold h-12 rounded-2xl"
           >
             <MessageCircle className="w-4 h-4" />
             Contact {getAgentName()}
@@ -331,9 +330,9 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </div>
         </div>
 
-        {/* Expat Friendly Tag (if applicable) */}
+        {/* Expat Friendly Tag */}
         {property.veg_nonveg === "Both" && (
-          <div className="mt-3 text-center">
+          <div className="mt-4 text-center">
             <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/30 text-xs rounded-full">
               🌍 Expat Friendly
             </Badge>
@@ -343,7 +342,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
 
       {/* Broker Reference Panel (Admin Only) */}
       {isAdmin && property.broker_contact && (
-        <div className="px-5 pb-5">
+        <div className="px-6 pb-6">
           <div className="bg-stone-100/80 rounded-2xl p-3 border border-stone-200/50">
             <div className="flex items-center justify-between">
               <div>
@@ -367,8 +366,8 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
         </div>
       )}
 
-      {/* Branding Footer (Subtle) */}
-      <div className="px-5 pb-4">
+      {/* Branding Footer */}
+      <div className="px-6 pb-5">
         <div className="text-center text-xs text-stone-400 font-light">
           Powered by <span className="font-semibold text-stone-600">Chariot Realty</span> • PropAI
         </div>
