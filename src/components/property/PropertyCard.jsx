@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Link2, Copy } from "lucide-react";
+import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Camera, Sparkles, Home as HomeIcon, Clock, Instagram } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +18,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     if (property.price_unit === "crores") {
       return `₹${property.price} Cr`;
     }
-    return `₹${property.price} L`;
+    return `₹${property.price}L`;
   };
 
   const getAgentPhone = () => {
@@ -33,9 +32,27 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     return property.assigned_agent || "Vishal";
   };
 
+  const getFreshnessTag = () => {
+    const daysOld = Math.floor((Date.now() - new Date(property.created_date).getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysOld === 0) return { text: "Just In", color: "bg-green-500", icon: "🟢" };
+    if (daysOld <= 2) return { text: `${daysOld}d ago`, color: "bg-green-500", icon: "🟢" };
+    if (daysOld <= 7) return { text: `${daysOld}d ago`, color: "bg-orange-500", icon: "🟠" };
+    return { text: "Older Listing", color: "bg-gray-400", icon: "⚪" };
+  };
+
+  const getAISummary = () => {
+    if (property.ai_description) {
+      // Extract first sentence or create short summary
+      const sentences = property.ai_description.split('.');
+      return sentences[0] + '.';
+    }
+    return `${property.bhk} with modern amenities in ${property.location}`;
+  };
+
   const handleWhatsApp = () => {
     const locationText = property.location || property.location_id || "Mumbai";
-    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.ai_title || property.bhk + ' in ' + locationText}\n\nCan you share more details and photos?`;
+    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.ai_title || property.bhk + ' in ' + locationText}\n${formatPrice()}\n\nCan you share more details and photos?`;
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -49,19 +66,34 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     }
   };
 
-  const copyLink = () => {
+  const handleShare = async () => {
+    const title = property.ai_title || `${property.bhk} in ${property.location || ''}`;
+    const shareData = {
+      title: title,
+      text: `Check out this property: ${title}\n${formatPrice()}\n\nView on Chariot Realty`,
+      url: `${window.location.origin}/property/${property.slug || property.id}`
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        copyShareLink();
+      }
+    } else {
+      copyShareLink();
+    }
+  };
+
+  const copyShareLink = () => {
     const url = `${window.location.origin}/property/${property.slug || property.id}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const copyCard = () => {
-    const title = property.ai_title || `${property.bhk} in ${property.location || ''}`;
-    const cardText = `${title}\n\n${property.ai_description || property.description || ''}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
-    navigator.clipboard.writeText(cardText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleInstagram = () => {
+    window.open('https://instagram.com/chariotrealtors', '_blank');
   };
 
   const statusColors = {
@@ -72,225 +104,260 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     Rented: "bg-green-500/20 text-green-900 border-green-300"
   };
 
+  const freshnessTag = getFreshnessTag();
+  const imageCount = property.images?.length || 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-white rounded-[22px] shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/50"
+      className="group bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden border border-stone-200/50"
     >
-      {/* Header with Status Badge */}
-      <div className="px-5 pt-5 pb-2 flex items-start justify-between">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge className={`text-xs font-bold border uppercase tracking-wide ${statusColors[property.status] || statusColors.Draft}`}>
-            {property.status?.toUpperCase() || "DRAFT"}
-          </Badge>
-          {property.featured && (
-            <Badge className="text-xs font-bold bg-[#FFD300]/20 text-black border-[#FFD300]">
-              Featured
-            </Badge>
-          )}
-          {property.listing_type && (
-            <Badge variant="outline" className="text-xs border-[#3B3B3B]">
-              {property.listing_type}
-            </Badge>
+      {/* Header Section - Property Type & Location */}
+      <div className="relative bg-gradient-to-r from-stone-100 to-stone-50 px-5 pt-5 pb-3 border-b border-stone-200/30">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge className="bg-black text-white font-bold text-xs px-3 py-1 rounded-full border-0">
+                {property.bhk}
+              </Badge>
+              {property.jodi_flag && (
+                <Badge className="bg-purple-500/20 text-purple-900 border-purple-500 font-bold text-xs px-3 py-1 rounded-full">
+                  JODI
+                </Badge>
+              )}
+              {freshnessTag && (
+                <Badge className={`${freshnessTag.color} text-white font-semibold text-xs px-2 py-0.5 rounded-full border-0`}>
+                  {freshnessTag.icon} {freshnessTag.text}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-sm text-stone-600">
+              <MapPin className="w-3.5 h-3.5 text-[#FFD300]" />
+              <span className="font-medium">{property.location || property.location_id?.split(',')[0] || "Mumbai"}</span>
+              {property.pocket && (
+                <>
+                  <span className="text-stone-400">•</span>
+                  <span className="text-xs">{property.pocket}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1.5 hover:bg-white/50 rounded-xl transition-colors">
+                  <MoreVertical className="w-4 h-4 text-stone-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onViewDetails(property)}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </DropdownMenuItem>
+                {property.broker_contact && (
+                  <DropdownMenuItem onClick={handleBrokerWhatsApp}>
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Contact Broker
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
-        {isAdmin && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
-                <MoreVertical className="w-4 h-4 text-gray-400" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewDetails(property)}>
-                <Eye className="w-4 h-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
-              {property.broker_contact && (
-                <DropdownMenuItem onClick={handleBrokerWhatsApp}>
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Contact Broker
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
 
-      {/* Image Section */}
+      {/* Image Section - Smart Display */}
       {property.images && property.images.length > 0 ? (
-        <div className="relative h-48 mx-5 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="relative h-56 bg-gradient-to-br from-stone-200 to-stone-300">
           <img
             src={property.images[0]}
             alt={property.building_name || property.bhk}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          
+          {/* Image Count Badge */}
+          {imageCount > 1 && (
+            <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5" />
+              {imageCount}
+            </div>
+          )}
+
+          {/* Featured Badge */}
+          {property.featured && (
+            <div className="absolute top-3 left-3 bg-[#FFD300] text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              Featured
+            </div>
+          )}
         </div>
       ) : (
-        <div className="relative h-48 mx-5 rounded-2xl bg-[#F7F7F7] flex flex-col items-center justify-center border-2 border-dashed border-[#3B3B3B]/20">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-sm">
-            <svg className="w-8 h-8 text-[#3B3B3B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+        <div className="relative h-56 bg-gradient-to-br from-stone-200 to-stone-300 flex flex-col items-center justify-center border-y border-stone-200/50">
+          <div className="w-20 h-20 bg-white/80 rounded-3xl flex items-center justify-center mb-3 shadow-sm">
+            <Camera className="w-10 h-10 text-stone-400" />
           </div>
-          <p className="text-xs text-[#3B3B3B] font-semibold">📸 Photos available on WhatsApp</p>
+          <p className="text-xs text-stone-500 font-semibold">📸 Photos Available on WhatsApp</p>
+          {property.broker_contact && (
+            <p className="text-xs text-stone-400 mt-1">Request from broker</p>
+          )}
         </div>
       )}
 
-      {/* Content Section */}
+      {/* Core Info Section */}
       <div className="p-5">
-        {/* AI-Generated Title or Fallback */}
-        {property.ai_title ? (
-          <h3 className="text-lg font-bold text-[#111111] mb-3 leading-tight">
-            {property.ai_title}
-          </h3>
-        ) : (
-          <div className="mb-3">
-            <h3 className="text-xl font-bold text-[#111111] mb-1">
-              {property.bhk} in {property.location || property.location_id?.split(',')[0] || "Mumbai"}
-            </h3>
-            {property.pocket && (
-              <div className="flex items-center gap-1.5 text-sm text-[#3B3B3B]">
-                <MapPin className="w-3.5 h-3.5 text-[#FFD300]" />
-                <span>{property.pocket}</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* AI-Generated Description Preview */}
-        {property.ai_description && (
-          <p className="text-sm text-[#3B3B3B]/80 mb-4 line-clamp-2 leading-relaxed">
-            {property.ai_description}
-          </p>
-        )}
-
-        {/* Price - Yellow/Amber gradient */}
-        <div className="mb-5">
-          <p className="text-3xl font-bold bg-gradient-to-r from-[#FFD300] to-[#FFA500] bg-clip-text text-transparent">
+        {/* Price - Bold Display */}
+        <div className="mb-4">
+          <p className="text-4xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-1">
             {formatPrice()}
           </p>
+          <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">
+            {property.listing_type} • {property.property_type || "Apartment"}
+          </p>
         </div>
 
-        {/* Property Details Grid */}
-        <div className="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-gray-100">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-10 h-10 rounded-xl bg-[#F7F7F7] flex items-center justify-center mb-2">
-              <Maximize2 className="w-5 h-5 text-[#3B3B3B]" />
+        {/* AI Summary Line */}
+        {property.ai_description && (
+          <div className="mb-4 p-3 bg-white/60 rounded-2xl border border-stone-200/50">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-stone-700 leading-relaxed line-clamp-2">
+                {getAISummary()}
+              </p>
             </div>
-            <p className="text-xs font-bold text-[#111111]">
-              {property.carpet_area || "N/A"}
-            </p>
-            <p className="text-xs text-[#3B3B3B]/60">sqft</p>
           </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="w-10 h-10 rounded-xl bg-[#F7F7F7] flex items-center justify-center mb-2">
-              <Car className="w-5 h-5 text-[#3B3B3B]" />
+        )}
+
+        {/* Details Grid - Clean Chips */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white/70 rounded-xl p-3 text-center border border-stone-200/50">
+            <div className="flex items-center justify-center mb-1">
+              <Maximize2 className="w-4 h-4 text-stone-600" />
             </div>
-            <p className="text-xs font-bold text-[#111111]">
-              {property.parking?.split(' ')[0] || "N/A"}
-            </p>
-            <p className="text-xs text-[#3B3B3B]/60">Parking</p>
+            <p className="text-sm font-bold text-stone-900">{property.carpet_area || "N/A"}</p>
+            <p className="text-xs text-stone-500">sq.ft</p>
           </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="w-10 h-10 rounded-xl bg-[#F7F7F7] flex items-center justify-center mb-2">
-              <svg className="w-5 h-5 text-[#3B3B3B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
+          
+          <div className="bg-white/70 rounded-xl p-3 text-center border border-stone-200/50">
+            <div className="flex items-center justify-center mb-1">
+              <Car className="w-4 h-4 text-stone-600" />
             </div>
-            <p className="text-xs font-bold text-[#111111] truncate px-1">
+            <p className="text-sm font-bold text-stone-900">{property.parking?.split(' ')[0] || "N/A"}</p>
+            <p className="text-xs text-stone-500">Parking</p>
+          </div>
+          
+          <div className="bg-white/70 rounded-xl p-3 text-center border border-stone-200/50">
+            <div className="flex items-center justify-center mb-1">
+              <HomeIcon className="w-4 h-4 text-stone-600" />
+            </div>
+            <p className="text-sm font-bold text-stone-900 truncate">
               {property.furnishing ? property.furnishing.split(' ')[0].split('-')[0] : "N/A"}
             </p>
-            <p className="text-xs text-[#3B3B3B]/60">Furnish</p>
+            <p className="text-xs text-stone-500">Furnish</p>
           </div>
         </div>
 
-        {/* Footer Info */}
-        <div className="flex items-center justify-between text-xs text-[#3B3B3B]/60 mb-3">
+        {/* Highlights Chips */}
+        {(property.view || property.floor || property.amenities?.length > 0) && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {property.view && (
+              <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50 rounded-full">
+                {property.view}
+              </Badge>
+            )}
+            {property.floor && (
+              <Badge variant="outline" className="text-xs border-stone-300 text-stone-700 bg-white rounded-full">
+                Floor {property.floor}
+              </Badge>
+            )}
+            {property.amenities?.slice(0, 2).map((amenity, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs border-stone-300 text-stone-700 bg-white rounded-full">
+                {amenity}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Footer Metadata */}
+        <div className="flex items-center justify-between text-xs text-stone-500 mb-4 pb-4 border-b border-stone-200">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3 h-3" />
               {property.views_count || 0}
             </span>
             {property.custom_id && (
-              <span className="text-[#3B3B3B]/40 font-mono">ID: {property.custom_id}</span>
+              <span className="font-mono text-stone-400">ID: {property.custom_id}</span>
             )}
           </div>
-          <span>{format(new Date(property.created_date), "MMM dd")}</span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {format(new Date(property.created_date), "MMM dd")}
+          </span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <Button
-            onClick={copyCard}
-            variant="outline"
-            size="sm"
-            className="text-xs border-[#3B3B3B]/20 hover:bg-[#F7F7F7] font-semibold"
-          >
-            <Copy className="w-3 h-3 mr-1" />
-            {copied ? "✓" : "Card"}
-          </Button>
-          <Button
-            onClick={copyLink}
-            variant="outline"
-            size="sm"
-            className="text-xs border-[#3B3B3B]/20 hover:bg-[#F7F7F7] font-semibold"
-          >
-            <Link2 className="w-3 h-3 mr-1" />
-            Link
-          </Button>
-          <Button
-            onClick={() => onViewDetails(property)}
-            variant="outline"
-            size="sm"
-            className="text-xs border-[#3B3B3B]/20 hover:bg-[#F7F7F7] font-semibold"
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            View
-          </Button>
-        </div>
-
-        {/* Primary CTA - WhatsApp Green */}
-        <Button
-          onClick={handleWhatsApp}
-          className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white gap-2 shadow-lg shadow-[#25D366]/20 font-bold h-12 rounded-2xl"
-        >
-          <MessageCircle className="w-4 h-4" />
-          Contact via WhatsApp
-        </Button>
-
-        {/* Secondary CTA for properties without images */}
-        {(!property.images || property.images.length === 0) && (
+        {/* CTA Section - Bottom Bar */}
+        <div className="space-y-2">
+          {/* Primary CTA - WhatsApp */}
           <Button
             onClick={handleWhatsApp}
-            variant="outline"
-            className="w-full mt-2 text-xs border-[#FFD300] text-black hover:bg-[#FFD300]/10 font-semibold"
+            className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white gap-2 shadow-lg shadow-[#25D366]/20 font-bold h-12 rounded-2xl"
           >
-            <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
-            WhatsApp for Photos
+            <MessageCircle className="w-4 h-4" />
+            Contact {getAgentName()}
           </Button>
+
+          {/* Secondary Actions */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              size="sm"
+              className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
+            >
+              <Share2 className="w-3.5 h-3.5 mr-1.5" />
+              {copied ? "Copied!" : "Share"}
+            </Button>
+            <Button
+              onClick={handleInstagram}
+              variant="outline"
+              size="sm"
+              className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
+            >
+              <Instagram className="w-3.5 h-3.5 mr-1.5" />
+              Instagram
+            </Button>
+          </div>
+        </div>
+
+        {/* Expat Friendly Tag (if applicable) */}
+        {property.veg_nonveg === "Both" && (
+          <div className="mt-3 text-center">
+            <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/30 text-xs rounded-full">
+              🌍 Expat Friendly
+            </Badge>
+          </div>
         )}
       </div>
 
       {/* Broker Reference Panel (Admin Only) */}
       {isAdmin && property.broker_contact && (
         <div className="px-5 pb-5">
-          <div className="bg-[#F7F7F7] rounded-xl p-3 border border-[#3B3B3B]/10">
+          <div className="bg-stone-100/80 rounded-2xl p-3 border border-stone-200/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#3B3B3B]/60 mb-1">Ref Broker</p>
-                <p className="text-sm font-bold text-[#111111]">
+                <p className="text-xs text-stone-500 mb-1">Ref Broker</p>
+                <p className="text-sm font-bold text-stone-900">
                   {property.broker_id ? `Broker #${property.broker_id.slice(0, 8)}` : 'Unknown'}
                 </p>
-                <p className="text-xs text-[#3B3B3B] mt-1">{property.broker_contact}</p>
+                <p className="text-xs text-stone-600 mt-1">{property.broker_contact}</p>
               </div>
               <Button
                 onClick={handleBrokerWhatsApp}
                 size="sm"
                 variant="outline"
-                className="text-xs"
+                className="text-xs border-stone-300 rounded-xl"
               >
                 <MessageCircle className="w-3 h-3 mr-1" />
                 Contact
@@ -299,6 +366,13 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </div>
         </div>
       )}
+
+      {/* Branding Footer (Subtle) */}
+      <div className="px-5 pb-4">
+        <div className="text-center text-xs text-stone-400 font-light">
+          Powered by <span className="font-semibold text-stone-600">Chariot Realty</span> • PropAI
+        </div>
+      </div>
     </motion.div>
   );
 }
