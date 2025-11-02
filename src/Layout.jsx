@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -52,8 +53,8 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="min-h-[calc(100vh-4rem)]">
+      {/* Main Content - Add padding for mobile nav */}
+      <main className="min-h-[calc(100vh-4rem)] pb-20 md:pb-0">
         {children}
       </main>
 
@@ -252,16 +253,16 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </footer>
 
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-gray-200 z-50 shadow-2xl">
-        <div className="flex items-center justify-around px-4 py-3">
+      {/* Mobile Navigation - Fixed z-index */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-gray-200 z-[100] shadow-2xl safe-area-inset-bottom">
+        <div className="flex items-center justify-around px-2 py-3">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-all ${
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all ${
                   isActive ? "bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816]" : "text-[#3B3B3B]"
                 }`}
               >

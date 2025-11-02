@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +30,7 @@ import {
   Users, Building2, MessageCircle, Phone, Mail,
   Star, TrendingUp, Search, Filter, Eye,
   AlertCircle, CheckCircle2, XCircle, Edit2,
-  Download, MapPin, BarChart3
+  Download, MapPin, BarChart3, BookOpen, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -271,6 +272,10 @@ export default function Admin() {
             <TabsTrigger value="analytics">
               <BarChart3 className="w-4 h-4 mr-2" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="content">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Blog Generator
             </TabsTrigger>
           </TabsList>
 
@@ -532,6 +537,108 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Blog Generator Tab */}
+          <TabsContent value="content">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-3xl p-8 border-2 border-[#F7F7F7] mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-2xl flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-[#1a1816]" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-[#111111]">AI Blog Generator</h2>
+                    <p className="text-sm text-[#3B3B3B]">Create SEO-optimized content for Mumbai real estate</p>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 rounded-2xl p-4 mb-6 border border-amber-200">
+                  <p className="text-sm text-amber-900 font-medium mb-2">📱 Generate via WhatsApp</p>
+                  <p className="text-sm text-amber-800 mb-4">
+                    Message the Blog Generator agent on WhatsApp to create content automatically.
+                  </p>
+                  <a 
+                    href={`https://wa.me/919819471310?text=${encodeURIComponent("Hi! I want to generate a blog post")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button className="bg-[#25D366] hover:bg-[#20BD5A] text-white w-full">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Open WhatsApp Blog Generator
+                    </Button>
+                  </a>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-[#111111] flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    Content Categories
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      {
+                        title: "Neighborhood Guide",
+                        description: "Deep dive into specific Mumbai localities",
+                        example: "Living in Pali Hill: The Quiet Heart of Bandra",
+                        prompt: "Write neighborhood guide for [Area Name]"
+                      },
+                      {
+                        title: "Expat Series",
+                        description: "Practical guides for newcomers",
+                        example: "Understanding Leave & License Agreements",
+                        prompt: "Write expat guide about [Topic]"
+                      },
+                      {
+                        title: "Market Insights",
+                        description: "Data-driven Mumbai real estate trends",
+                        example: "3BHK Rentals in Bandra See 12% Spike",
+                        prompt: "Generate market insights for [Area/Trend]"
+                      },
+                      {
+                        title: "Rental & Legal",
+                        description: "Simplified legal explanations",
+                        example: "Security Deposits: How Much & When?",
+                        prompt: "Explain [Legal Topic] in simple terms"
+                      }
+                    ].map((category, idx) => (
+                      <div key={idx} className="bg-stone-50 rounded-2xl p-5 border border-stone-200">
+                        <h4 className="font-bold text-[#111111] mb-2">{category.title}</h4>
+                        <p className="text-sm text-[#3B3B3B] mb-3">{category.description}</p>
+                        <p className="text-xs text-stone-500 mb-3 italic">Example: "{category.example}"</p>
+                        <div className="bg-white rounded-xl p-3 border border-stone-200">
+                          <p className="text-xs text-stone-500 mb-1">WhatsApp Prompt:</p>
+                          <code className="text-xs font-mono text-[#111111]">{category.prompt}</code>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 p-6 bg-gradient-to-br from-stone-100 to-stone-50 rounded-2xl border border-stone-200">
+                  <h3 className="text-lg font-bold text-[#111111] mb-4">How It Works</h3>
+                  <ol className="space-y-3 text-sm text-[#3B3B3B]">
+                    <li className="flex gap-3">
+                      <span className="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">1</span>
+                      <span>Message the WhatsApp agent with your request (e.g., "Write neighborhood guide for Juhu")</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">2</span>
+                      <span>AI researches current data and generates authentic, SEO-optimized content</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">3</span>
+                      <span>Blog post is created with Draft status - review before publishing</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">4</span>
+                      <span>Go to Insights page to review, edit, and publish the content</span>
+                    </li>
+                  </ol>
                 </div>
               </div>
             </div>
