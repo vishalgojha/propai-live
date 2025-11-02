@@ -4,6 +4,10 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import PropertyCard from "../components/property/PropertyCard";
+
 import {
   Sparkles,
   Shield,
@@ -13,6 +17,7 @@ import {
   Building2,
   CheckCircle,
   Check, // Kept for CTA section
+  ArrowRight, // Added for Featured Properties section
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SEO from "../components/SEO";
@@ -65,6 +70,20 @@ export default function Home() {
       description: "A single point of contact who actually remembers you and your needs"
     }
   ];
+
+  // Fetch featured properties (max 5)
+  const { data: featuredProperties = [] } = useQuery({
+    queryKey: ['featured-properties'],
+    queryFn: async () => {
+      const properties = await base44.entities.Property.filter(
+        { status: "Active", featured: true, is_duplicate: false },
+        '-created_date',
+        5
+      );
+      return properties;
+    },
+    initialData: [],
+  });
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
@@ -134,7 +153,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Properties (This section has been removed as per the outline's implied changes) */}
+      {/* Featured Properties Section */}
+      {featuredProperties.length > 0 && (
+        <section className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <Badge className="mb-4 bg-[#FFD300] text-black border-0 text-sm px-4 py-2 rounded-full">
+                <Sparkles className="w-4 h-4 inline mr-2" />
+                Featured Properties
+              </Badge>
+              <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-5 tracking-tight">
+                Handpicked For You
+              </h2>
+              <p className="text-lg text-gray-600 font-light max-w-2xl mx-auto">
+                Verified listings personally selected by our team
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {featuredProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+
+            <div className="text-center">
+              <Link to={createPageUrl("SmartFeed")}>
+                <Button size="lg" className="bg-gradient-to-r from-[#FFD300] to-[#FFC700] hover:from-[#FFC700] hover:to-[#FFB600] text-black font-bold px-8 py-6 rounded-2xl shadow-lg">
+                  View All Properties
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How It Works */}
       <section id="how-it-works" className="py-24 bg-[#F7F7F7]">
@@ -322,8 +374,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* PropertyDetailsModal (This component has been removed as per the outline's implied changes) */}
     </div>
   );
 }

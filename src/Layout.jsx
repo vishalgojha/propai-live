@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Set global meta tags
@@ -63,8 +64,10 @@ export default function Layout({ children, currentPageName }) {
         }
       } catch (error) {
         // User not authenticated - this is fine for public apps
-        console.log("No authenticated user", error); // Log error for debugging if it's not a 'not authenticated' error.
+        console.log("No authenticated user"); // Log error for debugging if it's not a 'not authenticated' error.
         setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     loadUser();
@@ -78,9 +81,10 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   // Only show admin links if user is admin
-  if (user?.role === 'admin') {
+  if (!loading && user?.role === 'admin') {
     navItems.push(
-      { name: "Brokers", icon: Settings, path: createPageUrl("AdminBrokers") },
+      { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
+      { name: "Brokers", icon: Users, path: createPageUrl("AdminBrokers") },
       { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
     );
   }

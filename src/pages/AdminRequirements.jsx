@@ -17,6 +17,8 @@ export default function AdminRequirements() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const REQUIREMENTS_PER_PAGE = 10;
 
   // Check if user is admin
   useEffect(() => {
@@ -51,6 +53,17 @@ export default function AdminRequirements() {
     if (req.listing_type) searchParams.set('listingType', req.listing_type);
     if (req.preferred_locations?.[0]) searchParams.set('search', req.preferred_locations[0]);
     navigate(createPageUrl("SmartFeed") + "?" + searchParams.toString());
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(requirements.length / REQUIREMENTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * REQUIREMENTS_PER_PAGE;
+  const endIndex = startIndex + REQUIREMENTS_PER_PAGE;
+  const paginatedRequirements = requirements.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (isLoading) {
@@ -117,182 +130,233 @@ export default function AdminRequirements() {
             <p className="text-[#3B3B3B]">Client requirements will appear here</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {requirements.map((req) => (
-              <motion.div
-                key={req.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30"
-              >
-                {/* Header Section with Status Badge */}
-                <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 py-5 border-b border-stone-200/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-2xl font-bold text-[#111111]">{req.client_name}</h3>
-                        <Badge className={
-                          req.status === "Active" ? "bg-green-500 text-white border-0" :
-                          req.status === "Matched" ? "bg-blue-500 text-white border-0" :
-                          req.status === "Closed" ? "bg-gray-500 text-white border-0" :
-                          "bg-orange-500 text-white border-0"
-                        }>
-                          {req.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-[#3B3B3B]">
-                        {req.client_phone && (
-                          <span className="flex items-center gap-1.5">
-                            <Phone className="w-4 h-4 text-stone-500" />
-                            {req.client_phone}
-                          </span>
-                        )}
-                        {req.client_email && (
-                          <span className="flex items-center gap-1.5">
-                            <Mail className="w-4 h-4 text-stone-500" />
-                            {req.client_email}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs text-stone-500">
-                      {format(new Date(req.created_date), "MMM dd, yyyy")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Core Requirements Grid */}
-                <div className="p-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-[#F7F7F7] rounded-2xl p-4">
-                      <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
-                        <HomeIcon className="w-3 h-3" />
-                        Type
-                      </p>
-                      <Badge className="bg-[#FFD300] text-black border-0 font-bold">
-                        {req.listing_type}
-                      </Badge>
-                    </div>
-                    <div className="bg-[#F7F7F7] rounded-2xl p-4">
-                      <p className="text-xs text-[#3B3B3B]/60 mb-2">BHK</p>
-                      <p className="text-base font-bold text-[#111111]">
-                        {req.bhk_preference?.join(", ") || "Any"}
-                      </p>
-                    </div>
-                    <div className="bg-[#F7F7F7] rounded-2xl p-4 md:col-span-2">
-                      <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
-                        <IndianRupee className="w-3 h-3" />
-                        Budget
-                      </p>
-                      <p className="text-base font-bold text-[#111111]">
-                        ₹{req.budget_min || 0}{req.budget_unit === "crores" ? " Cr" : "L"} - 
-                        ₹{req.budget_max || 0}{req.budget_unit === "crores" ? " Cr" : "L"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Locations */}
-                  {req.preferred_locations && req.preferred_locations.length > 0 && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                      <p className="text-xs text-blue-700 font-semibold mb-3 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        Preferred Locations
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {req.preferred_locations.map((loc, idx) => (
-                          <Badge key={idx} className="bg-white text-blue-700 border-blue-300 font-semibold">
-                            {loc}
+          <>
+            <div className="space-y-6 mb-8">
+              {paginatedRequirements.map((req) => (
+                <motion.div
+                  key={req.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30"
+                >
+                  {/* Header Section with Status Badge */}
+                  <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 py-5 border-b border-stone-200/50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-2xl font-bold text-[#111111]">{req.client_name}</h3>
+                          <Badge className={
+                            req.status === "Active" ? "bg-green-500 text-white border-0" :
+                            req.status === "Matched" ? "bg-blue-500 text-white border-0" :
+                            req.status === "Closed" ? "bg-gray-500 text-white border-0" :
+                            "bg-orange-500 text-white border-0"
+                          }>
+                            {req.status}
                           </Badge>
-                        ))}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-[#3B3B3B]">
+                          {req.client_phone && (
+                            <span className="flex items-center gap-1.5">
+                              <Phone className="w-4 h-4 text-stone-500" />
+                              {req.client_phone}
+                            </span>
+                          )}
+                          {req.client_email && (
+                            <span className="flex items-center gap-1.5">
+                              <Mail className="w-4 h-4 text-stone-500" />
+                              {req.client_email}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Preferences */}
-                  <div className="mb-6">
-                    <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Preferences</p>
-                    <div className="flex flex-wrap gap-2">
-                      {req.furnishing_preference && req.furnishing_preference !== "Any" && (
-                        <Badge variant="outline" className="border-stone-300 text-stone-700">
-                          {req.furnishing_preference}
-                        </Badge>
-                      )}
-                      {req.veg_nonveg && (
-                        <Badge variant="outline" className="border-stone-300 text-stone-700">
-                          {req.veg_nonveg}
-                        </Badge>
-                      )}
-                      {req.parking_required && (
-                        <Badge variant="outline" className="border-stone-300 text-stone-700">
-                          Parking Required
-                        </Badge>
-                      )}
-                      {req.possession_timeline && (
-                        <Badge variant="outline" className="border-stone-300 text-stone-700">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {req.possession_timeline}
-                        </Badge>
-                      )}
+                      <span className="text-xs text-stone-500">
+                        {format(new Date(req.created_date), "MMM dd, yyyy")}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Amenities */}
-                  {req.amenities_required && req.amenities_required.length > 0 && (
-                    <div className="mb-6">
-                      <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Required Amenities</p>
-                      <div className="flex flex-wrap gap-2">
-                        {req.amenities_required.map((amenity, idx) => (
-                          <Badge key={idx} className="bg-amber-50 text-amber-900 border-amber-200">
-                            {amenity}
-                          </Badge>
-                        ))}
+                  {/* Core Requirements Grid */}
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-[#F7F7F7] rounded-2xl p-4">
+                        <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
+                          <HomeIcon className="w-3 h-3" />
+                          Type
+                        </p>
+                        <Badge className="bg-[#FFD300] text-black border-0 font-bold">
+                          {req.listing_type}
+                        </Badge>
+                      </div>
+                      <div className="bg-[#F7F7F7] rounded-2xl p-4">
+                        <p className="text-xs text-[#3B3B3B]/60 mb-2">BHK</p>
+                        <p className="text-base font-bold text-[#111111]">
+                          {req.bhk_preference?.join(", ") || "Any"}
+                        </p>
+                      </div>
+                      <div className="bg-[#F7F7F7] rounded-2xl p-4 md:col-span-2">
+                        <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
+                          <IndianRupee className="w-3 h-3" />
+                          Budget
+                        </p>
+                        <p className="text-base font-bold text-[#111111]">
+                          ₹{req.budget_min || 0}{req.budget_unit === "crores" ? " Cr" : "L"} - 
+                          ₹{req.budget_max || 0}{req.budget_unit === "crores" ? " Cr" : "L"}
+                        </p>
                       </div>
                     </div>
-                  )}
 
-                  {/* Notes */}
-                  {req.notes && (
-                    <div className="mb-6 p-4 bg-stone-50 rounded-2xl border border-stone-200">
-                      <p className="text-xs text-stone-600 font-semibold mb-2">Internal Notes</p>
-                      <p className="text-sm text-[#111111] leading-relaxed">{req.notes}</p>
-                    </div>
-                  )}
-
-                  {/* Source Text */}
-                  {req.source_text && (
-                    <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-                      <p className="text-xs text-blue-600 font-semibold mb-2">Original Message</p>
-                      <p className="text-sm text-[#111111] italic leading-relaxed">{req.source_text}</p>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3">
-                    {req.client_phone && (
-                      <Button
-                        onClick={() => {
-                          const message = `Hi ${req.client_name}, this is Chariot Realty. We have some properties matching your requirement for ${req.bhk_preference?.join("/")} in ${req.preferred_locations?.join("/")}. Can we share details?`;
-                          window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                        }}
-                        className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp Client
-                      </Button>
+                    {/* Locations */}
+                    {req.preferred_locations && req.preferred_locations.length > 0 && (
+                      <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
+                        <p className="text-xs text-blue-700 font-semibold mb-3 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          Preferred Locations
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {req.preferred_locations.map((loc, idx) => (
+                            <Badge key={idx} className="bg-white text-blue-700 border-blue-300 font-semibold">
+                              {loc}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                    <Button
-                      onClick={() => handleFindMatches(req)}
-                      variant="outline"
-                      className="border-2 border-[#FFD300] text-black hover:bg-[#FFD300] font-semibold rounded-2xl"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Find Matches
-                    </Button>
+
+                    {/* Preferences */}
+                    <div className="mb-6">
+                      <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Preferences</p>
+                      <div className="flex flex-wrap gap-2">
+                        {req.furnishing_preference && req.furnishing_preference !== "Any" && (
+                          <Badge variant="outline" className="border-stone-300 text-stone-700">
+                            {req.furnishing_preference}
+                          </Badge>
+                        )}
+                        {req.veg_nonveg && (
+                          <Badge variant="outline" className="border-stone-300 text-stone-700">
+                            {req.veg_nonveg}
+                          </Badge>
+                        )}
+                        {req.parking_required && (
+                          <Badge variant="outline" className="border-stone-300 text-stone-700">
+                            Parking Required
+                          </Badge>
+                        )}
+                        {req.possession_timeline && (
+                          <Badge variant="outline" className="border-stone-300 text-stone-700">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {req.possession_timeline}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Amenities */}
+                    {req.amenities_required && req.amenities_required.length > 0 && (
+                      <div className="mb-6">
+                        <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Required Amenities</p>
+                        <div className="flex flex-wrap gap-2">
+                          {req.amenities_required.map((amenity, idx) => (
+                            <Badge key={idx} className="bg-amber-50 text-amber-900 border-amber-200">
+                              {amenity}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {req.notes && (
+                      <div className="mb-6 p-4 bg-stone-50 rounded-2xl border border-stone-200">
+                        <p className="text-xs text-stone-600 font-semibold mb-2">Internal Notes</p>
+                        <p className="text-sm text-[#111111] leading-relaxed">{req.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Source Text */}
+                    {req.source_text && (
+                      <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                        <p className="text-xs text-blue-600 font-semibold mb-2">Original Message</p>
+                        <p className="text-sm text-[#111111] italic leading-relaxed">{req.source_text}</p>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-3">
+                      {req.client_phone && (
+                        <Button
+                          onClick={() => {
+                            const message = `Hi ${req.client_name}, this is Chariot Realty. We have some properties matching your requirement for ${req.bhk_preference?.join("/")} in ${req.preferred_locations?.join("/")}. Can we share details?`;
+                            window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                          }}
+                          className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          WhatsApp Client
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => handleFindMatches(req)}
+                        variant="outline"
+                        className="border-2 border-[#FFD300] text-black hover:bg-[#FFD300] font-semibold rounded-2xl"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Find Matches
+                      </Button>
+                    </div>
                   </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                >
+                  Previous
+                </Button>
+                
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    if (
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <Button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          className={currentPage === pageNum ? "bg-[#FFD300] text-black" : ""}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                      return <span key={pageNum} className="px-2">...</span>;
+                    }
+                    return null;
+                  })}
                 </div>
-              </motion.div>
-            ))}
-          </div>
+
+                <Button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  size="sm"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

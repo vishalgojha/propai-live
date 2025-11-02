@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,6 +29,8 @@ export default function Admin() {
   const [viewMode, setViewMode] = useState("properties"); // properties, duplicates, brokers
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // ADDED
+  const PROPERTIES_PER_PAGE = 20; // ADDED
 
   const queryClient = useQueryClient();
 
@@ -49,6 +52,11 @@ export default function Admin() {
     };
     checkAuth();
   }, [navigate]);
+
+  // Reset currentPage when filters or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, viewMode]);
 
   const { data: properties = [] } = useQuery({
     queryKey: ['admin-properties'],
@@ -81,10 +89,10 @@ export default function Admin() {
   });
 
   const markAsDuplicateMutation = useMutation({
-    mutationFn: ({ duplicateId, originalId }) => 
-      base44.entities.Property.update(duplicateId, { 
-        is_duplicate: true, 
-        duplicate_of: originalId 
+    mutationFn: ({ duplicateId, originalId }) =>
+      base44.entities.Property.update(duplicateId, {
+        is_duplicate: true,
+        duplicate_of: originalId
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
@@ -122,6 +130,18 @@ export default function Admin() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination for filtered properties
+  const nonDuplicateProperties = filteredProperties.filter(p => !p.is_duplicate);
+  const totalPages = Math.ceil(nonDuplicateProperties.length / PROPERTIES_PER_PAGE);
+  const startIndex = (currentPage - 1) * PROPERTIES_PER_PAGE;
+  const endIndex = startIndex + PROPERTIES_PER_PAGE;
+  const paginatedProperties = nonDuplicateProperties.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const stats = {
     total: properties.length,
@@ -233,87 +253,142 @@ export default function Admin() {
 
         {/* Properties View */}
         {viewMode === 'properties' && (
-          <div className="space-y-4">
-            {filteredProperties.filter(p => !p.is_duplicate).map((property) => (
-              <motion.div
-                key={property.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
-                        {property.bhk}
-                      </Badge>
-                      <Badge variant="outline" className={
-                        property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
-                        property.status === "Draft" ? "bg-gray-500/20 text-gray-700 border-gray-500" :
-                        "bg-blue-500/20 text-blue-700 border-blue-500"
-                      }>
-                        {property.status}
-                      </Badge>
-                      {property.custom_id && (
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {property.custom_id}
+          <>
+            <div className="space-y-4 mb-8">
+              {paginatedProperties.map((property) => (
+                <motion.div
+                  key={property.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
+                          {property.bhk}
                         </Badge>
-                      )}
+                        <Badge variant="outline" className={
+                          property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
+                          property.status === "Draft" ? "bg-gray-500/20 text-gray-700 border-gray-500" :
+                          "bg-blue-500/20 text-blue-700 border-blue-500"
+                        }>
+                          {property.status}
+                        </Badge>
+                        {property.custom_id && (
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {property.custom_id}
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-bold text-[#111111] mb-2">
+                        {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Location</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            {property.location || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Building</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            {property.building_name || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Price</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60">Area</p>
+                          <p className="text-sm font-semibold text-[#111111]">
+                            {property.carpet_area || 'N/A'} sq.ft
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[#3B3B3B]/60">
+                        Added {format(new Date(property.created_date), "MMM dd, yyyy")}
+                      </p>
                     </div>
-                    <h3 className="text-lg font-bold text-[#111111] mb-2">
-                      {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60">Location</p>
-                        <p className="text-sm font-semibold text-[#111111]">
-                          {property.location || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60">Building</p>
-                        <p className="text-sm font-semibold text-[#111111]">
-                          {property.building_name || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60">Price</p>
-                        <p className="text-sm font-semibold text-[#111111]">
-                          ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60">Area</p>
-                        <p className="text-sm font-semibold text-[#111111]">
-                          {property.carpet_area || 'N/A'} sq.ft
-                        </p>
-                      </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleViewProperty(property.id)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteProperty(property.id)}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <p className="text-xs text-[#3B3B3B]/60">
-                      Added {format(new Date(property.created_date), "MMM dd, yyyy")}
-                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleViewProperty(property.id)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteProperty(property.id)}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                >
+                  Previous
+                </Button>
+
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    if (
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <Button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          className={currentPage === pageNum ? "bg-[#FFD300] text-black" : ""}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    } else if (
+                        (pageNum === currentPage - 2 && pageNum > 1 && currentPage > 3) ||
+                        (pageNum === currentPage + 2 && pageNum < totalPages && currentPage < totalPages - 2)
+                    ) {
+                      // Only show '...' if it's not immediately adjacent to a visible number
+                      return <span key={`ellipsis-${pageNum}`} className="px-2 text-[#3B3B3B]">...</span>;
+                    }
+                    return null;
+                  })}
                 </div>
-              </motion.div>
-            ))}
-          </div>
+
+                <Button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  size="sm"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Duplicates View */}
