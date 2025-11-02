@@ -53,12 +53,6 @@ export default function Home() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  const handleWhatsAppAI = () => {
-    const phone = "919819471310";
-    const message = `Hi, I'd like to use Chariot AI to find properties in Mumbai. Can you help me get started?`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
   const features = [
     {
       icon: Shield,
@@ -151,23 +145,58 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
+            {/* Primary CTAs - Vishal & Kapil */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <p className="text-stone-300 text-sm mb-4 font-light">Or speak directly with our team:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Vishal CTA */}
+                <Button
+                  onClick={() => handleWhatsApp("Vishal")}
+                  size="lg"
+                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-6 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-3"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
+                      V
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold">Chat with Vishal</p>
+                      <p className="text-xs text-white/80">+91 98194 71310</p>
+                    </div>
+                  </div>
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
+
+                {/* Kapil CTA */}
+                <Button
+                  onClick={() => handleWhatsApp("Kapil")}
+                  size="lg"
+                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-6 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-3"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
+                      K
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold">Chat with Kapil</p>
+                      <p className="text-xs text-white/80">+91 97737 57759</p>
+                    </div>
+                  </div>
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Secondary Action */}
+            <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="w-full bg-white text-[#1a1816] hover:bg-stone-100 font-semibold h-14 px-8 rounded-2xl shadow-sm border-0"
+                variant="outline"
+                className="w-full border-2 border-white/20 text-white hover:bg-white/10 font-semibold h-12 px-8 rounded-2xl backdrop-blur-sm"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Browse All Properties
-              </Button>
-              <Button
-                onClick={handleWhatsAppAI}
-                size="lg"
-                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-sm border-0"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Connect via WhatsApp AI
               </Button>
             </div>
           </motion.div>
