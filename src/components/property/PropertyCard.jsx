@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Link2, Copy } from "lucide-react";
@@ -10,9 +10,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
 
 export default function PropertyCard({ property, onViewDetails, isAdmin = false }) {
+  const [copied, setCopied] = useState(false);
+
   const formatPrice = () => {
     if (property.price_unit === "crores") {
       return `₹${property.price} Cr`;
@@ -21,11 +22,10 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   };
 
   const getAgentPhone = () => {
-    // Rotate between Vishal and Kapil based on assigned_agent or property ID
     if (property.assigned_agent === "Kapil") {
       return "919773757759";
     }
-    return "919819471310"; // Vishal (default)
+    return "919819471310";
   };
 
   const getAgentName = () => {
@@ -49,13 +49,15 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   const copyLink = () => {
     const url = `${window.location.origin}/property/${property.slug || property.id}`;
     navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const copyCard = () => {
     const cardText = `${property.bhk} in ${property.location_id}\n${property.pocket ? property.pocket + '\n' : ''}${formatPrice()} | ${property.carpet_area} sqft\n${property.furnishing}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
     navigator.clipboard.writeText(cardText);
-    toast.success("Card details copied");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const statusColors = {
@@ -101,10 +103,12 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
                 <Eye className="w-4 h-4 mr-2" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleBrokerWhatsApp}>
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Contact Broker
-              </DropdownMenuItem>
+              {property.broker_contact && (
+                <DropdownMenuItem onClick={handleBrokerWhatsApp}>
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Contact Broker
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -115,7 +119,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
         <div className="relative h-44 mx-4 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
           <img
             src={property.images[0]}
-            alt={property.building_name}
+            alt={property.building_name || property.bhk}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
@@ -215,7 +219,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             className="text-xs"
           >
             <Copy className="w-3 h-3 mr-1" />
-            Card
+            {copied ? "Copied!" : "Card"}
           </Button>
           <Button
             onClick={copyLink}

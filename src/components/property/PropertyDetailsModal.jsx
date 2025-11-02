@@ -22,9 +22,20 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
     return `₹${property.price} L`;
   };
 
+  const getAgentPhone = () => {
+    if (property.assigned_agent === "Kapil") {
+      return "919773757759";
+    }
+    return "919819471310";
+  };
+
+  const getAgentName = () => {
+    return property.assigned_agent || "Vishal";
+  };
+
   const handleWhatsApp = () => {
-    const message = `Hi, I'm interested in the ${property.bhk} property at ${property.building_name || 'your listing'} listed for ${formatPrice()}`;
-    const phone = property.broker_contact || "919876543210";
+    const message = `Hi ${getAgentName()}, I'm interested in:\n\n${property.bhk} in ${property.location_id}\n${property.building_name || ''}\n${formatPrice()}\n\nCan you share more details?`;
+    const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -59,6 +70,7 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
               <MapPin className="w-4 h-4 text-blue-500" />
               <p className="text-sm text-slate-600">
                 {property.building_name && `${property.building_name}, `}
+                {property.pocket && `${property.pocket}, `}
                 {property.location_id || "Mumbai"}
               </p>
             </div>
@@ -170,7 +182,7 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           size="lg"
         >
           <MessageCircle className="w-5 h-5" />
-          Connect via WhatsApp
+          Contact {getAgentName()} via WhatsApp
         </Button>
       </DialogContent>
     </Dialog>
