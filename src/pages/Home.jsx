@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PropertyCard from "../components/property/PropertyCard";
+import { Input } from "@/components/ui/input"; // Added for the search bar
+import { useState } from "react"; // Added for search state
 
 import {
   Sparkles,
@@ -24,6 +26,7 @@ import SEO from "../components/SEO";
 
 export default function Home() {
   // No authentication required for public home page
+  const [searchQuery, setSearchQuery] = useState("");
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -40,12 +43,18 @@ export default function Home() {
     }
   };
 
-  const handleWhatsAppStatic = () => {
-    // Using a static number as base44 and its specific WhatsApp AI integration is removed.
-    // This connects to Kapil's number mentioned in the CTA text.
-    const phone = "919773757759";
-    const message = `Hi, I found your contact on Chariot Realty website and would like to inquire about properties.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to SmartFeed with search query
+      window.location.href = createPageUrl("SmartFeed") + `?search=${encodeURIComponent(searchQuery)}`;
+    }
+  };
+
+  const handleWhatsAppAI = () => {
+    // Connect to Chariot Master WhatsApp AI Agent
+    const whatsappURL = base44.agents.getWhatsAppConnectURL('chariot_master');
+    window.open(whatsappURL, '_blank');
   };
 
   const features = [
@@ -119,6 +128,29 @@ export default function Home() {
               Mumbai's property market is broken. We're fixing it with AI-powered transparency.
               <br />No bait-and-switch. No fake listings. Just real properties.
             </p>
+
+            {/* AI-Powered Search Bar */}
+            <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
+              <div className="relative">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#3B3B3B]" />
+                <Input
+                  type="text"
+                  placeholder="Try: 3 BHK in Bandra under 2 Cr, furnished, for rent..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-16 pl-16 pr-6 text-lg rounded-2xl border-2 border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/60 focus:border-[#FFD300] focus:bg-white/20"
+                />
+                <Button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold h-12 px-8 rounded-xl"
+                >
+                  Search
+                </Button>
+              </div>
+              <p className="text-xs text-stone-400 mt-3">
+                💡 Just describe what you're looking for in plain English
+              </p>
+            </form>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to={createPageUrl("SmartFeed")}>
@@ -355,13 +387,13 @@ export default function Home() {
             </div>
 
             <Button
-              onClick={handleWhatsAppStatic} // Replaced handleWhatsAppAI with static handler
+              onClick={handleWhatsAppAI}
               size="lg"
               className="w-full max-w-lg mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
             >
               <MessageCircle className="w-6 h-6" />
               <div className="text-left">
-                <p className="text-lg font-bold">Chariot Realty AI</p>
+                <p className="text-lg font-bold">Chat with Chariot AI</p>
                 <p className="text-xs text-white/80">WhatsApp AI Assistant</p>
               </div>
             </Button>
