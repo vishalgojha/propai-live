@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom"; // Assuming react-router-dom for useNavigate
+
+// Placeholder for createPageUrl function. In a real app, this would likely be imported from a utility file.
+// Adjust the return value based on your actual routing structure.
+const createPageUrl = (pageName) => {
+  switch (pageName) {
+    case "PropertyDetails":
+      return "/property-details";
+    default:
+      return "/";
+  }
+};
 
 export default function PropertyCard({ property, onViewDetails, isAdmin = false }) {
   const [copied, setCopied] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const formatPrice = () => {
     if (property.price_unit === "crores") {
@@ -42,6 +56,11 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     if (phone) {
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
     }
+  };
+
+  const handleViewDetails = () => {
+    // Navigate to dedicated property details page
+    navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
   };
 
   const getShareUrl = () => {
@@ -124,7 +143,8 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="group bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-stone-200/50"
+        onClick={handleViewDetails}
+        className="group bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-stone-200/50 cursor-pointer"
       >
         {/* Header Section */}
         <div className="relative bg-gradient-to-r from-stone-100 to-stone-50 px-6 pt-6 pb-4 border-b border-stone-200/30">
@@ -284,14 +304,20 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             {/* Primary CTAs - Both Agents */}
             <div className="grid grid-cols-2 gap-2">
               <Button
-                onClick={() => handleWhatsApp("Vishal")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleWhatsApp("Vishal");
+                }}
                 className="bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-sm font-bold h-11 rounded-2xl flex flex-col items-center justify-center py-1 gap-0"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span className="text-xs">Vishal</span>
               </Button>
               <Button
-                onClick={() => handleWhatsApp("Kapil")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleWhatsApp("Kapil");
+                }}
                 className="bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-sm font-bold h-11 rounded-2xl flex flex-col items-center justify-center py-1 gap-0"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -302,7 +328,10 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             {/* Secondary Actions */}
             <div className="grid grid-cols-2 gap-2">
               <Button
-                onClick={handleShare}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShare();
+                }}
                 variant="outline"
                 size="sm"
                 className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
@@ -311,7 +340,10 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
                 Share
               </Button>
               <Button
-                onClick={handleInstagram}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleInstagram();
+                }}
                 variant="outline"
                 size="sm"
                 className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
@@ -320,6 +352,17 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
                 Instagram
               </Button>
             </div>
+
+            {/* View Details Button */}
+            <Button
+              onClick={handleViewDetails}
+              variant="outline"
+              size="sm"
+              className="w-full border-2 border-amber-500 text-amber-700 hover:bg-amber-50 font-semibold rounded-xl"
+            >
+              <Eye className="w-3.5 h-3.5 mr-1.5" />
+              View Full Details
+            </Button>
           </div>
 
           {/* Expat Friendly Tag */}
