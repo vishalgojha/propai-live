@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings } from "lucide-react";
+import { Home, Search, Settings, Zap } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -20,12 +19,11 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-3 group">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6907460ed52e46ec7bbc94b2/4847e85b5_1001601618-removebg-preview.png"
-                alt="Chariot Realty"
-                className="h-10 w-auto group-hover:scale-105 transition-transform"
-              />
+            <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
+              <div className="w-10 h-10 bg-[#FFD300] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
+                <Zap className="w-6 h-6 text-black fill-black" />
+              </div>
+              <span className="text-xl font-bold text-[#111111] tracking-tight">Chariot Realty</span>
             </Link>
 
             {/* Navigation */}
@@ -62,12 +60,11 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-2">
-              <div className="mb-6">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6907460ed52e46ec7bbc94b2/4847e85b5_1001601618-removebg-preview.png"
-                  alt="Chariot Realty"
-                  className="h-16 w-auto brightness-0 invert"
-                />
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center shadow-lg">
+                  <Zap className="w-7 h-7 text-black fill-black" />
+                </div>
+                <span className="text-2xl font-bold text-white tracking-tight">Chariot Realty</span>
               </div>
               <p className="text-gray-400 text-sm font-light leading-relaxed">
                 Mumbai's trusted partner for luxury and premium properties
