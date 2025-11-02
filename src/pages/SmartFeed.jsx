@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -85,7 +86,7 @@ export default function SmartFeed() {
               <Sparkles className="w-6 h-6 text-black" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-[#111111] tracking-tight">SmartFeed</h1>
+              <h1 className="text-3xl font-bold text-[#111111] tracking-tight">SmartFeed</h1>
               <p className="text-sm text-[#3B3B3B] font-light">AI-curated properties • Transparent pricing</p>
             </div>
           </div>
