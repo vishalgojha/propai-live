@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
-  Building2, MapPin, Maximize2, Car, Eye, MessageCircle,
-  Armchair, Shield, Camera
+  MapPin, Maximize2, Car, Eye, MessageCircle,
+  Armchair, Shield, Camera, Building2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -18,7 +18,6 @@ import {
 
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
-  const [imageError, setImageError] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -124,43 +123,19 @@ export default function PropertyCard({ property, onViewDetails }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       onClick={handleCardClick}
-      className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30 cursor-pointer group"
+      className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30 cursor-pointer group relative"
     >
-      {/* Image Section */}
-      <div className="relative h-56 bg-stone-100 overflow-hidden">
-        {property.images && property.images.length > 0 && !imageError ? (
-          <img
-            src={property.images[0]}
-            alt={property.ai_title || property.building_name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
-            <Building2 className="w-16 h-16 text-stone-300" />
-          </div>
-        )}
-
-        {/* Overlay Badges */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-          <Badge className="bg-black/90 text-white border-0 font-bold backdrop-blur-sm">
-            {property.bhk}
-          </Badge>
-          {property.jodi_flag && (
-            <Badge className="bg-purple-600/90 text-white border-0 font-bold backdrop-blur-sm">
-              JODI
-            </Badge>
-          )}
-        </div>
-
-        {/* Camera Icon (Small, only when pics/video available) */}
+      {/* AI Title & Description Section (replaces image area) */}
+      <div className="relative p-6 bg-gradient-to-br from-stone-50 via-white to-stone-50 border-b border-stone-100">
+        
+        {/* Camera Icon - Small, top-right corner */}
         {showMediaIcon && (
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-4 right-4">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1.5 cursor-pointer hover:bg-black/90 transition-all">
-                    <Camera className="w-4 h-4 text-white" />
+                  <div className="bg-amber-500/90 backdrop-blur-sm rounded-lg p-1.5 cursor-pointer hover:bg-amber-600 transition-all shadow-sm">
+                    <Camera className="w-3.5 h-3.5 text-white" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -171,47 +146,60 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         )}
 
-        {/* Trust Score Badge */}
-        {property.broker_trust_score && property.broker_trust_score >= 70 && (
-          <div className="absolute bottom-3 right-3">
-            <Badge className="bg-green-600/90 text-white border-0 backdrop-blur-sm flex items-center gap-1">
+        {/* Badges - Top left */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Badge className="bg-black text-white border-0 font-bold text-xs">
+            {property.bhk}
+          </Badge>
+          {property.jodi_flag && (
+            <Badge className="bg-purple-600 text-white border-0 font-bold text-xs">
+              JODI
+            </Badge>
+          )}
+          {property.broker_trust_score && property.broker_trust_score >= 70 && (
+            <Badge className="bg-green-600 text-white border-0 flex items-center gap-1 text-xs">
               <Shield className="w-3 h-3" />
               Verified
             </Badge>
-          </div>
-        )}
-
-        {/* Expat Friendly Badge */}
-        {property.expat_friendly && (
-          <div className="absolute bottom-3 left-3">
-            <Badge className="bg-blue-600/90 text-white border-0 backdrop-blur-sm">
+          )}
+          {property.expat_friendly && (
+            <Badge className="bg-blue-600 text-white border-0 text-xs">
               🌍 Expat Friendly
             </Badge>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Content Section */}
-      <div className="p-5">
-        {/* Title & Location */}
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-[#111111] mb-2 line-clamp-2 leading-tight group-hover:text-[#FFD300] transition-colors">
-            {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
-          </h3>
-          
-          <div className="flex items-start gap-2 text-sm text-[#3B3B3B] mb-1">
+        {/* AI Title - Full, no truncation */}
+        <h3 className="text-xl font-bold text-[#111111] mb-3 leading-tight group-hover:text-[#FFD300] transition-colors">
+          {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
+        </h3>
+        
+        {/* AI Description - Full, no truncation */}
+        {property.ai_description && (
+          <p className="text-sm text-[#3B3B3B] leading-relaxed mb-4">
+            {property.ai_description}
+          </p>
+        )}
+
+        {/* Location Info */}
+        <div className="space-y-2">
+          <div className="flex items-start gap-2 text-sm text-stone-600">
             <MapPin className="w-4 h-4 text-stone-500 flex-shrink-0 mt-0.5" />
-            <span className="line-clamp-1">{getLocationDisplay()}</span>
+            <span>{getLocationDisplay()}</span>
           </div>
 
           {property.building_name && (
-            <div className="flex items-center gap-2 text-sm text-[#3B3B3B]">
+            <div className="flex items-center gap-2 text-sm text-stone-600">
               <Building2 className="w-4 h-4 text-stone-500 flex-shrink-0" />
               <span className="line-clamp-1">{property.building_name}</span>
             </div>
           )}
         </div>
+      </div>
 
+      {/* Content Section */}
+      <div className="p-5">
+        
         {/* Key Stats Grid */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="text-center p-2 bg-stone-50 rounded-xl">
@@ -245,13 +233,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             {property.property_type || "Apartment"}
           </Badge>
         </div>
-
-        {/* AI Description Preview */}
-        {property.ai_description && (
-          <p className="text-sm text-[#3B3B3B] mb-4 line-clamp-2 leading-relaxed">
-            {property.ai_description}
-          </p>
-        )}
 
         {/* WhatsApp CTAs */}
         <div className="space-y-2">
