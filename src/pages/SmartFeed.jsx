@@ -19,7 +19,8 @@ export default function SmartFeed() {
     propertyCategory: "all",
     furnishing: "all",
     minPrice: "",
-    maxPrice: ""
+    maxPrice: "",
+    expat_mode: false, // Initialize expat_mode filter
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
 
@@ -34,6 +35,7 @@ export default function SmartFeed() {
     if (urlParams.get('furnishing')) newFilters.furnishing = urlParams.get('furnishing');
     if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
+    if (urlParams.get('expat_mode')) newFilters.expat_mode = urlParams.get('expat_mode') === 'true'; // Parse as boolean
     
     setFilters(newFilters);
   }, []);
@@ -48,7 +50,7 @@ export default function SmartFeed() {
   });
 
   const filteredProperties = useMemo(() => {
-    return properties.filter(property => {
+    let results = properties.filter(property => {
       // Text search
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -89,6 +91,11 @@ export default function SmartFeed() {
         if (property.furnishing !== filters.furnishing) return false;
       }
 
+      // Expat Mode filter
+      if (filters.expat_mode) {
+        if (!property.expat_friendly) return false;
+      }
+
       // Budget
       if (filters.minPrice || filters.maxPrice) {
         const priceInLakhs = property.price_unit === "crores" 
@@ -101,6 +108,25 @@ export default function SmartFeed() {
 
       return true;
     });
+
+    // BROKERTRUST™ RANKING - Quietly prioritize properties from trusted brokers
+    results.sort((a, b) => {
+      const trustScoreA = a.broker_trust_score || 50; // Default neutral score
+      const trustScoreB = b.broker_trust_score || 50;
+      
+      // Higher trust score = higher in feed
+      if (trustScoreB !== trustScoreA) {
+        return trustScoreB - trustScoreA;
+      }
+      
+      // Secondary sort: most recent (descending created_date)
+      // Ensure created_date is parsed as a Date object for comparison
+      const dateA = new Date(a.created_date);
+      const dateB = new Date(b.created_date);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return results;
   }, [properties, filters]);
 
   const clearFilters = () => {
@@ -112,7 +138,8 @@ export default function SmartFeed() {
       propertyCategory: "all",
       furnishing: "all",
       minPrice: "",
-      maxPrice: ""
+      maxPrice: "",
+      expat_mode: false, // Reset expat_mode
     });
   };
 

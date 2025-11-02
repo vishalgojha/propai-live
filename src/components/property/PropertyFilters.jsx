@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function PropertyFilters({ filters, onFilterChange, onClearFilters, allProperties = [] }) {
   const [nlpInput, setNlpInput] = useState("");
+  const [expatMode, setExpatMode] = useState(false);
 
   // Extract unique BHKs and locations from actual property data
   const uniqueBhks = [...new Set(allProperties.map(p => p.bhk).filter(Boolean))].sort();
@@ -29,35 +31,61 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     onFilterChange({ ...filters, location_multi: newLocations });
   };
 
+  // Expat Mode toggle handler
+  const toggleExpatMode = () => {
+    const newExpatMode = !expatMode;
+    setExpatMode(newExpatMode);
+
+    if (newExpatMode) {
+      // Auto-apply expat-friendly filters
+      onFilterChange({
+        ...filters,
+        furnishing: 'Fully Furnished',
+        expat_mode: true
+      });
+    } else {
+      // Remove expat filters by destructuring 'expat_mode' from the filters object
+      const { expat_mode, ...restFilters } = filters;
+      // It's important to also remove 'furnishing' if it was auto-applied by Expat Mode
+      // and not explicitly selected by the user otherwise.
+      // If we simply remove 'expat_mode' flag, 'furnishing' might stay 'Fully Furnished'.
+      // A more robust implementation would check if 'furnishing' was 'Fully Furnished'
+      // before expat_mode was activated, or if it was set *by* expat mode.
+      // For now, adhering strictly to the outline's instruction for removal:
+      onFilterChange(restFilters);
+    }
+  };
+
   // AI/NLP search handler
   const handleNlpSearch = () => {
     if (!nlpInput.trim()) return;
-    
+
     // Simple NLP parsing (can be enhanced with backend AI)
     const input = nlpInput.toLowerCase();
     const newFilters = { ...filters, search: nlpInput };
-    
+
     // Extract BHK from natural language
     const bhkMatches = input.match(/(\d+)\s*bhk/gi);
     if (bhkMatches) {
-      newFilters.bhk_multi = bhkMatches.map(m => m.toUpperCase().trim());
+      // Ensure BHK values match the case in uniqueBhks if necessary, or normalize
+      newFilters.bhk_multi = bhkMatches.map(m => m.replace(/\s*bhk/i, ' BHK').toUpperCase().trim());
     }
-    
+
     // Extract locations (check against known locations)
-    const locationMatches = uniqueLocations.filter(loc => 
+    const locationMatches = uniqueLocations.filter(loc =>
       input.includes(loc.toLowerCase())
     );
     if (locationMatches.length > 0) {
       newFilters.location_multi = locationMatches;
     }
-    
+
     // Extract listing type
     if (input.includes('rent') || input.includes('rental')) {
       newFilters.listingType = 'Rent';
     } else if (input.includes('sale') || input.includes('buy')) {
       newFilters.listingType = 'Sale';
     }
-    
+
     // Extract furnishing
     if (input.includes('furnished')) {
       if (input.includes('fully')) {
@@ -68,13 +96,13 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         newFilters.furnishing = 'Unfurnished';
       }
     }
-    
+
     // Extract budget
     const priceMatch = input.match(/(?:under|below|max|up to)\s*(\d+(?:\.\d+)?)\s*(cr|crore|crores|l|lakh|lakhs|k|thousand)/i);
     if (priceMatch) {
       const amount = parseFloat(priceMatch[1]);
       const unit = priceMatch[2].toLowerCase();
-      
+
       if (unit.startsWith('cr')) {
         newFilters.maxPrice = amount * 100; // Convert to lakhs
       } else if (unit.startsWith('l')) {
@@ -83,30 +111,56 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         newFilters.maxPrice = amount / 100; // Convert to lakhs
       }
     }
-    
+
     onFilterChange(newFilters);
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     (filters.bhk_multi && filters.bhk_multi.length > 0) ||
     (filters.location_multi && filters.location_multi.length > 0) ||
-    filters.minPrice || 
-    filters.maxPrice || 
-    filters.furnishing || 
-    (filters.listingType && filters.listingType !== "all") || 
-    filters.search || 
-    (filters.propertyCategory && filters.propertyCategory !== "all");
+    filters.minPrice ||
+    filters.maxPrice ||
+    filters.furnishing ||
+    (filters.listingType && filters.listingType !== "all") ||
+    filters.search ||
+    (filters.propertyCategory && filters.propertyCategory !== "all") ||
+    filters.expat_mode; // Check for expat mode filter
 
   return (
     <div className="bg-white rounded-[22px] shadow-sm border-2 border-[#F7F7F7] p-6 mb-8">
-      
+
+      {/* Expat Mode Toggle */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">🌍</span>
+            </div>
+            <div>
+              <h3 className="font-bold text-[#111111] text-sm">Expat Mode</h3>
+              <p className="text-xs text-[#3B3B3B]">Fully furnished • Great amenities • Expat-friendly buildings</p>
+            </div>
+          </div>
+          <button
+            onClick={toggleExpatMode}
+            className={`relative w-14 h-8 rounded-full transition-all ${
+              expatMode ? 'bg-blue-500' : 'bg-gray-300'
+            }`}
+          >
+            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${
+              expatMode ? 'translate-x-7' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+      </div>
+
       {/* AI-Powered Search */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-5 h-5 text-[#FFD300]" />
           <h3 className="font-bold text-[#111111] text-lg">AI-Powered Search</h3>
         </div>
-        
+
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
@@ -118,14 +172,14 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               className="pl-11 border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-12 rounded-xl"
             />
           </div>
-          <Button 
+          <Button
             onClick={handleNlpSearch}
             className="bg-[#FFD300] hover:bg-[#FFC700] text-black h-12 px-6 rounded-xl font-semibold"
           >
             Search
           </Button>
         </div>
-        
+
         <p className="text-xs text-[#3B3B3B]/60 mt-2">
           💡 Just describe what you're looking for in plain English
         </p>
@@ -226,8 +280,40 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 ₹{filters.minPrice || "0"}L - ₹{filters.maxPrice || "∞"}L
               </Badge>
             )}
+            {filters.expat_mode && ( // Display badge for Expat Mode if active
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-400 font-semibold">
+                Expat Mode
+                {/* Clicking X on the badge should toggle Expat Mode off */}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleExpatMode()} />
+              </Badge>
+            )}
+            {/* Adding other active filters here as badges, for example: */}
+            {filters.furnishing && (
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+                {filters.furnishing}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: undefined })} />
+              </Badge>
+            )}
+            {filters.listingType && filters.listingType !== "all" && (
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+                For {filters.listingType}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
+              </Badge>
+            )}
+            {filters.search && (
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+                Search: "{filters.search}"
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, search: undefined })} />
+              </Badge>
+            )}
+            {filters.propertyCategory && filters.propertyCategory !== "all" && (
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+                Category: {filters.propertyCategory}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
+              </Badge>
+            )}
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"

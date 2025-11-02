@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import {
   Building2, MapPin, Star, TrendingUp, Home,
   ArrowLeft, Check, Phone, MessageCircle, Sparkles,
-  Users, Calendar, Layers
+  Users, Calendar, Layers, IndianRupee
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SEO from "../components/SEO";
@@ -42,6 +42,62 @@ export default function BuildingProfile() {
     enabled: !!building?.name,
     initialData: [],
   });
+
+  // NEW: Get historical data for Building Memory
+  const { data: buildingHistory = [] } = useQuery({
+    queryKey: ['building-history', buildingId],
+    queryFn: async () => {
+      if (!building?.name) return [];
+      // Get ALL properties from this building (including sold/rented for history)
+      const allProps = await base44.entities.Property.filter({ 
+        building_name: building.name 
+      }, '-created_date');
+      return allProps;
+    },
+    enabled: !!building?.name,
+    initialData: [],
+  });
+
+  // Calculate building intelligence
+  const buildingIntelligence = useMemo(() => {
+    if (buildingHistory.length === 0) return null;
+
+    const now = new Date();
+    const sixMonthsAgo = new Date(now); // Create a new Date object
+    sixMonthsAgo.setMonth(now.getMonth() - 6); // Set it 6 months ago
+
+    const recent = buildingHistory.filter(p => 
+      p.created_date && new Date(p.created_date) >= sixMonthsAgo
+    );
+
+    const rentals = buildingHistory.filter(p => p.listing_type === 'Rent');
+    const sales = buildingHistory.filter(p => p.listing_type === 'Sale');
+
+    // Calculate average prices by BHK
+    // Returns value in Lakhs for consistency (1 Cr = 100 Lakhs)
+    const calculateAvg = (props, bhk) => {
+      const filtered = props.filter(p => p.bhk === bhk && p.price);
+      if (filtered.length === 0) return null;
+      const sum = filtered.reduce((acc, p) => {
+        // Convert all prices to Lakhs for calculation
+        const price = p.price_unit === 'crores' ? p.price * 100 : p.price;
+        return acc + price;
+      }, 0);
+      return (sum / filtered.length).toFixed(2);
+    };
+
+    return {
+      totalListings: buildingHistory.length,
+      listingsLast6Months: recent.length,
+      activeListings: buildingHistory.filter(p => p.status === 'Active').length,
+      completedDeals: buildingHistory.filter(p => p.status === 'Sold' || p.status === 'Rented').length,
+      avgRent2BHK: calculateAvg(rentals, '2 BHK'),
+      avgRent3BHK: calculateAvg(rentals, '3 BHK'),
+      avgSale2BHK: calculateAvg(sales, '2 BHK'),
+      avgSale3BHK: calculateAvg(sales, '3 BHK'),
+      activityTrend: recent.length >= 10 ? 'High Activity' : recent.length >= 5 ? 'Moderate' : 'Low Activity'
+    };
+  }, [buildingHistory]);
 
   const handleWhatsApp = () => {
     const message = `Hi, I'm interested in properties at ${building.name}, ${building.location}. Can you share available options?`;
@@ -239,6 +295,91 @@ export default function BuildingProfile() {
                 </div>
               )}
             </div>
+
+            {/* NEW: Building Memory - Market Intelligence */}
+            {buildingIntelligence && buildingIntelligence.totalListings > 0 && (
+              <div className="mb-8 p-6 bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50 rounded-3xl border-2 border-amber-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-lg font-bold text-[#111111]">Building Memory™</h3>
+                  <Badge className="bg-amber-500 text-white text-xs">Street Intelligence</Badge>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                    <p className="text-xs text-amber-700 mb-1">Total Listings</p>
+                    <p className="text-2xl font-bold text-[#111111]">{buildingIntelligence.totalListings}</p>
+                    <p className="text-xs text-[#3B3B3B] mt-1">All time</p>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                    <p className="text-xs text-amber-700 mb-1">Last 6 Months</p>
+                    <p className="text-2xl font-bold text-blue-600">{buildingIntelligence.listingsLast6Months}</p>
+                    <p className="text-xs text-[#3B3B3B] mt-1">{buildingIntelligence.activityTrend}</p>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                    <p className="text-xs text-amber-700 mb-1">Active Now</p>
+                    <p className="text-2xl font-bold text-green-600">{buildingIntelligence.activeListings}</p>
+                    <p className="text-xs text-[#3B3B3B] mt-1">Available</p>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                    <p className="text-xs text-amber-700 mb-1">Deals Closed</p>
+                    <p className="text-2xl font-bold text-purple-600">{buildingIntelligence.completedDeals}</p>
+                    <p className="text-xs text-[#3B3B3B] mt-1">Sold/Rented</p>
+                  </div>
+                </div>
+
+                {/* Historical Pricing */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white/80 rounded-xl p-4">
+                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                      <Home className="w-4 h-4 text-blue-600" />
+                      Average Rent Trends
+                    </h4>
+                    {buildingIntelligence.avgRent2BHK && (
+                      <div className="mb-2">
+                        <p className="text-xs text-[#3B3B3B]">2 BHK Average</p>
+                        <p className="text-xl font-bold text-[#111111]">₹{buildingIntelligence.avgRent2BHK}L<span className="text-xs font-normal">/month</span></p>
+                      </div>
+                    )}
+                    {buildingIntelligence.avgRent3BHK && (
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">3 BHK Average</p>
+                        <p className="text-xl font-bold text-[#111111]">₹{buildingIntelligence.avgRent3BHK}L<span className="text-xs font-normal">/month</span></p>
+                      </div>
+                    )}
+                    {!buildingIntelligence.avgRent2BHK && !buildingIntelligence.avgRent3BHK && (
+                      <p className="text-sm text-[#3B3B3B]">No rental data available yet</p>
+                    )}
+                  </div>
+
+                  <div className="bg-white/80 rounded-xl p-4">
+                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                      <IndianRupee className="w-4 h-4 text-green-600" />
+                      Average Sale Prices
+                    </h4>
+                    {buildingIntelligence.avgSale2BHK && (
+                      <div className="mb-2">
+                        <p className="text-xs text-[#3B3B3B]">2 BHK Average</p>
+                        <p className="text-xl font-bold text-[#111111]">₹{(buildingIntelligence.avgSale2BHK / 100).toFixed(2)} Cr</p>
+                      </div>
+                    )}
+                    {buildingIntelligence.avgSale3BHK && (
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">3 BHK Average</p>
+                        <p className="text-xl font-bold text-[#111111]">₹{(buildingIntelligence.avgSale3BHK / 100).toFixed(2)} Cr</p>
+                      </div>
+                    )}
+                    {!buildingIntelligence.avgSale2BHK && !buildingIntelligence.avgSale3BHK && (
+                      <p className="text-sm text-[#3B3B3B]">No sale data available yet</p>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-xs text-amber-800 mt-4 italic">
+                  📊 AI-calculated from {buildingIntelligence.totalListings} listings • Updated from broker WhatsApp data
+                </p>
+              </div>
+            )}
 
             {/* Tags & Features */}
             {building.tags && building.tags.length > 0 && (

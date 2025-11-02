@@ -67,6 +67,11 @@ export default function Admin() {
   const [brokerAnalytics, setBrokerAnalytics] = useState(null);
   const [conversationText, setConversationText] = useState("");
 
+  // NEW: Deals Radar state
+  const [showDealsRadar, setShowDealsRadar] = useState(false);
+  const [dealsData, setDealsData] = useState(null);
+  const [dealsLoading, setDealsLoading] = useState(false);
+
   // Check if user is admin
   useEffect(() => {
     const checkAuth = async () => {
@@ -158,6 +163,37 @@ export default function Admin() {
         id: propertyId,
         data: { is_duplicate: false, duplicate_of: null }
       });
+    }
+  };
+
+  // NEW: Load Deals Radar
+  const loadDealsRadar = async () => {
+    setDealsLoading(true);
+    try {
+      const response = await base44.functions.invoke('getDealsRadar', {});
+      setDealsData(response.data);
+      setShowDealsRadar(true);
+    } catch (error) {
+      console.error('Error loading deals radar:', error);
+      alert('Failed to load deals radar');
+    } finally {
+      setDealsLoading(false);
+    }
+  };
+
+  // NEW: Calculate all broker trust scores
+  const recalculateBrokerTrust = async () => {
+    if (!confirm('Recalculate trust scores for all brokers? This may take a minute.')) return;
+
+    try {
+      const response = await base44.functions.invoke('calculateBrokerTrust', {
+        recalculateAll: true
+      });
+      alert(`✅ Trust scores calculated for ${response.data.brokersScored} brokers!`);
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+    } catch (error) {
+      console.error('Error calculating trust:', error);
+      alert('Failed to calculate trust scores');
     }
   };
 
@@ -784,6 +820,175 @@ export default function Admin() {
     );
   };
 
+  // NEW: Deals Radar Modal
+  const DealsRadarModal = () => {
+    if (!dealsData) return null;
+
+    return (
+      <Dialog open={showDealsRadar} onOpenChange={setShowDealsRadar}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#FFD300]" />
+              AI Deals Radar - Your Unfair Advantage
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+              <p className="text-xs text-green-700 mb-1">Underpriced Deals</p>
+              <p className="text-3xl font-bold text-green-600">{dealsData.summary.underpricedDeals}</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <p className="text-xs text-blue-700 mb-1">Price Drops</p>
+              <p className="text-3xl font-bold text-blue-600">{dealsData.summary.priceDrops}</p>
+            </div>
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+              <p className="text-xs text-purple-700 mb-1">Hidden Matches</p>
+              <p className="text-3xl font-bold text-purple-600">{dealsData.summary.hiddenMatches}</p>
+            </div>
+          </div>
+
+          <Tabs defaultValue="underpriced">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="underpriced">💎 Underpriced</TabsTrigger>
+              <TabsTrigger value="drops">📉 Price Drops</TabsTrigger>
+              <TabsTrigger value="matches">🎯 Hidden Matches</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="underpriced" className="space-y-3 mt-4">
+              {dealsData.deals.underpriced.length === 0 ? (
+                <p className="text-center text-[#3B3B3B] py-8">No underpriced deals found</p>
+              ) : (
+                dealsData.deals.underpriced.map((deal, idx) => (
+                  <div key={idx} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-[#111111] mb-1">{deal.title}</h4>
+                        <p className="text-sm text-[#3B3B3B]">{deal.building} • {deal.location}</p>
+                      </div>
+                      <Badge className="bg-green-500 text-white text-lg px-3 py-1">
+                        {deal.discount} OFF
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">Actual Price</p>
+                        <p className="font-bold text-green-600">{deal.actualPrice}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">Expected Price</p>
+                        <p className="font-bold text-[#111111]">{deal.expectedPrice}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">You Save</p>
+                        <p className="font-bold text-green-600">{deal.discountAmount}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">Broker Trust</p>
+                        <p className="font-bold text-[#111111]">{deal.brokerTrustScore}/100</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${deal.propertyId}`)}
+                      size="sm"
+                      className="mt-3 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Property
+                    </Button>
+                  </div>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="drops" className="space-y-3 mt-4">
+              {dealsData.deals.priceDrops.length === 0 ? (
+                <p className="text-center text-[#3B3B3B] py-8">No price drops detected</p>
+              ) : (
+                dealsData.deals.priceDrops.map((drop, idx) => (
+                  <div key={idx} className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
+                    <h4 className="font-bold text-[#111111] mb-2">{drop.title}</h4>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">Old Price</p>
+                        <p className="font-bold text-gray-500 line-through">₹{drop.oldPrice}{drop.priceUnit === 'crores' ? ' Cr' : 'L'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">New Price</p>
+                        <p className="font-bold text-blue-600">₹{drop.newPrice}{drop.priceUnit === 'crores' ? ' Cr' : 'L'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]">Drop Amount</p>
+                        <p className="font-bold text-green-600">-₹{drop.dropAmount}{drop.priceUnit === 'crores' ? ' Cr' : 'L'}</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${drop.propertyId}`)}
+                      size="sm"
+                      className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      View Property
+                    </Button>
+                  </div>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="matches" className="space-y-3 mt-4">
+              {dealsData.deals.hiddenMatches.length === 0 ? (
+                <p className="text-center text-[#3B3B3B] py-8">No hidden matches found</p>
+              ) : (
+                dealsData.deals.hiddenMatches.map((match, idx) => (
+                  <div key={idx} className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <Badge className="bg-purple-500 text-white mb-2">Draft Property Match</Badge>
+                        <h4 className="font-bold text-[#111111]">{match.title}</h4>
+                        <p className="text-sm text-[#3B3B3B] mt-1">{match.location} • {match.price}</p>
+                      </div>
+                    </div>
+                    <div className="bg-white/60 rounded-lg p-3 mt-3">
+                      <p className="text-xs text-purple-700 mb-1">Matches Requirement:</p>
+                      <p className="font-semibold text-[#111111]">{match.clientName}</p>
+                      <p className="text-sm text-[#3B3B3B]">{match.clientPhone}</p>
+                      <p className="text-xs text-purple-600 mt-2">{match.matchReason}</p>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${match.propertyId}`)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        View Property
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const message = `Hi ${match.clientName}, we found a perfect match for your requirement! ${match.title} in ${match.location} at ${match.price}. Interested?`;
+                          window.open(`https://wa.me/${match.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                        }}
+                        size="sm"
+                        className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Contact Client
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <p className="text-xs text-[#3B3B3B] text-center mt-4 italic">
+            🔮 Generated: {new Date(dealsData.generatedAt).toLocaleString()} • Refresh for latest intelligence
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
@@ -812,6 +1017,31 @@ export default function Admin() {
             <h1 className="text-3xl font-bold text-[#111111]">Admin Dashboard</h1>
           </div>
           <p className="text-[#3B3B3B]">Manage properties, brokers, and requirements</p>
+        </div>
+
+        {/* NEW: Quick Actions Bar */}
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-4 mb-8 border-2 border-amber-200">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={loadDealsRadar}
+              disabled={dealsLoading}
+              className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {dealsLoading ? 'Loading...' : 'AI Deals Radar'}
+            </Button>
+            <Button
+              onClick={recalculateBrokerTrust}
+              variant="outline"
+              className="border-2 border-amber-300"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Recalculate BrokerTrust™
+            </Button>
+            <div className="ml-auto text-xs text-[#3B3B3B]">
+              <p>🎯 <strong>Your Unfair Advantage:</strong> AI-powered deal spotting & broker intelligence</p>
+            </div>
+          </div>
         </div>
 
         {/* Main Tabs */}
@@ -1530,6 +1760,7 @@ export default function Admin() {
       <BrokerEditModal />
       <BrokerPropertiesModal />
       <AIAssistantModal />
+      <DealsRadarModal />
     </div>
   );
 }
