@@ -1,17 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import {
-  Building2, MapPin, Maximize2, Car, Eye, Home, MessageCircle,
-  Armchair, Calendar, Star, TrendingUp, Shield, Sparkles, Phone
+  Building2, MapPin, Maximize2, Car, Eye, MessageCircle,
+  Armchair, Shield, Camera
 } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        setUser(null);
+      }
+    };
+    loadUser();
+  }, []);
 
   const formatPrice = () => {
     if (property.price_unit === "crores") {
@@ -89,6 +109,15 @@ export default function PropertyCard({ property, onViewDetails }) {
     return parts.join(', ') || property.location_id || 'Mumbai';
   };
 
+  // Check if property has media available from source text
+  const hasMediaInSource = property.source_text && 
+    (property.source_text.toLowerCase().includes('pic') || 
+     property.source_text.toLowerCase().includes('photo') ||
+     property.source_text.toLowerCase().includes('video') ||
+     property.source_text.toLowerCase().includes('img'));
+
+  const showMediaIcon = (property.images && property.images.length > 0) || hasMediaInSource;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -124,9 +153,27 @@ export default function PropertyCard({ property, onViewDetails }) {
           )}
         </div>
 
+        {/* Camera Icon (Small, only when pics/video available) */}
+        {showMediaIcon && (
+          <div className="absolute top-3 right-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1.5 cursor-pointer hover:bg-black/90 transition-all">
+                    <Camera className="w-4 h-4 text-white" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Photos/Videos Available</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
+
         {/* Trust Score Badge */}
         {property.broker_trust_score && property.broker_trust_score >= 70 && (
-          <div className="absolute top-3 right-3">
+          <div className="absolute bottom-3 right-3">
             <Badge className="bg-green-600/90 text-white border-0 backdrop-blur-sm flex items-center gap-1">
               <Shield className="w-3 h-3" />
               Verified
@@ -136,7 +183,7 @@ export default function PropertyCard({ property, onViewDetails }) {
 
         {/* Expat Friendly Badge */}
         {property.expat_friendly && (
-          <div className="absolute bottom-3 right-3">
+          <div className="absolute bottom-3 left-3">
             <Badge className="bg-blue-600/90 text-white border-0 backdrop-blur-sm">
               🌍 Expat Friendly
             </Badge>
@@ -208,6 +255,7 @@ export default function PropertyCard({ property, onViewDetails }) {
 
         {/* WhatsApp CTAs */}
         <div className="space-y-2">
+          {/* Main CTA - Always visible to all users */}
           <Button
             onClick={handleWhatsAppInquiry}
             className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-2xl h-11"
@@ -216,7 +264,8 @@ export default function PropertyCard({ property, onViewDetails }) {
             Contact {getAgentName()} via WhatsApp
           </Button>
 
-          {property.broker_contact && (
+          {/* Broker CTA - Only visible to admin users */}
+          {user?.role === 'admin' && property.broker_contact && (
             <Button
               onClick={handleBrokerWhatsApp}
               variant="outline"
