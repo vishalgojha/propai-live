@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -27,13 +28,15 @@ export default function SmartFeed() {
 
   const filteredProperties = useMemo(() => {
     return properties.filter(property => {
-      // Search filter
+      // Search filter - UPDATED to use new location hierarchy
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSearch = 
           property.building_name?.toLowerCase().includes(searchLower) ||
+          property.location?.toLowerCase().includes(searchLower) ||
           property.location_id?.toLowerCase().includes(searchLower) ||
           property.pocket?.toLowerCase().includes(searchLower) ||
+          property.city?.toLowerCase().includes(searchLower) ||
           property.description?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }

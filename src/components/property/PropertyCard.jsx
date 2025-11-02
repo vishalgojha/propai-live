@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,13 +34,15 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   };
 
   const handleWhatsApp = () => {
-    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.bhk} in ${property.location_id}\n${formatPrice()}\n\nCan you share more details and photos?`;
+    const locationText = property.location || property.location_id || "Mumbai";
+    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.bhk} in ${locationText}\n${formatPrice()}\n\nCan you share more details and photos?`;
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleBrokerWhatsApp = () => {
-    const message = `Hi, Chariot Realty here. Please confirm availability and share photos for:\n\n${property.bhk} in ${property.location_id}\n${property.building_name || ''}\nRef: ${property.custom_id || property.id}`;
+    const locationText = property.location || property.location_id || "Mumbai";
+    const message = `Hi, Chariot Realty here. Please confirm availability and share photos for:\n\n${property.bhk} in ${locationText}\n${property.building_name || ''}\nRef: ${property.custom_id || property.id}`;
     const phone = property.broker_contact?.replace(/\D/g, '');
     if (phone) {
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -54,7 +57,8 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   };
 
   const copyCard = () => {
-    const cardText = `${property.bhk} in ${property.location_id}\n${property.pocket ? property.pocket + '\n' : ''}${formatPrice()} | ${property.carpet_area} sqft\n${property.furnishing}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
+    const locationText = property.location || property.location_id || "Mumbai";
+    const cardText = `${property.bhk} in ${locationText}\n${property.pocket ? '📍 ' + property.pocket + '\n' : ''}${formatPrice()} | ${property.carpet_area} sqft\n${property.furnishing}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
     navigator.clipboard.writeText(cardText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -137,18 +141,20 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
 
       {/* Content Section */}
       <div className="p-4">
-        {/* Title and Location */}
+        {/* Title and Location - UPDATED HIERARCHY */}
         <div className="mb-3">
           <h3 className="text-lg font-bold text-slate-900 mb-1">
-            {property.bhk} in {property.location_id?.split(',')[0] || "Mumbai"}
+            {property.bhk} in {property.location || property.location_id?.split(',')[0] || "Mumbai"}
           </h3>
+          {/* Pocket as secondary tag with pin icon */}
           {property.pocket && (
             <div className="flex items-center gap-1.5 text-sm text-slate-600">
               <MapPin className="w-3.5 h-3.5 text-teal-500" />
               <span>{property.pocket}</span>
             </div>
           )}
-          {property.building_name && !property.pocket && (
+          {/* Building name shown only if no pocket */}
+          {!property.pocket && property.building_name && (
             <div className="flex items-center gap-1.5 text-sm text-slate-600">
               <MapPin className="w-3.5 h-3.5 text-teal-500" />
               <span>{property.building_name}</span>

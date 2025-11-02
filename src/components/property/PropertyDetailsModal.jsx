@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -34,9 +35,20 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
   };
 
   const handleWhatsApp = () => {
-    const message = `Hi ${getAgentName()}, I'm interested in:\n\n${property.bhk} in ${property.location_id}\n${property.building_name || ''}\n${formatPrice()}\n\nCan you share more details?`;
+    const locationText = property.location || property.location_id || "Mumbai";
+    const message = `Hi ${getAgentName()}, I'm interested in:\n\n${property.bhk} in ${locationText}\n${property.building_name || ''}\n${formatPrice()}\n\nCan you share more details?`;
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  // Format location display - UPDATED HIERARCHY
+  const getLocationDisplay = () => {
+    const parts = [];
+    if (property.building_name) parts.push(property.building_name);
+    if (property.pocket) parts.push(property.pocket);
+    if (property.location) parts.push(property.location);
+    else if (property.location_id) parts.push(property.location_id);
+    return parts.join(', ');
   };
 
   return (
@@ -45,7 +57,7 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5 text-blue-500" />
-            {property.bhk} - {property.building_name || "Premium Property"}
+            {property.bhk} in {property.location || property.location_id || "Mumbai"}
           </DialogTitle>
         </DialogHeader>
 
@@ -63,15 +75,13 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           </div>
         )}
 
-        {/* Price and Location */}
+        {/* Price and Location - UPDATED */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <MapPin className="w-4 h-4 text-blue-500" />
               <p className="text-sm text-slate-600">
-                {property.building_name && `${property.building_name}, `}
-                {property.pocket && `${property.pocket}, `}
-                {property.location_id || "Mumbai"}
+                {getLocationDisplay()}
               </p>
             </div>
             <div className="flex items-center gap-3">
