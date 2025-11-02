@@ -13,9 +13,9 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60">
+    <div className="min-h-screen bg-[#F7F7F7]">
+      {/* Header - White with yellow accents */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -35,14 +35,14 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold ${
                       isActive
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-slate-600 hover:bg-slate-50"
+                        ? "bg-[#FFD300] text-black"
+                        : "text-[#3B3B3B] hover:bg-[#F7F7F7]"
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
-                    <span className="text-sm font-medium">{item.name}</span>
+                    <span className="text-sm">{item.name}</span>
                   </Link>
                 );
               })}
@@ -56,54 +56,54 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12 hidden md:block">
+      {/* Footer - Black */}
+      <footer className="bg-[#111111] text-white py-16 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-2">
-              <div className="mb-4">
+              <div className="mb-6">
                 <img 
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6907460ed52e46ec7bbc94b2/4847e85b5_1001601618-removebg-preview.png"
                   alt="Chariot Realty"
                   className="h-16 w-auto brightness-0 invert"
                 />
               </div>
-              <p className="text-slate-400 text-sm">
+              <p className="text-gray-400 text-sm font-light leading-relaxed">
                 Mumbai's trusted partner for luxury and premium properties
               </p>
-              <p className="text-slate-400 text-sm mt-4">
+              <p className="text-gray-500 text-sm mt-6">
                 Mumbai, Maharashtra<br />
                 India
               </p>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link to={createPageUrl("Home")} className="hover:text-white">Home</Link></li>
-                <li><Link to={createPageUrl("SmartFeed")} className="hover:text-white">Search Properties</Link></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Contact Us</a></li>
+              <h4 className="font-bold mb-4 text-white">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-gray-400 font-light">
+                <li><Link to={createPageUrl("Home")} className="hover:text-[#FFD300] transition-colors">Home</Link></li>
+                <li><Link to={createPageUrl("SmartFeed")} className="hover:text-[#FFD300] transition-colors">Search Properties</Link></li>
+                <li><a href="#" className="hover:text-[#FFD300] transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-[#FFD300] transition-colors">Contact Us</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li>Vishal: +91 98194 71310</li>
-                <li>Kapil: +91 97737 57759</li>
+              <h4 className="font-bold mb-4 text-white">Contact</h4>
+              <ul className="space-y-2 text-sm text-gray-400 font-light">
+                <li className="hover:text-[#FFD300] transition-colors">Vishal: +91 98194 71310</li>
+                <li className="hover:text-[#FFD300] transition-colors">Kapil: +91 97737 57759</li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-400">
+          <div className="border-t border-[#3B3B3B] mt-12 pt-8 text-center text-sm text-gray-500">
             <p>© 2025 Chariot Realty. All rights reserved • Made with ❤️ in Mumbai</p>
           </div>
         </div>
       </footer>
 
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50">
+      {/* Mobile Navigation - Yellow accent on active */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-[#F7F7F7] z-50 shadow-2xl">
         <div className="flex items-center justify-around px-4 py-3">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -111,12 +111,12 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-all ${
-                  isActive ? "text-blue-600" : "text-slate-400"
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-all ${
+                  isActive ? "bg-[#FFD300] text-black" : "text-[#3B3B3B]"
                 }`}
               >
                 <item.icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{item.name}</span>
+                <span className="text-xs font-bold">{item.name}</span>
               </Link>
             );
           })}
