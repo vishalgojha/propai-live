@@ -23,8 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   Users, MessageCircle, Phone, Star, Search, Filter,
-  Eye, CheckCircle2, Edit2, Download, MapPin, Shield, Building2
+  Eye, CheckCircle2, Edit2, Download, MapPin, Shield, Building2,
+  Sparkles, Clock, TrendingUp, MessageSquare, Send
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -38,6 +45,14 @@ export default function AdminBrokers() {
   const [viewPropertiesModalOpen, setViewPropertiesModalOpen] = useState(false); // New state for properties modal
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // AI Assistant States
+  const [aiAssistantModalOpen, setAiAssistantModalOpen] = useState(false);
+  const [selectedBrokerForAI, setSelectedBrokerForAI] = useState(null);
+  const [followUpMessage, setFollowUpMessage] = useState("");
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [brokerAnalytics, setBrokerAnalytics] = useState(null);
+  const [conversationText, setConversationText] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -163,6 +178,82 @@ export default function AdminBrokers() {
     a.href = url;
     a.download = `chariot-brokers-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
+  };
+
+  const handleGenerateFollowUp = async (broker, propertyId = null, context = "") => {
+    setFollowUpLoading(true);
+    setSelectedBrokerForAI(broker); // Ensure broker is selected for AI modal
+    setBrokerAnalytics(null); // Clear previous analytics
+    setFollowUpMessage(""); // Clear previous message
+    setAiAssistantModalOpen(true); // Open modal immediately for feedback
+
+    try {
+      const response = await base44.functions.invoke('generateBrokerFollowUp', {
+        brokerId: broker.id,
+        propertyId,
+        context
+      });
+
+      setFollowUpMessage(response.data.message);
+      setBrokerAnalytics({
+        recommendations: response.data.recommendations,
+        whatsappUrl: response.data.whatsappUrl
+      });
+    } catch (error) {
+      console.error('Error generating follow-up:', error);
+      alert('Failed to generate follow-up message');
+      setAiAssistantModalOpen(false); // Close if error
+    } finally {
+      setFollowUpLoading(false);
+    }
+  };
+
+  const handleAnalyzeBroker = async (broker) => {
+    setSelectedBrokerForAI(broker);
+    setBrokerAnalytics(null); // Clear previous analytics
+    setFollowUpMessage(""); // Clear previous message
+    setAiAssistantModalOpen(true); // Open modal immediately
+
+    try {
+      const response = await base44.functions.invoke('analyzeBrokerPatterns', {
+        brokerId: broker.id
+      });
+      setBrokerAnalytics(response.data);
+    } catch (error) {
+      console.error('Error analyzing broker:', error);
+      alert('Failed to analyze broker patterns');
+      setAiAssistantModalOpen(false); // Close if error
+    }
+  };
+
+  const handleSummarizeConversation = async (broker) => {
+    if (!conversationText.trim()) {
+      alert('Please paste conversation text');
+      return;
+    }
+
+    try {
+      const response = await base44.functions.invoke('summarizeConversation', {
+        conversationText,
+        brokerId: broker.id
+      });
+
+      alert(`Conversation Summarized!\n\nSummary: ${response.data.summary}\n\nKey Points: ${response.data.key_points.join(', ')}\n\nSentiment: ${response.data.sentiment}`);
+      
+      setConversationText("");
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+      setAiAssistantModalOpen(false); // Close modal after successful summary
+    } catch (error) {
+      console.error('Error summarizing:', error);
+      alert('Failed to summarize conversation');
+    }
+  };
+
+  const sendFollowUp = () => {
+    if (brokerAnalytics?.whatsappUrl) {
+      window.open(brokerAnalytics.whatsappUrl, '_blank');
+      setAiAssistantModalOpen(false);
+    }
   };
 
   const BrokerPropertiesModal = () => {
@@ -364,6 +455,231 @@ export default function AdminBrokers() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  const AIAssistantModal = () => {
+    if (!selectedBrokerForAI) return null;
+
+    return (
+      <Dialog open={aiAssistantModalOpen} onOpenChange={setAiAssistantModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#FFD300]" />
+              AI Broker Assistant: {selectedBrokerForAI.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <Tabs defaultValue="followup" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="followup">Follow-Up</TabsTrigger>
+              <TabsTrigger value="analyze">Analytics</TabsTrigger>
+              <TabsTrigger value="summarize">Summarize Chat</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="followup" className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  AI-Generated Follow-Up Message
+                </h3>
+                <p className="text-xs text-[#3B3B3B] mb-3">
+                  Focused on availability and photo requests
+                </p>
+
+                {followUpLoading ? (
+                  <Textarea
+                    value="Generating message..."
+                    rows={5}
+                    className="mb-3 text-gray-500"
+                    readOnly
+                  />
+                ) : (
+                  <Textarea
+                    value={followUpMessage}
+                    onChange={(e) => setFollowUpMessage(e.target.value)}
+                    rows={5}
+                    className="mb-3"
+                    placeholder="Message will appear here after generation..."
+                  />
+                )}
+
+                {brokerAnalytics?.recommendations && (
+                  <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      Sending Recommendations
+                    </h4>
+                    <div className="space-y-1 text-sm">
+                      <p><strong>Timing:</strong> {brokerAnalytics.recommendations.sendTiming}</p>
+                      <p><strong>Best Time:</strong> {brokerAnalytics.recommendations.bestTimeOfDay}</p>
+                      <p><strong>Last Contact:</strong> {brokerAnalytics.recommendations.daysSinceLastContact} days ago</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={sendFollowUp}
+                    className="bg-[#25D366] hover:bg-[#20BD5A] text-white flex-1"
+                    disabled={!followUpMessage || followUpLoading}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send via WhatsApp
+                  </Button>
+                  <Button
+                    onClick={() => navigator.clipboard.writeText(followUpMessage)}
+                    variant="outline"
+                    disabled={!followUpMessage || followUpLoading}
+                  >
+                    Copy Message
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-sm mb-2">Generate New Follow-Up</h4>
+                <Input
+                  placeholder="Add context (e.g., 'urgent client request', 'price change')..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleGenerateFollowUp(selectedBrokerForAI, null, e.target.value);
+                    }
+                  }}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analyze" className="space-y-4">
+              {!brokerAnalytics ? (
+                <div className="text-center py-8">
+                  <Button onClick={() => handleAnalyzeBroker(selectedBrokerForAI)}>
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Analyze Broker Patterns
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-[#F7F7F7] rounded-xl p-4">
+                      <p className="text-xs text-[#3B3B3B] mb-1">Total Interactions</p>
+                      <p className="text-2xl font-bold">{brokerAnalytics.totalInteractions || 0}</p>
+                    </div>
+                    <div className="bg-[#F7F7F7] rounded-xl p-4">
+                      <p className="text-xs text-[#3B3B3B] mb-1">Reliability Score</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {brokerAnalytics.recommendations?.reliabilityScore || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {brokerAnalytics.recommendations && (
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <h4 className="font-semibold mb-3">📊 Contact Recommendations</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-[#3B3B3B]">Best Time of Day:</span>
+                          <span className="font-semibold">{brokerAnalytics.recommendations.bestTimeOfDay}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#3B3B3B]">Best Day:</span>
+                          <span className="font-semibold">{brokerAnalytics.recommendations.bestDayOfWeek}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#3B3B3B]">Avg Response Time:</span>
+                          <span className="font-semibold">{brokerAnalytics.recommendations.avgResponseTime}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {brokerAnalytics.metrics && (
+                    <div className="bg-green-50 rounded-xl p-4">
+                      <h4 className="font-semibold mb-3">📈 Performance Metrics</h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-[#3B3B3B]">Availability Confirmation</p>
+                          <p className="font-bold text-green-600">{brokerAnalytics.metrics.availabilityConfirmationRate}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3B3B3B]">Photo Sharing Rate</p>
+                          <p className="font-bold text-green-600">{brokerAnalytics.metrics.photoSharingRate}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3B3B3B]">Follow-Up Needed</p>
+                          <p className="font-bold text-orange-600">{brokerAnalytics.metrics.followUpRate}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3B3B3B]">Sentiment</p>
+                          <p className="font-bold text-blue-600">{brokerAnalytics.metrics.sentimentScore}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {brokerAnalytics.recentInteractions && brokerAnalytics.recentInteractions.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-3">Recent Interactions</h4>
+                      <div className="space-y-2">
+                        {brokerAnalytics.recentInteractions.map((interaction, idx) => (
+                          <div key={idx} className="bg-[#F7F7F7] rounded-xl p-3 text-sm">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-xs text-[#3B3B3B]">{interaction.date}</span>
+                              <Badge className={
+                                interaction.sentiment === 'Positive' ? 'bg-green-500/20 text-green-700' :
+                                interaction.sentiment === 'Negative' ? 'bg-red-500/20 text-red-700' :
+                                'bg-gray-500/20 text-gray-700'
+                              }>
+                                {interaction.sentiment}
+                              </Badge>
+                            </div>
+                            <p className="text-[#111111]">{interaction.summary}</p>
+                            <div className="flex gap-2 mt-2">
+                              {interaction.availabilityConfirmed && (
+                                <Badge variant="outline" className="text-xs">✅ Available</Badge>
+                              )}
+                              {interaction.photosReceived && (
+                                <Badge variant="outline" className="text-xs">📷 Photos</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="summarize" className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Paste WhatsApp Conversation</h3>
+                <p className="text-xs text-[#3B3B3B] mb-3">
+                  AI will extract: availability status, photo sharing, key points, sentiment
+                </p>
+
+                <Textarea
+                  value={conversationText}
+                  onChange={(e) => setConversationText(e.target.value)}
+                  rows={10}
+                  placeholder="Paste conversation here...&#10;&#10;Example:&#10;You: Hi Ramesh, is the 3 BHK still available?&#10;Broker: Yes available. Want to see photos?&#10;You: Yes please..."
+                  className="mb-3 font-mono text-xs"
+                />
+
+                <Button
+                  onClick={() => handleSummarizeConversation(selectedBrokerForAI)}
+                  className="w-full bg-[#FFD300] text-black hover:bg-[#FFC700]"
+                  disabled={!conversationText.trim()}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Summarize & Save to CRM
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     );
@@ -576,7 +892,7 @@ export default function AdminBrokers() {
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={() => handleWhatsApp(broker)}
                       className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
@@ -585,6 +901,26 @@ export default function AdminBrokers() {
                       <MessageCircle className="w-4 h-4 mr-2" />
                       WhatsApp {brokerProps.length > 0 && `(${brokerProps.length})`}
                     </Button>
+                    
+                    <Button
+                      onClick={() => handleGenerateFollowUp(broker)}
+                      className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold"
+                      size="sm"
+                      disabled={followUpLoading}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      AI Follow-Up
+                    </Button>
+
+                    <Button
+                      onClick={() => handleAnalyzeBroker(broker)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Analytics
+                    </Button>
+
                     {brokerProps.length > 0 && (
                       <Button
                         onClick={() => handleViewListings(broker)}
@@ -605,6 +941,7 @@ export default function AdminBrokers() {
 
       <BrokerEditModal />
       <BrokerPropertiesModal />
+      <AIAssistantModal />
     </div>
   );
 }
