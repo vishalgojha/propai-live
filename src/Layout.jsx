@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Zap } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -9,6 +9,7 @@ export default function Layout({ children, currentPageName }) {
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
     { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
     { name: "Admin", icon: Settings, path: createPageUrl("Admin") }
   ];
 
@@ -80,7 +81,7 @@ export default function Layout({ children, currentPageName }) {
               <ul className="space-y-2 text-sm text-gray-400 font-light">
                 <li><Link to={createPageUrl("Home")} className="hover:text-[#FFD300] transition-colors">Home</Link></li>
                 <li><Link to={createPageUrl("SmartFeed")} className="hover:text-[#FFD300] transition-colors">Search Properties</Link></li>
-                <li><a href="#" className="hover:text-[#FFD300] transition-colors">Blog</a></li>
+                <li><Link to={createPageUrl("Blogs")} className="hover:text-[#FFD300] transition-colors">Insights</Link></li>
                 <li><a href="#" className="hover:text-[#FFD300] transition-colors">Contact Us</a></li>
               </ul>
             </div>
