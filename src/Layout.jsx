@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Building2 } from "lucide-react";
+import { Home, Search, Settings } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -20,14 +19,12 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/30 transition-all">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-slate-900">Chariot Realty</h1>
-                <p className="text-xs text-slate-500 -mt-0.5">Mumbai Properties</p>
-              </div>
+            <Link to={createPageUrl("Home")} className="flex items-center gap-3 group">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6907460ed52e46ec7bbc94b2/4847e85b5_1001601618-removebg-preview.png"
+                alt="Chariot Realty"
+                className="h-10 w-auto group-hover:scale-105 transition-transform"
+              />
             </Link>
 
             {/* Navigation */}
@@ -64,16 +61,17 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Chariot Realty</h3>
-                  <p className="text-xs text-slate-400">Mumbai's trusted partner for luxury and premium properties</p>
-                </div>
+              <div className="mb-4">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6907460ed52e46ec7bbc94b2/4847e85b5_1001601618-removebg-preview.png"
+                  alt="Chariot Realty"
+                  className="h-16 w-auto brightness-0 invert"
+                />
               </div>
               <p className="text-slate-400 text-sm">
+                Mumbai's trusted partner for luxury and premium properties
+              </p>
+              <p className="text-slate-400 text-sm mt-4">
                 Mumbai, Maharashtra<br />
                 India
               </p>
