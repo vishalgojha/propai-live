@@ -57,7 +57,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   };
 
   const copyCard = () => {
-    const locationText = property.location || property.location_id || "Mumbai";
+    const locationText = property.location || property.location_id?.split(',')[0] || "";
     const cardText = `${property.bhk} in ${locationText}\n${property.pocket ? '📍 ' + property.pocket + '\n' : ''}${formatPrice()} | ${property.carpet_area} sqft\n${property.furnishing}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
     navigator.clipboard.writeText(cardText);
     setCopied(true);
