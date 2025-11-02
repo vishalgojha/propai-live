@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Sparkles, Home as HomeIcon, Clock, Instagram, Facebook, Twitter, Link as LinkIcon } from "lucide-react";
+import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Sparkles, Home as HomeIcon, Clock, Instagram, Facebook, Twitter, Link as LinkIcon, Camera, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -17,6 +17,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom"; // Assuming react-router-dom for useNavigate
 
 // Placeholder for createPageUrl function. In a real app, this would likely be imported from a utility file.
@@ -36,10 +42,26 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   const navigate = useNavigate();
 
   const formatPrice = () => {
-    if (property.price_unit === "crores") {
-      return `₹${property.price} Cr`;
+    if (!property.price) return "N/A";
+    
+    const price = property.price;
+    const unit = property.price_unit;
+    
+    // Convert to base unit (thousands)
+    let priceInK = unit === "crores" ? price * 10000 : price * 100;
+    
+    if (priceInK >= 10000) {
+      // Display in crores
+      const crores = priceInK / 10000;
+      return `₹${crores.toFixed(2)} Cr`;
+    } else if (priceInK >= 100) {
+      // Display in lakhs
+      const lakhs = priceInK / 100;
+      return `₹${lakhs.toFixed(2)}L`;
+    } else {
+      // Display in thousands
+      return `₹${priceInK.toFixed(0)}K`;
     }
-    return `₹${property.price}L`;
   };
 
   const handleWhatsApp = (agentName) => {
@@ -164,7 +186,31 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
                     {freshnessTag.icon} {freshnessTag.text}
                   </Badge>
                 )}
+                {property.images && property.images.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="flex items-center gap-1 cursor-help border-stone-300">
+                          <Camera className="w-3 h-3" />
+                          {property.images.length}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{property.images.length} photo{property.images.length > 1 ? 's' : ''} available</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
+              
+              {/* Building Name */}
+              {property.building_name && (
+                <div className="flex items-center gap-1.5 text-sm font-bold text-stone-800 mb-2">
+                  <Building2 className="w-3.5 h-3.5 text-amber-600" />
+                  <span>{property.building_name}</span>
+                </div>
+              )}
+              
               <div className="flex items-center gap-1.5 text-sm text-stone-600">
                 <MapPin className="w-3.5 h-3.5 text-stone-500" />
                 <span className="font-medium">{property.location || property.location_id?.split(',')[0] || "Mumbai"}</span>
@@ -201,7 +247,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </div>
         </div>
 
-        {/* Core Info Section - No Images, More Space for Content */}
+        {/* Core Info Section */}
         <div className="p-6">
           {/* AI Title */}
           {property.ai_title && (
