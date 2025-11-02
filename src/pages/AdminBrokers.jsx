@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,25 +22,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   Users, MessageCircle, Phone, Star, Search, Filter,
-  Eye, CheckCircle2, Edit2, Download, MapPin
+  Eye, CheckCircle2, Edit2, Download, MapPin, Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
 export default function AdminBrokers() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedBroker, setSelectedBroker] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const queryClient = useQueryClient();
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error("Authorization check failed:", error); // Log the error for debugging
+        navigate(createPageUrl("Home"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const { data: brokers = [], isLoading: brokersLoading } = useQuery({
     queryKey: ['brokers'],
     queryFn: () => base44.entities.Broker.list('-last_activity'),
     initialData: [],
+    enabled: isAuthorized,
   });
 
   const updateBrokerMutation = useMutation({
@@ -52,14 +77,14 @@ export default function AdminBrokers() {
   });
 
   const filteredBrokers = brokers.filter(broker => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       broker.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       broker.phone?.includes(searchQuery) ||
       broker.agency_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       broker.areas_covered?.some(area => area.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === "all" || broker.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -210,10 +235,25 @@ export default function AdminBrokers() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-[#FFD300] mx-auto mb-4 animate-pulse" />
+          <p className="text-[#3B3B3B]">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#111111] mb-2">Brokers</h1>
           <p className="text-[#3B3B3B]">Manage broker relationships & intelligence</p>
@@ -298,7 +338,6 @@ export default function AdminBrokers() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
               >
-                {/* ... keep existing code (broker card content from original Admin.js BrokersTab) ... */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">

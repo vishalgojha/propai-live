@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +26,51 @@ import {
   Users, Building2, MessageCircle, Phone, Mail,
   Star, TrendingUp, Search, Filter, Eye,
   AlertCircle, CheckCircle2, XCircle, Edit2,
-  Download, MapPin, BarChart3, BookOpen, Sparkles, Clock
+  Download, MapPin, BarChart3, BookOpen, Sparkles, Clock, Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
 export default function Admin() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error("Failed to fetch user or check role:", error);
+        navigate(createPageUrl("Home"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-[#FFD300] mx-auto mb-4 animate-pulse" />
+          <p className="text-[#3B3B3B]">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null; // Or show an unauthorized message if you prefer not to redirect immediately
+  }
+
   const [activeTab, setActiveTab] = useState("brokers");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

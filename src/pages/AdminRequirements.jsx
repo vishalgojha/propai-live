@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -7,18 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Search, MessageCircle, Phone, Mail, MapPin, Eye, Clock, Home as HomeIcon, IndianRupee
+  Search, MessageCircle, Phone, Mail, MapPin, Eye, Clock, Home as HomeIcon, IndianRupee, Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
 export default function AdminRequirements() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        navigate(createPageUrl("Home"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
+    enabled: isAuthorized, // Only run the query if authorized
   });
 
   const handleFindMatches = (req) => {
@@ -28,6 +52,23 @@ export default function AdminRequirements() {
     if (req.preferred_locations?.[0]) searchParams.set('search', req.preferred_locations[0]);
     navigate(createPageUrl("SmartFeed") + "?" + searchParams.toString());
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-[#FFD300] mx-auto mb-4 animate-pulse" />
+          <p className="text-[#3B3B3B]">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    // If not authorized after loading, return null or an unauthorized message
+    // Navigation already happened in useEffect if not authorized
+    return null; 
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">

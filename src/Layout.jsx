@@ -8,15 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems = [
-    { name: "Home", icon: Home, path: createPageUrl("Home") },
-    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
-    { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
-    { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
-    { name: "Brokers", icon: Settings, path: createPageUrl("AdminBrokers") },
-    { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
-  ];
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     // Set global meta tags
@@ -54,6 +46,38 @@ export default function Layout({ children, currentPageName }) {
     setOGTag('og:site_name', 'Chariot Realty');
     setOGTag('og:locale', 'en_IN');
   }, []);
+
+  useEffect(() => {
+    // Check if user is logged in and get user data
+    const loadUser = async () => {
+      try {
+        // Assuming 'base44' is globally available or imported in a real application context
+        // For this example, if base44 is not defined, this will throw an error.
+        // In a real app, you'd ensure base44 is properly imported or handled.
+        const currentUser = await base44.auth.me(); 
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Failed to load user:", error);
+        setUser(null);
+      }
+    };
+    loadUser();
+  }, [location.pathname]);
+
+  const navItems = [
+    { name: "Home", icon: Home, path: createPageUrl("Home") },
+    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
+    { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
+  ];
+
+  // Only show admin links if user is admin
+  if (user?.role === 'admin') {
+    navItems.push(
+      { name: "Brokers", icon: Settings, path: createPageUrl("AdminBrokers") },
+      { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
