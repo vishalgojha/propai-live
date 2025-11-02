@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Sparkles, Home as HomeIcon, Clock, Instagram, Facebook, Twitter, Link as LinkIcon, Camera, Building2 } from "lucide-react";
+import { MapPin, Maximize2, Car, MessageCircle, Eye, MoreVertical, Share2, Sparkles, Home as HomeIcon, Clock, Instagram, Facebook, Twitter, Link as LinkIcon, Camera, Building2, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -36,31 +36,26 @@ const createPageUrl = (pageName) => {
   }
 };
 
-export default function PropertyCard({ property, onViewDetails, isAdmin = false }) {
+export default function PropertyCard({ property, onViewDetails }) {
   const [copied, setCopied] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const formatPrice = () => {
     if (!property.price) return "N/A";
-    
-    const price = property.price;
-    const unit = property.price_unit;
-    
-    // Convert to base unit (thousands)
-    let priceInK = unit === "crores" ? price * 10000 : price * 100;
-    
-    if (priceInK >= 10000) {
-      // Display in crores
-      const crores = priceInK / 10000;
-      return `₹${crores.toFixed(2)} Cr`;
-    } else if (priceInK >= 100) {
-      // Display in lakhs
-      const lakhs = priceInK / 100;
-      return `₹${lakhs.toFixed(2)}L`;
+
+    // All prices are stored in lakhs, so we just need to display them correctly
+    const priceInLakhs = property.price;
+
+    if (priceInLakhs >= 100) {
+      // Display as Crores if 100 lakhs or more
+      return `₹${(priceInLakhs / 100).toFixed(2)} Cr`;
+    } else if (priceInLakhs < 1) {
+      // Display as Thousands (K) if less than 1 lakh
+      return `₹${(priceInLakhs * 100).toFixed(0)}K`;
     } else {
-      // Display in thousands
-      return `₹${priceInK.toFixed(0)}K`;
+      // Display as Lakhs
+      return `₹${priceInLakhs.toFixed(2)}L`;
     }
   };
 
@@ -212,7 +207,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         onClick={handleViewDetails}
-        className="group bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-stone-200/50 cursor-pointer"
+        className="bg-white rounded-[22px] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 group"
       >
         {/* Header Section */}
         <div className="relative bg-gradient-to-r from-stone-100 to-stone-50 px-6 pt-6 pb-4 border-b border-stone-200/30">
@@ -269,27 +264,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
               </div>
             </div>
 
-            {isAdmin && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-1.5 hover:bg-white/50 rounded-xl transition-colors">
-                    <MoreVertical className="w-4 h-4 text-stone-400" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onViewDetails(property)}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </DropdownMenuItem>
-                  {property.broker_contact && (
-                    <DropdownMenuItem onClick={handleBrokerWhatsApp}>
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Contact Broker
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {/* Admin actions (removed from UI as isAdmin prop is no longer passed) */}
           </div>
         </div>
 
@@ -301,16 +276,6 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
               {property.ai_title}
             </h3>
           )}
-
-          {/* Price */}
-          <div className="mb-5">
-            <p className="text-4xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-2">
-              {formatPrice()}
-            </p>
-            <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">
-              {property.listing_type} • {property.property_type || "Apartment"}
-            </p>
-          </div>
 
           {/* AI Description - NO TRUNCATION (4 lines max) */}
           {property.ai_description && (
@@ -391,107 +356,25 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
             </span>
           </div>
 
-          {/* CTA Section */}
-          <div className="space-y-3">
-            {/* Primary CTAs - Both Agents */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleWhatsApp("Vishal");
-                }}
-                className="bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-sm font-bold h-11 rounded-2xl flex flex-col items-center justify-center py-1 gap-0"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-xs">Vishal</span>
-              </Button>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleWhatsApp("Kapil");
-                }}
-                className="bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-sm font-bold h-11 rounded-2xl flex flex-col items-center justify-center py-1 gap-0"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-xs">Kapil</span>
-              </Button>
+          {/* Price & Action Button */}
+          <div className="flex items-center justify-between mt-6 pt-5 border-t border-[#F7F7F7]">
+            <div>
+              <p className="text-xs text-[#3B3B3B]/60 mb-1 uppercase tracking-wide">
+                {property.listing_type === "Rent" ? "Rent/Month" : "Price"}
+              </p>
+              <p className="text-2xl font-black text-[#111111] tracking-tight">
+                {formatPrice()}
+              </p>
             </div>
-
-            {/* Secondary Actions */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleShare();
-                }}
-                variant="outline"
-                size="sm"
-                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
-              >
-                <Share2 className="w-3.5 h-3.5 mr-1.5" />
-                Share
-              </Button>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleInstagram();
-                }}
-                variant="outline"
-                size="sm"
-                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
-              >
-                <Instagram className="w-3.5 h-3.5 mr-1.5" />
-                Instagram
-              </Button>
-            </div>
-
-            {/* View Details Button */}
             <Button
               onClick={handleViewDetails}
-              variant="outline"
-              size="sm"
-              className="w-full border-2 border-amber-500 text-amber-700 hover:bg-amber-50 font-semibold rounded-xl"
+              className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold h-11 px-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 group-hover:scale-105"
             >
-              <Eye className="w-3.5 h-3.5 mr-1.5" />
-              View Full Details
+              View Details
+              <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
-
-          {/* Expat Friendly Tag */}
-          {property.veg_nonveg === "Both" && (
-            <div className="mt-4 text-center">
-              <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/30 text-xs rounded-full">
-                🌍 Expat Friendly
-              </Badge>
-            </div>
-          )}
         </div>
-
-        {/* Broker Reference Panel (Admin Only) */}
-        {isAdmin && property.broker_contact && (
-          <div className="px-6 pb-6">
-            <div className="bg-stone-100/80 rounded-2xl p-3 border border-stone-200/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-stone-500 mb-1">Ref Broker</p>
-                  <p className="text-sm font-bold text-stone-900">
-                    {property.broker_id ? `Broker #${property.broker_id.slice(0, 8)}` : 'Unknown'}
-                  </p>
-                  <p className="text-xs text-stone-600 mt-1">{property.broker_contact}</p>
-                </div>
-                <Button
-                  onClick={handleBrokerWhatsApp}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs border-stone-300 rounded-xl"
-                >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  Contact
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Branding Footer */}
         <div className="px-6 pb-5">
