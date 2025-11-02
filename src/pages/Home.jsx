@@ -2,13 +2,11 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import PropertyCard from "../components/property/PropertyCard";
 import { 
-  Sparkles, Search, MessageCircle, ArrowRight
+  Sparkles, Search, MessageCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SEO from "../components/SEO";
@@ -44,20 +42,6 @@ export default function Home() {
     const whatsappURL = base44.agents.getWhatsAppConnectURL('chariot_master');
     window.open(whatsappURL, '_blank');
   };
-
-  // Fetch featured properties (max 5)
-  const { data: featuredProperties = [] } = useQuery({
-    queryKey: ['featured-properties'],
-    queryFn: async () => {
-      const properties = await base44.entities.Property.filter(
-        { status: "Active", featured: true, is_duplicate: false },
-        '-created_date',
-        5
-      );
-      return properties;
-    },
-    initialData: [],
-  });
 
   // Get stats
   const { data: properties = [] } = useQuery({
@@ -198,41 +182,6 @@ export default function Home() {
           </div>
         </motion.div>
       </div>
-
-      {/* Featured Properties Section (Below Stats) */}
-      {featuredProperties.length > 0 && (
-        <section className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <Badge className="mb-4 bg-[#FFD300] text-black border-0 text-sm px-4 py-2 rounded-full font-bold">
-                <Sparkles className="w-4 h-4 inline mr-2" />
-                Featured Properties
-              </Badge>
-              <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-5 tracking-tight">
-                Handpicked For You
-              </h2>
-              <p className="text-lg text-gray-600 font-light max-w-2xl mx-auto">
-                Verified listings personally selected by our team
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {featuredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-
-            <div className="text-center">
-              <Link to={createPageUrl("SmartFeed")}>
-                <Button size="lg" className="bg-gradient-to-r from-[#FFD300] to-[#FFC700] hover:from-[#FFC700] hover:to-[#FFB600] text-black font-bold px-8 py-6 rounded-2xl shadow-lg">
-                  View All Properties
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 }
