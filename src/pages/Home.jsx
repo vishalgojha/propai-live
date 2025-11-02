@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -317,31 +318,20 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Benefits */}
+            {/* Right: Benefits for Clients Only */}
             <div className="space-y-6">
               <div className="bg-[#F7F7F7] rounded-2xl p-6">
                 <h4 className="font-bold text-[#111111] mb-3 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-[#FFD300]" />
-                  For Clients
+                  What You Get
                 </h4>
                 <ul className="space-y-2 text-[#3B3B3B]">
                   <li>→ See building context (pricing, activity, vibes) upfront</li>
                   <li>→ Trust the data—it's ranked by broker reliability</li>
                   <li>→ No spam, no duplicates, no bait-and-switch</li>
                   <li>→ Expat Mode: instant curation for international moves</li>
-                </ul>
-              </div>
-
-              <div className="bg-[#F7F7F7] rounded-2xl p-6">
-                <h4 className="font-bold text-[#111111] mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#FFD300]" />
-                  For You (Vishal & Kapil)
-                </h4>
-                <ul className="space-y-2 text-[#3B3B3B]">
-                  <li>→ Spot underpriced listings 15% below market</li>
-                  <li>→ Know which brokers are reliable (Trust Score)</li>
-                  <li>→ Match properties to requirements automatically</li>
-                  <li>→ Building profiles write themselves from data</li>
+                  <li>→ Building Memory: historical pricing & market intelligence</li>
+                  <li>→ Semantic search: understands context, not just keywords</li>
                 </ul>
               </div>
 
