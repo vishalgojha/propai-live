@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -159,15 +158,16 @@ export default function Blogs() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
           {categories.map((cat) => {
             const Icon = cat.icon;
+            const isSelected = selectedCategory === cat.value;
             return (
               <Button
                 key={cat.value}
                 onClick={() => setSelectedCategory(cat.value)}
-                variant={selectedCategory === cat.value ? "default" : "outline"}
-                className={`flex items-center justify-start gap-2 rounded-2xl font-semibold h-12 w-full ${
-                  selectedCategory === cat.value
+                variant={isSelected ? "default" : "outline"}
+                className={`flex items-center justify-start gap-2 rounded-2xl font-semibold h-12 w-full transition-all ${
+                  isSelected
                     ? "bg-[#FFD300] text-black border-0 shadow-md"
-                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7]"
+                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7] text-[#3B3B3B]"
                 }`}
               >
                 <Icon className="w-4 h-4" />
