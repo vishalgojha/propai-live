@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import PropertyCard from "../components/property/PropertyCard";
@@ -14,12 +14,21 @@ export default function SmartFeed() {
     search: "",
     bhk: "all",
     listingType: "all",
-    propertyCategory: "all", // Added propertyCategory filter
+    propertyCategory: "all",
     furnishing: "all",
     minPrice: "",
     maxPrice: ""
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Read search query from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    if (searchParam) {
+      setFilters(prev => ({ ...prev, search: searchParam }));
+    }
+  }, []);
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
@@ -76,7 +85,7 @@ export default function SmartFeed() {
       search: "",
       bhk: "all",
       listingType: "all",
-      propertyCategory: "all", // Added propertyCategory to clearFilters
+      propertyCategory: "all",
       furnishing: "all",
       minPrice: "",
       maxPrice: ""

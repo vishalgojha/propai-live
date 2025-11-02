@@ -93,7 +93,7 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -119,30 +119,37 @@ export default function Home() {
               Whether it's a home or an office, we deliver honest guidance and verified options.
             </p>
 
-            {/* Search Bar - Larger Size */}
-            <div className="max-w-3xl mx-auto mb-10">
-              <div className="flex gap-3 bg-white/10 rounded-3xl p-3 border border-white/20 hover:border-[#FFD300]/50 transition-all backdrop-blur-xl">
-                <div className="relative flex-1">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
-                  <Input
-                    placeholder="Search using AI: 3 BHK in Bandra, sea view, furnished..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-14 bg-white/5 border-0 h-16 text-white placeholder:text-gray-400 text-xl focus-visible:ring-2 focus-visible:ring-[#FFD300]"
-                  />
-                </div>
-                <Button
-                  onClick={handleSearch}
-                  size="lg"
-                  className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-12 h-16 rounded-2xl shadow-xl shadow-[#FFD300]/30 border-0 text-lg"
-                >
-                  Search
-                </Button>
+            {/* Search Bar - Redesigned */}
+            <div className="max-w-2xl mx-auto mb-10">
+              {/* AI Powered Badge */}
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-[#FFD300]" />
+                <span className="text-sm text-gray-300 font-medium">AI-Powered Search</span>
               </div>
+
+              {/* Search Input */}
+              <div className="relative mb-4">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  placeholder="Try: 3 BHK in Bandra, sea view, furnished under 3 cr"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="pl-14 pr-4 bg-white/10 border border-white/20 hover:border-[#FFD300]/50 h-14 text-white placeholder:text-gray-400 text-base focus-visible:ring-2 focus-visible:ring-[#FFD300] rounded-2xl backdrop-blur-xl"
+                />
+              </div>
+
+              {/* Search Button - Below and Smaller */}
+              <Button
+                onClick={handleSearch}
+                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-8 h-12 rounded-xl shadow-lg shadow-[#FFD300]/20 border-0"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Search Properties
+              </Button>
             </div>
 
-            {/* Quick Actions - Updated */}
+            {/* Quick Actions */}
             <div className="flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
