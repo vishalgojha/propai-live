@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, Users } from "lucide-react";
@@ -73,21 +73,26 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, [location.pathname]);
 
-  const navItems = [
-    { name: "Home", icon: Home, path: createPageUrl("Home") },
-    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
-    { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
-    { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
-  ];
+  // Compute navItems based on user state - updates when user changes
+  const navItems = useMemo(() => {
+    const items = [
+      { name: "Home", icon: Home, path: createPageUrl("Home") },
+      { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
+      { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
+      { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
+    ];
 
-  // Only show admin links if user is admin
-  if (!loading && user?.role === 'admin') {
-    navItems.push(
-      { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
-      { name: "Brokers", icon: Users, path: createPageUrl("AdminBrokers") },
-      { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
-    );
-  }
+    // Add admin links if user is admin
+    if (!loading && user?.role === 'admin') {
+      items.push(
+        { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
+        { name: "Brokers", icon: Users, path: createPageUrl("AdminBrokers") },
+        { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
+      );
+    }
+
+    return items;
+  }, [user, loading]);
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
