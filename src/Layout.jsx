@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Zap, BookOpen } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2 } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
