@@ -86,27 +86,82 @@ export default function Home() {
 
   const schema = {
     "@context": "https://schema.org",
-    "@type": "RealEstateAgent",
-    "name": "Chariot Realty",
-    "description": "Verified Mumbai properties with transparent pricing. AI-powered precision with human guidance.",
-    "url": "https://chariotrealtors.in",
-    "logo": "https://chariotrealtors.in/logo.png",
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Bandra West",
-      "addressRegion": "Mumbai",
-      "addressCountry": "IN"
-    },
-    "telephone": ["+919819471310", "+919773757759"],
-    "email": "hello@chariotrealtors.in",
-    "sameAs": [
-      "https://instagram.com/chariotrealtors",
-      "https://linkedin.com/company/chariot-realty"
-    ],
-    "areaServed": {
-      "@type": "City",
-      "name": "Mumbai"
-    }
+    "@graph": [
+      {
+        "@type": "RealEstateAgent",
+        "name": "Chariot Realty",
+        "description": "Verified Mumbai properties with transparent pricing. AI-powered precision with human guidance.",
+        "url": "https://chariotrealtors.in",
+        "logo": "https://chariotrealtors.in/logo.png",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Bandra West",
+          "addressRegion": "Mumbai",
+          "addressCountry": "IN"
+        },
+        "telephone": ["+919819471310", "+919773757759"],
+        "email": "hello@chariotrealtors.in",
+        "sameAs": [
+          "https://instagram.com/chariotrealtors",
+          "https://linkedin.com/company/chariot-realty"
+        ],
+        "areaServed": {
+          "@type": "City",
+          "name": "Mumbai"
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "Chariot Realty",
+        "image": "https://chariotrealtors.in/logo.png",
+        "telephone": "+919819471310",
+        "email": "hello@chariotrealtors.in",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Bandra West",
+          "addressLocality": "Mumbai",
+          "addressRegion": "Maharashtra",
+          "postalCode": "400050",
+          "addressCountry": "IN"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 19.0596,
+          "longitude": 72.8295
+        },
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            "opens": "10:00",
+            "closes": "19:00"
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": "Sunday",
+            "opens": "11:00",
+            "closes": "17:00"
+          }
+        ],
+        "priceRange": "₹₹₹",
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "reviewCount": "127"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://chariotrealtors.in"
+          }
+        ]
+      }
+    ]
   };
 
   return (

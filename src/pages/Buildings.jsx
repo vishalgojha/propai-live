@@ -57,11 +57,31 @@ export default function Buildings() {
     return unit === "crores" ? `₹${price} Cr` : `₹${price}L`;
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://chariotrealtors.in"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Buildings",
+        "item": "https://chariotrealtors.in/buildings"
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <SEO
         title="Mumbai Buildings Directory | Street-Level Intelligence"
         description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
+        schema={breadcrumbSchema}
         canonical="https://chariotrealtors.in/buildings"
       />
       
@@ -92,15 +112,11 @@ export default function Buildings() {
           </div>
           <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
             <p className="text-xs text-[#3B3B3B] mb-1">Total Listings</p>
-            <p className="text-2xl font-bold text-[#111111]">
-              {buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}
-            </p>
+            <p className="text-2xl font-bold text-[#111111]">{buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
             <p className="text-xs text-[#3B3B3B] mb-1">Active Listings</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}
-            </p>
+            <p className="text-2xl font-bold text-blue-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
           </div>
         </div>
 

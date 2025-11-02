@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
-import { 
-  Building2, MapPin, Star, TrendingUp, Home, 
+import {
+  Building2, MapPin, Star, TrendingUp, Home,
   ArrowLeft, Check, Phone, MessageCircle, Sparkles,
   Users, Calendar, Layers
 } from "lucide-react";
@@ -50,21 +50,56 @@ export default function BuildingProfile() {
 
   const buildingSchema = building ? {
     "@context": "https://schema.org",
-    "@type": "Residence",
-    "name": building.name,
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": building.location,
-      "streetAddress": building.pocket || building.location,
-      "addressCountry": "IN"
-    },
-    "description": `${building.name} in ${building.location}. ${building.amenities?.length || 0} amenities, ${building.total_units || 'Multiple'} units.`,
-    "numberOfRooms": building.total_units,
-    "amenityFeature": building.amenities?.map(a => ({
-      "@type": "LocationFeatureSpecification",
-      "name": a
-    })) || [],
-    "image": building.images?.[0]
+    "@graph": [
+      {
+        "@type": "Residence",
+        "name": building.name,
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": building.location,
+          "streetAddress": building.pocket || building.location,
+          "addressCountry": "IN"
+        },
+        "description": `${building.name} in ${building.location}. ${building.amenities?.length || 0} amenities, ${building.total_units || 'Multiple'} units.`,
+        "numberOfRooms": building.total_units,
+        "amenityFeature": building.amenities?.map(a => ({
+          "@type": "LocationFeatureSpecification",
+          "name": a
+        })) || [],
+        "image": building.images?.[0],
+        "aggregateRating": building.management_quality && building.management_quality !== "Unknown" ? {
+          "@type": "AggregateRating",
+          "ratingValue": building.management_quality === "Excellent" ? "5" :
+                        building.management_quality === "Good" ? "4" :
+                        building.management_quality === "Average" ? "3" : "2",
+          "bestRating": "5",
+          "worstRating": "1"
+        } : undefined
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://chariotrealtors.in"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Buildings",
+            "item": "https://chariotrealtors.in/buildings"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": building.name,
+            "item": `https://chariotrealtors.in/building/${building.slug || building.id}`
+          }
+        ]
+      }
+    ]
   } : null;
 
   if (!buildingId) {
@@ -105,7 +140,7 @@ export default function BuildingProfile() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        
+
         {/* Back Button */}
         <Button
           onClick={() => navigate(createPageUrl("Buildings"))}

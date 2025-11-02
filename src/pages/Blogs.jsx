@@ -46,11 +46,31 @@ export default function Blogs() {
 
   const featuredBlog = blogs.find(b => b.featured) || blogs[0];
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://chariotrealtors.in"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Insights",
+        "item": "https://chariotrealtors.in/insights"
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <SEO
         title="Chariot Insights | Mumbai Real Estate Guides & Market Data"
         description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."
+        schema={breadcrumbSchema}
         canonical="https://chariotrealtors.in/insights"
       />
 

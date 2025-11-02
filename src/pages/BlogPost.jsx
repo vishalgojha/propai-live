@@ -92,26 +92,57 @@ export default function BlogPost() {
 
   const articleSchema = blog ? {
     "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": blog.title,
-    "description": blog.excerpt,
-    "image": blog.featured_image || "https://chariotrealtors.in/og-default.jpg",
-    "datePublished": blog.created_date,
-    "dateModified": blog.updated_date || blog.created_date,
-    "author": {
-      "@type": blog.author === "Chariot AI" ? "Organization" : "Person",
-      "name": blog.author || "Chariot Realty"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Chariot Realty",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://chariotrealtors.in/logo.png"
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": blog.title,
+        "description": blog.excerpt,
+        "image": blog.featured_image || "https://chariotrealtors.in/og-default.jpg",
+        "datePublished": blog.created_date,
+        "dateModified": blog.updated_date || blog.created_date,
+        "author": {
+          "@type": blog.author === "Chariot AI" ? "Organization" : "Person",
+          "name": blog.author || "Chariot Realty"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Chariot Realty",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://chariotrealtors.in/logo.png"
+          }
+        },
+        "articleSection": blog.category,
+        "keywords": blog.tags?.join(", "),
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": `https://chariotrealtors.in/insights/${blog.slug}`
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://chariotrealtors.in"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Insights",
+            "item": "https://chariotrealtors.in/insights"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": blog.title,
+            "item": `https://chariotrealtors.in/insights/${blog.slug}`
+          }
+        ]
       }
-    },
-    "articleSection": blog.category,
-    "keywords": blog.tags?.join(", ")
+    ]
   } : null;
 
   if (!slug) {

@@ -93,11 +93,31 @@ export default function SmartFeed() {
     });
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://chariotrealtors.in"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Properties",
+        "item": "https://chariotrealtors.in/properties"
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <SEO
         title="SmartFeed | AI-Curated Mumbai Properties | Chariot Realty"
         description="Browse verified properties in Bandra, Juhu, Andheri & more. SmartFeed delivers AI-curated listings with transparent pricing — no bait-and-switch, ever."
+        schema={breadcrumbSchema}
         canonical="https://chariotrealtors.in/properties"
       />
 

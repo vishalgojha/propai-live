@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,12 +8,79 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  MapPin, Home, Maximize2, Car, MessageCircle, Building2, 
-  Calendar, Armchair, Check, Utensils 
+import {
+  MapPin, Home, Maximize2, Car, MessageCircle, Building2,
+  Calendar, Armchair, Check, Utensils
 } from "lucide-react";
 
 export default function PropertyDetailsModal({ property, isOpen, onClose }) {
+  useEffect(() => {
+    if (property && isOpen) {
+      // Inject property-specific schema
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": property.property_category === "Commercial" ? "CommercialProperty" : "Apartment",
+        "name": property.ai_title || (property.bhk ? `${property.bhk} in ${property.location || 'Mumbai'}` : property.building_name || 'Property'),
+        "description": property.ai_description || property.description || "",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": property.building_name || property.pocket || property.location || "",
+          "addressLocality": property.location || property.location_id || "Mumbai",
+          "addressRegion": "Mumbai", // Assuming Mumbai for now
+          "addressCountry": "IN"
+        },
+        "floorSize": property.carpet_area ? {
+          "@type": "QuantitativeValue",
+          "value": property.carpet_area,
+          "unitCode": "FTK" // Square feet
+        } : undefined,
+        "numberOfRooms": property.bhk ? parseInt(property.bhk.split(' ')[0]) || undefined : undefined,
+        "petsAllowed": (property.veg_nonveg === "Both" || property.veg_nonveg === "Non-Veg Allowed") ? true : undefined,
+        "amenityFeature": property.amenities?.map(a => ({
+          "@type": "LocationFeatureSpecification",
+          "name": a
+        })) || [],
+        "image": property.images?.length > 0 ? property.images : undefined,
+        "offers": {
+          "@type": "Offer",
+          "price": property.price_unit === "crores" ? property.price * 10000000 : property.price * 100000,
+          "priceCurrency": "INR",
+          "availability": property.status === "Active" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": property.price,
+            "priceCurrency": "INR"
+          }
+        }
+      };
+
+      let script = document.querySelector('script[data-property-schema]');
+      if (script) {
+        script.textContent = JSON.stringify(schema);
+      } else {
+        script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.setAttribute('data-property-schema', 'true');
+        script.textContent = JSON.stringify(schema);
+        document.head.appendChild(script);
+      }
+
+      return () => {
+        const existingScript = document.querySelector('script[data-property-schema]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+      };
+    }
+    // Cleanup if modal closes or property becomes null while open
+    return () => {
+      const existingScript = document.querySelector('script[data-property-schema]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, [property, isOpen]);
+
   if (!property) return null;
 
   const formatPrice = () => {
