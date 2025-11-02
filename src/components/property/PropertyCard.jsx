@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -272,6 +273,32 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           </Button>
         )}
       </div>
+
+      {/* Broker Reference Panel (Admin Only) */}
+      {isAdmin && property.broker_contact && (
+        <div className="px-5 pb-5">
+          <div className="bg-[#F7F7F7] rounded-xl p-3 border border-[#3B3B3B]/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#3B3B3B]/60 mb-1">Ref Broker</p>
+                <p className="text-sm font-bold text-[#111111]">
+                  {property.broker_id ? `Broker #${property.broker_id.slice(0, 8)}` : 'Unknown'}
+                </p>
+                <p className="text-xs text-[#3B3B3B] mt-1">{property.broker_contact}</p>
+              </div>
+              <Button
+                onClick={handleBrokerWhatsApp}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+              >
+                <MessageCircle className="w-3 h-3 mr-1" />
+                Contact
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
