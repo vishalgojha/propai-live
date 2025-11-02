@@ -30,7 +30,7 @@ import {
   Users, Building2, MessageCircle, Phone, Mail,
   Star, TrendingUp, Search, Filter, Eye,
   AlertCircle, CheckCircle2, XCircle, Edit2,
-  Download, MapPin, BarChart3, BookOpen, Sparkles
+  Download, MapPin, BarChart3, BookOpen, Sparkles, Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -44,6 +44,9 @@ export default function Admin() {
   
   const queryClient = useQueryClient();
 
+  // Helper to create page URLs - assuming this is a common pattern for routing
+  const createPageUrl = (page) => `/${page.toLowerCase()}`;
+
   // Fetch brokers
   const { data: brokers = [], isLoading: brokersLoading } = useQuery({
     queryKey: ['brokers'],
@@ -55,6 +58,13 @@ export default function Admin() {
   const { data: properties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list(),
+    initialData: [],
+  });
+
+  // Fetch requirements
+  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
   });
 
@@ -269,6 +279,10 @@ export default function Admin() {
               <Users className="w-4 h-4 mr-2" />
               Brokers
             </TabsTrigger>
+            <TabsTrigger value="requirements">
+              <Search className="w-4 h-4 mr-2" />
+              Requirements
+            </TabsTrigger>
             <TabsTrigger value="analytics">
               <BarChart3 className="w-4 h-4 mr-2" />
               Analytics
@@ -478,6 +492,219 @@ export default function Admin() {
                           View {broker.active_listings_count || broker.total_listings_count} Listings
                         </Button>
                       )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Requirements Tab */}
+          <TabsContent value="requirements">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                <p className="text-xs text-[#3B3B3B] mb-1">Total Requirements</p>
+                <p className="text-2xl font-bold text-[#111111]">{requirements.length}</p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {requirements.filter(r => r.status === "Active").length}
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                <p className="text-xs text-[#3B3B3B] mb-1">Matched</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {requirements.filter(r => r.status === "Matched").length}
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                <p className="text-xs text-[#3B3B3B] mb-1">Closed</p>
+                <p className="text-2xl font-bold text-[#3B3B3B]">
+                  {requirements.filter(r => r.status === "Closed").length}
+                </p>
+              </div>
+            </div>
+
+            {/* Requirements List */}
+            {requirementsLoading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-48 w-full rounded-2xl" />
+                ))}
+              </div>
+            ) : requirements.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center border-2 border-[#F7F7F7]">
+                <Search className="w-12 h-12 text-[#3B3B3B] mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-[#111111] mb-2">No requirements yet</h3>
+                <p className="text-[#3B3B3B]">Client requirements will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {requirements.map((req) => (
+                  <motion.div
+                    key={req.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-bold text-[#111111]">{req.client_name}</h3>
+                          <Badge className={
+                            req.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
+                            req.status === "Matched" ? "bg-blue-500/20 text-blue-700 border-blue-500" :
+                            req.status === "Closed" ? "bg-gray-500/20 text-gray-700 border-gray-500" :
+                            "bg-orange-500/20 text-orange-700 border-orange-500"
+                          }>
+                            {req.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-[#3B3B3B]">
+                          {req.client_phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {req.client_phone}
+                            </span>
+                          )}
+                          {req.client_email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3" />
+                              {req.client_email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Requirement Details */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Type</p>
+                        <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
+                          {req.listing_type}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]/60 mb-1">BHK Preference</p>
+                        <p className="text-sm font-bold text-[#111111]">
+                          {req.bhk_preference?.join(", ") || "Any"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Budget</p>
+                        <p className="text-sm font-bold text-[#111111]">
+                          ₹{req.budget_min || 0}{req.budget_unit === "crores" ? " Cr" : "L"} - 
+                          ₹{req.budget_max || 0}{req.budget_unit === "crores" ? " Cr" : "L"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Created</p>
+                        <p className="text-sm text-[#111111]">
+                          {format(new Date(req.created_date), "MMM dd, yyyy")}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Locations */}
+                    {req.preferred_locations && req.preferred_locations.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs text-[#3B3B3B]/60 mb-2">Preferred Locations</p>
+                        <div className="flex flex-wrap gap-2">
+                          {req.preferred_locations.map((loc, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {loc}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preferences */}
+                    <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
+                      <p className="text-xs text-[#3B3B3B]/60 mb-2">Preferences</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {req.furnishing_preference && req.furnishing_preference !== "Any" && (
+                          <Badge variant="outline">{req.furnishing_preference}</Badge>
+                        )}
+                        {req.veg_nonveg && (
+                          <Badge variant="outline">{req.veg_nonveg}</Badge>
+                        )}
+                        {req.parking_required && (
+                          <Badge variant="outline">Parking Required</Badge>
+                        )}
+                        {req.possession_timeline && (
+                          <Badge variant="outline">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {req.possession_timeline}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Amenities */}
+                    {req.amenities_required && req.amenities_required.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs text-[#3B3B3B]/60 mb-2">Required Amenities</p>
+                        <div className="flex flex-wrap gap-2">
+                          {req.amenities_required.map((amenity, idx) => (
+                            <Badge key={idx} className="bg-amber-500/20 text-amber-900 border-amber-500 text-xs">
+                              {amenity}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {req.notes && (
+                      <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                        <p className="text-xs text-blue-600 mb-1">Notes</p>
+                        <p className="text-sm text-[#111111]">{req.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Source Text */}
+                    {req.source_text && (
+                      <div className="mb-4 p-3 bg-stone-50 rounded-xl border border-stone-200">
+                        <p className="text-xs text-stone-500 mb-1">Original Message</p>
+                        <p className="text-sm text-[#111111] italic">{req.source_text}</p>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      {req.client_phone && (
+                        <Button
+                          onClick={() => {
+                            const message = `Hi ${req.client_name}, this is Chariot Realty. We have some properties matching your requirement for ${req.bhk_preference?.join("/")} in ${req.preferred_locations?.join("/")}. Can we share details?`;
+                            window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                          }}
+                          className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                          size="sm"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          WhatsApp Client
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => {
+                          // Navigate to SmartFeed with filters
+                          const searchParams = new URLSearchParams();
+                          if (req.bhk_preference?.[0]) searchParams.set('bhk', req.bhk_preference[0]);
+                          if (req.listing_type) searchParams.set('listingType', req.listing_type);
+                          if (req.preferred_locations?.[0]) searchParams.set('search', req.preferred_locations[0]);
+                          window.location.href = createPageUrl("SmartFeed") + "?" + searchParams.toString();
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Find Matches
+                      </Button>
                     </div>
                   </motion.div>
                 ))}
