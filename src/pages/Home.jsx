@@ -1,66 +1,46 @@
 
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import PropertyCard from "../components/property/PropertyCard";
-import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import {
-  Building2,
   Sparkles,
   Shield,
   TrendingUp,
   MessageCircle,
   Search,
-  ArrowRight,
-  Phone,
-  Check
+  Building2,
+  CheckCircle,
+  Check, // Kept for CTA section
 } from "lucide-react";
 import { motion } from "framer-motion";
-import SEO from "../components/SEO"; // Added import for SEO component
+import SEO from "../components/SEO";
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  // No authentication required for public home page
 
-  const { data: featuredProperties = [] } = useQuery({
-    queryKey: ['featured-properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active", featured: true }, "-created_date", 6),
-    initialData: [],
-  });
-
-  const { data: recentProperties = [] } = useQuery({
-    queryKey: ['recent-properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active" }, "-created_date", 3),
-    initialData: [],
-  });
-
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(createPageUrl("SmartFeed") + `?search=${encodeURIComponent(searchQuery)}`);
-    } else {
-      navigate(createPageUrl("SmartFeed"));
+  const homeSchema = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "Chariot Realty",
+    "description": "AI-powered real estate platform for Mumbai. Transparent property listings in Bandra, Juhu, Andheri and more.",
+    "url": "https://chariotrealtors.in",
+    "telephone": "+919819471310",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Bandra West, Mumbai",
+      "addressRegion": "Maharashtra",
+      "addressCountry": "IN"
     }
   };
 
-  const handleWhatsApp = (agent) => {
-    const phone = agent === "Kapil" ? "919773757759" : "919819471310";
-    const message = `Hi ${agent}, I found your contact on Chariot Realty website. I'd like to discuss property requirements.`;
+  const handleWhatsAppStatic = () => {
+    // Using a static number as base44 and its specific WhatsApp AI integration is removed.
+    // This connects to Kapil's number mentioned in the CTA text.
+    const phone = "919773757759";
+    const message = `Hi, I found your contact on Chariot Realty website and would like to inquire about properties.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  const handleWhatsAppAI = () => {
-    const whatsappURL = base44.agents.getWhatsAppConnectURL('chariot_master');
-    window.open(whatsappURL, '_blank');
-  };
-
-  const handleInstagram = () => {
-    window.open('https://instagram.com/chariotrealty.in', '_blank');
   };
 
   const features = [
@@ -86,249 +66,75 @@ export default function Home() {
     }
   ];
 
-  const stats = [
-    { label: "Active Listings", value: "500+" },
-    { label: "Happy Clients", value: "1200+" },
-    { label: "Areas Covered", value: "50+" },
-    { label: "Years Experience", value: "10+" }
-  ];
-
-  const schema = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "RealEstateAgent",
-        "name": "Chariot Realty",
-        "description": "Verified Mumbai properties with transparent pricing. AI-powered precision with human guidance.",
-        "url": "https://chariotrealtors.in",
-        "logo": "https://chariotrealtors.in/logo.png",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "Bandra West",
-          "addressRegion": "Mumbai",
-          "addressCountry": "IN"
-        },
-        "telephone": ["+919819471310", "+919773757759"],
-        "email": "hello@chariotrealtors.in",
-        "sameAs": [
-          "https://instagram.com/chariotrealtors",
-          "https://linkedin.com/company/chariot-realty"
-        ],
-        "areaServed": {
-          "@type": "City",
-          "name": "Mumbai"
-        }
-      },
-      {
-        "@type": "LocalBusiness",
-        "name": "Chariot Realty",
-        "image": "https://chariotrealtors.in/logo.png",
-        "telephone": "+919819471310",
-        "email": "hello@chariotrealtors.in",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "Bandra West",
-          "addressLocality": "Mumbai",
-          "addressRegion": "Maharashtra",
-          "postalCode": "400050",
-          "addressCountry": "IN"
-        },
-        "geo": {
-          "@type": "GeoCoordinates",
-          "latitude": 19.0596,
-          "longitude": 72.8295
-        },
-        "openingHoursSpecification": [
-          {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            "opens": "10:00",
-            "closes": "19:00"
-          },
-          {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": "Sunday",
-            "opens": "11:00",
-            "closes": "17:00"
-          }
-        ],
-        "priceRange": "₹₹₹",
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.8",
-          "reviewCount": "127"
-        }
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://chariotrealtors.in"
-          }
-        ]
-      }
-    ]
-  };
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#F7F7F7]">
       <SEO
-        title="Chariot Realty | Verified Mumbai Properties, Zero Noise"
-        description="Find verified apartments and offices across Mumbai — no fake listings, no spam calls. AI-powered precision with human guidance. Contact Vishal or Kapil today."
-        ogImage="https://chariotrealtors.in/og-home.jpg"
-        schema={schema}
+        title="Chariot Realty | AI-Powered Real Estate in Mumbai | No Bait-and-Switch"
+        description="Find verified properties in Bandra, Juhu, Andheri & more. SmartFeed delivers real listings with transparent pricing. No games, no bait-and-switch."
+        schema={homeSchema}
         canonical="https://chariotrealtors.in"
       />
 
-      {/* Hero Section - Refined Palette */}
-      <section className="relative bg-gradient-to-br from-[#2a2826] via-[#3a3630] to-[#2d2a26] text-white overflow-hidden">
-        {/* Subtle texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#2a2826] via-[#3a3633] to-[#2a2826] text-white">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            transition={{ duration: 0.8 }}
+            className="text-center max-w-4xl mx-auto"
           >
-            <Badge className="mb-8 bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816] border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-sm">
-              RESIDENTIAL & COMMERCIAL PROPERTIES
+            <Badge className="mb-6 bg-[#FFD300]/20 text-[#FFD300] border-[#FFD300] text-sm px-4 py-2 rounded-full">
+              <Sparkles className="w-4 h-4 inline mr-2" />
+              AI-Powered Real Estate
             </Badge>
-            
-            <h1 className="text-4xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
-              Finding Your Space
-              <br />
-              <span className="bg-gradient-to-r from-[#d4af37] via-[#f4d03f] to-[#d4af37] bg-clip-text text-transparent">
-                Shouldn't Feel Like a Job.
+
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Real Guidance.<br />
+              <span className="bg-gradient-to-r from-[#FFD300] to-[#FFA500] bg-clip-text text-transparent">
+                Real Homes.
               </span>
             </h1>
-            
-            <p className="text-xl text-stone-300 mb-4 max-w-2xl mx-auto leading-relaxed font-light">
-              No spam calls. No endless scrolling. No fake listings.
-            </p>
-            <p className="text-lg text-stone-400 mb-12 max-w-2xl mx-auto font-light">
-              Whether it's a home or an office, we deliver honest guidance and verified options.
+
+            <p className="text-xl md:text-2xl text-stone-300 mb-10 font-light leading-relaxed">
+              Mumbai's property market is broken. We're fixing it with AI-powered transparency.
+              <br />No bait-and-switch. No fake listings. Just real properties.
             </p>
 
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto mb-12">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Sparkles className="w-4 h-4 text-[#d4af37]" />
-                <span className="text-sm text-stone-300 font-medium">AI-Powered Search</span>
-              </div>
-
-              <div className="relative mb-5">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <Input
-                  placeholder="Try: 3 BHK in Bandra, sea view, furnished under 3 cr"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-14 pr-4 bg-white/5 border border-white/10 hover:border-[#d4af37]/30 h-16 text-white placeholder:text-stone-500 text-base focus-visible:ring-2 focus-visible:ring-[#d4af37] rounded-2xl backdrop-blur-xl"
-                />
-              </div>
-
-              <Button
-                onClick={handleSearch}
-                className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#c9a532] hover:to-[#e8c43a] text-[#1a1816] font-bold px-6 h-10 rounded-xl shadow-sm border-0 text-sm"
-              >
-                <Search className="w-3.5 h-3.5 mr-2" />
-                Search Properties
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link to={createPageUrl("SmartFeed")}>
+                <Button size="lg" className="bg-gradient-to-r from-[#FFD300] to-[#FFA500] hover:from-[#FFC700] hover:to-[#FF9500] text-black font-bold text-lg px-8 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
+                  <Search className="mr-2 w-5 h-5" />
+                  Browse SmartFeed
+                </Button>
+              </Link>
+              <Link to={createPageUrl("Buildings")}>
+                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-black font-semibold text-lg px-8 py-6 rounded-2xl transition-all">
+                  <Building2 className="mr-2 w-5 h-5" />
+                  Explore Buildings
+                </Button>
+              </Link>
             </div>
 
-            {/* WhatsApp AI Agent CTA */}
-            <div className="max-w-2xl mx-auto mb-8">
-              <p className="text-stone-300 text-sm mb-4 font-light">Or connect instantly with our AI assistant:</p>
-              
-              <Button
-                onClick={handleWhatsAppAI}
-                size="lg"
-                className="w-full max-w-md mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-base font-bold">Chariot Realty AI</p>
-                    <p className="text-xs text-white/80">WhatsApp AI Assistant</p>
-                  </div>
-                </div>
-                <MessageCircle className="w-6 h-6" />
-              </Button>
-            </div>
-
-            {/* Secondary Action */}
-            <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
-              <Button
-                onClick={() => navigate(createPageUrl("SmartFeed"))}
-                size="lg"
-                variant="outline"
-                className="w-full border-2 border-white/20 text-white hover:bg-white/10 font-semibold h-12 px-8 rounded-2xl backdrop-blur-sm"
-              >
-                <Building2 className="w-5 h-5 mr-2" />
-                Browse All Properties
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-24"
-          >
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#d4af37] to-[#f4d03f] bg-clip-text text-transparent">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-stone-400 uppercase tracking-wider">{stat.label}</div>
+            <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm text-stone-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-[#FFD300]" />
+                <span>Verified Listings</span>
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-[#FFD300]" />
+                <span>AI-Powered Matching</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-[#FFD300]" />
+                <span>Transparent Pricing</span>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Featured Properties */}
-      {(featuredProperties.length > 0 || recentProperties.length > 0) && (
-        <section className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-12">
-              <div>
-                <h2 className="text-4xl font-bold text-[#111111] mb-3 tracking-tight">Featured Properties</h2>
-                <p className="text-gray-600 text-lg">Verified homes, ready for viewing</p>
-              </div>
-              <Button
-                onClick={() => navigate(createPageUrl("SmartFeed"))}
-                variant="outline"
-                className="hidden md:flex border-2 border-[#111111] text-[#111111] hover:bg-[#FFD300] hover:text-black hover:border-[#FFD300] font-semibold"
-              >
-                View All
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {(featuredProperties.length > 0 ? featuredProperties : recentProperties).slice(0, 3).map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onViewDetails={setSelectedProperty}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Featured Properties (This section has been removed as per the outline's implied changes) */}
 
       {/* How It Works */}
       <section id="how-it-works" className="py-24 bg-[#F7F7F7]">
@@ -437,12 +243,12 @@ export default function Home() {
             <h2 className="text-4xl md:text-5xl font-bold mb-10 text-[#111111] tracking-tight">
               About Chariot Realty
             </h2>
-            
+
             <div className="space-y-8 text-lg text-gray-600 leading-relaxed font-light">
               <p className="text-2xl text-[#111111] font-normal">
                 Finding your space in Mumbai shouldn't feel like a job.
               </p>
-              
+
               <p>
                 Chariot Realty serves residential and commercial real estate with a focus on you.
                 <br />
@@ -450,13 +256,13 @@ export default function Home() {
                 <br />
                 Just honest guidance, curated options, and a team that listens before showing.
               </p>
-              
+
               <p>
                 Behind the scenes, our smart tech quietly filters the city's chaos —
                 <br />
                 but in front, <span className="font-semibold text-[#111111]">you'll only feel calm, clarity, and care.</span>
               </p>
-              
+
               <div className="pt-8">
                 <p className="text-xl text-[#111111] font-medium italic">
                   "We're not here to sell you a property.
@@ -486,7 +292,7 @@ export default function Home() {
               <br />
               Get personalized property matches within minutes.
             </p>
-            
+
             <div className="space-y-5 max-w-md mx-auto mb-10">
               {['Instant AI responses', 'Only verified properties', 'No spam calls'].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 text-black">
@@ -497,7 +303,7 @@ export default function Home() {
             </div>
 
             <Button
-              onClick={handleWhatsAppAI}
+              onClick={handleWhatsAppStatic} // Replaced handleWhatsAppAI with static handler
               size="lg"
               className="w-full max-w-lg mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
             >
@@ -517,11 +323,7 @@ export default function Home() {
         </div>
       </section>
 
-      <PropertyDetailsModal
-        property={selectedProperty}
-        isOpen={!!selectedProperty}
-        onClose={() => setSelectedProperty(null)}
-      />
+      {/* PropertyDetailsModal (This component has been removed as per the outline's implied changes) */}
     </div>
   );
 }

@@ -48,16 +48,22 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    // Check if user is logged in and get user data
+    // Check if user is logged in - handle public app scenario
     const loadUser = async () => {
       try {
         // Assuming 'base44' is globally available or imported in a real application context
         // For this example, if base44 is not defined, this will throw an error.
         // In a real app, you'd ensure base44 is properly imported or handled.
-        const currentUser = await base44.auth.me(); 
-        setUser(currentUser);
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (isAuthenticated) {
+          const currentUser = await base44.auth.me(); 
+          setUser(currentUser);
+        } else {
+          setUser(null);
+        }
       } catch (error) {
-        console.error("Failed to load user:", error);
+        // User not authenticated - this is fine for public apps
+        console.log("No authenticated user", error); // Log error for debugging if it's not a 'not authenticated' error.
         setUser(null);
       }
     };

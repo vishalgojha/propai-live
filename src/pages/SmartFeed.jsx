@@ -40,10 +40,12 @@ export default function SmartFeed() {
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.filter({ 
-      status: "Active",
-      is_duplicate: false  // Exclude duplicate properties
-    }, "-created_date"),
+    queryFn: async () => {
+      // Public read - no authentication required due to RLS read: {}
+      const props = await base44.entities.Property.list('-created_date');
+      // Filter on client side for active, non-duplicate properties
+      return props.filter(p => p.status === "Active" && !p.is_duplicate);
+    },
     initialData: [],
   });
 
