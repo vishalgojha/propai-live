@@ -1,527 +1,422 @@
-
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import PropertyCard from "../components/property/PropertyCard";
-import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
-import {
-  Building2,
-  Sparkles,
-  Shield,
-  TrendingUp,
-  MessageCircle,
-  Search,
-  ArrowRight,
-  Phone,
-  Check
+import { 
+  Search, Sparkles, TrendingUp, Shield, Building2, 
+  CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
+  Zap, BookOpen, Globe
 } from "lucide-react";
 import { motion } from "framer-motion";
-import SEO from "../components/SEO"; // Added import for SEO component
+import SEO from "../components/SEO";
 
 export default function Home() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProperty, setSelectedProperty] = useState(null);
 
-  const { data: featuredProperties = [] } = useQuery({
-    queryKey: ['featured-properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active", featured: true }, "-created_date", 6),
-    initialData: [],
-  });
-
-  const { data: recentProperties = [] } = useQuery({
-    queryKey: ['recent-properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active" }, "-created_date", 3),
-    initialData: [],
-  });
-
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(createPageUrl("SmartFeed") + `?search=${encodeURIComponent(searchQuery)}`);
-    } else {
-      navigate(createPageUrl("SmartFeed"));
-    }
-  };
-
-  const handleWhatsApp = (agent) => {
-    const phone = agent === "Kapil" ? "919773757759" : "919819471310";
-    const message = `Hi ${agent}, I found your contact on Chariot Realty website. I'd like to discuss property requirements.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  const handleWhatsAppAI = () => {
-    const whatsappURL = base44.agents.getWhatsAppConnectURL('chariot_master');
-    window.open(whatsappURL, '_blank');
-  };
-
-  const handleInstagram = () => {
-    window.open('https://instagram.com/chariotrealty.in', '_blank');
-  };
-
-  const features = [
-    {
-      icon: Shield,
-      title: "Real Listings Only",
-      description: "Every property is verified by our team. No fake photos, no bait-and-switch"
-    },
-    {
-      icon: MessageCircle,
-      title: "WhatsApp Convenience",
-      description: "No app downloads or endless scrolling. Just simple messaging"
-    },
-    {
-      icon: Sparkles,
-      title: "AI That Helps, Not Hypes",
-      description: "Smart tech quietly supports our human advisors behind the scenes"
-    },
-    {
-      icon: TrendingUp,
-      title: "Personal Advisors",
-      description: "A single point of contact who actually remembers you and your needs"
-    }
-  ];
-
-  const stats = [
-    { label: "Active Listings", value: "500+" },
-    { label: "Happy Clients", value: "1200+" },
-    { label: "Areas Covered", value: "50+" },
-    { label: "Years Experience", value: "10+" }
-  ];
-
-  const schema = {
+  const homeSchema = {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "RealEstateAgent",
-        "name": "Chariot Realty",
-        "description": "Verified Mumbai properties with transparent pricing. AI-powered precision with human guidance.",
-        "url": "https://chariotrealtors.in",
-        "logo": "https://chariotrealtors.in/logo.png",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "Bandra West",
-          "addressRegion": "Mumbai",
-          "addressCountry": "IN"
-        },
-        "telephone": ["+919819471310", "+919773757759"],
-        "email": "hello@chariotrealtors.in",
-        "sameAs": [
-          "https://instagram.com/chariotrealtors",
-          "https://linkedin.com/company/chariot-realty"
-        ],
-        "areaServed": {
-          "@type": "City",
-          "name": "Mumbai"
-        }
-      },
-      {
-        "@type": "LocalBusiness",
-        "name": "Chariot Realty",
-        "image": "https://chariotrealtors.in/logo.png",
-        "telephone": "+919819471310",
-        "email": "hello@chariotrealtors.in",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "Bandra West",
-          "addressLocality": "Mumbai",
-          "addressRegion": "Maharashtra",
-          "postalCode": "400050",
-          "addressCountry": "IN"
-        },
-        "geo": {
-          "@type": "GeoCoordinates",
-          "latitude": 19.0596,
-          "longitude": 72.8295
-        },
-        "openingHoursSpecification": [
-          {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            "opens": "10:00",
-            "closes": "19:00"
-          },
-          {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": "Sunday",
-            "opens": "11:00",
-            "closes": "17:00"
-          }
-        ],
-        "priceRange": "₹₹₹",
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.8",
-          "reviewCount": "127"
-        }
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://chariotrealtors.in"
-          }
-        ]
-      }
-    ]
+    "@type": "RealEstateAgent",
+    "name": "Chariot Realty",
+    "description": "AI-powered real estate platform for Mumbai, delivering transparent, verified property listings without the noise.",
+    "url": "https://chariotrealtors.in",
+    "areaServed": {
+      "@type": "City",
+      "name": "Mumbai"
+    },
+    "priceRange": "$$"
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#F7F7F7]">
       <SEO
-        title="Chariot Realty | Verified Mumbai Properties, Zero Noise"
-        description="Find verified apartments and offices across Mumbai — no fake listings, no spam calls. AI-powered precision with human guidance. Contact Vishal or Kapil today."
-        ogImage="https://chariotrealtors.in/og-home.jpg"
-        schema={schema}
+        title="Chariot Realty | Mumbai Real Estate, Reimagined by AI"
+        description="Find verified Mumbai properties with AI-powered intelligence. Building Memory™, BrokerTrust™ scoring, and Expat Mode — real estate without the noise."
+        schema={homeSchema}
         canonical="https://chariotrealtors.in"
       />
 
-      {/* Hero Section - Refined Palette */}
-      <section className="relative bg-gradient-to-br from-[#2a2826] via-[#3a3630] to-[#2d2a26] text-white overflow-hidden">
-        {/* Subtle texture overlay */}
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 text-white overflow-hidden">
+        {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center max-w-4xl mx-auto"
           >
-            <Badge className="mb-8 bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816] border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-sm">
-              RESIDENTIAL & COMMERCIAL PROPERTIES
+            {/* Badge */}
+            <Badge className="mb-6 bg-[#FFD300] text-black border-0 px-4 py-2 text-sm font-bold inline-flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Powered by Building-Level Intelligence
             </Badge>
-            
-            <h1 className="text-4xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
-              Finding Your Space
+
+            {/* Headline */}
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Mumbai Real Estate,
               <br />
-              <span className="bg-gradient-to-r from-[#d4af37] via-[#f4d03f] to-[#d4af37] bg-clip-text text-transparent">
-                Shouldn't Feel Like a Job.
+              <span className="bg-gradient-to-r from-[#FFD300] via-[#FFC700] to-[#FFD300] bg-clip-text text-transparent">
+                Decoded by AI
               </span>
             </h1>
-            
-            <p className="text-xl text-stone-300 mb-4 max-w-2xl mx-auto leading-relaxed font-light">
-              No spam calls. No endless scrolling. No fake listings.
+
+            {/* Subheadline */}
+            <p className="text-xl md:text-2xl text-stone-300 mb-10 leading-relaxed font-light">
+              Every building has a story. Every street has a pulse. We don't just list properties—
+              <br className="hidden md:block" />
+              <span className="text-[#FFD300] font-medium">we understand them at a contextual level.</span>
             </p>
-            <p className="text-lg text-stone-400 mb-12 max-w-2xl mx-auto font-light">
-              Whether it's a home or an office, we deliver honest guidance and verified options.
-            </p>
 
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto mb-12">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Sparkles className="w-4 h-4 text-[#d4af37]" />
-                <span className="text-sm text-stone-300 font-medium">AI-Powered Search</span>
-              </div>
-
-              <div className="relative mb-5">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <Input
-                  placeholder="Try: 3 BHK in Bandra, sea view, furnished under 3 cr"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-14 pr-4 bg-white/5 border border-white/10 hover:border-[#d4af37]/30 h-16 text-white placeholder:text-stone-500 text-base focus-visible:ring-2 focus-visible:ring-[#d4af37] rounded-2xl backdrop-blur-xl"
-                />
-              </div>
-
-              <Button
-                onClick={handleSearch}
-                className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#c9a532] hover:to-[#e8c43a] text-[#1a1816] font-bold px-6 h-10 rounded-xl shadow-sm border-0 text-sm"
-              >
-                <Search className="w-3.5 h-3.5 mr-2" />
-                Search Properties
-              </Button>
-            </div>
-
-            {/* WhatsApp AI Agent CTA */}
-            <div className="max-w-2xl mx-auto mb-8">
-              <p className="text-stone-300 text-sm mb-4 font-light">Or connect instantly with our AI assistant:</p>
-              
-              <Button
-                onClick={handleWhatsAppAI}
-                size="lg"
-                className="w-full max-w-md mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-base font-bold">Chariot Realty AI</p>
-                    <p className="text-xs text-white/80">WhatsApp AI Assistant</p>
-                  </div>
-                </div>
-                <MessageCircle className="w-6 h-6" />
-              </Button>
-            </div>
-
-            {/* Secondary Action */}
-            <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
+                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold h-14 px-8 rounded-2xl shadow-xl text-lg group"
+              >
+                <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Explore SmartFeed
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("Buildings"))}
+                size="lg"
                 variant="outline"
-                className="w-full border-2 border-white/20 text-white hover:bg-white/10 font-semibold h-12 px-8 rounded-2xl backdrop-blur-sm"
+                className="border-2 border-white/30 hover:bg-white/10 text-white font-semibold h-14 px-8 rounded-2xl backdrop-blur-sm text-lg"
               >
                 <Building2 className="w-5 h-5 mr-2" />
-                Browse All Properties
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-24"
-          >
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#d4af37] to-[#f4d03f] bg-clip-text text-transparent">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-stone-400 uppercase tracking-wider">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Featured Properties */}
-      {(featuredProperties.length > 0 || recentProperties.length > 0) && (
-        <section className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-12">
-              <div>
-                <h2 className="text-4xl font-bold text-[#111111] mb-3 tracking-tight">Featured Properties</h2>
-                <p className="text-gray-600 text-lg">Verified homes, ready for viewing</p>
-              </div>
-              <Button
-                onClick={() => navigate(createPageUrl("SmartFeed"))}
-                variant="outline"
-                className="hidden md:flex border-2 border-[#111111] text-[#111111] hover:bg-[#FFD300] hover:text-black hover:border-[#FFD300] font-semibold"
-              >
-                View All
-                <ArrowRight className="w-4 h-4 ml-2" />
+                Building Intelligence
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {(featuredProperties.length > 0 ? featuredProperties : recentProperties).slice(0, 3).map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onViewDetails={setSelectedProperty}
-                />
-              ))}
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-stone-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
+                <span>AI-Verified Data</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
+                <span>No Bait-and-Switch</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
+                <span>Broker Trust Scoring</span>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </motion.div>
+        </div>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-24 bg-[#F7F7F7]">
+        {/* Wave separator */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 120" className="w-full h-auto">
+            <path
+              fill="#F7F7F7"
+              d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* Why Chariot - The Unfair Advantages */}
+      <section className="py-20 bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-5 tracking-tight">
-              How It Works
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-stone-900 text-white border-0 px-4 py-2">
+              What Makes Us Different
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-4">
+              Your Unfair Advantages
             </h2>
-            <p className="text-lg text-gray-600 font-light max-w-2xl mx-auto">
-              Simple. Personal. Stress-free.
+            <p className="text-xl text-[#3B3B3B] max-w-2xl mx-auto font-light">
+              Features MagicBricks and Housing will never build
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            {[
-              {
-                step: "1",
-                title: "Tell Us What You're Looking For",
-                description: "Just message us on WhatsApp — your budget, area, and what kind of vibe you want. That's all. No apps, no forms."
-              },
-              {
-                step: "2",
-                title: "We Curate & Verify Options",
-                description: "Our team personally reviews listings that actually exist — filtered by your taste, not algorithms gone wild."
-              },
-              {
-                step: "3",
-                title: "You Get Your SmartFeed",
-                description: "A private link with the best matching homes. No clutter. No fake listings. Just real choices."
-              },
-              {
-                step: "4",
-                title: "Visit, Decide, Move In",
-                description: "We handle calls, visits, and coordination. You just focus on finding \"the one.\""
-              }
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl flex items-center justify-center text-2xl font-bold text-black mx-auto mb-6 shadow-sm">
-                  {item.step}
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Building Memory™ */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-3xl p-8 border-2 border-amber-200 hover:shadow-xl transition-all group"
+            >
+              <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Brain className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#111111] mb-3">Building Memory™</h3>
+              <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+                Every building becomes a living knowledge object. Historical pricing, broker activity, tenant profiles—
+                <span className="font-semibold text-amber-700"> auto-learned from parsed data.</span>
+              </p>
+              <div className="space-y-2 text-sm text-[#3B3B3B]">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <span>"Oberoi Sky Heights: 47 listings, avg ₹2.34L for 2BHK, High Activity"</span>
                 </div>
-                <h3 className="text-xl font-bold text-[#111111] mb-4">{item.title}</h3>
-                <p className="text-gray-600 leading-relaxed font-light text-sm">{item.description}</p>
-              </motion.div>
-            ))}
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <span>Contextual summaries generated from message patterns</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <span>Street-level pricing intelligence on autopilot</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* BrokerTrust™ */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 border-2 border-blue-200 hover:shadow-xl transition-all group"
+            >
+              <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Shield className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#111111] mb-3">BrokerTrust™ Layer</h3>
+              <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+                Invisible quality filter. Properties from high-trust brokers rise to the top—
+                <span className="font-semibold text-blue-700"> you see the clean data first.</span>
+              </p>
+              <div className="space-y-2 text-sm text-[#3B3B3B]">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span>Auto-scores brokers: duplicate rate, response time, photo sharing</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span>SmartFeed ranking: Trust Score 85+ properties shown first</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span>Your data quality improves with every parse</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* AI Deals Radar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-8 border-2 border-emerald-200 hover:shadow-xl transition-all group"
+            >
+              <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#111111] mb-3">AI Deals Radar</h3>
+              <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+                Spot underpriced listings, price drops, and hidden matches—
+                <span className="font-semibold text-emerald-700"> before they hit portals.</span>
+              </p>
+              <div className="space-y-2 text-sm text-[#3B3B3B]">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span>Flags properties 15%+ below building avg</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span>Tracks price reductions in real-time</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span>Matches draft properties to active requirements</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Additional Features Row */}
+          <div className="grid md:grid-cols-3 gap-6 mt-8">
+            <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
+              <Globe className="w-10 h-10 text-[#FFD300] mb-4" />
+              <h4 className="font-bold text-[#111111] mb-2">Expat Mode™</h4>
+              <p className="text-sm text-[#3B3B3B]">One-toggle curation: Fully furnished + expat-friendly buildings + good amenities. Built for the global crowd.</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
+              <Eye className="w-10 h-10 text-[#FFD300] mb-4" />
+              <h4 className="font-bold text-[#111111] mb-2">Semantic Search</h4>
+              <p className="text-sm text-[#3B3B3B]">"Modern flat near Pali Hill with balcony" understands context—not just keyword matching. Google-level property discovery.</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
+              <Zap className="w-10 h-10 text-[#FFD300] mb-4" />
+              <h4 className="font-bold text-[#111111] mb-2">Mumbai Street Smarts</h4>
+              <p className="text-sm text-[#3B3B3B]">AI trained on broker lingo, location vibes, and cultural nuances. Pali Hill ≠ Hill Road—we get it.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Why Choose Chariot */}
-      <section className="py-24 bg-white border-y border-gray-100">
+      {/* How It Actually Works */}
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-8 tracking-tight">
-              Why Choose Chariot
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-[#111111] mb-4">
+              The Intelligence Layer
             </h2>
-            <p className="text-xl text-gray-600 font-light max-w-2xl mx-auto">
-              Because you deserve a home search that feels human.
+            <p className="text-xl text-[#3B3B3B] max-w-3xl mx-auto font-light">
+              You see properties. We see patterns, relationships, and context that generic portals miss.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-3xl p-8 border-2 border-gray-100 hover:border-[#FFD300] hover:shadow-lg transition-all"
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                  <feature.icon className="w-7 h-7 text-black" />
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left: Visual */}
+            <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-3xl p-8 text-white">
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-black">1</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1">WhatsApp → Structured Data</h4>
+                    <p className="text-sm text-stone-300">Broker forwards: "2bhk sf mod kit 2cp Pali Hill 80L". AI parses, links to building, extracts intelligence.</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-4 text-[#111111]">{feature.title}</h3>
-                <p className="text-[#3B3B3B] text-sm leading-relaxed font-light">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
 
-          <div className="text-center mt-16">
-            <div className="inline-block bg-[#FFD300] text-black px-8 py-4 rounded-3xl">
-              <p className="text-lg font-bold">
-                Chariot Realty — Where AI ends, and actual care begins.
-              </p>
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-black">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1">Building Becomes Knowledge Node</h4>
+                    <p className="text-sm text-stone-300">"Raheja Classique" accumulates context: pricing, broker trust, tenant profiles, amenities—self-learning.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-black">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1">SmartFeed Ranks by Trust</h4>
+                    <p className="text-sm text-stone-300">High-trust brokers rise. Duplicates hidden. You see the clean, curated feed—decades ahead of MagicBricks.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-black">4</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1">Intelligence Compounds</h4>
+                    <p className="text-sm text-stone-300">Every parse enriches the system. Building Memory™ grows. Deals Radar gets smarter. Your advantage scales.</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* About Chariot */}
-      <section className="py-24 bg-[#F7F7F7]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-10 text-[#111111] tracking-tight">
-              About Chariot Realty
-            </h2>
-            
-            <div className="space-y-8 text-lg text-gray-600 leading-relaxed font-light">
-              <p className="text-2xl text-[#111111] font-normal">
-                Finding your space in Mumbai shouldn't feel like a job.
-              </p>
-              
-              <p>
-                Chariot Realty serves residential and commercial real estate with a focus on you.
-                <br />
-                No spam calls, no endless scrolling, no fake listings.
-                <br />
-                Just honest guidance, curated options, and a team that listens before showing.
-              </p>
-              
-              <p>
-                Behind the scenes, our smart tech quietly filters the city's chaos —
-                <br />
-                but in front, <span className="font-semibold text-[#111111]">you'll only feel calm, clarity, and care.</span>
-              </p>
-              
-              <div className="pt-8">
-                <p className="text-xl text-[#111111] font-medium italic">
-                  "We're not here to sell you a property.
-                  <br />
-                  We're here to help you find your space in the city."
+            {/* Right: Benefits */}
+            <div className="space-y-6">
+              <div className="bg-[#F7F7F7] rounded-2xl p-6">
+                <h4 className="font-bold text-[#111111] mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-[#FFD300]" />
+                  For Clients
+                </h4>
+                <ul className="space-y-2 text-[#3B3B3B]">
+                  <li>→ See building context (pricing, activity, vibes) upfront</li>
+                  <li>→ Trust the data—it's ranked by broker reliability</li>
+                  <li>→ No spam, no duplicates, no bait-and-switch</li>
+                  <li>→ Expat Mode: instant curation for international moves</li>
+                </ul>
+              </div>
+
+              <div className="bg-[#F7F7F7] rounded-2xl p-6">
+                <h4 className="font-bold text-[#111111] mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-[#FFD300]" />
+                  For You (Vishal & Kapil)
+                </h4>
+                <ul className="space-y-2 text-[#3B3B3B]">
+                  <li>→ Spot underpriced listings 15% below market</li>
+                  <li>→ Know which brokers are reliable (Trust Score)</li>
+                  <li>→ Match properties to requirements automatically</li>
+                  <li>→ Building profiles write themselves from data</li>
+                </ul>
+              </div>
+
+              <div className="bg-gradient-to-r from-[#FFD300] to-[#FFC700] rounded-2xl p-6">
+                <h4 className="font-bold text-black mb-2">The Moat</h4>
+                <p className="text-sm text-black/80">
+                  MagicBricks has listings. You have <span className="font-bold">living intelligence</span>. That's not a feature gap—it's a decade gap.
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof / Trust Section */}
+      <section className="py-20 bg-[#F7F7F7]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-[#111111] mb-6">
+            Built in Mumbai. Powered by AI. Driven by People.
+          </h2>
+          <p className="text-lg text-[#3B3B3B] mb-8 leading-relaxed max-w-3xl mx-auto">
+            We're not a portal dumping 10,000 listings. We're a boutique consultancy that uses AI to understand Mumbai real estate at a <span className="font-semibold text-[#111111]">contextual, street-level depth</span>—then shows you the 3 properties that actually fit.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => navigate(createPageUrl("SmartFeed"))}
+              size="lg"
+              className="bg-[#111111] hover:bg-[#FFD300] hover:text-black text-white font-bold h-14 px-8 rounded-2xl"
+            >
+              <Search className="w-5 h-5 mr-2" />
+              Browse Properties
+            </Button>
+            <Button
+              onClick={() => navigate(createPageUrl("Blogs"))}
+              size="lg"
+              variant="outline"
+              className="border-2 border-[#111111] hover:bg-[#111111] hover:text-white font-semibold h-14 px-8 rounded-2xl"
+            >
+              <BookOpen className="w-5 h-5 mr-2" />
+              Read Insights
+            </Button>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-[#FFD300] to-[#FFC700]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-black" />
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">
-                Ready to Start?
-              </h2>
-            </div>
-            <p className="text-black/70 text-xl mb-10 leading-relaxed font-medium">
-              Connect with our AI assistant on WhatsApp.
-              <br />
-              Get personalized property matches within minutes.
-            </p>
-            
-            <div className="space-y-5 max-w-md mx-auto mb-10">
-              {['Instant AI responses', 'Only verified properties', 'No spam calls'].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 text-black">
-                  <Check className="w-5 h-5 flex-shrink-0 font-bold" />
-                  <span className="font-semibold">{item}</span>
-                </div>
-              ))}
-            </div>
-
+      <section className="py-16 bg-gradient-to-br from-stone-900 to-stone-800 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready to See the Difference?
+          </h2>
+          <p className="text-xl text-stone-300 mb-8">
+            Start with SmartFeed or connect with Vishal & Kapil on WhatsApp
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={handleWhatsAppAI}
+              onClick={() => window.open('https://wa.me/919819471310?text=Hi%20Vishal,%20I%20found%20Chariot%20Realty%20and%20would%20love%20to%20explore%20properties%20in%20Mumbai', '_blank')}
               size="lg"
-              className="w-full max-w-lg mx-auto bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-16 px-8 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-4"
+              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl"
             >
-              <MessageCircle className="w-6 h-6" />
-              <div className="text-left">
-                <p className="text-lg font-bold">Chariot Realty AI</p>
-                <p className="text-xs text-white/80">WhatsApp AI Assistant</p>
-              </div>
+              <MessageCircle className="w-5 h-5 mr-2" />
+              WhatsApp Vishal
             </Button>
-
-            <div className="mt-8">
-              <p className="text-sm text-black/60">
-                Need human help? Call Vishal (+91 98194 71310) or Kapil (+91 97737 57759)
-              </p>
-            </div>
+            <Button
+              onClick={() => window.open('https://wa.me/919773757759?text=Hi%20Kapil,%20I%20found%20Chariot%20Realty%20and%20would%20love%20to%20explore%20properties%20in%20Mumbai', '_blank')}
+              size="lg"
+              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl"
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              WhatsApp Kapil
+            </Button>
           </div>
         </div>
       </section>
-
-      <PropertyDetailsModal
-        property={selectedProperty}
-        isOpen={!!selectedProperty}
-        onClose={() => setSelectedProperty(null)}
-      />
     </div>
   );
 }
