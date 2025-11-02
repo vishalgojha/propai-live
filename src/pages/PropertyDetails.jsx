@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,29 +29,10 @@ export default function PropertyDetails() {
   const propertyId = urlParams.get('id');
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
-  const [user, setUser] = React.useState(null);
-
-  // Check authentication for view tracking
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          const currentUser = await base44.auth.me();
-          setUser(currentUser);
-        }
-      } catch (error) {
-        // Not authenticated - fine for public viewing
-        setUser(null);
-      }
-    };
-    checkAuth();
-  }, []);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', propertyId],
     queryFn: async () => {
-      // Public read - no authentication required
       const properties = await base44.entities.Property.list();
       return properties.find(p => p.id === propertyId);
     },
@@ -60,32 +40,15 @@ export default function PropertyDetails() {
   });
 
   const incrementViewsMutation = useMutation({
-    mutationFn: async (propId) => {
-      // Only increment if user is authenticated (admin)
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          return await base44.entities.Property.update(propId, { 
-            views_count: (property?.views_count || 0) + 1 
-          });
-        } else {
-          // If not authenticated, we don't attempt to update views.
-          // This prevents unauthorized users from incrementing views.
-          console.log("Cannot increment views - admin access required or not logged in.");
-          return null; // Explicitly return null or undefined if no update is performed
-        }
-      } catch (error) {
-        console.error("Error incrementing views:", error);
-        return null; // Return null on error
-      }
-    },
+    mutationFn: (propId) => base44.entities.Property.update(propId, { 
+      views_count: (property?.views_count || 0) + 1 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
     },
   });
 
   useEffect(() => {
-    // Track view only once per session
     if (property && !sessionStorage.getItem(`viewed-property-${property.id}`)) {
       incrementViewsMutation.mutate(property.id);
       sessionStorage.setItem(`viewed-property-${property.id}`, 'true');

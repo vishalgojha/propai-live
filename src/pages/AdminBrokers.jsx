@@ -54,9 +54,6 @@ export default function AdminBrokers() {
   const [brokerAnalytics, setBrokerAnalytics] = useState(null);
   const [conversationText, setConversationText] = useState("");
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const BROKERS_PER_PAGE = 10;
-
   const queryClient = useQueryClient();
 
   // Check if user is admin
@@ -114,17 +111,6 @@ export default function AdminBrokers() {
 
     return matchesSearch && matchesStatus;
   });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredBrokers.length / BROKERS_PER_PAGE);
-  const startIndex = (currentPage - 1) * BROKERS_PER_PAGE;
-  const endIndex = startIndex + BROKERS_PER_PAGE;
-  const paginatedBrokers = filteredBrokers.slice(startIndex, endIndex);
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const getBrokerProperties = (brokerId) => {
     return allProperties.filter(p => p.broker_id === brokerId);
@@ -794,213 +780,162 @@ export default function AdminBrokers() {
             <p className="text-[#3B3B3B]">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <>
-            <div className="space-y-4 mb-8">
-              {paginatedBrokers.map((broker) => {
-                const brokerProps = getBrokerProperties(broker.id);
-                
-                return (
-                  <motion.div
-                    key={broker.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">
-                          <Users className="w-6 h-6 text-[#FFD300]" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-[#111111]">{broker.name}</h3>
-                            {broker.verified && (
-                              <Badge className="bg-green-500/20 text-green-700 border-green-500">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Verified
-                              </Badge>
-                            )}
-                          </div>
-                          {broker.custom_id && (
-                            <p className="text-xs text-[#3B3B3B]/60 font-mono mb-2">{broker.custom_id}</p>
-                          )}
-                          {broker.agency_name && (
-                            <p className="text-sm text-[#3B3B3B] mb-2">{broker.agency_name}</p>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {broker.status}
-                            </Badge>
-                            {broker.response_time && broker.response_time !== "Unknown" && (
-                              <Badge variant="outline" className="text-xs">
-                                {broker.response_time} Response
-                              </Badge>
-                            )}
-                            {broker.reliability_rating && (
-                              <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
-                                <Star className="w-3 h-3 mr-1" fill="currentColor" />
-                                {broker.reliability_rating}/5
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
+          <div className="space-y-4">
+            {filteredBrokers.map((broker) => {
+              const brokerProps = getBrokerProperties(broker.id);
+              
+              return (
+                <motion.div
+                  key={broker.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">
+                        <Users className="w-6 h-6 text-[#FFD300]" />
                       </div>
-                      <Button
-                        onClick={() => {
-                          setSelectedBroker(broker);
-                          setEditModalOpen(true);
-                        }}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Contact</p>
-                        <div className="flex items-center gap-1 text-sm text-[#111111]">
-                          <Phone className="w-3 h-3" />
-                          {broker.phone}
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-bold text-[#111111]">{broker.name}</h3>
+                          {broker.verified && (
+                            <Badge className="bg-green-500/20 text-green-700 border-green-500">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Verified
+                            </Badge>
+                          )}
                         </div>
-                        {broker.alternate_phones && broker.alternate_phones.length > 0 && (
-                          <div className="text-xs text-[#3B3B3B]/60 mt-1">
-                            +{broker.alternate_phones.length} alt number{broker.alternate_phones.length > 1 ? 's' : ''}
-                          </div>
+                        {broker.custom_id && (
+                          <p className="text-xs text-[#3B3B3B]/60 font-mono mb-2">{broker.custom_id}</p>
                         )}
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Total Listings</p>
-                        <p className="text-sm font-bold text-[#111111]">{broker.total_listings_count || 0}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Active Listings</p>
-                        <p className="text-sm font-bold text-green-600">{brokerProps.length}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Last Activity</p>
-                        <p className="text-sm text-[#111111]">
-                          {broker.last_activity ? format(new Date(broker.last_activity), "MMM dd, yyyy") : "Never"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {broker.areas_covered && broker.areas_covered.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-xs text-[#3B3B3B]/60 mb-2">Areas Covered</p>
+                        {broker.agency_name && (
+                          <p className="text-sm text-[#3B3B3B] mb-2">{broker.agency_name}</p>
+                        )}
                         <div className="flex flex-wrap gap-2">
-                          {broker.areas_covered.map((area, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {area}
+                          <Badge variant="outline" className="text-xs">
+                            {broker.status}
+                          </Badge>
+                          {broker.response_time && broker.response_time !== "Unknown" && (
+                            <Badge variant="outline" className="text-xs">
+                              {broker.response_time} Response
                             </Badge>
-                          ))}
+                          )}
+                          {broker.reliability_rating && (
+                            <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
+                              <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                              {broker.reliability_rating}/5
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
+                    <Button
+                      onClick={() => {
+                        setSelectedBroker(broker);
+                        setEditModalOpen(true);
+                      }}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
 
-                    {broker.notes && (
-                      <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Notes</p>
-                        <p className="text-sm text-[#111111]">{broker.notes}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Contact</p>
+                      <div className="flex items-center gap-1 text-sm text-[#111111]">
+                        <Phone className="w-3 h-3" />
+                        {broker.phone}
                       </div>
-                    )}
+                      {broker.alternate_phones && broker.alternate_phones.length > 0 && (
+                        <div className="text-xs text-[#3B3B3B]/60 mt-1">
+                          +{broker.alternate_phones.length} alt number{broker.alternate_phones.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Total Listings</p>
+                      <p className="text-sm font-bold text-[#111111]">{broker.total_listings_count || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Active Listings</p>
+                      <p className="text-sm font-bold text-green-600">{brokerProps.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Last Activity</p>
+                      <p className="text-sm text-[#111111]">
+                        {broker.last_activity ? format(new Date(broker.last_activity), "MMM dd, yyyy") : "Never"}
+                      </p>
+                    </div>
+                  </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => handleWhatsApp(broker)}
-                        className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
-                        size="sm"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp {brokerProps.length > 0 && `(${brokerProps.length})`}
-                      </Button>
-                      
-                      <Button
-                        onClick={() => handleGenerateFollowUp(broker)}
-                        className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold"
-                        size="sm"
-                        disabled={followUpLoading}
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        AI Follow-Up
-                      </Button>
+                  {broker.areas_covered && broker.areas_covered.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-[#3B3B3B]/60 mb-2">Areas Covered</p>
+                      <div className="flex flex-wrap gap-2">
+                        {broker.areas_covered.map((area, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {area}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
+                  {broker.notes && (
+                    <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
+                      <p className="text-xs text-[#3B3B3B]/60 mb-1">Notes</p>
+                      <p className="text-sm text-[#111111]">{broker.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => handleWhatsApp(broker)}
+                      className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                      size="sm"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      WhatsApp {brokerProps.length > 0 && `(${brokerProps.length})`}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleGenerateFollowUp(broker)}
+                      className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold"
+                      size="sm"
+                      disabled={followUpLoading}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      AI Follow-Up
+                    </Button>
+
+                    <Button
+                      onClick={() => handleAnalyzeBroker(broker)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Analytics
+                    </Button>
+
+                    {brokerProps.length > 0 && (
                       <Button
-                        onClick={() => handleAnalyzeBroker(broker)}
+                        onClick={() => handleViewListings(broker)}
                         variant="outline"
                         size="sm"
                       >
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Analytics
+                        <Eye className="w-4 h-4 mr-2" />
+                        View {brokerProps.length} Listing{brokerProps.length > 1 ? 's' : ''}
                       </Button>
-
-                      {brokerProps.length > 0 && (
-                        <Button
-                          onClick={() => handleViewListings(broker)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View {brokerProps.length} Listing{brokerProps.length > 1 ? 's' : ''}
-                        </Button>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                  size="sm"
-                >
-                  Previous
-                </Button>
-                
-                <div className="flex gap-2">
-                  {[...Array(totalPages)].map((_, idx) => {
-                    const pageNum = idx + 1;
-                    if (
-                      pageNum === 1 ||
-                      pageNum === totalPages ||
-                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                    ) {
-                      return (
-                        <Button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          className={currentPage === pageNum ? "bg-[#FFD300] text-black" : ""}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                      return <span key={pageNum} className="px-2">...</span>;
-                    }
-                    return null;
-                  })}
-                </div>
-
-                <Button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                  size="sm"
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         )}
       </div>
 

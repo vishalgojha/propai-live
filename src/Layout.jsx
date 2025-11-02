@@ -1,15 +1,14 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, Users } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Set global meta tags
@@ -49,50 +48,36 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    // Check if user is logged in - handle public app scenario
+    // Check if user is logged in and get user data
     const loadUser = async () => {
       try {
         // Assuming 'base44' is globally available or imported in a real application context
         // For this example, if base44 is not defined, this will throw an error.
         // In a real app, you'd ensure base44 is properly imported or handled.
-        const isAuthenticated = await base44.auth.isAuthenticated();
-        if (isAuthenticated) {
-          const currentUser = await base44.auth.me(); 
-          setUser(currentUser);
-        } else {
-          setUser(null);
-        }
+        const currentUser = await base44.auth.me(); 
+        setUser(currentUser);
       } catch (error) {
-        // User not authenticated - this is fine for public apps
-        console.log("No authenticated user"); // Log error for debugging if it's not a 'not authenticated' error.
+        console.error("Failed to load user:", error);
         setUser(null);
-      } finally {
-        setLoading(false);
       }
     };
     loadUser();
   }, [location.pathname]);
 
-  // Compute navItems based on user state - updates when user changes
-  const navItems = useMemo(() => {
-    const items = [
-      { name: "Home", icon: Home, path: createPageUrl("Home") },
-      { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
-      { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
-      { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
-    ];
+  const navItems = [
+    { name: "Home", icon: Home, path: createPageUrl("Home") },
+    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
+    { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
+  ];
 
-    // Add admin links if user is admin
-    if (!loading && user?.role === 'admin') {
-      items.push(
-        { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
-        { name: "Brokers", icon: Users, path: createPageUrl("AdminBrokers") },
-        { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
-      );
-    }
-
-    return items;
-  }, [user, loading]);
+  // Only show admin links if user is admin
+  if (user?.role === 'admin') {
+    navItems.push(
+      { name: "Brokers", icon: Settings, path: createPageUrl("AdminBrokers") },
+      { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">

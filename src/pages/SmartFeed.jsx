@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
-import { Button } from "@/components/ui/button"; // Added import for Button
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -23,8 +22,6 @@ export default function SmartFeed() {
     maxPrice: ""
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const PROPERTIES_PER_PAGE = 12;
 
   // Read filters from URL parameters on mount
   useEffect(() => {
@@ -43,12 +40,10 @@ export default function SmartFeed() {
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
-    queryFn: async () => {
-      // Public read - no authentication required due to RLS read: {}
-      const props = await base44.entities.Property.list('-created_date');
-      // Filter on client side for active, non-duplicate properties
-      return props.filter(p => p.status === "Active" && !p.is_duplicate);
-    },
+    queryFn: () => base44.entities.Property.filter({ 
+      status: "Active",
+      is_duplicate: false  // Exclude duplicate properties
+    }, "-created_date"),
     initialData: [],
   });
 
@@ -107,22 +102,6 @@ export default function SmartFeed() {
       return true;
     });
   }, [properties, filters]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProperties.length / PROPERTIES_PER_PAGE);
-  const startIndex = (currentPage - 1) * PROPERTIES_PER_PAGE;
-  const endIndex = startIndex + PROPERTIES_PER_PAGE;
-  const paginatedProperties = filteredProperties.slice(startIndex, endIndex);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const clearFilters = () => {
     setFilters({
@@ -187,16 +166,11 @@ export default function SmartFeed() {
           allProperties={properties}
         />
 
-        {/* Results Count with Pagination Info */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* Results Count */}
+        <div className="mb-6">
           <p className="text-sm text-[#3B3B3B]">
-            Showing <span className="font-bold text-[#111111]">{startIndex + 1}-{Math.min(endIndex, filteredProperties.length)}</span> of <span className="font-bold text-[#111111]">{filteredProperties.length}</span> {filteredProperties.length === 1 ? 'property' : 'properties'}
+            Showing <span className="font-bold text-[#111111]">{filteredProperties.length}</span> {filteredProperties.length === 1 ? 'property' : 'properties'}
           </p>
-          {totalPages > 1 && (
-            <p className="text-sm text-[#3B3B3B]">
-              Page <span className="font-bold text-[#111111]">{currentPage}</span> of <span className="font-bold text-[#111111]">{totalPages}</span>
-            </p>
-          )}
         </div>
 
         {/* Error State */}
@@ -229,82 +203,20 @@ export default function SmartFeed() {
         )}
 
         {/* Properties Grid */}
-        {!isLoading && paginatedProperties.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {paginatedProperties.map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onViewDetails={setSelectedProperty}
-                />
-              ))}
-            </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex items-center justify-center gap-2">
-                <Button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                  className="rounded-xl"
-                >
-                  Previous
-                </Button>
-                
-                <div className="flex gap-2">
-                  {[...Array(totalPages)].map((_, idx) => {
-                    const pageNum = idx + 1;
-                    // Show first page, last page, current page, and pages around current
-                    if (
-                      pageNum === 1 ||
-                      pageNum === totalPages ||
-                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                    ) {
-                      return (
-                        <Button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          className={`w-10 h-10 rounded-xl ${
-                            currentPage === pageNum ? "bg-[#FFD300] text-black" : ""
-                          }`}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    } else if (
-                      (pageNum === currentPage - 2 && currentPage > 3 && pageNum !== 1) || 
-                      (pageNum === currentPage + 2 && currentPage < totalPages - 2 && pageNum !== totalPages)
-                    ) {
-                      // Only show ellipsis once on each side if applicable
-                      if (
-                        (pageNum === currentPage - 2 && (currentPage - 2 > 1)) ||
-                        (pageNum === currentPage + 2 && (currentPage + 2 < totalPages))
-                      ) {
-                        return <span key={`ellipsis-${pageNum}`} className="px-2 text-sm text-[#3B3B3B]">...</span>;
-                      }
-                    }
-                    return null;
-                  })}
-                </div>
-
-                <Button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                  className="rounded-xl"
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
+        {!isLoading && filteredProperties.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProperties.map((property) => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                onViewDetails={setSelectedProperty}
+              />
+            ))}
+          </div>
         )}
 
         {/* Empty State */}
-        {!isLoading && filteredProperties.length === 0 && ( // Use filteredProperties.length here for empty state
+        {!isLoading && filteredProperties.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-[#F7F7F7] rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-[#3B3B3B]/10">
               <AlertCircle className="w-10 h-10 text-[#3B3B3B]" />
