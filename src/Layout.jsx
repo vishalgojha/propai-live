@@ -1,11 +1,12 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
@@ -29,7 +30,7 @@ export default function Layout({ children, currentPageName }) {
               <span className="text-xl font-bold text-[#111111] tracking-tight">Chariot Realty</span>
             </Link>
 
-            {/* Navigation */}
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -49,17 +50,57 @@ export default function Layout({ children, currentPageName }) {
                 );
               })}
             </nav>
+
+            {/* Mobile Hamburger Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-[#111111]" />
+              ) : (
+                <Menu className="w-6 h-6 text-[#111111]" />
+              )}
+            </Button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <nav className="px-4 py-4 space-y-2">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-semibold ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816]"
+                        : "text-[#3B3B3B] hover:bg-[#F7F7F7]"
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </header>
 
-      {/* Main Content - Add padding for mobile nav */}
-      <main className="min-h-[calc(100vh-4rem)] pb-20 md:pb-0">
+      {/* Main Content - No extra bottom padding needed now */}
+      <main className="min-h-[calc(100vh-4rem)]">
         {children}
       </main>
 
       {/* Enhanced Footer */}
-      <footer className="bg-[#2a2826] text-white py-16 hidden md:block border-t border-stone-700/50">
+      <footer className="bg-[#2a2826] text-white py-16 border-t border-stone-700/50">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-[0.02]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -252,27 +293,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
       </footer>
-
-      {/* Mobile Navigation - Fixed z-index */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-gray-200 z-[100] shadow-2xl safe-area-inset-bottom">
-        <div className="flex items-center justify-around px-2 py-3">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all ${
-                  isActive ? "bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816]" : "text-[#3B3B3B]"
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="text-xs font-bold">{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
     </div>
   );
 }
