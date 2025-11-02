@@ -257,8 +257,8 @@ export default function Home() {
                     <Sparkles className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="text-base font-bold">Connect with WhatsApp AI</p>
-                    <p className="text-xs text-white/80">Instant property search & recommendations</p>
+                    <p className="text-base font-bold">Chariot Realty AI</p>
+                    <p className="text-xs text-white/80">WhatsApp AI Assistant</p>
                   </div>
                 </div>
                 <MessageCircle className="w-6 h-6" />
