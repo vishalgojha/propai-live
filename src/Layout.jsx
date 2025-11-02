@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -15,7 +16,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       {/* Header - White with yellow accents */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#F7F7F7]">
+      <header className="sticky top-0 z-50 bg-white/98 backdrop-blur-xl border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -37,7 +38,7 @@ export default function Layout({ children, currentPageName }) {
                     to={item.path}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold ${
                       isActive
-                        ? "bg-[#FFD300] text-black"
+                        ? "bg-[#FFD300] text-black shadow-md"
                         : "text-[#3B3B3B] hover:bg-[#F7F7F7]"
                     }`}
                   >
@@ -56,8 +57,8 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Footer - Black */}
-      <footer className="bg-[#111111] text-white py-16 hidden md:block">
+      {/* Footer - Dark Gray instead of Pure Black */}
+      <footer className="bg-[#1a1a1a] text-white py-16 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-2">
@@ -96,14 +97,14 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
-          <div className="border-t border-[#3B3B3B] mt-12 pt-8 text-center text-sm text-gray-500">
+          <div className="border-t border-gray-700 mt-12 pt-8 text-center text-sm text-gray-500">
             <p>© 2025 Chariot Realty. All rights reserved • Made with ❤️ in Mumbai</p>
           </div>
         </div>
       </footer>
 
       {/* Mobile Navigation - Yellow accent on active */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-[#F7F7F7] z-50 shadow-2xl">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-gray-200 z-50 shadow-2xl">
         <div className="flex items-center justify-around px-4 py-3">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
