@@ -35,8 +35,8 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
   };
 
   const handleWhatsApp = () => {
-    const locationText = property.location || property.location_id || "Mumbai";
-    const message = `Hi ${getAgentName()}, I'm interested in:\n\n${property.bhk} in ${locationText}\n${property.building_name || ''}\n${formatPrice()}\n\nCan you share more details?`;
+    const title = property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`;
+    const message = `Hi ${getAgentName()}, I'm interested in:\n\n${title}\n${formatPrice()}\n\nCan you share more details?`;
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -55,9 +55,11 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-blue-500" />
-            {property.bhk} in {property.location || property.location_id || "Mumbai"}
+          <DialogTitle className="flex items-center gap-2 text-left">
+            <Building2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            <span className="leading-tight">
+              {property.ai_title || `${property.bhk} in ${property.location || property.location_id || "Mumbai"}`}
+            </span>
           </DialogTitle>
         </DialogHeader>
 
@@ -162,11 +164,13 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           )}
         </div>
 
-        {/* Description */}
-        {property.description && (
+        {/* AI-Generated Description or Fallback */}
+        {(property.ai_description || property.description) && (
           <div className="mb-6">
-            <h4 className="text-sm font-semibold text-slate-900 mb-2">Description</h4>
-            <p className="text-sm text-slate-600 leading-relaxed">{property.description}</p>
+            <h4 className="text-sm font-semibold text-slate-900 mb-2">About this Property</h4>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              {property.ai_description || property.description}
+            </p>
           </div>
         )}
 

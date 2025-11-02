@@ -35,7 +35,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
 
   const handleWhatsApp = () => {
     const locationText = property.location || property.location_id || "Mumbai";
-    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.bhk} in ${locationText}\n${formatPrice()}\n\nCan you share more details and photos?`;
+    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.ai_title || property.bhk + ' in ' + locationText}\n\nCan you share more details and photos?`;
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -57,8 +57,8 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
   };
 
   const copyCard = () => {
-    const locationText = property.location || property.location_id?.split(',')[0] || "";
-    const cardText = `${property.bhk} in ${locationText}\n${property.pocket ? '📍 ' + property.pocket + '\n' : ''}${formatPrice()} | ${property.carpet_area} sqft\n${property.furnishing}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
+    const title = property.ai_title || `${property.bhk} in ${property.location || ''}`;
+    const cardText = `${title}\n\n${property.ai_description || property.description || ''}\n\nView on Chariot Realty:\n${window.location.origin}/property/${property.slug || property.id}`;
     navigator.clipboard.writeText(cardText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -80,7 +80,7 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     >
       {/* Header with Status Badge */}
       <div className="px-4 pt-4 pb-2 flex items-start justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge className={`text-xs font-medium border ${statusColors[property.status] || statusColors.Draft}`}>
             {property.status?.toUpperCase() || "DRAFT"}
           </Badge>
@@ -135,32 +135,37 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <p className="text-xs text-slate-500 font-medium">Photos available on WhatsApp</p>
+          <p className="text-xs text-slate-500 font-medium">📸 Photos available on WhatsApp</p>
         </div>
       )}
 
       {/* Content Section */}
       <div className="p-4">
-        {/* Title and Location - UPDATED HIERARCHY */}
-        <div className="mb-3">
-          <h3 className="text-lg font-bold text-slate-900 mb-1">
-            {property.bhk} in {property.location || property.location_id?.split(',')[0] || "Mumbai"}
+        {/* AI-Generated Title or Fallback */}
+        {property.ai_title ? (
+          <h3 className="text-base font-bold text-slate-900 mb-3 leading-snug">
+            {property.ai_title}
           </h3>
-          {/* Pocket as secondary tag with pin icon */}
-          {property.pocket && (
-            <div className="flex items-center gap-1.5 text-sm text-slate-600">
-              <MapPin className="w-3.5 h-3.5 text-teal-500" />
-              <span>{property.pocket}</span>
-            </div>
-          )}
-          {/* Building name shown only if no pocket */}
-          {!property.pocket && property.building_name && (
-            <div className="flex items-center gap-1.5 text-sm text-slate-600">
-              <MapPin className="w-3.5 h-3.5 text-teal-500" />
-              <span>{property.building_name}</span>
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="mb-3">
+            <h3 className="text-lg font-bold text-slate-900 mb-1">
+              {property.bhk} in {property.location || property.location_id?.split(',')[0] || "Mumbai"}
+            </h3>
+            {property.pocket && (
+              <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                <MapPin className="w-3.5 h-3.5 text-teal-500" />
+                <span>{property.pocket}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* AI-Generated Description Preview */}
+        {property.ai_description && (
+          <p className="text-sm text-slate-600 mb-3 line-clamp-2 leading-relaxed">
+            {property.ai_description}
+          </p>
+        )}
 
         {/* Price */}
         <div className="mb-4">
