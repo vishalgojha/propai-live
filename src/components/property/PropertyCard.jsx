@@ -22,39 +22,10 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     return `₹${property.price}L`;
   };
 
-  const getAgentPhone = () => {
-    if (property.assigned_agent === "Kapil") {
-      return "919773757759";
-    }
-    return "919819471310";
-  };
-
-  const getAgentName = () => {
-    return property.assigned_agent || "Vishal";
-  };
-
-  const getFreshnessTag = () => {
-    const daysOld = Math.floor((Date.now() - new Date(property.created_date).getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysOld === 0) return { text: "Just In", color: "bg-green-500", icon: "🟢" };
-    if (daysOld <= 2) return { text: `${daysOld}d ago`, color: "bg-green-500", icon: "🟢" };
-    if (daysOld <= 7) return { text: `${daysOld}d ago`, color: "bg-orange-500", icon: "🟠" };
-    return { text: "Older Listing", color: "bg-gray-400", icon: "⚪" };
-  };
-
-  const getAISummary = () => {
-    if (property.ai_description) {
-      // Extract first sentence or create short summary
-      const sentences = property.ai_description.split('.');
-      return sentences[0] + '.';
-    }
-    return `${property.bhk} with modern amenities in ${property.location}`;
-  };
-
-  const handleWhatsApp = () => {
+  const handleWhatsApp = (agentName) => {
+    const phone = agentName === "Kapil" ? "919773757759" : "919819471310";
     const locationText = property.location || property.location_id || "Mumbai";
-    const message = `Hi ${getAgentName()}, I saw this property on Chariot Realty SmartFeed.\n\n${property.ai_title || property.bhk + ' in ' + locationText}\n${formatPrice()}\n\nCan you share more details and photos?`;
-    const phone = getAgentPhone();
+    const message = `Hi ${agentName}, I saw this property on Chariot Realty SmartFeed.\n\n${property.ai_title || property.bhk + ' in ' + locationText}\n${formatPrice()}\n\nCan you share more details and photos?`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -104,6 +75,25 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
     Sold: "bg-red-500/20 text-red-900 border-red-300",
     Rented: "bg-green-500/20 text-green-900 border-green-300"
   };
+
+  const getFreshnessTag = () => {
+    const daysOld = Math.floor((Date.now() - new Date(property.created_date).getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysOld === 0) return { text: "Just In", color: "bg-green-500", icon: "🟢" };
+    if (daysOld <= 2) return { text: `${daysOld}d ago`, color: "bg-green-500", icon: "🟢" };
+    if (daysOld <= 7) return { text: `${daysOld}d ago`, color: "bg-orange-500", icon: "🟠" };
+    return { text: "Older Listing", color: "bg-gray-400", icon: "⚪" };
+  };
+
+  const getAISummary = () => {
+    if (property.ai_description) {
+      // Extract first sentence or create short summary
+      const sentences = property.ai_description.split('.');
+      return sentences[0] + '.';
+    }
+    return `${property.bhk} with modern amenities in ${property.location}`;
+  };
+
 
   const freshnessTag = getFreshnessTag();
   const imageCount = property.images?.length || 0;
@@ -298,14 +288,23 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
 
         {/* CTA Section */}
         <div className="space-y-3">
-          {/* Primary CTA */}
-          <Button
-            onClick={handleWhatsApp}
-            className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white gap-2 shadow-sm font-bold h-12 rounded-2xl"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Contact {getAgentName()}
-          </Button>
+          {/* Primary CTAs - Both Agents */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => handleWhatsApp("Vishal")}
+              className="bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-sm font-bold h-11 rounded-2xl flex flex-col items-center justify-center py-1 gap-0"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="text-xs">Vishal</span>
+            </Button>
+            <Button
+              onClick={() => handleWhatsApp("Kapil")}
+              className="bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-sm font-bold h-11 rounded-2xl flex flex-col items-center justify-center py-1 gap-0"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="text-xs">Kapil</span>
+            </Button>
+          </div>
 
           {/* Secondary Actions */}
           <div className="grid grid-cols-2 gap-2">
