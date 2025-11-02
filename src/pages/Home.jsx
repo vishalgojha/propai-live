@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -87,9 +88,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - Bold & Confident */}
-      <section className="relative bg-[#111111] text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
+      {/* Hero Section - Dark Gray instead of Pure Black */}
+      <section className="relative bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] text-white overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -98,7 +99,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <Badge className="mb-6 bg-[#FFD300]/20 text-[#FFD300] border-[#FFD300]/30 text-sm px-4 py-1.5 font-semibold tracking-wide">
+            <Badge className="mb-6 bg-[#FFD300] text-black border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-lg shadow-[#FFD300]/30">
               THE FUTURE OF MUMBAI REAL ESTATE
             </Badge>
             
@@ -108,30 +109,30 @@ export default function Home() {
               Meet <span className="text-[#FFD300]">AI Clarity.</span>
             </h1>
             
-            <p className="text-xl text-gray-400 mb-3 max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="text-xl text-gray-300 mb-3 max-w-2xl mx-auto leading-relaxed font-light">
               Real homes. Real data. Real-time — directly from WhatsApp.
             </p>
-            <p className="text-lg text-gray-500 mb-10 max-w-2xl mx-auto font-light">
+            <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-light">
               No spam, no fake listings. Just verified properties powered by AI.
             </p>
 
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto mb-10">
-              <div className="flex gap-2 bg-[#1a1a1a] rounded-3xl p-2.5 border border-[#3B3B3B] hover:border-[#FFD300]/30 transition-all">
+              <div className="flex gap-2 bg-white/10 rounded-3xl p-2.5 border border-white/20 hover:border-[#FFD300]/50 transition-all backdrop-blur-xl">
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     placeholder="Search Bandra | Juhu | Khar..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-12 bg-transparent border-0 h-14 text-white placeholder:text-gray-500 text-lg focus-visible:ring-0"
+                    className="pl-12 bg-white/5 border-0 h-14 text-white placeholder:text-gray-400 text-lg focus-visible:ring-2 focus-visible:ring-[#FFD300]"
                   />
                 </div>
                 <Button
                   onClick={handleSearch}
                   size="lg"
-                  className="bg-[#FFD300] hover:bg-[#FFD300]/90 text-black font-bold px-10 h-14 rounded-2xl shadow-lg shadow-[#FFD300]/20"
+                  className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-10 h-14 rounded-2xl shadow-xl shadow-[#FFD300]/30 border-0"
                 >
                   Search
                 </Button>
@@ -143,7 +144,7 @@ export default function Home() {
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl"
+                className="bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-lg border-0"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Explore Live Listings
@@ -152,7 +153,7 @@ export default function Home() {
                 onClick={() => handleWhatsApp("Vishal")}
                 size="lg"
                 variant="outline"
-                className="border-[#3B3B3B] text-white hover:bg-[#1a1a1a] hover:border-[#FFD300]/50 h-14 px-8 rounded-2xl font-semibold"
+                className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white h-14 px-8 rounded-2xl font-semibold"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Contact on WhatsApp
@@ -172,7 +173,7 @@ export default function Home() {
                 <div className="text-4xl md:text-5xl font-bold mb-2 text-[#FFD300]">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-500 uppercase tracking-wider">{stat.label}</div>
+                <div className="text-sm text-gray-400 uppercase tracking-wider">{stat.label}</div>
               </div>
             ))}
           </motion.div>
@@ -181,7 +182,7 @@ export default function Home() {
 
       {/* Featured Properties */}
       {(featuredProperties.length > 0 || recentProperties.length > 0) && (
-        <section className="py-20 bg-[#F7F7F7]">
+        <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-10">
               <div>
@@ -191,7 +192,7 @@ export default function Home() {
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 variant="outline"
-                className="hidden md:flex border-[#3B3B3B] hover:bg-[#FFD300] hover:text-black hover:border-[#FFD300] font-semibold"
+                className="hidden md:flex border-2 border-[#111111] text-[#111111] hover:bg-[#FFD300] hover:text-black hover:border-[#FFD300] font-semibold"
               >
                 View All
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -212,7 +213,7 @@ export default function Home() {
       )}
 
       {/* How It Works - 3 Bold Steps */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-4 tracking-tight">
@@ -249,7 +250,7 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="relative text-center"
               >
-                <div className="w-20 h-20 bg-[#FFD300] rounded-3xl flex items-center justify-center text-3xl font-bold text-black mx-auto mb-6 shadow-lg shadow-[#FFD300]/20">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl flex items-center justify-center text-3xl font-bold text-black mx-auto mb-6 shadow-xl shadow-[#FFD300]/30">
                   {item.step}
                 </div>
                 <h3 className="text-2xl font-bold text-[#111111] mb-3">{item.title}</h3>
@@ -265,8 +266,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Chariot Exists - Mission Statement */}
-      <section className="py-20 bg-[#111111] text-white">
+      {/* Why Chariot Exists - White Background */}
+      <section className="py-20 bg-white border-y border-gray-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -274,28 +275,30 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-[#111111]">
               Because Mumbai Real Estate
               <br />
               <span className="text-[#FFD300]">Deserved Better Tech.</span>
             </h2>
             
-            <div className="space-y-6 text-lg text-gray-300 leading-relaxed font-light">
+            <div className="space-y-6 text-lg text-gray-600 leading-relaxed font-light">
               <p>
                 Every broker WhatsApps. Every buyer scrolls listings.
                 <br />
                 But the tools never caught up — messy chats, repeated data, fake numbers, half-baked portals.
               </p>
               
-              <p className="text-xl text-white font-normal">
+              <p className="text-xl text-[#111111] font-normal">
                 So we built Chariot Realty:
                 <br />
                 An AI-driven, WhatsApp-first platform built for Mumbai brokers who mean business.
               </p>
               
-              <p className="text-2xl font-semibold text-[#FFD300]">
-                We don't automate you — we amplify you.
-              </p>
+              <div className="inline-block bg-[#FFD300] text-black px-8 py-4 rounded-3xl my-4">
+                <p className="text-2xl font-bold">
+                  We don't automate you — we amplify you.
+                </p>
+              </div>
               
               <p>
                 Every chat → every property → structured, verified, and ready to share.
@@ -309,8 +312,8 @@ export default function Home() {
       <section className="py-20 bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-[#FFD300]/20 text-black border-[#FFD300] uppercase tracking-wider font-bold">
-              Our Edge
+            <Badge className="mb-4 bg-[#FFD300] text-black border-0 font-bold shadow-lg shadow-[#FFD300]/30">
+              OUR EDGE
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-4 tracking-tight">
               What Makes Us Different
@@ -325,9 +328,9 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-3xl p-8 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                className="bg-white rounded-3xl p-8 border-2 border-gray-100 hover:border-[#FFD300] hover:shadow-xl transition-all"
               >
-                <div className="w-14 h-14 bg-[#FFD300] rounded-2xl flex items-center justify-center mb-6">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-[#FFD300]/20">
                   <feature.icon className="w-7 h-7 text-black" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-[#111111]">{feature.title}</h3>
@@ -370,8 +373,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section - Go Live in 10 Seconds */}
-      <section className="py-20 bg-[#FFD300]">
+      {/* CTA Section - Yellow with Better Contrast */}
+      <section className="py-20 bg-gradient-to-br from-[#FFD300] to-[#FFC700]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -381,7 +384,7 @@ export default function Home() {
                   Go Live in 10 Seconds
                 </h2>
               </div>
-              <p className="text-black/70 text-xl mb-8 leading-relaxed font-light">
+              <p className="text-black/70 text-xl mb-8 leading-relaxed font-medium">
                 Send your next property on WhatsApp.
                 <br />
                 We'll do the rest.
@@ -390,8 +393,8 @@ export default function Home() {
               <div className="space-y-4">
                 {['Instant AI parsing & structuring', 'Professional property cards', 'Direct client connections'].map((item, i) => (
                   <div key={i} className="flex items-center gap-3 text-black">
-                    <Check className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium">{item}</span>
+                    <Check className="w-5 h-5 flex-shrink-0 font-bold" />
+                    <span className="font-semibold">{item}</span>
                   </div>
                 ))}
               </div>
@@ -399,15 +402,15 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Vishal Card */}
-              <div className="bg-black/90 backdrop-blur-xl rounded-3xl p-8 border border-black">
-                <div className="w-16 h-16 bg-[#FFD300] rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 text-black">
+              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-xl">
+                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 text-white">
                   V
                 </div>
-                <h3 className="text-2xl font-bold mb-2 text-white">Vishal</h3>
-                <p className="text-gray-400 text-sm mb-6">Co-Founder & Property Expert</p>
+                <h3 className="text-2xl font-bold mb-2 text-[#111111]">Vishal</h3>
+                <p className="text-gray-600 text-sm mb-6">Co-Founder & Property Expert</p>
                 
                 <div className="space-y-3 mb-6">
-                  <a href="tel:+919819471310" className="flex items-center gap-2 text-sm text-gray-300 hover:text-white">
+                  <a href="tel:+919819471310" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
                     <Phone className="w-4 h-4" />
                     +91 98194 71310
                   </a>
@@ -415,7 +418,7 @@ export default function Home() {
 
                 <Button
                   onClick={() => handleWhatsApp("Vishal")}
-                  className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white font-semibold h-12 rounded-2xl"
+                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-lg border-0"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Send Listing
@@ -423,15 +426,15 @@ export default function Home() {
               </div>
 
               {/* Kapil Card */}
-              <div className="bg-black/90 backdrop-blur-xl rounded-3xl p-8 border border-black">
-                <div className="w-16 h-16 bg-[#FFD300] rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 text-black">
+              <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 shadow-xl">
+                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 text-white">
                   K
                 </div>
-                <h3 className="text-2xl font-bold mb-2 text-white">Kapil</h3>
-                <p className="text-gray-400 text-sm mb-6">Co-Founder & Property Expert</p>
+                <h3 className="text-2xl font-bold mb-2 text-[#111111]">Kapil</h3>
+                <p className="text-gray-600 text-sm mb-6">Co-Founder & Property Expert</p>
                 
                 <div className="space-y-3 mb-6">
-                  <a href="tel:+919773757759" className="flex items-center gap-2 text-sm text-gray-300 hover:text-white">
+                  <a href="tel:+919773757759" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#111111]">
                     <Phone className="w-4 h-4" />
                     +91 97737 57759
                   </a>
@@ -439,7 +442,7 @@ export default function Home() {
 
                 <Button
                   onClick={() => handleWhatsApp("Kapil")}
-                  className="w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white font-semibold h-12 rounded-2xl"
+                  className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-lg border-0"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Send Listing
