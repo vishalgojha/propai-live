@@ -184,13 +184,25 @@ export default function PropertyCard({ property, onViewDetails, isAdmin = false 
           )}
         </div>
       ) : (
-        <div className="relative h-56 bg-gradient-to-br from-stone-200 to-stone-300 flex flex-col items-center justify-center border-y border-stone-200/50">
-          <div className="w-20 h-20 bg-white/80 rounded-3xl flex items-center justify-center mb-3 shadow-sm">
-            <Camera className="w-10 h-10 text-stone-400" />
+        <div className="relative h-56 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-200">
+          {/* Subtle camera badge with tooltip */}
+          <div className="absolute top-3 right-3 group/tooltip">
+            <div className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-stone-200/50">
+              <Camera className="w-4 h-4 text-stone-500" />
+            </div>
+            {/* Tooltip */}
+            <div className="absolute top-full right-0 mt-2 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-10">
+              <div className="bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap">
+                Photos via WhatsApp 📩
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-stone-500 font-semibold">📸 Photos Available on WhatsApp</p>
-          {property.broker_contact && (
-            <p className="text-xs text-stone-400 mt-1">Request from broker</p>
+
+          {property.featured && (
+            <div className="absolute top-3 left-3 bg-[#FFD300] text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5" />
+              Featured
+            </div>
           )}
         </div>
       )}
