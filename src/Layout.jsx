@@ -14,7 +14,8 @@ export default function Layout({ children, currentPageName }) {
     { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
     { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
     { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
-    { name: "Admin", icon: Settings, path: createPageUrl("Admin") }
+    { name: "Brokers", icon: Settings, path: createPageUrl("AdminBrokers") },
+    { name: "Requirements", icon: Settings, path: createPageUrl("AdminRequirements") }
   ];
 
   useEffect(() => {

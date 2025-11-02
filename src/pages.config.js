@@ -5,6 +5,8 @@ import BlogPost from './pages/BlogPost';
 import Admin from './pages/Admin';
 import Buildings from './pages/Buildings';
 import BuildingProfile from './pages/BuildingProfile';
+import AdminBrokers from './pages/AdminBrokers';
+import AdminRequirements from './pages/AdminRequirements';
 import Layout from './Layout.jsx';
 
 
@@ -16,6 +18,8 @@ export const PAGES = {
     "Admin": Admin,
     "Buildings": Buildings,
     "BuildingProfile": BuildingProfile,
+    "AdminBrokers": AdminBrokers,
+    "AdminRequirements": AdminRequirements,
 }
 
 export const pagesConfig = {
