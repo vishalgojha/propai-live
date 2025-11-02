@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,9 +75,45 @@ export default function PropertyDetails() {
     return property?.assigned_agent || "Vishal";
   };
 
+  const getFullPropertyDetails = () => {
+    if (!property) return '';
+    
+    const details = [];
+    
+    // Basic info
+    details.push(`📍 Property: ${property.ai_title || `${property.bhk} in ${property.location}`}`);
+    details.push(`💰 Price: ${formatPrice()}`);
+    details.push(`🏠 Type: ${property.listing_type} | ${property.property_type || 'Apartment'}`);
+    
+    // Location details
+    if (property.building_name) details.push(`🏢 Building: ${property.building_name}`);
+    if (property.location) details.push(`📌 Location: ${property.location}`);
+    if (property.pocket) details.push(`📍 Area: ${property.pocket}`);
+    
+    // Property specs
+    if (property.carpet_area) details.push(`📐 Carpet Area: ${property.carpet_area} sq.ft`);
+    if (property.built_up_area) details.push(`📏 Built-up: ${property.built_up_area} sq.ft`);
+    if (property.furnishing) details.push(`🪑 Furnishing: ${property.furnishing}`);
+    if (property.parking) details.push(`🚗 Parking: ${property.parking}`);
+    if (property.floor) details.push(`🏗️ Floor: ${property.floor}${property.total_floors ? ` of ${property.total_floors}` : ''}`);
+    if (property.possession) details.push(`📅 Possession: ${property.possession}`);
+    if (property.view) details.push(`🌅 View: ${property.view}`);
+    
+    // Additional info
+    if (property.veg_nonveg && property.veg_nonveg !== 'N/A') details.push(`🍽️ Food: ${property.veg_nonveg}`);
+    if (property.amenities && property.amenities.length > 0) {
+      details.push(`✨ Amenities: ${property.amenities.join(', ')}`);
+    }
+    
+    // Reference ID
+    if (property.custom_id) details.push(`🔖 Ref ID: ${property.custom_id}`);
+    
+    return details.join('\n');
+  };
+
   const handleWhatsApp = () => {
-    const title = property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`;
-    const message = `Hi ${getAgentName()}, I'm interested in:\n\n${title}\n${formatPrice()}\n\nCan you share more details?`;
+    const message = `Hi ${getAgentName()}, I'm interested in this property from Chariot Realty:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+    
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -86,8 +123,20 @@ export default function PropertyDetails() {
   };
 
   const getShareText = () => {
-    const title = property.ai_title || `${property.bhk} in ${property.location || ''}`;
-    return `Check out this property: ${title}\n${formatPrice()}\n\nView on Chariot Realty`;
+    const details = [];
+    details.push(`🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}`);
+    details.push(`💰 ${formatPrice()} | ${property.listing_type}`);
+    if (property.building_name) details.push(`🏢 ${property.building_name}`);
+    details.push(`📍 ${property.location}${property.pocket ? `, ${property.pocket}` : ''}`);
+    if (property.carpet_area) details.push(`📐 ${property.carpet_area} sq.ft`);
+    if (property.furnishing) details.push(`🪑 ${property.furnishing}`);
+    if (property.parking) details.push(`🚗 ${property.parking}`);
+    if (property.floor) details.push(`🏗️ Floor ${property.floor}`);
+    
+    details.push('\n📱 View full details on Chariot Realty');
+    details.push('✨ Verified listings | Transparent pricing | No spam');
+    
+    return details.join('\n');
   };
 
   const handleShare = async () => {
@@ -488,8 +537,55 @@ export default function PropertyDetails() {
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Share Property</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#FFD300] rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-black" />
+              </div>
+              Share Property
+            </DialogTitle>
           </DialogHeader>
+          
+          {/* Property Preview in Share Modal */}
+          <div className="bg-[#F7F7F7] rounded-2xl p-4 mb-4">
+            {property.images && property.images.length > 0 && (
+              <img 
+                src={property.images[0]} 
+                alt={property.ai_title || 'Property'} 
+                className="w-full h-32 object-cover rounded-xl mb-3"
+              />
+            )}
+            
+            <h4 className="font-bold text-sm text-[#111111] mb-2">
+              {property.ai_title || `${property.bhk} in ${property.location}`}
+            </h4>
+            
+            <div className="space-y-1 text-xs text-[#3B3B3B]">
+              <p className="font-bold text-lg text-amber-600">{formatPrice()}</p>
+              <p className="text-stone-500">{property.listing_type} • {property.property_type || 'Apartment'}</p>
+              {property.building_name && <p>🏢 {property.building_name}</p>}
+              <p>📍 {getLocationDisplay()}</p>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {property.carpet_area && <p>📐 {property.carpet_area} sq.ft</p>}
+                {property.furnishing && <p>🪑 {property.furnishing}</p>}
+                {property.parking && <p>🚗 {property.parking}</p>}
+                {property.floor && <p>🏗️ Floor {property.floor}</p>}
+              </div>
+            </div>
+            
+            {/* Chariot Branding */}
+            <div className="mt-4 pt-3 border-t border-stone-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-black" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#111111]">Chariot Realty</p>
+                  <p className="text-xs text-[#3B3B3B]">Verified • Transparent • No spam</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-3">
             <Button
               onClick={shareToWhatsApp}
@@ -518,8 +614,14 @@ export default function PropertyDetails() {
               className="w-full justify-start"
             >
               <LinkIcon className="w-5 h-5 mr-3" />
-              {copied ? "Link Copied!" : "Copy Link"}
+              {copied ? "✅ Link Copied!" : "Copy Link"}
             </Button>
+          </div>
+          
+          {/* Share URL Preview */}
+          <div className="bg-stone-50 rounded-lg p-3 mt-2">
+            <p className="text-xs text-stone-500 mb-1">Share link:</p>
+            <p className="text-xs text-stone-700 font-mono break-all">{getShareUrl()}</p>
           </div>
         </DialogContent>
       </Dialog>
