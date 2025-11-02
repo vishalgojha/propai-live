@@ -91,9 +91,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkQzMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2djhIMjR2LThoMTJ6bTAgMjR2OEgyNHYtOGgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
+      {/* Hero Section - Refined Palette */}
+      <section className="relative bg-gradient-to-br from-[#2a2826] via-[#3a3630] to-[#2d2a26] text-white overflow-hidden">
+        {/* Subtle texture overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
           <motion.div
@@ -102,47 +105,46 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <Badge className="mb-8 bg-[#FFD300] text-black border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-sm">
+            <Badge className="mb-8 bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816] border-0 text-sm px-4 py-1.5 font-bold tracking-wide shadow-sm">
               RESIDENTIAL & COMMERCIAL PROPERTIES
             </Badge>
             
             <h1 className="text-4xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
               Finding Your Space
               <br />
-              <span className="text-[#FFD300]">Shouldn't Feel Like a Job.</span>
+              <span className="bg-gradient-to-r from-[#d4af37] via-[#f4d03f] to-[#d4af37] bg-clip-text text-transparent">
+                Shouldn't Feel Like a Job.
+              </span>
             </h1>
             
-            <p className="text-xl text-gray-300 mb-4 max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="text-xl text-stone-300 mb-4 max-w-2xl mx-auto leading-relaxed font-light">
               No spam calls. No endless scrolling. No fake listings.
             </p>
-            <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto font-light">
+            <p className="text-lg text-stone-400 mb-12 max-w-2xl mx-auto font-light">
               Whether it's a home or an office, we deliver honest guidance and verified options.
             </p>
 
-            {/* Search Bar - Redesigned */}
+            {/* Search Bar */}
             <div className="max-w-2xl mx-auto mb-12">
-              {/* AI Powered Badge */}
               <div className="flex items-center justify-center gap-2 mb-4">
-                <Sparkles className="w-4 h-4 text-[#FFD300]" />
-                <span className="text-sm text-gray-300 font-medium">AI-Powered Search</span>
+                <Sparkles className="w-4 h-4 text-[#d4af37]" />
+                <span className="text-sm text-stone-300 font-medium">AI-Powered Search</span>
               </div>
 
-              {/* Search Input */}
               <div className="relative mb-5">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
                 <Input
                   placeholder="Try: 3 BHK in Bandra, sea view, furnished under 3 cr"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-14 pr-4 bg-white/10 border border-white/20 hover:border-[#FFD300]/50 h-16 text-white placeholder:text-gray-400 text-base focus-visible:ring-2 focus-visible:ring-[#FFD300] rounded-2xl backdrop-blur-xl"
+                  className="pl-14 pr-4 bg-white/5 border border-white/10 hover:border-[#d4af37]/30 h-16 text-white placeholder:text-stone-500 text-base focus-visible:ring-2 focus-visible:ring-[#d4af37] rounded-2xl backdrop-blur-xl"
                 />
               </div>
 
-              {/* Search Button */}
               <Button
                 onClick={handleSearch}
-                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-6 h-10 rounded-xl shadow-sm border-0 text-sm"
+                className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#c9a532] hover:to-[#e8c43a] text-[#1a1816] font-bold px-6 h-10 rounded-xl shadow-sm border-0 text-sm"
               >
                 <Search className="w-3.5 h-3.5 mr-2" />
                 Search Properties
@@ -154,7 +156,7 @@ export default function Home() {
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="w-full bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-sm border-0"
+                className="w-full bg-white text-[#1a1816] hover:bg-stone-100 font-semibold h-14 px-8 rounded-2xl shadow-sm border-0"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Browse All Properties
@@ -179,10 +181,10 @@ export default function Home() {
           >
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2 text-[#FFD300]">
+                <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#d4af37] to-[#f4d03f] bg-clip-text text-transparent">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-400 uppercase tracking-wider">{stat.label}</div>
+                <div className="text-sm text-stone-400 uppercase tracking-wider">{stat.label}</div>
               </div>
             ))}
           </motion.div>

@@ -16,14 +16,14 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
-      {/* Header - White with yellow accents */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-white/98 backdrop-blur-xl border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-[#FFD300] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
-                <Zap className="w-6 h-6 text-black fill-black" />
+              <div className="w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
+                <Zap className="w-6 h-6 text-[#1a1816] fill-[#1a1816]" />
               </div>
               <span className="text-xl font-bold text-[#111111] tracking-tight">Chariot Realty</span>
             </Link>
@@ -38,7 +38,7 @@ export default function Layout({ children, currentPageName }) {
                     to={item.path}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold ${
                       isActive
-                        ? "bg-[#FFD300] text-black shadow-md"
+                        ? "bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816] shadow-sm"
                         : "text-[#3B3B3B] hover:bg-[#F7F7F7]"
                     }`}
                   >
@@ -57,21 +57,21 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Footer - Dark Gray instead of Pure Black */}
-      <footer className="bg-[#1a1a1a] text-white py-16 hidden md:block">
+      {/* Footer */}
+      <footer className="bg-[#2a2826] text-white py-16 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-2">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center shadow-lg">
-                  <Zap className="w-7 h-7 text-black fill-black" />
+                <div className="w-12 h-12 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-2xl flex items-center justify-center shadow-sm">
+                  <Zap className="w-7 h-7 text-[#1a1816] fill-[#1a1816]" />
                 </div>
                 <span className="text-2xl font-bold text-white tracking-tight">Chariot Realty</span>
               </div>
-              <p className="text-gray-400 text-sm font-light leading-relaxed">
+              <p className="text-stone-400 text-sm font-light leading-relaxed">
                 Mumbai's trusted partner for residential & commercial properties
               </p>
-              <p className="text-gray-500 text-sm mt-6">
+              <p className="text-stone-500 text-sm mt-6">
                 Mumbai, Maharashtra<br />
                 India
               </p>
@@ -79,30 +79,30 @@ export default function Layout({ children, currentPageName }) {
 
             <div>
               <h4 className="font-bold mb-4 text-white">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-gray-400 font-light">
-                <li><Link to={createPageUrl("Home")} className="hover:text-[#FFD300] transition-colors">Home</Link></li>
-                <li><Link to={createPageUrl("SmartFeed")} className="hover:text-[#FFD300] transition-colors">Search Properties</Link></li>
-                <li><Link to={createPageUrl("Blogs")} className="hover:text-[#FFD300] transition-colors">Insights</Link></li>
-                <li><a href="#" className="hover:text-[#FFD300] transition-colors">Contact Us</a></li>
+              <ul className="space-y-2 text-sm text-stone-400 font-light">
+                <li><Link to={createPageUrl("Home")} className="hover:text-[#d4af37] transition-colors">Home</Link></li>
+                <li><Link to={createPageUrl("SmartFeed")} className="hover:text-[#d4af37] transition-colors">Search Properties</Link></li>
+                <li><Link to={createPageUrl("Blogs")} className="hover:text-[#d4af37] transition-colors">Insights</Link></li>
+                <li><a href="#" className="hover:text-[#d4af37] transition-colors">Contact Us</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-bold mb-4 text-white">Contact</h4>
-              <ul className="space-y-2 text-sm text-gray-400 font-light">
-                <li className="hover:text-[#FFD300] transition-colors">Vishal: +91 98194 71310</li>
-                <li className="hover:text-[#FFD300] transition-colors">Kapil: +91 97737 57759</li>
+              <ul className="space-y-2 text-sm text-stone-400 font-light">
+                <li className="hover:text-[#d4af37] transition-colors">Vishal: +91 98194 71310</li>
+                <li className="hover:text-[#d4af37] transition-colors">Kapil: +91 97737 57759</li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-gray-700 mt-12 pt-8 text-center text-sm text-gray-500">
+          <div className="border-t border-stone-700 mt-12 pt-8 text-center text-sm text-stone-500">
             <p>© 2025 Chariot Realty. All rights reserved • Made with ❤️ in Mumbai</p>
           </div>
         </div>
       </footer>
 
-      {/* Mobile Navigation - Yellow accent on active */}
+      {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-gray-200 z-50 shadow-2xl">
         <div className="flex items-center justify-around px-4 py-3">
           {navItems.map((item) => {
@@ -112,7 +112,7 @@ export default function Layout({ children, currentPageName }) {
                 key={item.name}
                 to={item.path}
                 className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-all ${
-                  isActive ? "bg-[#FFD300] text-black" : "text-[#3B3B3B]"
+                  isActive ? "bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-[#1a1816]" : "text-[#3B3B3B]"
                 }`}
               >
                 <item.icon className="w-5 h-5" />
