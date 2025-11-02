@@ -4,8 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, Sparkles, TrendingUp, Shield, Building2, 
+import {
+  Search, Sparkles, TrendingUp, Shield, Building2,
   CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
   Zap, BookOpen, Globe
 } from "lucide-react";
@@ -73,7 +73,7 @@ export default function Home() {
               <span className="text-[#FFD300] font-medium">we understand them at a contextual level.</span>
             </p>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons - FIXED: Made second button visible on mobile */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
@@ -87,8 +87,7 @@ export default function Home() {
               <Button
                 onClick={() => navigate(createPageUrl("Buildings"))}
                 size="lg"
-                variant="outline"
-                className="border-2 border-white/30 hover:bg-white/10 text-white font-semibold h-14 px-8 rounded-2xl backdrop-blur-sm text-lg"
+                className="bg-white/10 hover:bg-white/20 border-2 border-white/40 text-white font-semibold h-14 px-8 rounded-2xl backdrop-blur-sm text-lg"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Building Intelligence
