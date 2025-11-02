@@ -53,6 +53,12 @@ export default function Home() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleWhatsAppAI = () => {
+    const phone = "919819471310";
+    const message = `Hi, I'd like to use Chariot AI to find properties in Mumbai. Can you help me get started?`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const features = [
     {
       icon: Shield,
@@ -113,47 +119,46 @@ export default function Home() {
               Just honest guidance, curated options, and a team that listens before showing.
             </p>
 
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto mb-10">
-              <div className="flex gap-2 bg-white/10 rounded-3xl p-2.5 border border-white/20 hover:border-[#FFD300]/50 transition-all backdrop-blur-xl">
+            {/* Search Bar - Larger Size */}
+            <div className="max-w-3xl mx-auto mb-10">
+              <div className="flex gap-3 bg-white/10 rounded-3xl p-3 border border-white/20 hover:border-[#FFD300]/50 transition-all backdrop-blur-xl">
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
                   <Input
-                    placeholder="Search Bandra | Juhu | Khar..."
+                    placeholder="Search using AI: 3 BHK in Bandra, sea view, furnished..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-12 bg-white/5 border-0 h-14 text-white placeholder:text-gray-400 text-lg focus-visible:ring-2 focus-visible:ring-[#FFD300]"
+                    className="pl-14 bg-white/5 border-0 h-16 text-white placeholder:text-gray-400 text-xl focus-visible:ring-2 focus-visible:ring-[#FFD300]"
                   />
                 </div>
                 <Button
                   onClick={handleSearch}
                   size="lg"
-                  className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-10 h-14 rounded-2xl shadow-xl shadow-[#FFD300]/30 border-0"
+                  className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold px-12 h-16 rounded-2xl shadow-xl shadow-[#FFD300]/30 border-0 text-lg"
                 >
                   Search
                 </Button>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            {/* Quick Actions - Updated */}
+            <div className="flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-lg border-0"
+                className="w-full bg-white text-black hover:bg-gray-100 font-semibold h-14 px-8 rounded-2xl shadow-lg border-0"
               >
                 <Building2 className="w-5 h-5 mr-2" />
-                Browse Properties
+                Browse All Properties
               </Button>
               <Button
-                onClick={() => handleWhatsApp("Vishal")}
+                onClick={handleWhatsAppAI}
                 size="lg"
-                variant="outline"
-                className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white h-14 px-8 rounded-2xl font-semibold"
+                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-lg border-0"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
-                Message Us
+                Connect via WhatsApp AI
               </Button>
             </div>
           </motion.div>
