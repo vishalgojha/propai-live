@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import {
   Home, Users, AlertCircle, ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
+import SEO from "../components/SEO";
 
 export default function Buildings() {
   const navigate = useNavigate();
@@ -57,6 +59,12 @@ export default function Buildings() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
+      <SEO
+        title="Mumbai Buildings Directory | Street-Level Intelligence"
+        description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
+        canonical="https://chariotrealtors.in/buildings"
+      />
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         
         {/* Header */}

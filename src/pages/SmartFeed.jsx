@@ -8,6 +8,7 @@ import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import SEO from "../components/SEO";
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -94,6 +95,12 @@ export default function SmartFeed() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
+      <SEO
+        title="SmartFeed | AI-Curated Mumbai Properties | Chariot Realty"
+        description="Browse verified properties in Bandra, Juhu, Andheri & more. SmartFeed delivers AI-curated listings with transparent pricing — no bait-and-switch, ever."
+        canonical="https://chariotrealtors.in/properties"
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         {/* Hero Section */}
         <div className="mb-8">

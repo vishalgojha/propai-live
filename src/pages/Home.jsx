@@ -21,6 +21,7 @@ import {
   Check
 } from "lucide-react";
 import { motion } from "framer-motion";
+import SEO from "../components/SEO"; // Added import for SEO component
 
 export default function Home() {
   const navigate = useNavigate();
@@ -50,12 +51,6 @@ export default function Home() {
   const handleWhatsApp = (agent) => {
     const phone = agent === "Kapil" ? "919773757759" : "919819471310";
     const message = `Hi ${agent}, I found your contact on Chariot Realty website. I'd like to discuss property requirements.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  const handleWhatsAppAI = () => {
-    const phone = "919819471310";
-    const message = `Hi, I'd like to use Chariot AI to find properties in Mumbai. Can you help me get started?`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -89,8 +84,41 @@ export default function Home() {
     { label: "Years Experience", value: "10+" }
   ];
 
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "Chariot Realty",
+    "description": "Verified Mumbai properties with transparent pricing. AI-powered precision with human guidance.",
+    "url": "https://chariotrealtors.in",
+    "logo": "https://chariotrealtors.in/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Bandra West",
+      "addressRegion": "Mumbai",
+      "addressCountry": "IN"
+    },
+    "telephone": ["+919819471310", "+919773757759"],
+    "email": "hello@chariotrealtors.in",
+    "sameAs": [
+      "https://instagram.com/chariotrealtors",
+      "https://linkedin.com/company/chariot-realty"
+    ],
+    "areaServed": {
+      "@type": "City",
+      "name": "Mumbai"
+    }
+  };
+
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Chariot Realty | Verified Mumbai Properties, Zero Noise"
+        description="Find verified apartments and offices across Mumbai — no fake listings, no spam calls. AI-powered precision with human guidance. Contact Vishal or Kapil today."
+        ogImage="https://chariotrealtors.in/og-home.jpg"
+        schema={schema}
+        canonical="https://chariotrealtors.in"
+      />
+
       {/* Hero Section - Refined Palette */}
       <section className="relative bg-gradient-to-br from-[#2a2826] via-[#3a3630] to-[#2d2a26] text-white overflow-hidden">
         {/* Subtle texture overlay */}
@@ -151,23 +179,58 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
+            {/* Primary CTAs - Vishal & Kapil */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <p className="text-stone-300 text-sm mb-4 font-light">Or speak directly with our team:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Vishal CTA */}
+                <Button
+                  onClick={() => handleWhatsApp("Vishal")}
+                  size="lg"
+                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-6 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-3"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
+                      V
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold">Chat with Vishal</p>
+                      <p className="text-xs text-white/80">+91 98194 71310</p>
+                    </div>
+                  </div>
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
+
+                {/* Kapil CTA */}
+                <Button
+                  onClick={() => handleWhatsApp("Kapil")}
+                  size="lg"
+                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-6 rounded-2xl shadow-lg border-0 flex items-center justify-center gap-3"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
+                      K
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold">Chat with Kapil</p>
+                      <p className="text-xs text-white/80">+91 97737 57759</p>
+                    </div>
+                  </div>
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Secondary Action */}
+            <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="w-full bg-white text-[#1a1816] hover:bg-stone-100 font-semibold h-14 px-8 rounded-2xl shadow-sm border-0"
+                variant="outline"
+                className="w-full border-2 border-white/20 text-white hover:bg-white/10 font-semibold h-12 px-8 rounded-2xl backdrop-blur-sm"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Browse All Properties
-              </Button>
-              <Button
-                onClick={handleWhatsAppAI}
-                size="lg"
-                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-sm border-0"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Connect via WhatsApp AI
               </Button>
             </div>
           </motion.div>

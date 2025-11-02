@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import SEO from "../components/SEO";
 
 export default function BlogPost() {
   const navigate = useNavigate();
@@ -88,6 +90,30 @@ export default function BlogPost() {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const articleSchema = blog ? {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": blog.title,
+    "description": blog.excerpt,
+    "image": blog.featured_image || "https://chariotrealtors.in/og-default.jpg",
+    "datePublished": blog.created_date,
+    "dateModified": blog.updated_date || blog.created_date,
+    "author": {
+      "@type": blog.author === "Chariot AI" ? "Organization" : "Person",
+      "name": blog.author || "Chariot Realty"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Chariot Realty",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://chariotrealtors.in/logo.png"
+      }
+    },
+    "articleSection": blog.category,
+    "keywords": blog.tags?.join(", ")
+  } : null;
+
   if (!slug) {
     return (
       <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
@@ -117,6 +143,15 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
+      {blog && (
+        <SEO
+          title={`${blog.title} | Chariot Insights`}
+          description={blog.excerpt || blog.title}
+          ogImage={blog.featured_image}
+          schema={articleSchema}
+          canonical={`https://chariotrealtors.in/insights/${blog.slug}`}
+        />
+      )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Back Button */}

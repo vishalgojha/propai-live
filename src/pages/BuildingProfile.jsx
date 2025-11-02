@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ import {
   Users, Calendar, Layers
 } from "lucide-react";
 import { motion } from "framer-motion";
+import SEO from "../components/SEO";
 
 export default function BuildingProfile() {
   const navigate = useNavigate();
@@ -46,6 +48,25 @@ export default function BuildingProfile() {
     window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const buildingSchema = building ? {
+    "@context": "https://schema.org",
+    "@type": "Residence",
+    "name": building.name,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": building.location,
+      "streetAddress": building.pocket || building.location,
+      "addressCountry": "IN"
+    },
+    "description": `${building.name} in ${building.location}. ${building.amenities?.length || 0} amenities, ${building.total_units || 'Multiple'} units.`,
+    "numberOfRooms": building.total_units,
+    "amenityFeature": building.amenities?.map(a => ({
+      "@type": "LocationFeatureSpecification",
+      "name": a
+    })) || [],
+    "image": building.images?.[0]
+  } : null;
+
   if (!buildingId) {
     return (
       <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
@@ -73,6 +94,16 @@ export default function BuildingProfile() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
+      {building && (
+        <SEO
+          title={`${building.name}, ${building.location} | Pricing, Amenities & Listings | Chariot`}
+          description={`${building.name} in ${building.location} — View active listings, average pricing, building amenities & verified reviews. Street-level property intelligence by Chariot Realty.`}
+          ogImage={building.images?.[0]}
+          schema={buildingSchema}
+          canonical={`https://chariotrealtors.in/building/${building.slug || building.id}`}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         
         {/* Back Button */}

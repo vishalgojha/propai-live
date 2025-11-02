@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -7,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  BookOpen, Search, TrendingUp, Home as HomeIcon, 
-  Globe, FileText, Clock, ArrowRight, Sparkles 
+import {
+  BookOpen, Search, TrendingUp, Home as HomeIcon,
+  Globe, FileText, Clock, ArrowRight, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import SEO from "../components/SEO";
 
 export default function Blogs() {
   const navigate = useNavigate();
@@ -35,7 +37,7 @@ export default function Blogs() {
 
   const filteredBlogs = blogs.filter(blog => {
     const matchesCategory = selectedCategory === "all" || blog.category === selectedCategory;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       blog.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blog.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blog.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -46,8 +48,14 @@ export default function Blogs() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
+      <SEO
+        title="Chariot Insights | Mumbai Real Estate Guides & Market Data"
+        description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."
+        canonical="https://chariotrealtors.in/insights"
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        
+
         {/* Hero Section */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
@@ -83,8 +91,8 @@ export default function Blogs() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="h-64 md:h-auto bg-gradient-to-br from-[#FFD300]/20 to-[#FFC700]/20 flex items-center justify-center">
                 {featuredBlog.featured_image ? (
-                  <img 
-                    src={featuredBlog.featured_image} 
+                  <img
+                    src={featuredBlog.featured_image}
                     alt={featuredBlog.title}
                     className="w-full h-full object-cover"
                   />
@@ -172,8 +180,8 @@ export default function Blogs() {
               >
                 <div className="h-48 bg-gradient-to-br from-[#FFD300]/10 to-[#FFC700]/10 flex items-center justify-center">
                   {blog.featured_image ? (
-                    <img 
-                      src={blog.featured_image} 
+                    <img
+                      src={blog.featured_image}
                       alt={blog.title}
                       className="w-full h-full object-cover"
                     />
@@ -181,20 +189,20 @@ export default function Blogs() {
                     <BookOpen className="w-12 h-12 text-[#FFD300]" />
                   )}
                 </div>
-                
+
                 <div className="p-6">
                   <Badge className="mb-3 bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold text-xs">
                     {blog.category}
                   </Badge>
-                  
+
                   <h3 className="text-xl font-bold text-[#111111] mb-2 leading-tight line-clamp-2">
                     {blog.title}
                   </h3>
-                  
+
                   <p className="text-sm text-[#3B3B3B] mb-4 line-clamp-3 leading-relaxed">
                     {blog.excerpt}
                   </p>
-                  
+
                   <div className="flex items-center justify-between text-xs text-[#3B3B3B]/60">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -202,7 +210,7 @@ export default function Blogs() {
                     </span>
                     <span>{format(new Date(blog.created_date), "MMM dd")}</span>
                   </div>
-                  
+
                   {blog.ai_generated && (
                     <Badge variant="outline" className="mt-3 text-xs border-[#3B3B3B]/20">
                       <Sparkles className="w-3 h-3 mr-1" />

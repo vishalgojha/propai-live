@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X } from "lucide-react";
@@ -15,6 +16,43 @@ export default function Layout({ children, currentPageName }) {
     { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
     { name: "Admin", icon: Settings, path: createPageUrl("Admin") }
   ];
+
+  useEffect(() => {
+    // Set global meta tags
+    const setMetaTag = (name, content) => {
+      let tag = document.querySelector(`meta[name="${name}"]`);
+      if (tag) {
+        tag.setAttribute('content', content);
+      } else {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', name);
+        tag.setAttribute('content', content);
+        document.head.appendChild(tag);
+      }
+    };
+
+    // Default meta tags
+    setMetaTag('viewport', 'width=device-width, initial-scale=1.0');
+    setMetaTag('theme-color', '#FFD300');
+    setMetaTag('author', 'Chariot Realty');
+    setMetaTag('robots', 'index, follow');
+    
+    // Open Graph defaults
+    const setOGTag = (property, content) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (tag) {
+        tag.setAttribute('content', content);
+      } else {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        tag.setAttribute('content', content);
+        document.head.appendChild(tag);
+      }
+    };
+
+    setOGTag('og:site_name', 'Chariot Realty');
+    setOGTag('og:locale', 'en_IN');
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
