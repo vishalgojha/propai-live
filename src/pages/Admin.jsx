@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,10 +23,10 @@ import {
 } from "@/components/ui/select";
 import {
   Shield, Home, Users, Building2, FileText, Search,
-  Eye, Trash2, AlertTriangle, Copy, Upload,
-  Image as ImageIcon, X, CheckCircle2, RefreshCw,
-  Sparkles, Clock, TrendingUp, BarChart3, ArrowLeft,
-  Package
+  Eye, Trash2, AlertTriangle, Copy, Upload, MessageCircle,
+  Image as ImageIcon, X, CheckCircle2, RefreshCw, MapPin,
+  Sparkles, Clock, TrendingUp, BarChart3, Phone, Mail,
+  Package, Star
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -43,6 +44,10 @@ export default function Admin() {
   const [propStatusFilter, setPropStatusFilter] = useState("Active");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+
+  // Brokers state
+  const [brokerSearchQuery, setBrokerSearchQuery] = useState("");
+  const [brokerStatusFilter, setBrokerStatusFilter] = useState("all");
 
   // Image upload states
   const [imageUploadModalOpen, setImageUploadModalOpen] = useState(false);
@@ -221,6 +226,41 @@ export default function Admin() {
     }
   };
 
+  // Broker handlers
+  const handleWhatsApp = (broker) => {
+    const brokerProps = properties.filter(p => p.broker_id === broker.id);
+    
+    let message = `Hi ${broker.name}, this is Chariot Realty.\n\n`;
+    
+    if (brokerProps.length > 0) {
+      message += `Regarding your ${brokerProps.length} listing${brokerProps.length > 1 ? 's' : ''}:\n\n`;
+      brokerProps.slice(0, 3).forEach((prop, idx) => {
+        message += `${idx + 1}. ${prop.bhk || 'Property'} in ${prop.location || 'Mumbai'}\n`;
+        message += `   ${prop.building_name ? `${prop.building_name}, ` : ''}`;
+        message += `₹${prop.price}${prop.price_unit === 'crores' ? ' Cr' : 'L'}\n`;
+        if (prop.custom_id) message += `   ID: ${prop.custom_id}\n`;
+        message += '\n';
+      });
+      if (brokerProps.length > 3) {
+        message += `...and ${brokerProps.length - 3} more listing${brokerProps.length - 3 > 1 ? 's' : ''}\n\n`;
+      }
+      message += `Can we discuss these listings?`;
+    } else {
+      message += `Can we discuss potential property listings in ${broker.areas_covered?.join(', ') || 'your areas'}?`;
+    }
+    
+    window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  // Requirement handlers
+  const handleFindMatches = (req) => {
+    const searchParams = new URLSearchParams();
+    if (req.bhk_preference?.[0]) searchParams.set('bhk', req.bhk_preference[0]);
+    if (req.listing_type) searchParams.set('listingType', req.listing_type);
+    if (req.preferred_locations?.[0]) searchParams.set('search', req.preferred_locations[0]);
+    navigate(createPageUrl("SmartFeed") + "?" + searchParams.toString());
+  };
+
   // Stats
   const stats = {
     properties: {
@@ -240,7 +280,7 @@ export default function Admin() {
     }
   };
 
-  // Filtered & paginated properties
+  // Filtered data
   const filteredProperties = properties.filter(property => {
     if (property.is_duplicate) return false;
     
@@ -251,6 +291,24 @@ export default function Admin() {
       property.bhk?.toLowerCase().includes(propSearchQuery.toLowerCase());
 
     const matchesStatus = propStatusFilter === "all" || property.status === propStatusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredBrokers = brokers.filter(broker => {
+    const matchesSearch = !brokerSearchQuery ||
+      broker.name?.toLowerCase().includes(brokerSearchQuery.toLowerCase()) ||
+      broker.phone?.includes(brokerSearchQuery) ||
+      broker.agency_name?.toLowerCase().includes(brokerSearchQuery.toLowerCase());
+
+    let matchesStatus = true;
+    if (brokerStatusFilter === "Active") {
+      matchesStatus = broker.status === "Active";
+    } else if (brokerStatusFilter === "Verified") {
+      matchesStatus = broker.verified;
+    } else if (brokerStatusFilter === "Dormant") {
+      matchesStatus = broker.status === "Dormant";
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -365,7 +423,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+      <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -395,7 +453,7 @@ export default function Admin() {
                 variant="outline"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Sync Trust
+                Trust
               </Button>
             </div>
           </div>
@@ -477,73 +535,61 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32">
         
-        {/* Overview Tab */}
         <AnimatePresence mode="wait">
+          {/* Overview Tab */}
           {activeTab === "overview" && (
             <motion.div
               key="overview"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="space-y-6">
-                {/* Key Metrics */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      </div>
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mb-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
                     </div>
                     <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.active}</p>
                     <p className="text-sm text-slate-500">Active Properties</p>
                   </div>
 
                   <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                        <Copy className="w-5 h-5 text-orange-600" />
-                      </div>
+                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mb-2">
+                      <Copy className="w-5 h-5 text-orange-600" />
                     </div>
                     <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.duplicates}</p>
                     <p className="text-sm text-slate-500">Duplicates</p>
                   </div>
 
                   <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <ImageIcon className="w-5 h-5 text-blue-600" />
-                      </div>
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-2">
+                      <ImageIcon className="w-5 h-5 text-blue-600" />
                     </div>
                     <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.needsPhotos}</p>
                     <p className="text-sm text-slate-500">Need Photos</p>
                   </div>
 
                   <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                        <Users className="w-5 h-5 text-purple-600" />
-                      </div>
+                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mb-2">
+                      <Users className="w-5 h-5 text-purple-600" />
                     </div>
                     <p className="text-3xl font-bold text-slate-900 mb-1">{stats.brokers.active}</p>
                     <p className="text-sm text-slate-500">Active Brokers</p>
                   </div>
 
                   <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-amber-600" />
-                      </div>
+                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-2">
+                      <TrendingUp className="w-5 h-5 text-amber-600" />
                     </div>
                     <p className="text-3xl font-bold text-slate-900 mb-1">{stats.requirements.active}</p>
                     <p className="text-sm text-slate-500">Active Leads</p>
                   </div>
                 </div>
 
-                {/* Quick Actions Grid */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
                     <h3 className="text-lg font-bold text-slate-900 mb-3">Properties needing photos</h3>
@@ -578,13 +624,12 @@ export default function Admin() {
           {activeTab === "properties" && (
             <motion.div
               key="properties"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="space-y-4">
-                {/* Search & Filters */}
                 <div className="bg-white rounded-2xl p-4 border border-slate-200">
                   <div className="flex flex-col md:flex-row gap-3">
                     <div className="flex-1 relative">
@@ -622,7 +667,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Properties List */}
                 {propertiesLoading ? (
                   <div className="space-y-3">
                     {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
@@ -637,14 +681,11 @@ export default function Admin() {
                   <>
                     <div className="space-y-3">
                       {paginatedProperties.map((property) => (
-                        <motion.div
+                        <div
                           key={property.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
                           className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
                         >
                           <div className="flex items-center gap-4">
-                            {/* Image Thumbnail */}
                             <div className="relative w-20 h-20 flex-shrink-0">
                               {property.images?.[0] ? (
                                 <img 
@@ -662,7 +703,6 @@ export default function Admin() {
                               </Badge>
                             </div>
 
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start gap-2 mb-2">
                                 <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
@@ -695,7 +735,6 @@ export default function Admin() {
                               </div>
                             </div>
 
-                            {/* Actions */}
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <Button
                                 onClick={() => handleImageUpload(property)}
@@ -723,11 +762,10 @@ export default function Admin() {
                               </Button>
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
 
-                    {/* Pagination */}
                     {totalPages > 1 && (
                       <div className="flex justify-center gap-2 mt-6">
                         <Button
@@ -761,10 +799,10 @@ export default function Admin() {
           {activeTab === "duplicates" && (
             <motion.div
               key="duplicates"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="space-y-4">
                 {duplicates.length === 0 ? (
@@ -851,45 +889,215 @@ export default function Admin() {
             </motion.div>
           )}
 
-          {/* Brokers Tab - Navigate to dedicated page */}
+          {/* Brokers Tab */}
           {activeTab === "brokers" && (
             <motion.div
               key="brokers"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-12 text-center border border-slate-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
-              <Users className="w-16 h-16 text-[#FFD300] mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Broker Management</h3>
-              <p className="text-slate-600 mb-6">View and manage all broker relationships</p>
-              <Button
-                onClick={() => navigate(createPageUrl("AdminBrokers"))}
-                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Go to Brokers Section
-              </Button>
+              <div className="space-y-4">
+                <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        placeholder="Search brokers..."
+                        value={brokerSearchQuery}
+                        onChange={(e) => setBrokerSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select value={brokerStatusFilter} onValueChange={setBrokerStatusFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Verified">Verified</SelectItem>
+                        <SelectItem value="Dormant">Dormant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {filteredBrokers.length === 0 ? (
+                    <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
+                      <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold text-slate-900 mb-2">No brokers found</h3>
+                      <p className="text-slate-500">Try adjusting your search or filters</p>
+                    </div>
+                  ) : (
+                    filteredBrokers.map((broker) => {
+                      const brokerProps = properties.filter(p => p.broker_id === broker.id);
+                      
+                      return (
+                        <div
+                          key={broker.id}
+                          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-lg font-bold text-slate-900">{broker.name}</h3>
+                                {broker.verified && (
+                                  <Badge className="bg-green-500/20 text-green-700 border-green-500">
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                    Verified
+                                  </Badge>
+                                )}
+                              </div>
+                              {broker.custom_id && (
+                                <p className="text-xs text-slate-500 font-mono mb-2">{broker.custom_id}</p>
+                              )}
+                              <div className="flex items-center gap-4 text-sm text-slate-600">
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {broker.phone}
+                                </span>
+                                <span>•</span>
+                                <span>{brokerProps.length} listings</span>
+                                {broker.trust_score && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <Star className="w-3 h-3 text-[#FFD300]" fill="currentColor" />
+                                      {broker.trust_score}/100
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {broker.areas_covered && broker.areas_covered.length > 0 && (
+                            <div className="mb-3">
+                              <div className="flex flex-wrap gap-2">
+                                {broker.areas_covered.map((area, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    <MapPin className="w-3 h-3 mr-1" />
+                                    {area}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleWhatsApp(broker)}
+                              className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                              size="sm"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              WhatsApp
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }))}
+                </div>
+              </div>
             </motion.div>
           )}
 
-          {/* Requirements Tab - Navigate to dedicated page */}
+          {/* Requirements Tab */}
           {activeTab === "requirements" && (
             <motion.div
               key="requirements"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-12 text-center border border-slate-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
-              <FileText className="w-16 h-16 text-[#FFD300] mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Lead Management</h3>
-              <p className="text-slate-600 mb-6">View and manage client requirements</p>
-              <Button
-                onClick={() => navigate(createPageUrl("AdminRequirements"))}
-                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Go to Requirements Section
-              </Button>
+              <div className="space-y-4">
+                {requirements.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
+                    <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">No requirements yet</h3>
+                    <p className="text-slate-500">Client requirements will appear here</p>
+                  </div>
+                ) : (
+                  requirements.map((req) => (
+                    <div
+                      key={req.id}
+                      className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-bold text-slate-900">{req.client_name}</h3>
+                            <Badge className={
+                              req.status === "Active" ? "bg-green-500 text-white" :
+                              req.status === "Matched" ? "bg-blue-500 text-white" :
+                              "bg-gray-500 text-white"
+                            }>
+                              {req.status}
+                            </Badge>
+                          </div>
+                          {req.client_phone && (
+                            <p className="text-sm text-slate-600 flex items-center gap-1 mb-2">
+                              <Phone className="w-3 h-3" />
+                              {req.client_phone}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-4 text-sm text-slate-600">
+                            <span>{req.bhk_preference?.join(", ") || "Any"} BHK</span>
+                            <span>•</span>
+                            <span>{req.listing_type}</span>
+                            <span>•</span>
+                            <span>₹{req.budget_min}-{req.budget_max}{req.budget_unit === 'crores' ? ' Cr' : 'L'}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {format(new Date(req.created_date), "MMM dd")}
+                        </span>
+                      </div>
+
+                      {req.preferred_locations && req.preferred_locations.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-2">
+                            {req.preferred_locations.map((loc, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                {loc}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        {req.client_phone && (
+                          <Button
+                            onClick={() => {
+                              const message = `Hi ${req.client_name}, this is Chariot Realty. We have properties matching your requirement. Can we share details?`;
+                              window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                            }}
+                            className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                            size="sm"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            WhatsApp
+                          </Button>
+                        )}
+                        <Button
+                          onClick={() => handleFindMatches(req)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Find Matches
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
