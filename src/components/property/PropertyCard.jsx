@@ -6,13 +6,14 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera
+  Armchair, Shield, Eye, Home, Camera, CheckCircle2
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [broker, setBroker] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -25,6 +26,21 @@ export default function PropertyCard({ property, onViewDetails }) {
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    const loadBroker = async () => {
+      if (property.broker_id) {
+        try {
+          const brokers = await base44.entities.Broker.list();
+          const foundBroker = brokers.find(b => b.id === property.broker_id);
+          setBroker(foundBroker);
+        } catch (error) {
+          console.error("Failed to load broker:", error);
+        }
+      }
+    };
+    loadBroker();
+  }, [property.broker_id]);
 
   const formatPrice = () => {
     if (property.price_unit === "crores") {
@@ -59,6 +75,26 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleCheckAvailability = (e) => {
+    e.stopPropagation();
+    
+    if (!broker || !broker.phone) {
+      alert('Broker contact not available');
+      return;
+    }
+
+    const message = `Hi ${broker.name}, checking availability for:\n\n` +
+      `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
+      `💰 ${formatPrice()} | ${property.listing_type}\n` +
+      `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
+      `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
+      `\n✅ Is this property still available?\n` +
+      `📸 Can you share latest photos?\n\n` +
+      `- Chariot Realty Team`;
+    
+    window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const handleCardClick = () => {
     if (property.slug) {
       navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
@@ -68,6 +104,7 @@ export default function PropertyCard({ property, onViewDetails }) {
   };
 
   const hasImages = property.images && property.images.length > 0;
+  const isAdmin = user?.role === 'admin';
 
   return (
     <motion.div
@@ -142,6 +179,17 @@ export default function PropertyCard({ property, onViewDetails }) {
             <p className="text-xs font-bold text-slate-900 truncate">{property.furnishing || 'N/A'}</p>
           </div>
         </div>
+
+        {/* Admin Check Availability Button */}
+        {isAdmin && (
+          <Button
+            onClick={handleCheckAvailability}
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md mb-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-sm">Check Availability</span>
+          </Button>
+        )}
 
         {/* WhatsApp Contact Buttons */}
         <div className="space-y-2">
