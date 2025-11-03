@@ -175,22 +175,6 @@ export default function Buildings() {
                 onClick={() => handleBuildingClick(building)}
                 className="bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-stone-200/50 cursor-pointer group"
               >
-                {/* Image Section */}
-                {building.images && building.images.length > 0 ? (
-                  <div className="h-48 relative overflow-hidden">
-                    <img
-                      src={building.images[0]}
-                      alt={building.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  </div>
-                ) : (
-                  <div className="h-48 bg-gradient-to-br from-stone-200 to-stone-300 flex items-center justify-center">
-                    <Building2 className="w-16 h-16 text-stone-400" />
-                  </div>
-                )}
-
                 {/* Content */}
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
@@ -255,17 +239,11 @@ export default function Buildings() {
                   )}
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-white/60 rounded-2xl">
+                  <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-white/60 rounded-2xl">
                     <div className="text-center">
-                      <p className="text-xs text-stone-500 mb-1">Listings</p>
+                      <p className="text-xs text-stone-500 mb-1">Active Listings</p>
                       <p className="text-sm font-bold text-[#111111]">{building.active_listings || 0}</p>
                     </div>
-                    {building.total_floors && (
-                      <div className="text-center">
-                        <p className="text-xs text-stone-500 mb-1">Floors</p>
-                        <p className="text-sm font-bold text-[#111111]">{building.total_floors}</p>
-                      </div>
-                    )}
                     {building.year_built && (
                       <div className="text-center">
                         <p className="text-xs text-stone-500 mb-1">Built</p>
