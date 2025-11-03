@@ -83,7 +83,7 @@ export default function Layout({ children, currentPageName }) {
 
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
-    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "Browse Properties", icon: Search, path: createPageUrl("SmartFeed") },
     { name: "Buildings", icon: Building2, path: createPageUrl("Buildings") },
     { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
   ];
