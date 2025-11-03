@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tabs, // Keep this import as it's used within modals
+  Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
@@ -33,15 +33,16 @@ import {
   Eye, Edit2, Trash2, AlertTriangle, Copy, MessageCircle,
   Phone, Star, MapPin, Download, Sparkles, Clock, TrendingUp,
   MessageSquare, Send, CheckCircle2, Mail, Calendar, IndianRupee,
-  HomeIcon, Upload, Image as ImageIcon, X
+  HomeIcon, Upload, Image as ImageIcon, X, ChevronDown, MoreVertical,
+  RefreshCw, ExternalLink, Package
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 
 export default function Admin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState("properties");
@@ -51,6 +52,7 @@ export default function Admin() {
   const [propStatusFilter, setPropStatusFilter] = useState("all");
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [propViewMode, setPropViewMode] = useState("properties");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Brokers state
   const [brokerSearchQuery, setBrokerSearchQuery] = useState("");
@@ -58,7 +60,7 @@ export default function Admin() {
   const [selectedBroker, setSelectedBroker] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [viewPropertiesModalOpen, setViewPropertiesModalOpen] = useState(false);
-  
+
   // AI Assistant States
   const [aiAssistantModalOpen, setAiAssistantModalOpen] = useState(false);
   const [selectedBrokerForAI, setSelectedBrokerForAI] = useState(null);
@@ -97,13 +99,13 @@ export default function Admin() {
     checkAuth();
   }, [navigate]);
 
-  // Queries with LIVE UPDATES (refetchInterval: 10000 = 10 seconds)
-  const { data: properties = [] } = useQuery({
+  // Queries with LIVE UPDATES
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery({
     queryKey: ['admin-properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 10000, // ✅ LIVE UPDATES every 10 seconds
+    refetchInterval: 10000,
   });
 
   const { data: duplicates = [] } = useQuery({
@@ -111,7 +113,7 @@ export default function Admin() {
     queryFn: () => base44.entities.Property.filter({ is_duplicate: true }, '-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 10000, // ✅ LIVE UPDATES
+    refetchInterval: 10000,
   });
 
   const { data: brokers = [] } = useQuery({
@@ -119,7 +121,7 @@ export default function Admin() {
     queryFn: () => base44.entities.Broker.list('-last_activity'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 10000, // ✅ LIVE UPDATES
+    refetchInterval: 10000,
   });
 
   const { data: requirements = [] } = useQuery({
@@ -127,7 +129,7 @@ export default function Admin() {
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 10000, // ✅ LIVE UPDATES
+    refetchInterval: 10000,
   });
 
   // Mutations
@@ -159,12 +161,11 @@ export default function Admin() {
     },
   });
 
-  // Image upload handler
-  const handleImageUpload = (propertyId) => {
-    const property = properties.find(p => p.id === propertyId);
+  // Image upload handlers
+  const handleImageUpload = (property) => {
     setSelectedPropertyForImages(property);
     setImageUploadModalOpen(true);
-    setImagesToUpload([]); // Clear previous selections
+    setImagesToUpload([]);
   };
 
   const handleFileSelect = (e) => {
@@ -181,7 +182,6 @@ export default function Admin() {
       const uploadedUrls = [];
 
       for (const file of imagesToUpload) {
-        // Assuming base44.integrations.Core.UploadFile expects an object with a file property
         const response = await base44.integrations.Core.UploadFile({ file });
         if (response && response.file_url) {
           uploadedUrls.push(response.file_url);
@@ -191,7 +191,6 @@ export default function Admin() {
         }
       }
 
-      // Update property with new images
       const existingImages = selectedPropertyForImages.images || [];
       const updatedImages = [...existingImages, ...uploadedUrls];
 
@@ -209,18 +208,22 @@ export default function Admin() {
     }
   };
 
-  const handleRemoveImage = async (propertyId, imageUrl) => {
-    const property = properties.find(p => p.id === propertyId);
-    if (!property) return;
+  const handleRemoveImage = async (imageUrl) => {
+    if (!selectedPropertyForImages) return;
 
     if (!confirm('Are you sure you want to remove this image?')) return;
 
-    const updatedImages = (property.images || []).filter(img => img !== imageUrl);
+    const updatedImages = (selectedPropertyForImages.images || []).filter(img => img !== imageUrl);
 
     try {
       await updatePropertyMutation.mutateAsync({
-        id: propertyId,
+        id: selectedPropertyForImages.id,
         data: { images: updatedImages }
+      });
+
+      setSelectedPropertyForImages({
+        ...selectedPropertyForImages,
+        images: updatedImages
       });
       alert('✅ Image removed successfully!');
     } catch (error) {
@@ -235,7 +238,7 @@ export default function Admin() {
   };
 
   const handleDeleteProperty = (propertyId) => {
-    if (confirm("Are you sure you want to delete this property?")) {
+    if (confirm("Are you sure you want to delete this property permanently? This action cannot be undone.")) {
       deletePropertyMutation.mutate(propertyId);
     }
   };
@@ -288,7 +291,7 @@ export default function Admin() {
   const handleWhatsApp = (broker) => {
     const brokerProps = getBrokerProperties(broker.id);
     let message = `Hi ${broker.name}, this is Chariot Realty.\n\n`;
-    
+
     if (brokerProps.length > 0) {
       message += `Regarding your ${brokerProps.length} listing${brokerProps.length > 1 ? 's' : ''}:\n\n`;
       brokerProps.slice(0, 3).forEach((prop, idx) => {
@@ -305,7 +308,7 @@ export default function Admin() {
     } else {
       message += `Can we discuss potential property listings in ${broker.areas_covered?.join(', ') || 'your areas'}?`;
     }
-    
+
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -338,6 +341,7 @@ export default function Admin() {
     a.click();
   };
 
+  // AI functions
   const handleGenerateFollowUp = async (broker, propertyId = null, context = "") => {
     setFollowUpLoading(true);
     setSelectedBrokerForAI(broker);
@@ -397,7 +401,7 @@ export default function Admin() {
       });
 
       alert(`Conversation Summarized!\n\nSummary: ${response.data.summary}\n\nKey Points: ${response.data.key_points.join(', ')}\n\nSentiment: ${response.data.sentiment}`);
-      
+
       setConversationText("");
       queryClient.invalidateQueries({ queryKey: ['brokers'] });
       setAiAssistantModalOpen(false);
@@ -480,89 +484,99 @@ export default function Admin() {
 
     return (
       <Dialog open={viewPropertiesModalOpen} onOpenChange={setViewPropertiesModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {selectedBroker.name}'s Listings ({brokerProps.length})
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-[#FFD300]" />
+              {selectedBroker.name}'s Portfolio ({brokerProps.length} properties)
             </DialogTitle>
           </DialogHeader>
 
           {brokerProps.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-[#3B3B3B]">No properties found for this broker.</p>
+            <div className="text-center py-16">
+              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No properties found for this broker.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {brokerProps.map((property) => (
                 <div
                   key={property.id}
-                  className="p-4 bg-[#F7F7F7] rounded-2xl border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                  className="group p-5 bg-white hover:bg-gray-50 rounded-2xl border border-gray-200 hover:border-[#FFD300] transition-all cursor-pointer"
+                  onClick={() => {
+                    setViewPropertiesModalOpen(false);
+                    navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+                  }}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
-                          {property.bhk || 'N/A'}
-                        </Badge>
-                        <Badge variant="outline" className={
-                          property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
-                          "bg-gray-500/20 text-gray-700 border-gray-500"
-                        }>
-                          {property.status}
-                        </Badge>
-                        {property.custom_id && (
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {property.custom_id}
-                          </Badge>
-                        )}
+                  <div className="flex items-start gap-4">
+                    {/* Property Image */}
+                    {property.images?.[0] ? (
+                      <img
+                        src={property.images[0]}
+                        alt={property.ai_title}
+                        className="w-24 h-24 rounded-xl object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-10 h-10 text-gray-400" />
                       </div>
-                      <h4 className="text-lg font-bold text-[#111111] mb-2">
-                        {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    )}
+
+                    {/* Property Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="text-xs text-[#3B3B3B]/60">Location</p>
-                          <p className="text-sm font-semibold text-[#111111]">
-                            {property.location || 'N/A'}
-                          </p>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className="bg-[#FFD300] text-black font-bold">
+                              {property.bhk || 'N/A'}
+                            </Badge>
+                            <Badge variant="outline" className={
+                              property.status === "Active" ? "border-green-500 text-green-700" :
+                                "border-gray-400 text-gray-600"
+                            }>
+                              {property.status}
+                            </Badge>
+                            {property.custom_id && (
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {property.custom_id}
+                              </Badge>
+                            )}
+                          </div>
+                          <h4 className="font-bold text-lg text-gray-900 mb-1 line-clamp-1">
+                            {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
+                          </h4>
+                        </div>
+                        <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-[#FFD300] transition-colors" />
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-500 text-xs mb-0.5">Location</p>
+                          <p className="font-semibold text-gray-900">{property.location || 'N/A'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-[#3B3B3B]/60">Price</p>
-                          <p className="text-sm font-semibold text-[#111111]">
+                          <p className="text-gray-500 text-xs mb-0.5">Price</p>
+                          <p className="font-semibold text-gray-900">
                             ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-[#3B3B3B]/60">Type</p>
-                          <p className="text-sm font-semibold text-[#111111]">
-                            {property.listing_type}
-                          </p>
+                          <p className="text-gray-500 text-xs mb-0.5">Type</p>
+                          <p className="font-semibold text-gray-900">{property.listing_type}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-[#3B3B3B]/60">Area</p>
-                          <p className="text-sm font-semibold text-[#111111]">
-                            {property.carpet_area || 'N/A'} sq.ft
-                          </p>
+                          <p className="text-gray-500 text-xs mb-0.5">Area</p>
+                          <p className="font-semibold text-gray-900">{property.carpet_area || 'N/A'} sq.ft</p>
                         </div>
                       </div>
+
                       {property.building_name && (
-                        <p className="text-sm text-[#3B3B3B] mb-2">
-                          <Building2 className="w-3 h-3 inline mr-1" />
+                        <p className="text-sm text-gray-600 mt-2 flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5" />
                           {property.building_name}
                         </p>
                       )}
                     </div>
-                    <Button
-                      onClick={() => {
-                        setViewPropertiesModalOpen(false);
-                        navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Eye className="w-3 h-3 mr-1" />
-                      View
-                    </Button>
                   </div>
                 </div>
               ))}
@@ -594,7 +608,7 @@ export default function Admin() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-semibold text-[#111111] mb-2 block">Status</label>
-              <Select value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>
+              <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -613,7 +627,7 @@ export default function Admin() {
                 {[1, 2, 3, 4, 5].map(rating => (
                   <button
                     key={rating}
-                    onClick={() => setFormData({...formData, reliability_rating: rating})}
+                    onClick={() => setFormData({ ...formData, reliability_rating: rating })}
                     className={`p-2 rounded-xl transition-all ${
                       formData.reliability_rating >= rating
                         ? 'bg-[#FFD300] text-black'
@@ -628,7 +642,7 @@ export default function Admin() {
 
             <div>
               <label className="text-sm font-semibold text-[#111111] mb-2 block">Response Time</label>
-              <Select value={formData.response_time} onValueChange={(val) => setFormData({...formData, response_time: val})}>
+              <Select value={formData.response_time} onValueChange={(val) => setFormData({ ...formData, response_time: val })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -645,7 +659,7 @@ export default function Admin() {
               <input
                 type="checkbox"
                 checked={formData.verified}
-                onChange={(e) => setFormData({...formData, verified: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, verified: e.target.checked })}
                 className="w-4 h-4"
               />
               <label className="text-sm font-semibold text-[#111111]">Verified Broker</label>
@@ -656,7 +670,7 @@ export default function Admin() {
               <Textarea
                 placeholder="e.g., 'reliable, only Juhu flats, fast response'"
                 value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
               />
             </div>
@@ -848,8 +862,8 @@ export default function Admin() {
                               <span className="text-xs text-[#3B3B3B]">{interaction.date}</span>
                               <Badge className={
                                 interaction.sentiment === 'Positive' ? 'bg-green-500/20 text-green-700' :
-                                interaction.sentiment === 'Negative' ? 'bg-red-500/20 text-red-700' :
-                                'bg-gray-500/20 text-gray-700'
+                                  interaction.sentiment === 'Negative' ? 'bg-red-500/20 text-red-700' :
+                                    'bg-gray-500/20 text-gray-700'
                               }>
                                 {interaction.sentiment}
                               </Badge>
@@ -1077,33 +1091,42 @@ export default function Admin() {
 
     return (
       <Dialog open={imageUploadModalOpen} onOpenChange={setImageUploadModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Manage Images: {selectedPropertyForImages.ai_title || `${selectedPropertyForImages.bhk} in ${selectedPropertyForImages.location}`}
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-[#FFD300]" />
+              Manage Images
             </DialogTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              {selectedPropertyForImages.ai_title || `${selectedPropertyForImages.bhk} in ${selectedPropertyForImages.location}`}
+            </p>
           </DialogHeader>
 
           {/* Current Images */}
           {selectedPropertyForImages.images && selectedPropertyForImages.images.length > 0 && (
             <div className="mb-6">
-              <h4 className="font-semibold mb-3 text-sm">Current Images ({selectedPropertyForImages.images.length})</h4>
+              <h4 className="font-semibold mb-3 text-sm flex items-center justify-between">
+                <span>Current Images ({selectedPropertyForImages.images.length})</span>
+                <Badge variant="outline">{selectedPropertyForImages.images.length} photos</Badge>
+              </h4>
               <div className="grid grid-cols-3 gap-3">
                 {selectedPropertyForImages.images.map((img, idx) => (
                   <div key={idx} className="relative group">
-                    <img 
-                      src={img} 
-                      alt={`Property ${idx + 1}`} 
+                    <img
+                      src={img}
+                      alt={`Property ${idx + 1}`}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                     <Button
-                      onClick={() => handleRemoveImage(selectedPropertyForImages.id, img)}
+                      onClick={() => handleRemoveImage(img)}
                       size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 bg-red-500 hover:bg-red-600"
                     >
                       <X className="w-4 h-4" />
                     </Button>
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">
+                      #{idx + 1}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1111,49 +1134,62 @@ export default function Admin() {
           )}
 
           {/* Upload New Images */}
-          <div>
-            <h4 className="font-semibold mb-3 text-sm">Upload New Images</h4>
-            <div className="space-y-4">
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileSelect}
-                className="cursor-pointer"
-              />
-              
-              {imagesToUpload.length > 0 && (
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-700 mb-2">
-                    {imagesToUpload.length} image(s) selected
-                  </p>
-                  <div className="space-y-1">
-                    {imagesToUpload.map((file, idx) => (
-                      <p key={idx} className="text-xs text-blue-600">{file.name}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
+          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <h4 className="font-semibold mb-2">Upload New Images</h4>
+            <p className="text-sm text-gray-500 mb-4">
+              Drag and drop or click to browse
+            </p>
 
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleUploadImages}
-                  disabled={uploadingImages || imagesToUpload.length === 0}
-                  className="bg-[#FFD300] text-black hover:bg-[#FFC700] flex-1"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploadingImages ? 'Uploading...' : `Upload ${imagesToUpload.length} Image(s)`}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setImageUploadModalOpen(false);
-                    setImagesToUpload([]);
-                  }}
-                  variant="outline"
-                >
-                  Cancel
-                </Button>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+              className="cursor-pointer mb-4"
+            />
+
+            {imagesToUpload.length > 0 && (
+              <div className="bg-blue-50 rounded-lg p-4 mb-4 text-left">
+                <p className="text-sm font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {imagesToUpload.length} file(s) selected
+                </p>
+                <div className="space-y-1">
+                  {imagesToUpload.map((file, idx) => (
+                    <p key={idx} className="text-xs text-blue-600 truncate">{file.name}</p>
+                  ))}
+                </div>
               </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handleUploadImages}
+                disabled={uploadingImages || imagesToUpload.length === 0}
+                className="bg-[#FFD300] text-black hover:bg-[#FFC700] flex-1"
+              >
+                {uploadingImages ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload {imagesToUpload.length} Image(s)
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => {
+                  setImageUploadModalOpen(false);
+                  setImagesToUpload([]);
+                }}
+                variant="outline"
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -1163,10 +1199,12 @@ export default function Admin() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <Shield className="w-12 h-12 text-[#FFD300] mx-auto mb-4 animate-pulse" />
-          <p className="text-[#3B3B3B]">Verifying access...</p>
+          <div className="w-16 h-16 bg-[#FFD300] rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Shield className="w-8 h-8 text-black" />
+          </div>
+          <p className="text-gray-600 font-medium">Verifying admin access...</p>
         </div>
       </div>
     );
@@ -1177,815 +1215,925 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8">
 
-        {/* Header */}
+        {/* Modern Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center">
-              <Shield className="w-6 h-6 text-black" />
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#FFD300] to-[#FFA500] rounded-2xl flex items-center justify-center shadow-lg">
+                  <Shield className="w-7 h-7 text-black" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                  <p className="text-sm text-gray-500">Live updates • Auto-refresh every 10s</p>
+                </div>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-[#111111]">Admin Dashboard</h1>
-          </div>
-          <p className="text-[#3B3B3B]">Manage properties, brokers, and requirements • Live updates every 10s</p>
-        </div>
 
-        {/* Quick Actions Bar - FIXED: Added proper event handlers */}
-        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-4 mb-8 border-2 border-amber-200">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                loadDealsRadar();
-              }}
-              disabled={dealsLoading}
-              className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold touch-manipulation"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {dealsLoading ? 'Loading...' : 'AI Deals Radar'}
-            </Button>
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                recalculateBrokerTrust();
-              }}
-              variant="outline"
-              className="border-2 border-amber-300 touch-manipulation"
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Recalculate BrokerTrust™
-            </Button>
-            <div className="ml-auto text-xs text-[#3B3B3B]">
-              <p>🎯 <strong>Your Unfair Advantage:</strong> AI-powered deal spotting & broker intelligence</p>
+            {/* Quick Actions */}
+            <div className="hidden lg:flex items-center gap-3">
+              <Button
+                onClick={loadDealsRadar}
+                disabled={dealsLoading}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {dealsLoading ? 'Loading...' : 'AI Deals Radar'}
+              </Button>
+              <Button
+                onClick={recalculateBrokerTrust}
+                variant="outline"
+                className="border-2"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sync Trust Scores
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Main Tabs - FIXED: Proper button structure */}
-        <div className="w-full mb-8">
-          <div className="flex flex-col w-full space-y-2">
+        {/* Tabs - Modern Horizontal Design */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-2 mb-8">
+          <div className="flex gap-2">
             <button
               onClick={() => setActiveTab("properties")}
-              className={`w-full flex items-center justify-start gap-3 px-4 py-3 rounded-xl transition-all font-semibold touch-manipulation ${
+              className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-semibold transition-all ${
                 activeTab === "properties"
-                  ? "bg-[#FFD300] text-black shadow-sm"
-                  : "bg-white text-[#3B3B3B] hover:bg-stone-100"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Home className="w-5 h-5" />
-              <span>Properties</span>
+              <span className="hidden sm:inline">Properties</span>
+              <Badge className={activeTab === "properties" ? "bg-black/20 text-black" : "bg-gray-200 text-gray-700"}>
+                {propStats.active}
+              </Badge>
             </button>
-            
+
             <button
               onClick={() => setActiveTab("brokers")}
-              className={`w-full flex items-center justify-start gap-3 px-4 py-3 rounded-xl transition-all font-semibold touch-manipulation ${
+              className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-semibold transition-all ${
                 activeTab === "brokers"
-                  ? "bg-[#FFD300] text-black shadow-sm"
-                  : "bg-white text-[#3B3B3B] hover:bg-stone-100"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Users className="w-5 h-5" />
-              <span>Brokers</span>
+              <span className="hidden sm:inline">Brokers</span>
+              <Badge className={activeTab === "brokers" ? "bg-black/20 text-black" : "bg-gray-200 text-gray-700"}>
+                {brokerStats.active}
+              </Badge>
             </button>
-            
+
             <button
               onClick={() => setActiveTab("requirements")}
-              className={`w-full flex items-center justify-start gap-3 px-4 py-3 rounded-xl transition-all font-semibold touch-manipulation ${
+              className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-semibold transition-all ${
                 activeTab === "requirements"
-                  ? "bg-[#FFD300] text-black shadow-sm"
-                  : "bg-white text-[#3B3B3B] hover:bg-stone-100"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               <FileText className="w-5 h-5" />
-              <span>Requirements</span>
+              <span className="hidden sm:inline">Requirements</span>
+              <Badge className={activeTab === "requirements" ? "bg-black/20 text-black" : "bg-gray-200 text-gray-700"}>
+                {reqStats.active}
+              </Badge>
             </button>
           </div>
         </div>
 
         {/* Tab Content - Properties */}
-        {activeTab === "properties" && (
-          <div>
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Total Properties</p>
-                <p className="text-2xl font-bold text-[#111111]">{propStats.total}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
-                <p className="text-2xl font-bold text-green-600">{propStats.active}</p>
-              </div>
-              <div 
-                className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7] cursor-pointer hover:border-orange-500/50 touch-manipulation" 
-                onClick={() => setPropViewMode('duplicates')}
-              >
-                <p className="text-xs text-[#3B3B3B] mb-1">Duplicates</p>
-                <p className="text-2xl font-bold text-orange-600">{propStats.duplicates}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Draft</p>
-                <p className="text-2xl font-bold text-gray-600">{propStats.draft}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Sold/Rented</p>
-                <p className="text-2xl font-bold text-blue-600">{propStats.sold}</p>
-              </div>
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="bg-white rounded-2xl p-2 mb-6 border-2 border-[#F7F7F7] inline-flex gap-2">
-              <Button
-                onClick={() => setPropViewMode('properties')}
-                variant={propViewMode === 'properties' ? 'default' : 'ghost'}
-                size="sm"
-                className={`touch-manipulation ${propViewMode === 'properties' ? 'bg-[#FFD300] text-black' : ''}`}
-              >
-                <Home className="w-4 h-4 mr-2" />
-                Properties
-              </Button>
-              <Button
-                onClick={() => setPropViewMode('duplicates')}
-                variant={propViewMode === 'duplicates' ? 'default' : 'ghost'}
-                size="sm"
-                className={`touch-manipulation ${propViewMode === 'duplicates' ? 'bg-[#FFD300] text-black' : ''}`}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Duplicates ({propStats.duplicates})
-              </Button>
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-[#F7F7F7]">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
-                  <Input
-                    placeholder="Search by building, location, ID, or BHK..."
-                    value={propSearchQuery}
-                    onChange={(e) => setPropSearchQuery(e.target.value)}
-                    className="pl-11"
-                  />
+        <AnimatePresence mode="wait">
+          {activeTab === "properties" && (
+            <motion.div
+              key="properties"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Stats Grid - Larger & More Prominent */}
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <Package className="w-8 h-8 text-gray-400" />
+                    <Badge variant="outline" className="text-xs">Total</Badge>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{propStats.total}</p>
+                  <p className="text-sm text-gray-500">All Properties</p>
                 </div>
-                <Select value={propStatusFilter} onValueChange={setPropStatusFilter}>
-                  <SelectTrigger>
-                    <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Sold">Sold</SelectItem>
-                    <SelectItem value="Rented">Rented</SelectItem>
-                    <SelectItem value="On Hold">On Hold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Properties View - WITH IMAGE MANAGEMENT */}
-            {propViewMode === 'properties' && (
-              <div className="space-y-4">
-                {filteredProperties.filter(p => !p.is_duplicate).map((property) => (
-                  <motion.div
-                    key={property.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    <Badge className="bg-green-600 text-white text-xs">Live</Badge>
+                  </div>
+                  <p className="text-3xl font-bold text-green-700 mb-1">{propStats.active}</p>
+                  <p className="text-sm text-green-600">Active Listings</p>
+                </div>
+
+                <div
+                  className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setPropViewMode('duplicates')}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <Copy className="w-8 h-8 text-orange-600" />
+                    <Badge className="bg-orange-600 text-white text-xs">Review</Badge>
+                  </div>
+                  <p className="text-3xl font-bold text-orange-700 mb-1">{propStats.duplicates}</p>
+                  <p className="text-sm text-orange-600">Duplicates</p>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <Clock className="w-8 h-8 text-gray-400" />
+                    <Badge variant="outline" className="text-xs">Pending</Badge>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-700 mb-1">{propStats.draft}</p>
+                  <p className="text-sm text-gray-500">Draft</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingUp className="w-8 h-8 text-blue-600" />
+                    <Badge className="bg-blue-600 text-white text-xs">Closed</Badge>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-700 mb-1">{propStats.sold}</p>
+                  <p className="text-sm text-blue-600">Sold/Rented</p>
+                </div>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white rounded-2xl p-1.5 border border-gray-200 shadow-sm inline-flex gap-1">
+                  <Button
+                    onClick={() => setPropViewMode('properties')}
+                    variant={propViewMode === 'properties' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`rounded-xl ${propViewMode === 'properties' ? 'bg-[#FFD300] text-black shadow-sm' : ''}`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
-                            {property.bhk}
-                          </Badge>
-                          <Badge variant="outline" className={
-                            property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
-                            property.status === "Draft" ? "bg-gray-500/20 text-gray-700 border-gray-500" :
-                            "bg-blue-500/20 text-blue-700 border-blue-500"
-                          }>
-                            {property.status}
-                          </Badge>
-                          {property.custom_id && (
-                            <Badge variant="outline" className="font-mono text-xs">
-                              {property.custom_id}
-                            </Badge>
-                          )}
-                          {/* Image Count Badge */}
-                          <Badge variant="outline" className="text-xs">
-                            <ImageIcon className="w-3 h-3 mr-1" />
-                            {property.images?.length || 0} photos
-                          </Badge>
+                    <Home className="w-4 h-4 mr-2" />
+                    Active Properties
+                  </Button>
+                  <Button
+                    onClick={() => setPropViewMode('duplicates')}
+                    variant={propViewMode === 'duplicates' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`rounded-xl ${propViewMode === 'duplicates' ? 'bg-orange-500 text-white shadow-sm' : ''}`}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Duplicates ({propStats.duplicates})
+                  </Button>
+                </div>
+
+                <Button
+                  onClick={() => setFiltersExpanded(!filtersExpanded)}
+                  variant="outline"
+                  className="border-2"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                  <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+                </Button>
+              </div>
+
+              {/* Filters - Collapsible */}
+              <AnimatePresence>
+                {filtersExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm overflow-hidden"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="text-sm font-semibold text-gray-700 mb-2 block">Search</label>
+                        <div className="relative">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Input
+                            placeholder="Search by building, location, ID, or BHK..."
+                            value={propSearchQuery}
+                            onChange={(e) => setPropSearchQuery(e.target.value)}
+                            className="pl-12 h-11 rounded-xl"
+                          />
                         </div>
-                        <h3 className="text-lg font-bold text-[#111111] mb-2">
-                          {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-                          <div>
-                            <p className="text-xs text-[#3B3B3B]/60">Location</p>
-                            <p className="text-sm font-semibold text-[#111111]">
-                              {property.location || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-[#3B3B3B]/60">Building</p>
-                            <p className="text-sm font-semibold text-[#111111]">
-                              {property.building_name || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-[#3B3B3B]/60">Price</p>
-                            <p className="text-sm font-semibold text-[#111111]">
-                              ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-[#3B3B3B]/60">Area</p>
-                            <p className="text-sm font-semibold text-[#111111]">
-                              {property.carpet_area || 'N/A'} sq.ft
-                            </p>
-                          </div>
-                        </div>
-                        <p className="text-xs text-[#3B3B3B]/60">
-                          Added {format(new Date(property.created_date), "MMM dd, yyyy")}
-                        </p>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {/* NEW: Upload Images Button */}
-                        <Button
-                          onClick={() => handleImageUpload(property.id)}
-                          size="sm"
-                          variant="outline"
-                          className="border-[#FFD300] text-black hover:bg-[#FFD300]"
-                        >
-                          <Upload className="w-4 h-4 mr-1" />
-                          Images
-                        </Button>
-                        <Button
-                          onClick={() => handleViewProperty(property.id)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteProperty(property.id)}
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <div>
+                        <label className="text-sm font-semibold text-gray-700 mb-2 block">Status</label>
+                        <Select value={propStatusFilter} onValueChange={setPropStatusFilter}>
+                          <SelectTrigger className="h-11 rounded-xl">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Draft">Draft</SelectItem>
+                            <SelectItem value="Sold">Sold</SelectItem>
+                            <SelectItem value="Rented">Rented</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </motion.div>
-                ))}
-              </div>
-            )}
+                )}
+              </AnimatePresence>
 
-            {/* Duplicates View */}
-            {propViewMode === 'duplicates' && (
-              <div className="space-y-4">
-                {duplicates.length === 0 ? (
-                  <div className="bg-white rounded-2xl p-12 text-center border-2 border-[#F7F7F7]">
-                    <Copy className="w-12 h-12 text-[#3B3B3B] mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-[#111111] mb-2">No duplicates found</h3>
-                    <p className="text-[#3B3B3B]">All properties are unique</p>
-                  </div>
-                ) : (
-                  duplicates.map((property) => (
+              {/* Properties List - Card Layout */}
+              {propertiesLoading ? (
+                <div className="grid gap-4">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-48 rounded-3xl" />
+                  ))}
+                </div>
+              ) : propViewMode === 'properties' ? (
+                <div className="grid gap-4">
+                  {filteredProperties.filter(p => !p.is_duplicate).map((property) => (
                     <motion.div
                       key={property.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-orange-50 rounded-2xl p-6 border-2 border-orange-200"
+                      className="group bg-white hover:bg-gray-50 rounded-3xl p-6 border border-gray-200 hover:border-[#FFD300] hover:shadow-lg transition-all"
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-6">
+                        {/* Property Image */}
+                        <div className="relative flex-shrink-0">
+                          {property.images?.[0] ? (
+                            <img
+                              src={property.images[0]}
+                              alt={property.ai_title}
+                              className="w-32 h-32 rounded-2xl object-cover"
+                            />
+                          ) : (
+                            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                              <Building2 className="w-12 h-12 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="absolute -top-2 -right-2 bg-white rounded-full p-1.5 shadow-md">
+                            <Badge className="text-xs">
+                              {property.images?.length || 0} 📷
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Property Info */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge className="bg-orange-500 text-white">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              DUPLICATE
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge className="bg-[#FFD300] text-black font-bold">
+                                  {property.bhk}
+                                </Badge>
+                                <Badge variant="outline" className={
+                                  property.status === "Active" ? "border-green-500 text-green-700 bg-green-50" :
+                                    "border-gray-400 text-gray-600"
+                                }>
+                                  {property.status}
+                                </Badge>
+                                {property.custom_id && (
+                                  <Badge variant="outline" className="font-mono text-xs">
+                                    {property.custom_id}
+                                  </Badge>
+                                )}
+                              </div>
+                              <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
+                                {property.ai_title || `${property.bhk} in ${property.location}`}
+                              </h3>
+                              <p className="text-sm text-gray-500 flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {property.location} {property.building_name && `• ${property.building_name}`}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-gray-900">
+                                ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
+                              </p>
+                              <p className="text-xs text-gray-500">{property.listing_type}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
+                            <div>
+                              <p className="text-gray-500 text-xs mb-0.5">Area</p>
+                              <p className="font-semibold text-gray-900">{property.carpet_area || 'N/A'} sq.ft</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs mb-0.5">Furnishing</p>
+                              <p className="font-semibold text-gray-900">{property.furnishing || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs mb-0.5">Parking</p>
+                              <p className="font-semibold text-gray-900">{property.parking || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs mb-0.5">Added</p>
+                              <p className="font-semibold text-gray-900">
+                                {format(new Date(property.created_date), "MMM dd")}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() => handleImageUpload(property)}
+                              size="sm"
+                              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Manage Images
+                            </Button>
+                            <Button
+                              onClick={() => handleViewProperty(property.id)}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteProperty(property.id)}
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:bg-red-50 border-red-200"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {duplicates.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-16 text-center border border-gray-200">
+                      <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">All Clean!</h3>
+                      <p className="text-gray-500">No duplicate properties found</p>
+                    </div>
+                  ) : (
+                    duplicates.map((property) => (
+                      <motion.div
+                        key={property.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-3xl p-6 border-2 border-orange-200"
+                      >
+                        <div className="flex items-start gap-6">
+                          {property.images?.[0] ? (
+                            <img
+                              src={property.images[0]}
+                              alt={property.ai_title}
+                              className="w-32 h-32 rounded-2xl object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0">
+                              <Building2 className="w-12 h-12 text-gray-400" />
+                            </div>
+                          )}
+
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge className="bg-orange-600 text-white">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    DUPLICATE
+                                  </Badge>
+                                  <Badge className="bg-[#FFD300] text-black">
+                                    {property.bhk}
+                                  </Badge>
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-1">
+                                  {property.ai_title || `${property.bhk} in ${property.location}`}
+                                </h3>
+                                {property.duplicate_of && (
+                                  <p className="text-sm text-orange-700 font-semibold">
+                                    Duplicate of: {property.duplicate_of}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold text-gray-900">
+                                  ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
+                              <div>
+                                <p className="text-gray-600 text-xs mb-0.5">Building</p>
+                                <p className="font-semibold text-gray-900">{property.building_name || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 text-xs mb-0.5">Area</p>
+                                <p className="font-semibold text-gray-900">{property.carpet_area || 'N/A'} sq.ft</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 text-xs mb-0.5">Floor</p>
+                                <p className="font-semibold text-gray-900">{property.floor || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 text-xs mb-0.5">Added</p>
+                                <p className="font-semibold text-gray-900">
+                                  {format(new Date(property.created_date), "MMM dd")}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                onClick={() => handleViewProperty(property.id)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                onClick={() => handleRestoreDuplicate(property.id)}
+                                size="sm"
+                                className="bg-gradient-to-r from-green-600 to-green-700 text-white"
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                Restore
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteProperty(property.id)}
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:bg-red-50 border-red-200"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Tab Content - Brokers (keeping existing but improved styling) */}
+          {activeTab === "brokers" && (
+            <motion.div
+              key="brokers"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Total Brokers</p>
+                  <p className="text-2xl font-bold text-[#111111]">{brokerStats.total}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
+                  <p className="text-2xl font-bold text-green-600">{brokerStats.active}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Verified</p>
+                  <p className="text-2xl font-bold text-[#FFD300]">{brokerStats.verified}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Blacklisted</p>
+                  <p className="text-2xl font-bold text-red-600">{brokerStats.blacklisted}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Total Listings</p>
+                  <p className="text-2xl font-bold text-[#111111]">{brokerStats.totalListings}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Active Listings</p>
+                  <p className="text-2xl font-bold text-blue-600">{brokerStats.activeListings}</p>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-[#F7F7F7]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
+                    <Input
+                      placeholder="Search brokers by name, phone, agency, or area..."
+                      value={brokerSearchQuery}
+                      onChange={(e) => setBrokerSearchQuery(e.target.value)}
+                      className="pl-11"
+                    />
+                  </div>
+                  <Select value={brokerStatusFilter} onValueChange={setBrokerStatusFilter}>
+                    <SelectTrigger>
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Dormant">Dormant</SelectItem>
+                      <SelectItem value="Blacklisted">Blacklisted</SelectItem>
+                      <SelectItem value="Verified">Verified</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleExportBrokersCSV} variant="outline" className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
+              </div>
+
+              {/* Brokers List */}
+              <div className="space-y-4">
+                {filteredBrokers.map((broker) => {
+                  const brokerProps = getBrokerProperties(broker.id);
+
+                  return (
+                    <motion.div
+                      key={broker.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">
+                            <Users className="w-6 h-6 text-[#FFD300]" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-bold text-[#111111]">{broker.name}</h3>
+                              {broker.verified && (
+                                <Badge className="bg-green-500/20 text-green-700 border-green-500">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Verified
+                                </Badge>
+                              )}
+                            </div>
+                            {broker.custom_id && (
+                              <p className="text-xs text-[#3B3B3B]/60 font-mono mb-2">{broker.custom_id}</p>
+                            )}
+                            {broker.agency_name && (
+                              <p className="text-sm text-[#3B3B3B] mb-2">{broker.agency_name}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {broker.status}
+                              </Badge>
+                              {broker.response_time && broker.response_time !== "Unknown" && (
+                                <Badge variant="outline" className="text-xs">
+                                  {broker.response_time} Response
+                                </Badge>
+                              )}
+                              {broker.reliability_rating && (
+                                <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
+                                  <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                                  {broker.reliability_rating}/5
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setSelectedBroker(broker);
+                            setEditModalOpen(true);
+                          }}
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60 mb-1">Contact</p>
+                          <div className="flex items-center gap-1 text-sm text-[#111111]">
+                            <Phone className="w-3 h-3" />
+                            {broker.phone}
+                          </div>
+                          {broker.alternate_phones && broker.alternate_phones.length > 0 && (
+                            <div className="text-xs text-[#3B3B3B]/60 mt-1">
+                              +{broker.alternate_phones.length} alt number{broker.alternate_phones.length > 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60 mb-1">Total Listings</p>
+                          <p className="text-sm font-bold text-[#111111]">{broker.total_listings_count || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60 mb-1">Active Listings</p>
+                          <p className="text-sm font-bold text-green-600">{brokerProps.length}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#3B3B3B]/60 mb-1">Last Activity</p>
+                          <p className="text-sm text-[#111111]">
+                            {broker.last_activity ? format(new Date(broker.last_activity), "MMM dd, yyyy") : "Never"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {broker.areas_covered && broker.areas_covered.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-xs text-[#3B3B3B]/60 mb-2">Areas Covered</p>
+                          <div className="flex flex-wrap gap-2">
+                            {broker.areas_covered.map((area, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                {area}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {broker.notes && (
+                        <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
+                          <p className="text-xs text-[#3B3B3B]/60 mb-1">Notes</p>
+                          <p className="text-sm text-[#111111]">{broker.notes}</p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => handleWhatsApp(broker)}
+                          className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                          size="sm"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          WhatsApp {brokerProps.length > 0 && `(${brokerProps.length})`}
+                        </Button>
+
+                        <Button
+                          onClick={() => handleGenerateFollowUp(broker)}
+                          className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold"
+                          size="sm"
+                          disabled={followUpLoading}
+                        >
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          AI Follow-Up
+                        </Button>
+
+                        <Button
+                          onClick={() => handleAnalyzeBroker(broker)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          Analytics
+                        </Button>
+
+                        {brokerProps.length > 0 && (
+                          <Button
+                            onClick={() => handleViewListings(broker)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View {brokerProps.length} Listing{brokerProps.length > 1 ? 's' : ''}
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Tab Content - Requirements */}
+          {activeTab === "requirements" && (
+            <motion.div
+              key="requirements"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Total Requirements</p>
+                  <p className="text-2xl font-bold text-[#111111]">{reqStats.total}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
+                  <p className="text-2xl font-bold text-green-600">{reqStats.active}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Matched</p>
+                  <p className="text-2xl font-bold text-blue-600">{reqStats.matched}</p>
+                </div>
+                <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
+                  <p className="text-xs text-[#3B3B3B] mb-1">Closed</p>
+                  <p className="text-2xl font-bold text-[#3B3B3B]">{reqStats.closed}</p>
+                </div>
+              </div>
+
+              {/* Requirements List */}
+              {requirements.length === 0 ? (
+                <div className="bg-white rounded-2xl p-12 text-center border-2 border-[#F7F7F7]">
+                  <Search className="w-12 h-12 text-[#3B3B3B] mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-[#111111] mb-2">No requirements yet</h3>
+                  <p className="text-[#3B3B3B]">Client requirements will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {requirements.map((req) => (
+                    <motion.div
+                      key={req.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30"
+                    >
+                      {/* Header Section */}
+                      <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 py-5 border-b border-stone-200/50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="text-2xl font-bold text-[#111111]">{req.client_name}</h3>
+                              <Badge className={
+                                req.status === "Active" ? "bg-green-500 text-white border-0" :
+                                  req.status === "Matched" ? "bg-blue-500 text-white border-0" :
+                                    req.status === "Closed" ? "bg-gray-500 text-white border-0" :
+                                      "bg-orange-500 text-white border-0"
+                              }>
+                                {req.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-[#3B3B3B]">
+                              {req.client_phone && (
+                                <span className="flex items-center gap-1.5">
+                                  <Phone className="w-4 h-4 text-stone-500" />
+                                  {req.client_phone}
+                                </span>
+                              )}
+                              {req.client_email && (
+                                <span className="flex items-center gap-1.5">
+                                  <Mail className="w-4 h-4 text-stone-500" />
+                                  {req.client_email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs text-stone-500">
+                            {format(new Date(req.created_date), "MMM dd, yyyy")}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Core Requirements */}
+                      <div className="p-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div className="bg-[#F7F7F7] rounded-2xl p-4">
+                            <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
+                              <HomeIcon className="w-3 h-3" />
+                              Type
+                            </p>
+                            <Badge className="bg-[#FFD300] text-black border-0 font-bold">
+                              {req.listing_type}
                             </Badge>
-                            <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
-                              {property.bhk}
-                            </Badge>
-                            {property.custom_id && (
-                              <Badge variant="outline" className="font-mono text-xs">
-                                {property.custom_id}
+                          </div>
+                          <div className="bg-[#F7F7F7] rounded-2xl p-4">
+                            <p className="text-xs text-[#3B3B3B]/60 mb-2">BHK</p>
+                            <p className="text-base font-bold text-[#111111]">
+                              {req.bhk_preference?.join(", ") || "Any"}
+                            </p>
+                          </div>
+                          <div className="bg-[#F7F7F7] rounded-2xl p-4 md:col-span-2">
+                            <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
+                              <IndianRupee className="w-3 h-3" />
+                              Budget
+                            </p>
+                            <p className="text-base font-bold text-[#111111]">
+                              ₹{req.budget_min || 0}{req.budget_unit === "crores" ? " Cr" : "L"} -
+                              ₹{req.budget_max || 0}{req.budget_unit === "crores" ? " Cr" : "L"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Locations */}
+                        {req.preferred_locations && req.preferred_locations.length > 0 && (
+                          <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
+                            <p className="text-xs text-blue-700 font-semibold mb-3 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              Preferred Locations
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {req.preferred_locations.map((loc, idx) => (
+                                <Badge key={idx} className="bg-white text-blue-700 border-blue-300 font-semibold">
+                                  {loc}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Preferences */}
+                        <div className="mb-6">
+                          <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Preferences</p>
+                          <div className="flex flex-wrap gap-2">
+                            {req.furnishing_preference && req.furnishing_preference !== "Any" && (
+                              <Badge variant="outline" className="border-stone-300 text-stone-700">
+                                {req.furnishing_preference}
+                              </Badge>
+                            )}
+                            {req.veg_nonveg && (
+                              <Badge variant="outline" className="border-stone-300 text-stone-700">
+                                {req.veg_nonveg}
+                              </Badge>
+                            )}
+                            {req.parking_required && (
+                              <Badge variant="outline" className="border-stone-300 text-stone-700">
+                                Parking Required
+                              </Badge>
+                            )}
+                            {req.possession_timeline && (
+                              <Badge variant="outline" className="border-stone-300 text-stone-700">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {req.possession_timeline}
                               </Badge>
                             )}
                           </div>
-                          <h3 className="text-lg font-bold text-[#111111] mb-2">
-                            {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
-                          </h3>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-                            <div>
-                              <p className="text-xs text-[#3B3B3B]/60">Building</p>
-                              <p className="text-sm font-semibold text-[#111111]">
-                                {property.building_name || 'N/A'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-[#3B3B3B]/60">Price</p>
-                              <p className="text-sm font-semibold text-[#111111]">
-                                ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-[#3B3B3B]/60">Area</p>
-                              <p className="text-sm font-semibold text-[#111111]">
-                                {property.carpet_area || 'N/A'} sq.ft
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-[#3B3B3B]/60">Floor</p>
-                              <p className="text-sm font-semibold text-[#111111]">
-                                {property.floor || 'N/A'}
-                              </p>
+                        </div>
+
+                        {/* Amenities */}
+                        {req.amenities_required && req.amenities_required.length > 0 && (
+                          <div className="mb-6">
+                            <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Required Amenities</p>
+                            <div className="flex flex-wrap gap-2">
+                              {req.amenities_required.map((amenity, idx) => (
+                                <Badge key={idx} className="bg-amber-50 text-amber-900 border-amber-200">
+                                  {amenity}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
-                          {property.duplicate_of && (
-                            <p className="text-xs text-orange-600 font-semibold">
-                              Duplicate of: {property.duplicate_of}
-                            </p>
+                        )}
+
+                        {/* Notes */}
+                        {req.notes && (
+                          <div className="mb-6 p-4 bg-stone-50 rounded-2xl border border-stone-200">
+                            <p className="text-xs text-stone-600 font-semibold mb-2">Internal Notes</p>
+                            <p className="text-sm text-[#111111] leading-relaxed">{req.notes}</p>
+                          </div>
+                        )}
+
+                        {/* Source Text */}
+                        {req.source_text && (
+                          <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                            <p className="text-xs text-blue-600 font-semibold mb-2">Original Message</p>
+                            <p className="text-sm text-[#111111] italic leading-relaxed">{req.source_text}</p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-3">
+                          {req.client_phone && (
+                            <Button
+                              onClick={() => {
+                                const message = `Hi ${req.client_name}, this is Chariot Realty. We have some properties matching your requirement for ${req.bhk_preference?.join("/")} in ${req.preferred_locations?.join("/")}. Can we share details?`;
+                                window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                              }}
+                              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              WhatsApp Client
+                            </Button>
                           )}
-                        </div>
-                        <div className="flex gap-2">
                           <Button
-                            onClick={() => handleViewProperty(property.id)}
-                            size="sm"
+                            onClick={() => handleFindMatches(req)}
                             variant="outline"
+                            className="border-2 border-[#FFD300] text-black hover:bg-[#FFD300] font-semibold rounded-2xl"
                           >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => handleRestoreDuplicate(property.id)}
-                            size="sm"
-                            variant="outline"
-                            className="text-green-600 hover:bg-green-50"
-                          >
-                            Restore
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteProperty(property.id)}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            <Eye className="w-4 h-4 mr-2" />
+                            Find Matches
                           </Button>
                         </div>
                       </div>
                     </motion.div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab Content - Brokers */}
-        {activeTab === "brokers" && (
-          <div>
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Total Brokers</p>
-                <p className="text-2xl font-bold text-[#111111]">{brokerStats.total}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
-                <p className="text-2xl font-bold text-green-600">{brokerStats.active}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Verified</p>
-                <p className="text-2xl font-bold text-[#FFD300]">{brokerStats.verified}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Blacklisted</p>
-                <p className="text-2xl font-bold text-red-600">{brokerStats.blacklisted}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Total Listings</p>
-                <p className="text-2xl font-bold text-[#111111]">{brokerStats.totalListings}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Active Listings</p>
-                <p className="text-2xl font-bold text-blue-600">{brokerStats.activeListings}</p>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-[#F7F7F7]">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
-                  <Input
-                    placeholder="Search brokers by name, phone, agency, or area..."
-                    value={brokerSearchQuery}
-                    onChange={(e) => setBrokerSearchQuery(e.target.value)}
-                    className="pl-11"
-                  />
+                  ))}
                 </div>
-                <Select value={brokerStatusFilter} onValueChange={setBrokerStatusFilter}>
-                  <SelectTrigger>
-                    <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Dormant">Dormant</SelectItem>
-                    <SelectItem value="Blacklisted">Blacklisted</SelectItem>
-                    <SelectItem value="Verified">Verified</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={handleExportBrokersCSV} variant="outline" className="w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
-                </Button>
-              </div>
-            </div>
-
-            {/* Brokers List */}
-            <div className="space-y-4">
-              {filteredBrokers.map((broker) => {
-                const brokerProps = getBrokerProperties(broker.id);
-                
-                return (
-                  <motion.div
-                    key={broker.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl p-6 border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-[#FFD300]/20 rounded-xl flex items-center justify-center">
-                          <Users className="w-6 h-6 text-[#FFD300]" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-[#111111]">{broker.name}</h3>
-                            {broker.verified && (
-                              <Badge className="bg-green-500/20 text-green-700 border-green-500">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Verified
-                              </Badge>
-                            )}
-                          </div>
-                          {broker.custom_id && (
-                            <p className="text-xs text-[#3B3B3B]/60 font-mono mb-2">{broker.custom_id}</p>
-                          )}
-                          {broker.agency_name && (
-                            <p className="text-sm text-[#3B3B3B] mb-2">{broker.agency_name}</p>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {broker.status}
-                            </Badge>
-                            {broker.response_time && broker.response_time !== "Unknown" && (
-                              <Badge variant="outline" className="text-xs">
-                                {broker.response_time} Response
-                              </Badge>
-                            )}
-                            {broker.reliability_rating && (
-                              <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
-                                <Star className="w-3 h-3 mr-1" fill="currentColor" />
-                                {broker.reliability_rating}/5
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => {
-                          setSelectedBroker(broker);
-                          setEditModalOpen(true);
-                        }}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Contact</p>
-                        <div className="flex items-center gap-1 text-sm text-[#111111]">
-                          <Phone className="w-3 h-3" />
-                          {broker.phone}
-                        </div>
-                        {broker.alternate_phones && broker.alternate_phones.length > 0 && (
-                          <div className="text-xs text-[#3B3B3B]/60 mt-1">
-                            +{broker.alternate_phones.length} alt number{broker.alternate_phones.length > 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Total Listings</p>
-                        <p className="text-sm font-bold text-[#111111]">{broker.total_listings_count || 0}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Active Listings</p>
-                        <p className="text-sm font-bold text-green-600">{brokerProps.length}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Last Activity</p>
-                        <p className="text-sm text-[#111111]">
-                          {broker.last_activity ? format(new Date(broker.last_activity), "MMM dd, yyyy") : "Never"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {broker.areas_covered && broker.areas_covered.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-xs text-[#3B3B3B]/60 mb-2">Areas Covered</p>
-                        <div className="flex flex-wrap gap-2">
-                          {broker.areas_covered.map((area, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {area}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {broker.notes && (
-                      <div className="mb-4 p-3 bg-[#F7F7F7] rounded-xl">
-                        <p className="text-xs text-[#3B3B3B]/60 mb-1">Notes</p>
-                        <p className="text-sm text-[#111111]">{broker.notes}</p>
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => handleWhatsApp(broker)}
-                        className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
-                        size="sm"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp {brokerProps.length > 0 && `(${brokerProps.length})`}
-                      </Button>
-                      
-                      <Button
-                        onClick={() => handleGenerateFollowUp(broker)}
-                        className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-semibold"
-                        size="sm"
-                        disabled={followUpLoading}
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        AI Follow-Up
-                      </Button>
-
-                      <Button
-                        onClick={() => handleAnalyzeBroker(broker)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Analytics
-                      </Button>
-
-                      {brokerProps.length > 0 && (
-                        <Button
-                          onClick={() => handleViewListings(broker)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View {brokerProps.length} Listing{brokerProps.length > 1 ? 's' : ''}
-                        </Button>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Tab Content - Requirements */}
-        {activeTab === "requirements" && (
-          <div>
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Total Requirements</p>
-                <p className="text-2xl font-bold text-[#111111]">{reqStats.total}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
-                <p className="text-2xl font-bold text-green-600">{reqStats.active}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Matched</p>
-                <p className="text-2xl font-bold text-blue-600">{reqStats.matched}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-                <p className="text-xs text-[#3B3B3B] mb-1">Closed</p>
-                <p className="text-2xl font-bold text-[#3B3B3B]">{reqStats.closed}</p>
-              </div>
-            </div>
-
-            {/* Requirements List */}
-            {requirements.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 text-center border-2 border-[#F7F7F7]">
-                <Search className="w-12 h-12 text-[#3B3B3B] mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-[#111111] mb-2">No requirements yet</h3>
-                <p className="text-[#3B3B3B]">Client requirements will appear here</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {requirements.map((req) => (
-                  <motion.div
-                    key={req.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30"
-                  >
-                    {/* Header Section */}
-                    <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 py-5 border-b border-stone-200/50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-2xl font-bold text-[#111111]">{req.client_name}</h3>
-                            <Badge className={
-                              req.status === "Active" ? "bg-green-500 text-white border-0" :
-                              req.status === "Matched" ? "bg-blue-500 text-white border-0" :
-                              req.status === "Closed" ? "bg-gray-500 text-white border-0" :
-                              "bg-orange-500 text-white border-0"
-                            }>
-                              {req.status}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-[#3B3B3B]">
-                            {req.client_phone && (
-                              <span className="flex items-center gap-1.5">
-                                <Phone className="w-4 h-4 text-stone-500" />
-                                {req.client_phone}
-                              </span>
-                            )}
-                            {req.client_email && (
-                              <span className="flex items-center gap-1.5">
-                                <Mail className="w-4 h-4 text-stone-500" />
-                                {req.client_email}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs text-stone-500">
-                          {format(new Date(req.created_date), "MMM dd, yyyy")}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Core Requirements */}
-                    <div className="p-6">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-[#F7F7F7] rounded-2xl p-4">
-                          <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
-                            <HomeIcon className="w-3 h-3" />
-                            Type
-                          </p>
-                          <Badge className="bg-[#FFD300] text-black border-0 font-bold">
-                            {req.listing_type}
-                          </Badge>
-                        </div>
-                        <div className="bg-[#F7F7F7] rounded-2xl p-4">
-                          <p className="text-xs text-[#3B3B3B]/60 mb-2">BHK</p>
-                          <p className="text-base font-bold text-[#111111]">
-                            {req.bhk_preference?.join(", ") || "Any"}
-                          </p>
-                        </div>
-                        <div className="bg-[#F7F7F7] rounded-2xl p-4 md:col-span-2">
-                          <p className="text-xs text-[#3B3B3B]/60 mb-2 flex items-center gap-1">
-                            <IndianRupee className="w-3 h-3" />
-                            Budget
-                          </p>
-                          <p className="text-base font-bold text-[#111111]">
-                            ₹{req.budget_min || 0}{req.budget_unit === "crores" ? " Cr" : "L"} - 
-                            ₹{req.budget_max || 0}{req.budget_unit === "crores" ? " Cr" : "L"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Locations */}
-                      {req.preferred_locations && req.preferred_locations.length > 0 && (
-                        <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                          <p className="text-xs text-blue-700 font-semibold mb-3 flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            Preferred Locations
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {req.preferred_locations.map((loc, idx) => (
-                              <Badge key={idx} className="bg-white text-blue-700 border-blue-300 font-semibold">
-                                {loc}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Preferences */}
-                      <div className="mb-6">
-                        <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Preferences</p>
-                        <div className="flex flex-wrap gap-2">
-                          {req.furnishing_preference && req.furnishing_preference !== "Any" && (
-                            <Badge variant="outline" className="border-stone-300 text-stone-700">
-                              {req.furnishing_preference}
-                            </Badge>
-                          )}
-                          {req.veg_nonveg && (
-                            <Badge variant="outline" className="border-stone-300 text-stone-700">
-                              {req.veg_nonveg}
-                            </Badge>
-                          )}
-                          {req.parking_required && (
-                            <Badge variant="outline" className="border-stone-300 text-stone-700">
-                              Parking Required
-                            </Badge>
-                          )}
-                          {req.possession_timeline && (
-                            <Badge variant="outline" className="border-stone-300 text-stone-700">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {req.possession_timeline}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Amenities */}
-                      {req.amenities_required && req.amenities_required.length > 0 && (
-                        <div className="mb-6">
-                          <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Required Amenities</p>
-                          <div className="flex flex-wrap gap-2">
-                            {req.amenities_required.map((amenity, idx) => (
-                              <Badge key={idx} className="bg-amber-50 text-amber-900 border-amber-200">
-                                {amenity}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Notes */}
-                      {req.notes && (
-                        <div className="mb-6 p-4 bg-stone-50 rounded-2xl border border-stone-200">
-                          <p className="text-xs text-stone-600 font-semibold mb-2">Internal Notes</p>
-                          <p className="text-sm text-[#111111] leading-relaxed">{req.notes}</p>
-                        </div>
-                      )}
-
-                      {/* Source Text */}
-                      {req.source_text && (
-                        <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-                          <p className="text-xs text-blue-600 font-semibold mb-2">Original Message</p>
-                          <p className="text-sm text-[#111111] italic leading-relaxed">{req.source_text}</p>
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-3">
-                        {req.client_phone && (
-                          <Button
-                            onClick={() => {
-                              const message = `Hi ${req.client_name}, this is Chariot Realty. We have some properties matching your requirement for ${req.bhk_preference?.join("/")} in ${req.preferred_locations?.join("/")}. Can we share details?`;
-                              window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                            }}
-                            className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            WhatsApp Client
-                          </Button>
-                        )}
-                        <Button
-                          onClick={() => handleFindMatches(req)}
-                          variant="outline"
-                          className="border-2 border-[#FFD300] text-black hover:bg-[#FFD300] font-semibold rounded-2xl"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Find Matches
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Modals */}
-      <BrokerEditModal />
       <BrokerPropertiesModal />
+      <BrokerEditModal />
       <AIAssistantModal />
       <DealsRadarModal />
       <ImageUploadModal />
