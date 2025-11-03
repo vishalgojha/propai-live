@@ -52,22 +52,10 @@ export default function PropertyCard({ property, onViewDetails }) {
     return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
-  const getAgentPhone = () => {
-    if (property.assigned_agent_name?.toLowerCase().includes('kapil') || 
-        property.assigned_agent?.toLowerCase().includes('kapil')) {
-      return "919773757759";
-    }
-    return "919819471310";
-  };
-
-  const getAgentName = () => {
-    return property.assigned_agent_name || property.assigned_agent || "Vishal";
-  };
-
-  const handleWhatsAppInquiry = (e) => {
+  const handleWhatsAppVishal = (e) => {
     e.stopPropagation();
     
-    const message = `Hi ${getAgentName()}, I'm interested in this property:\n\n` +
+    const message = `Hi Vishal, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
@@ -78,7 +66,24 @@ export default function PropertyCard({ property, onViewDetails }) {
       `✅ Viewing schedule\n\n` +
       `Thank you!`;
     
-    window.open(`https://wa.me/${getAgentPhone()}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleWhatsAppKapil = (e) => {
+    e.stopPropagation();
+    
+    const message = `Hi Kapil, I'm interested in this property:\n\n` +
+      `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
+      `💰 ${formatPrice()} | ${property.listing_type}\n` +
+      `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
+      `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
+      `\nPlease share:\n` +
+      `✅ Latest photos\n` +
+      `✅ Availability status\n` +
+      `✅ Viewing schedule\n\n` +
+      `Thank you!`;
+    
+    window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleBrokerWhatsApp = (e) => {
@@ -252,11 +257,19 @@ export default function PropertyCard({ property, onViewDetails }) {
         {/* WhatsApp CTAs */}
         <div className="space-y-2">
           <Button
-            onClick={handleWhatsAppInquiry}
+            onClick={handleWhatsAppVishal}
             className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-2xl h-11"
           >
             <MessageCircle className="w-4 h-4 mr-2" />
-            Contact {getAgentName()} via WhatsApp
+            Contact Vishal via WhatsApp
+          </Button>
+
+          <Button
+            onClick={handleWhatsAppKapil}
+            className="w-full bg-[#128C7E] hover:bg-[#0F7A6E] text-white font-bold rounded-2xl h-11"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Contact Kapil via WhatsApp
           </Button>
 
           {user?.role === 'admin' && property.broker_contact && (
