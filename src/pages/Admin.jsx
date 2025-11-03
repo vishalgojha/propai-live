@@ -71,6 +71,12 @@ export default function Admin() {
   const [blogTags, setBlogTags] = useState("");
   const [blogRelatedLocations, setBlogRelatedLocations] = useState("");
 
+  // Building Intelligence Tool states
+  const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
+  const [buildingQuery, setBuildingQuery] = useState("");
+  const [buildingQueryResult, setBuildingQueryResult] = useState(null);
+  const [queryingBuilding, setQueryingBuilding] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -597,6 +603,50 @@ export default function Admin() {
     });
   };
 
+  const handleBuildingQuery = async () => {
+    if (!buildingQuery.trim()) {
+      toast.error('Please enter a building query', {
+        className: 'bg-red-600 text-white border-0'
+      });
+      return;
+    }
+
+    setQueryingBuilding(true);
+    setBuildingQueryResult(null);
+
+    const loadingToast = toast.loading('🧠 Querying Building Intelligence...', {
+      description: 'Searching building database and analyzing data...',
+      className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0',
+    });
+
+    try {
+      // Call the building_assistant agent
+      const response = await base44.agents.invoke('building_assistant', {
+        query: buildingQuery
+      });
+
+      toast.dismiss(loadingToast);
+
+      setBuildingQueryResult(response);
+
+      toast.success('✅ Query Complete!', {
+        description: 'Building intelligence retrieved',
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 3000
+      });
+
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('❌ Query Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setQueryingBuilding(false);
+    }
+  };
+
   // Stats
   const stats = {
     properties: {
@@ -847,6 +897,88 @@ export default function Admin() {
     </Dialog>
   );
 
+  // Building Query Modal
+  const BuildingQueryModal = () => (
+    <Dialog open={buildingQueryModalOpen} onOpenChange={setBuildingQueryModalOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-blue-500" />
+            Building Intelligence Tool
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Ask About Any Building</label>
+            <Input
+              placeholder='e.g., "Tell me about Maker Tower" or "Best buildings in Bandra for expats?"'
+              value={buildingQuery}
+              onChange={(e) => setBuildingQuery(e.target.value)}
+              className="mb-2"
+              onKeyPress={(e) => e.key === 'Enter' && handleBuildingQuery()}
+            />
+            <p className="text-xs text-slate-500">Query pricing trends, tenant profiles, amenities, market activity, or compare buildings</p>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
+            <p className="font-semibold mb-1">💡 Example queries:</p>
+            <ul className="space-y-1 text-xs">
+              <li>• "What's the average rent for 2 BHK in Oberoi Sky Heights?"</li>
+              <li>• "Compare Maker Tower and Rustomjee Paramount"</li>
+              <li>• "Which buildings in Juhu are expat-friendly?"</li>
+              <li>• "Show me recent activity in Pali Hill buildings"</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleBuildingQuery}
+              disabled={queryingBuilding || !buildingQuery.trim()}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex-1"
+            >
+              {queryingBuilding ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Querying...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Query Buildings
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => setBuildingQueryModalOpen(false)}
+              variant="outline"
+              disabled={queryingBuilding}
+            >
+              Close
+            </Button>
+          </div>
+
+          {/* Query Result */}
+          {buildingQueryResult && (
+            <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                Intelligence Result:
+              </h4>
+              <div className="prose prose-sm max-w-none">
+                <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-white p-4 rounded-lg border">
+                  {typeof buildingQueryResult === 'string' 
+                    ? buildingQueryResult 
+                    : JSON.stringify(buildingQueryResult, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -881,6 +1013,14 @@ export default function Admin() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={() => setBuildingQueryModalOpen(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Building Intel
+              </Button>
               <Button
                 onClick={loadDealsRadar}
                 disabled={dealsLoading}
@@ -1801,6 +1941,7 @@ export default function Admin() {
 
       <ImageUploadModal />
       <BlogGenModal />
+      <BuildingQueryModal />
     </div>
   );
 }
