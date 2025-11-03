@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,10 +26,12 @@ import {
   Eye, Trash2, AlertTriangle, Copy, Upload, MessageCircle,
   Image as ImageIcon, X, CheckCircle2, RefreshCw, MapPin,
   Sparkles, Clock, TrendingUp, BarChart3, Phone, Mail,
-  Package, Star
+  Package, Star, Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -165,10 +166,17 @@ export default function Admin() {
         data: { images: updatedImages }
       });
 
-      alert(`✅ Uploaded ${uploadedUrls.length} image(s)!`);
+      toast.success(`✅ Uploaded ${uploadedUrls.length} image(s)!`, {
+        description: `Images added to property ${selectedPropertyForImages.custom_id || selectedPropertyForImages.id}.`,
+        className: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0',
+        duration: 3000
+      });
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Failed to upload images');
+      toast.error('Failed to upload images', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
     } finally {
       setUploadingImages(false);
     }
@@ -189,9 +197,17 @@ export default function Admin() {
         ...selectedPropertyForImages,
         images: updatedImages
       });
+      toast.success('Image removed!', {
+        description: 'Property images updated.',
+        className: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0',
+        duration: 2000
+      });
     } catch (error) {
       console.error('Error removing image:', error);
-      alert('Failed to remove image');
+      toast.error('Failed to remove image', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
     }
   };
 
@@ -203,6 +219,11 @@ export default function Admin() {
   const handleDeleteProperty = (propertyId) => {
     if (confirm("Delete this property?")) {
       deletePropertyMutation.mutate(propertyId);
+      toast.info('Property deleted!', {
+        description: `Property with ID ${propertyId} has been removed.`,
+        className: 'bg-slate-600 text-white border-0',
+        duration: 2000
+      });
     }
   };
 
@@ -210,10 +231,17 @@ export default function Admin() {
     setDealsLoading(true);
     try {
       const response = await base44.functions.invoke('getDealsRadar', {});
-      alert(`📊 Deals Radar:\n\n💎 ${response.data.summary.underpricedDeals} Underpriced\n📉 ${response.data.summary.priceDrops} Price Drops\n🎯 ${response.data.summary.hiddenMatches} Hidden Matches`);
+      toast.success('Deals Radar Loaded', {
+        description: `💎 ${response.data.summary.underpricedDeals} Underpriced | 📉 ${response.data.summary.priceDrops} Price Drops | 🎯 ${response.data.summary.hiddenMatches} Hidden Matches`,
+        duration: 5000,
+        className: 'bg-gradient-to-r from-purple-600 to-purple-700 text-white border-0'
+      });
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to load deals radar');
+      toast.error('Failed to load deals radar', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
     } finally {
       setDealsLoading(false);
     }
@@ -223,10 +251,17 @@ export default function Admin() {
     if (!confirm('Recalculate all broker trust scores?')) return;
     try {
       const response = await base44.functions.invoke('calculateBrokerTrust', { recalculateAll: true });
-      alert(`✅ Scored ${response.data.brokersScored} brokers!`);
+      toast.success('✅ Broker Trust Scores Updated', {
+        description: `Scored ${response.data.brokersScored} brokers successfully`,
+        className: 'bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black border-0',
+        duration: 4000
+      });
       queryClient.invalidateQueries({ queryKey: ['brokers'] });
     } catch (error) {
-      alert('Failed to calculate scores');
+      toast.error('Failed to calculate scores', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
     }
   };
 
@@ -237,10 +272,17 @@ export default function Admin() {
       const response = await base44.functions.invoke('generatePropertySlugs', { 
         generateForAll: true 
       });
-      alert(`✅ Generated ${response.data.successCount} slugs!\n\nAll properties now have SEO-friendly URLs.`);
+      toast.success('✅ SEO Slugs Generated', {
+        description: `Generated ${response.data.successCount} slugs. All properties now have SEO-friendly URLs.`,
+        className: 'bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black border-0',
+        duration: 4000
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     } catch (error) {
-      alert('Failed to generate slugs: ' + error.message);
+      toast.error('Failed to generate slugs', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
     } finally {
       setGeneratingSlugs(false);
     }
@@ -248,13 +290,68 @@ export default function Admin() {
 
   const backfillBuildings = async () => {
     if (!confirm('Generate buildings from all properties?\n\nThis will:\n1. Find properties with building names\n2. Create Building entities\n3. Link properties to buildings')) return;
-    setGeneratingSlugs(true); // Reuse loading state
+    setGeneratingSlugs(true);
+    
+    // Show loading toast
+    toast.loading('🏗️ Building Intelligence System running...', {
+      description: 'Scanning properties, fuzzy matching buildings, enriching with web data...',
+      className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0',
+      id: 'building-backfill'
+    });
+
     try {
       const response = await base44.functions.invoke('backfillBuildings', {});
-      alert(`✅ ${response.data.message}\n\n📊 Stats:\n- Properties processed: ${response.data.results.properties_processed}\n- Buildings created: ${response.data.results.buildings_created}\n- Linked to existing: ${response.data.results.buildings_linked}`);
+      
+      const { results } = response.data;
+      
+      // Dismiss loading toast
+      toast.dismiss('building-backfill');
+      
+      // Show result toast
+      if (results.properties_processed === 0) {
+        toast.info('✅ Backfill Complete', {
+          description: (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                <span>All properties already linked to buildings!</span>
+              </div>
+              <div className="text-xs opacity-90 mt-2 space-y-1">
+                <div>• Properties with building_name: {results.total_properties}</div>
+                <div>• Already linked: All ✅</div>
+                <div>• New buildings created: {results.buildings_created}</div>
+              </div>
+            </div>
+          ),
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 6000
+        });
+      } else {
+        toast.success('✅ Backfill Complete!', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">{response.data.message}</div>
+              <div className="text-xs opacity-90 space-y-1">
+                <div>📊 Stats:</div>
+                <div>• Properties processed: {results.properties_processed}</div>
+                <div>• Buildings created: {results.buildings_created}</div>
+                <div>• Linked to existing: {results.buildings_linked}</div>
+              </div>
+            </div>
+          ),
+          className: 'bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black border-0',
+          duration: 6000
+        });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     } catch (error) {
-      alert('Failed to backfill buildings: ' + error.message);
+      toast.dismiss('building-backfill');
+      toast.error('❌ Building Backfill Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
     } finally {
       setGeneratingSlugs(false);
     }
@@ -456,6 +553,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Toaster position="top-center" richColors closeButton />
       {/* Fixed Header */}
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -884,6 +982,11 @@ export default function Admin() {
                                 updatePropertyMutation.mutate({
                                   id: property.id,
                                   data: { is_duplicate: false, duplicate_of: null }
+                                });
+                                toast.success('Property restored!', {
+                                  description: `Property ${property.custom_id || property.id} is no longer marked as duplicate.`,
+                                  className: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0',
+                                  duration: 2000
                                 });
                               }
                             }}
