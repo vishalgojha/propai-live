@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,47 +30,51 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     onFilterChange({ ...filters, location_multi: newLocations });
   };
 
+  // Listing Type toggle
+  const toggleListingType = (type) => {
+    const newListingType = filters.listingType === type ? "all" : type;
+    onFilterChange({ ...filters, listingType: newListingType });
+  };
+
   // Expat Mode toggle handler
   const toggleExpatMode = () => {
     const newExpatMode = !expatMode;
     setExpatMode(newExpatMode);
 
     if (newExpatMode) {
-      // Auto-apply expat-friendly filters
       onFilterChange({
         ...filters,
         furnishing: 'Fully Furnished',
         expat_mode: true
       });
     } else {
-      // Remove expat filters by destructuring 'expat_mode' from the filters object
       const { expat_mode, ...restFilters } = filters;
-      // It's important to also remove 'furnishing' if it was auto-applied by Expat Mode
-      // and not explicitly selected by the user otherwise.
-      // If we simply remove 'expat_mode' flag, 'furnishing' might stay 'Fully Furnished'.
-      // A more robust implementation would check if 'furnishing' was 'Fully Furnished'
-      // before expat_mode was activated, or if it was set *by* expat mode.
-      // For now, adhering strictly to the outline's instruction for removal:
       onFilterChange(restFilters);
     }
+  };
+
+  // Get price unit label based on listing type
+  const getPriceUnit = () => {
+    if (filters.listingType === "Rent") {
+      return "Lakhs";
+    } else if (filters.listingType === "Sale" || filters.listingType === "Pre Leased") {
+      return "Cr";
+    }
+    return "Lakhs"; // Default
   };
 
   // AI/NLP search handler
   const handleNlpSearch = () => {
     if (!nlpInput.trim()) return;
 
-    // Simple NLP parsing (can be enhanced with backend AI)
     const input = nlpInput.toLowerCase();
     const newFilters = { ...filters, search: nlpInput };
 
-    // Extract BHK from natural language
     const bhkMatches = input.match(/(\d+)\s*bhk/gi);
     if (bhkMatches) {
-      // Ensure BHK values match the case in uniqueBhks if necessary, or normalize
       newFilters.bhk_multi = bhkMatches.map(m => m.replace(/\s*bhk/i, ' BHK').toUpperCase().trim());
     }
 
-    // Extract locations (check against known locations)
     const locationMatches = uniqueLocations.filter(loc =>
       input.includes(loc.toLowerCase())
     );
@@ -79,14 +82,14 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       newFilters.location_multi = locationMatches;
     }
 
-    // Extract listing type
     if (input.includes('rent') || input.includes('rental')) {
       newFilters.listingType = 'Rent';
     } else if (input.includes('sale') || input.includes('buy')) {
       newFilters.listingType = 'Sale';
+    } else if (input.includes('pre leased') || input.includes('pre-leased')) {
+      newFilters.listingType = 'Pre Leased';
     }
 
-    // Extract furnishing
     if (input.includes('furnished')) {
       if (input.includes('fully')) {
         newFilters.furnishing = 'Fully Furnished';
@@ -97,18 +100,17 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       }
     }
 
-    // Extract budget
     const priceMatch = input.match(/(?:under|below|max|up to)\s*(\d+(?:\.\d+)?)\s*(cr|crore|crores|l|lakh|lakhs|k|thousand)/i);
     if (priceMatch) {
       const amount = parseFloat(priceMatch[1]);
       const unit = priceMatch[2].toLowerCase();
 
       if (unit.startsWith('cr')) {
-        newFilters.maxPrice = amount * 100; // Convert to lakhs
+        newFilters.maxPrice = amount * 100;
       } else if (unit.startsWith('l')) {
         newFilters.maxPrice = amount;
       } else if (unit === 'k') {
-        newFilters.maxPrice = amount / 100; // Convert to lakhs
+        newFilters.maxPrice = amount / 100;
       }
     }
 
@@ -124,7 +126,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     (filters.listingType && filters.listingType !== "all") ||
     filters.search ||
     (filters.propertyCategory && filters.propertyCategory !== "all") ||
-    filters.expat_mode; // Check for expat mode filter
+    filters.expat_mode;
 
   return (
     <div className="bg-white rounded-[22px] shadow-sm border-2 border-[#F7F7F7] p-6 mb-8">
@@ -185,6 +187,31 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </p>
       </div>
 
+      {/* Listing Type Filter - Rent/Sale/Pre Leased */}
+      <div className="mb-6">
+        <label className="text-sm font-semibold text-[#111111] mb-3 block">Looking For</label>
+        <div className="flex flex-wrap gap-2">
+          {['Rent', 'Sale', 'Pre Leased'].map((type) => {
+            const isSelected = filters.listingType === type;
+            return (
+              <Button
+                key={type}
+                onClick={() => toggleListingType(type)}
+                variant={isSelected ? "default" : "outline"}
+                size="sm"
+                className={`rounded-xl font-semibold ${
+                  isSelected
+                    ? "bg-[#FFD300] text-black border-0"
+                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7] text-[#3B3B3B]"
+                }`}
+              >
+                {type}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Multi-Select BHK */}
       <div className="mb-6">
         <label className="text-sm font-semibold text-[#111111] mb-3 block">Select BHK (Multi-select)</label>
@@ -235,23 +262,27 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </div>
       </div>
 
-      {/* Budget Range */}
+      {/* Budget Range - Dynamic based on listing type */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <div>
-          <label className="text-sm font-semibold text-[#111111] mb-2 block">Min Price (Lakhs)</label>
+          <label className="text-sm font-semibold text-[#111111] mb-2 block">
+            Min Price ({getPriceUnit()})
+          </label>
           <Input
             type="number"
-            placeholder="e.g., 50"
+            placeholder={filters.listingType === "Rent" ? "e.g., 50" : "e.g., 1"}
             value={filters.minPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
             className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
           />
         </div>
         <div>
-          <label className="text-sm font-semibold text-[#111111] mb-2 block">Max Price (Lakhs)</label>
+          <label className="text-sm font-semibold text-[#111111] mb-2 block">
+            Max Price ({getPriceUnit()})
+          </label>
           <Input
             type="number"
-            placeholder="e.g., 200"
+            placeholder={filters.listingType === "Rent" ? "e.g., 200" : "e.g., 5"}
             value={filters.maxPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
             className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
@@ -277,17 +308,15 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             ))}
             {(filters.minPrice || filters.maxPrice) && (
               <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
-                ₹{filters.minPrice || "0"}L - ₹{filters.maxPrice || "∞"}L
+                ₹{filters.minPrice || "0"} - ₹{filters.maxPrice || "∞"} {getPriceUnit()}
               </Badge>
             )}
-            {filters.expat_mode && ( // Display badge for Expat Mode if active
+            {filters.expat_mode && (
               <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-400 font-semibold">
                 Expat Mode
-                {/* Clicking X on the badge should toggle Expat Mode off */}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleExpatMode()} />
               </Badge>
             )}
-            {/* Adding other active filters here as badges, for example: */}
             {filters.furnishing && (
               <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
                 {filters.furnishing}

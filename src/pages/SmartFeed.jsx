@@ -96,14 +96,26 @@ export default function SmartFeed() {
         if (!property.expat_friendly) return false;
       }
 
-      // Budget
+      // Budget - Dynamic based on listing type
       if (filters.minPrice || filters.maxPrice) {
-        const priceInLakhs = property.price_unit === "crores" 
-          ? property.price * 100 
-          : property.price;
+        let priceInFilterUnit = property.price;
+        
+        // Convert property.price to the unit expected by the filter
+        if (filters.listingType === "Rent") {
+          // Filter is expected to be in Lakhs (e.g., rent of 50k is 0.5 lakhs)
+          // Convert property price to lakhs
+          priceInFilterUnit = property.price_unit === "crores" ? property.price * 100 : property.price;
+        } else if (filters.listingType === "Sale" || filters.listingType === "Pre Leased") {
+          // Filter is expected to be in Crores
+          // Convert property price to crores
+          priceInFilterUnit = property.price_unit === "lakhs" ? property.price / 100 : property.price;
+        } else {
+          // Default or "all" listingType: treat prices as Lakhs
+          priceInFilterUnit = property.price_unit === "crores" ? property.price * 100 : property.price;
+        }
 
-        if (filters.minPrice && priceInLakhs < parseFloat(filters.minPrice)) return false;
-        if (filters.maxPrice && priceInLakhs > parseFloat(filters.maxPrice)) return false;
+        if (filters.minPrice && priceInFilterUnit < parseFloat(filters.minPrice)) return false;
+        if (filters.maxPrice && priceInFilterUnit > parseFloat(filters.maxPrice)) return false;
       }
 
       return true;
