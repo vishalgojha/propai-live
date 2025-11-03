@@ -840,7 +840,7 @@ export default function Admin() {
 
                   {brokerAnalytics.recentInteractions && brokerAnalytics.recentInteractions.length > 0 && (
                     <div>
-                      <h4 className="font-semibold mb-3">Recent Interacti ons</h4>
+                      <h4 className="font-semibold mb-3">Recent Interactions</h4>
                       <div className="space-y-2">
                         {brokerAnalytics.recentInteractions.map((interaction, idx) => (
                           <div key={idx} className="bg-[#F7F7F7] rounded-xl p-3 text-sm">
@@ -903,7 +903,6 @@ export default function Admin() {
     );
   };
 
-  // NEW: Deals Radar Modal
   const DealsRadarModal = () => {
     if (!dealsData) return null;
 
@@ -1217,24 +1216,32 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Main Tabs */}
+        {/* Main Tabs - NOW VERTICAL */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="properties" className="flex items-center gap-2">
-              <Home className="w-4 h-4" />
-              Properties
+          <TabsList className="flex flex-col w-full mb-8 h-auto space-y-2 bg-transparent">
+            <TabsTrigger 
+              value="properties" 
+              className="w-full justify-start gap-3 data-[state=active]:bg-[#FFD300] data-[state=active]:text-black h-12 rounded-xl"
+            >
+              <Home className="w-5 h-5" />
+              <span className="font-semibold">Properties</span>
             </TabsTrigger>
-            <TabsTrigger value="brokers" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Brokers
+            <TabsTrigger 
+              value="brokers" 
+              className="w-full justify-start gap-3 data-[state=active]:bg-[#FFD300] data-[state=active]:text-black h-12 rounded-xl"
+            >
+              <Users className="w-5 h-5" />
+              <span className="font-semibold">Brokers</span>
             </TabsTrigger>
-            <TabsTrigger value="requirements" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Requirements
+            <TabsTrigger 
+              value="requirements" 
+              className="w-full justify-start gap-3 data-[state=active]:bg-[#FFD300] data-[state=active]:text-black h-12 rounded-xl"
+            >
+              <FileText className="w-5 h-5" />
+              <span className="font-semibold">Requirements</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* PROPERTIES TAB */}
           <TabsContent value="properties">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
