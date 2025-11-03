@@ -107,7 +107,12 @@ export default function PropertyCard({ property, onViewDetails }) {
   };
 
   const handleCardClick = () => {
-    navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+    // Use slug-based URL if available, fallback to ID
+    if (property.slug) {
+      navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
+    } else {
+      navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+    }
   };
 
   const getLocationDisplay = () => {

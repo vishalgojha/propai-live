@@ -27,17 +27,21 @@ export default function PropertyDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
-  const propertyId = urlParams.get('id');
+  const propertySlug = urlParams.get('slug');
+  const propertyId = urlParams.get('id'); // Fallback for old links
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
 
   const { data: property, isLoading } = useQuery({
-    queryKey: ['property', propertyId],
+    queryKey: ['property', propertySlug || propertyId],
     queryFn: async () => {
       const properties = await base44.entities.Property.list();
+      if (propertySlug) {
+        return properties.find(p => p.slug === propertySlug);
+      }
       return properties.find(p => p.id === propertyId);
     },
-    enabled: !!propertyId,
+    enabled: !!(propertySlug || propertyId),
   });
 
   const incrementViewsMutation = useMutation({
@@ -45,7 +49,7 @@ export default function PropertyDetails() {
       views_count: (property?.views_count || 0) + 1 
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['property', propertySlug || propertyId] });
     },
   });
 
@@ -119,6 +123,11 @@ export default function PropertyDetails() {
   };
 
   const getShareUrl = () => {
+    // Use clean slug-based URL
+    if (property?.slug) {
+      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
+    }
+    // Fallback to current URL if slug is not available (e.g., old links)
     return window.location.href;
   };
 
@@ -220,7 +229,7 @@ export default function PropertyDetails() {
     }
   } : null;
 
-  if (!propertyId) {
+  if (!propertySlug && !propertyId) {
     return (
       <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
         <div className="text-center">
@@ -253,7 +262,7 @@ export default function PropertyDetails() {
           description={property.ai_description || property.description || `${property.bhk} property for ${property.listing_type} in ${property.location}`}
           ogImage={property.images?.[0]}
           schema={propertySchema}
-          canonical={`https://chariotrealtors.in/property/${property.slug || property.id}`}
+          canonical={getShareUrl()}
         />
       )}
 
