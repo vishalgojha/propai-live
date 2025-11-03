@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -6,7 +5,8 @@ import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Sparkles, ChevronDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 
@@ -20,9 +20,12 @@ export default function SmartFeed() {
     furnishing: "all",
     minPrice: "",
     maxPrice: "",
-    expat_mode: false, // Initialize expat_mode filter
+    expat_mode: false,
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [itemsToShow, setItemsToShow] = useState(24); // Pagination state
+
+  const ITEMS_PER_PAGE = 24;
 
   // Read filters from URL parameters on mount
   useEffect(() => {
@@ -35,16 +38,21 @@ export default function SmartFeed() {
     if (urlParams.get('furnishing')) newFilters.furnishing = urlParams.get('furnishing');
     if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
-    if (urlParams.get('expat_mode')) newFilters.expat_mode = urlParams.get('expat_mode') === 'true'; // Parse as boolean
+    if (urlParams.get('expat_mode')) newFilters.expat_mode = urlParams.get('expat_mode') === 'true';
     
     setFilters(newFilters);
   }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setItemsToShow(ITEMS_PER_PAGE);
+  }, [filters]);
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.filter({ 
       status: "Active",
-      is_duplicate: false  // Exclude duplicate properties
+      is_duplicate: false
     }, "-created_date"),
     initialData: [],
   });
@@ -98,16 +106,12 @@ export default function SmartFeed() {
 
       // Budget filtering with dynamic unit handling
       if (filters.minPrice || filters.maxPrice) {
-        // Determine if we're filtering by crores or lakhs based on listing type
         const filterUnit = (filters.listingType === 'Sale' || filters.listingType === 'Pre Leased') ? 'crores' : 'lakhs';
         
-        // Normalize property price to the filter unit
         let propertyPriceNormalized;
         if (filterUnit === 'crores') {
-          // Filtering in Cr, normalize property price to Cr
           propertyPriceNormalized = property.price_unit === "crores" ? property.price : property.price / 100;
         } else {
-          // Filtering in Lakhs, normalize property price to Lakhs
           propertyPriceNormalized = property.price_unit === "crores" ? property.price * 100 : property.price;
         }
 
@@ -118,18 +122,15 @@ export default function SmartFeed() {
       return true;
     });
 
-    // BROKERTRUST™ RANKING - Quietly prioritize properties from trusted brokers
+    // BROKERTRUST™ RANKING
     results.sort((a, b) => {
-      const trustScoreA = a.broker_trust_score || 50; // Default neutral score
+      const trustScoreA = a.broker_trust_score || 50;
       const trustScoreB = b.broker_trust_score || 50;
       
-      // Higher trust score = higher in feed
       if (trustScoreB !== trustScoreA) {
         return trustScoreB - trustScoreA;
       }
       
-      // Secondary sort: most recent (descending created_date)
-      // Ensure created_date is parsed as a Date object for comparison
       const dateA = new Date(a.created_date);
       const dateB = new Date(b.created_date);
       return dateB.getTime() - dateA.getTime();
@@ -137,6 +138,14 @@ export default function SmartFeed() {
 
     return results;
   }, [properties, filters]);
+
+  // Paginated properties to display
+  const displayedProperties = filteredProperties.slice(0, itemsToShow);
+  const hasMore = itemsToShow < filteredProperties.length;
+
+  const loadMore = () => {
+    setItemsToShow(prev => prev + ITEMS_PER_PAGE);
+  };
 
   const clearFilters = () => {
     setFilters({
@@ -148,7 +157,7 @@ export default function SmartFeed() {
       furnishing: "all",
       minPrice: "",
       maxPrice: "",
-      expat_mode: false, // Reset expat_mode
+      expat_mode: false,
     });
   };
 
@@ -205,7 +214,9 @@ export default function SmartFeed() {
         {/* Results Count */}
         <div className="mb-6">
           <p className="text-sm text-[#3B3B3B]">
-            Showing <span className="font-bold text-[#111111]">{filteredProperties.length}</span> {filteredProperties.length === 1 ? 'property' : 'properties'}
+            Showing <span className="font-bold text-[#111111]">{displayedProperties.length}</span> of{' '}
+            <span className="font-bold text-[#111111]">{filteredProperties.length}</span>{' '}
+            {filteredProperties.length === 1 ? 'property' : 'properties'}
           </p>
         </div>
 
@@ -239,16 +250,49 @@ export default function SmartFeed() {
         )}
 
         {/* Properties Grid */}
-        {!isLoading && filteredProperties.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProperties.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                onViewDetails={setSelectedProperty}
-              />
-            ))}
-          </div>
+        {!isLoading && displayedProperties.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {displayedProperties.map((property) => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onViewDetails={setSelectedProperty}
+                />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="mt-12 flex justify-center">
+                <Button
+                  onClick={loadMore}
+                  size="lg"
+                  className="bg-gradient-to-r from-[#FFD300] to-[#FFC700] hover:from-[#FFC700] hover:to-[#FFB000] text-black font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <ChevronDown className="w-5 h-5 mr-2" />
+                  Load More Properties
+                  <span className="ml-2 text-xs opacity-80">
+                    ({filteredProperties.length - itemsToShow} remaining)
+                  </span>
+                </Button>
+              </div>
+            )}
+
+            {/* End of results message */}
+            {!hasMore && filteredProperties.length > ITEMS_PER_PAGE && (
+              <div className="mt-12 text-center">
+                <div className="inline-block bg-white rounded-2xl px-6 py-3 border-2 border-[#F7F7F7]">
+                  <p className="text-sm text-[#3B3B3B] font-medium">
+                    🎯 You've viewed all {filteredProperties.length} properties
+                  </p>
+                  <p className="text-xs text-[#3B3B3B]/60 mt-1">
+                    Try adjusting your filters to see more options
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Empty State */}
