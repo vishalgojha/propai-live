@@ -20,9 +20,10 @@ export default function Buildings() {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
 
+  // FIXED: Remove verified filter to show all buildings
   const { data: buildings = [], isLoading } = useQuery({
     queryKey: ['buildings'],
-    queryFn: () => base44.entities.Building.filter({ verified: true }, '-total_listings'),
+    queryFn: () => base44.entities.Building.list('-total_listings'),
     initialData: [],
   });
 
@@ -208,11 +209,18 @@ export default function Buildings() {
                         )}
                       </div>
                     </div>
-                    {building.verified && (
-                      <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
-                        Verified
-                      </Badge>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {building.verified && (
+                        <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
+                          Verified
+                        </Badge>
+                      )}
+                      {!building.verified && (
+                        <Badge className="bg-amber-500/20 text-amber-700 border-amber-500 text-xs">
+                          Auto
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {/* Building Type & Developer */}
