@@ -1,0 +1,368 @@
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * 🧠 Chariot Realty — Building Intelligence System (BIS)
+ * 
+ * Makes every building a self-learning knowledge node.
+ * Handles:
+ * - Fuzzy matching & variant detection
+ * - Geo-integrity corrections (Mumbai-specific)
+ * - Contextual enrichment (vibe, tenant profile, sentiment)
+ * - Relational intelligence (similar buildings)
+ * - Building Memory™ aggregation
+ * - NEW: Web-based intelligence enrichment
+ */
+
+// Mumbai Geo-Integrity Database
+const MUMBAI_GEO_TRUTH = {
+  'Rustomjee Paramount': 'Khar West',
+  'Rustomjee Seasons': 'Bandra East',
+  'Rustomjee Elements': 'Juhu',
+  'Rustomjee La Vie': 'Andheri West',
+  'Kalpataru Sparkle': 'Bandra East',
+  'Lodha Primero': 'Mahalaxmi',
+  'Oberoi Sky Heights': 'BKC',
+  'Oberoi Splendor': 'Andheri East',
+  'Raheja Classique': 'Andheri West',
+  'Raheja Vistas': 'Powai',
+};
+
+// Fuzzy string matching (simple Levenshtein-inspired)
+function stringSimilarity(str1, str2) {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer.toLowerCase(), shorter.toLowerCase());
+  return (longer.length - editDistance) / longer.length;
+}
+
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+// Token overlap check (for "Rustomjee Paramount" vs "Paramount Rustomjee")
+function tokenOverlap(str1, str2) {
+  const tokens1 = str1.toLowerCase().split(/\s+/);
+  const tokens2 = str2.toLowerCase().split(/\s+/);
+  
+  const overlap = tokens1.filter(t => tokens2.includes(t)).length;
+  const total = Math.max(tokens1.length, tokens2.length);
+  
+  return overlap / total;
+}
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Allow both admin and agents to call this
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const {
+      building_name,
+      location,
+      pocket,
+      broker_id,
+      property_data,
+      action = 'enrich', // 'enrich', 'find_match', 'correct_geo', 'enrich_from_web'
+      enable_web_enrichment = true // toggle web enrichment
+    } = body;
+
+    if (!building_name) {
+      return Response.json({ error: 'building_name required' }, { status: 400 });
+    }
+
+    // Get all buildings for fuzzy matching
+    const allBuildings = await base44.asServiceRole.entities.Building.list();
+
+    // ═══════════════════════════════════════════
+    // STEP 1: FUZZY MATCHING
+    // ═══════════════════════════════════════════
+    let matchedBuilding = null;
+    let matchConfidence = 0;
+
+    for (const building of allBuildings) {
+      // Check exact match
+      if (building.name.toLowerCase() === building_name.toLowerCase()) {
+        matchedBuilding = building;
+        matchConfidence = 1.0;
+        break;
+      }
+
+      // Check known variants
+      if (building.known_variants && building.known_variants.some(v => 
+        v.toLowerCase() === building_name.toLowerCase()
+      )) {
+        matchedBuilding = building;
+        matchConfidence = 0.95;
+        break;
+      }
+
+      // Fuzzy match
+      const similarity = stringSimilarity(building.name, building_name);
+      const overlap = tokenOverlap(building.name, building_name);
+      const score = (similarity * 0.6) + (overlap * 0.4);
+
+      if (score > 0.80 && score > matchConfidence) {
+        matchedBuilding = building;
+        matchConfidence = score;
+      }
+    }
+
+    if (action === 'find_match') {
+      return Response.json({
+        match_found: !!matchedBuilding,
+        matched_building: matchedBuilding,
+        confidence: matchConfidence,
+        suggestion: matchConfidence > 0.80 ? 'merge' : 'create_new'
+      });
+    }
+
+    // ═══════════════════════════════════════════
+    // STEP 2: GEO-INTEGRITY CHECK
+    // ═══════════════════════════════════════════
+    let correctedLocation = location;
+    let geoCorrected = false;
+
+    const geoTruth = MUMBAI_GEO_TRUTH[building_name] || 
+                     MUMBAI_GEO_TRUTH[matchedBuilding?.name];
+
+    if (geoTruth && location && geoTruth.toLowerCase() !== location.toLowerCase()) {
+      correctedLocation = geoTruth;
+      geoCorrected = true;
+    }
+
+    // ═══════════════════════════════════════════
+    // STEP 3: CONTEXTUAL ENRICHMENT
+    // ═══════════════════════════════════════════
+    const buildingData = matchedBuilding || {};
+
+    // Update known variants
+    const knownVariants = new Set(buildingData.known_variants || []);
+    if (building_name !== buildingData.name) {
+      knownVariants.add(building_name);
+    }
+
+    // Update broker references
+    const brokerRefs = new Set(buildingData.broker_references || []);
+    if (broker_id) {
+      brokerRefs.add(broker_id);
+    }
+
+    const last10Brokers = [...(buildingData.last_10_brokers || [])];
+    if (broker_id && !last10Brokers.includes(broker_id)) {
+      last10Brokers.unshift(broker_id);
+      if (last10Brokers.length > 10) last10Brokers.pop();
+    }
+
+    // Extract vibe keywords from property data
+    const vibeKeywords = new Set(buildingData.vibe_keywords || []);
+    if (property_data) {
+      const text = `${property_data.ai_title || ''} ${property_data.ai_description || ''} ${property_data.description || ''}`.toLowerCase();
+      
+      const vibePatterns = {
+        'quiet': /\b(quiet|peaceful|serene|calm)\b/,
+        'luxury': /\b(luxury|premium|upscale|posh)\b/,
+        'family': /\b(family|children|kids|school)\b/,
+        'expat': /\b(expat|international|foreign)\b/,
+        'modern': /\b(modern|contemporary|new|recent)\b/,
+        'corporate': /\b(corporate|professional|business)\b/,
+        'party': /\b(party|social|lively|happening)\b/,
+        'sea-view': /\b(sea view|ocean|waterfront)\b/,
+        'well-maintained': /\b(well-maintained|maintained|upkeep)\b/,
+      };
+
+      for (const [keyword, pattern] of Object.entries(vibePatterns)) {
+        if (pattern.test(text)) {
+          vibeKeywords.add(keyword);
+        }
+      }
+    }
+
+    // Infer tenant profile
+    const tenantProfile = new Set(buildingData.tenant_profile || []);
+    if (property_data) {
+      if (property_data.expat_friendly || (vibeKeywords.has('expat'))) tenantProfile.add('expats');
+      if (vibeKeywords.has('family')) tenantProfile.add('families');
+      if (vibeKeywords.has('corporate')) tenantProfile.add('corporate');
+      if (property_data.furnishing === 'Fully Furnished') tenantProfile.add('furnished_seekers');
+    }
+
+    // Update statistics
+    const totalListings = (buildingData.total_listings || 0) + 1;
+    const listingsLast6M = (buildingData.listings_last_6m || 0) + 1;
+
+    const marketActivity = listingsLast6M >= 10 ? 'High Activity' :
+                          listingsLast6M >= 5 ? 'Moderate' :
+                          listingsLast6M >= 1 ? 'Low Activity' : 'Unknown';
+
+    // Calculate averages if property_data provided
+    let avgUpdates = {};
+    if (property_data && property_data.price && property_data.bhk) {
+      const priceInLakhs = property_data.price_unit === 'crores' ? 
+        property_data.price * 100 : property_data.price;
+
+      if (property_data.listing_type === 'Rent') {
+        if (property_data.bhk === '2 BHK') {
+          const current = buildingData.avg_rent_2bhk || 0;
+          const count = totalListings - 1;
+          avgUpdates.avg_rent_2bhk = ((current * count) + priceInLakhs) / totalListings;
+        } else if (property_data.bhk === '3 BHK') {
+          const current = buildingData.avg_rent_3bhk || 0;
+          const count = totalListings - 1;
+          avgUpdates.avg_rent_3bhk = ((current * count) + priceInLakhs) / totalListings;
+        }
+      } else if (property_data.listing_type === 'Sale') {
+        if (property_data.bhk === '2 BHK') {
+          const current = buildingData.avg_sale_2bhk || 0;
+          const count = totalListings - 1;
+          avgUpdates.avg_sale_2bhk = ((current * count) + priceInLakhs) / totalListings;
+        } else if (property_data.bhk === '3 BHK') {
+          const current = buildingData.avg_sale_3bhk || 0;
+          const count = totalListings - 1;
+          avgUpdates.avg_sale_3bhk = ((current * count) + priceInLakhs) / totalListings;
+        }
+      }
+    }
+
+    // Generate building summary
+    const buildingSummary = `${Array.from(vibeKeywords).slice(0, 3).join(', ')} building popular with ${Array.from(tenantProfile).join(' and ')}. ${marketActivity} in listings.`;
+
+    // Track geo corrections
+    const geoCorrections = [...(buildingData.geo_corrections || [])];
+    if (geoCorrected) {
+      geoCorrections.push({
+        from_location: location,
+        to_location: correctedLocation,
+        correction_date: new Date().toISOString()
+      });
+    }
+
+    // Confidence level
+    let locationConfidence = buildingData.location_confidence || 'medium';
+    if (geoCorrected && geoCorrections.length >= 3) {
+      locationConfidence = 'verified';
+    } else if (geoCorrected) {
+      locationConfidence = 'high';
+    }
+
+    // ═══════════════════════════════════════════
+    // STEP 4: WEB ENRICHMENT (NEW)
+    // ═══════════════════════════════════════════
+    let webEnrichmentData = null;
+    const shouldEnrichFromWeb = enable_web_enrichment && 
+      !matchedBuilding && // Only for new buildings
+      !buildingData.developer_reputation; // Haven't enriched yet
+
+    if (shouldEnrichFromWeb) {
+      try {
+        const webEnrichResponse = await base44.asServiceRole.functions.invoke(
+          'enrichBuildingFromWeb',
+          {
+            building_name: building_name,
+            location: correctedLocation,
+            developer_name: property_data?.developer_name
+          }
+        );
+
+        if (webEnrichResponse.data?.success) {
+          webEnrichmentData = webEnrichResponse.data.enrichedData;
+        }
+      } catch (webError) {
+        console.log('Web enrichment failed (non-critical):', webError.message);
+        // Continue without web enrichment
+      }
+    }
+
+    // ═══════════════════════════════════════════
+    // STEP 5: UPDATE OR CREATE BUILDING
+    // ═══════════════════════════════════════════
+    const enrichedData = {
+      name: matchedBuilding?.name || building_name,
+      location: correctedLocation,
+      location_confidence: locationConfidence,
+      pocket: pocket || buildingData.pocket,
+      known_variants: Array.from(knownVariants),
+      broker_references: Array.from(brokerRefs),
+      last_10_brokers: last10Brokers,
+      vibe_keywords: Array.from(vibeKeywords),
+      tenant_profile: Array.from(tenantProfile),
+      total_listings: totalListings,
+      listings_last_6m: listingsLast6M,
+      market_activity: marketActivity,
+      building_summary: buildingSummary,
+      geo_corrections: geoCorrections,
+      last_intelligence_update: new Date().toISOString(),
+      ...avgUpdates,
+      // Merge web enrichment data if available
+      ...(webEnrichmentData || {}),
+      // Preserve existing data
+      ...buildingData,
+    };
+
+    let resultBuilding;
+    if (matchedBuilding) {
+      // Update existing
+      await base44.asServiceRole.entities.Building.update(matchedBuilding.id, enrichedData);
+      resultBuilding = { ...matchedBuilding, ...enrichedData };
+    } else {
+      // Create new
+      resultBuilding = await base44.asServiceRole.entities.Building.create({
+        ...enrichedData,
+        verified: false,
+        verification_source: webEnrichmentData ? 'auto_parsed_with_web' : 'auto_parsed'
+      });
+    }
+
+    return Response.json({
+      success: true,
+      action: matchedBuilding ? 'updated' : 'created',
+      building: resultBuilding,
+      intelligence: {
+        fuzzy_matched: matchConfidence > 0.8 && matchConfidence < 1.0,
+        match_confidence: matchConfidence,
+        geo_corrected: geoCorrected,
+        vibe_keywords: Array.from(vibeKeywords),
+        tenant_profile: Array.from(tenantProfile),
+        market_activity: marketActivity,
+        total_variants_known: knownVariants.size,
+        web_enriched: !!webEnrichmentData
+      }
+    });
+
+  } catch (error) {
+    console.error('Building Intelligence error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
