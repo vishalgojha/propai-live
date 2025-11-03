@@ -173,7 +173,7 @@ export default function BlogPost() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       {blog && (
         <SEO
           title={`${blog.title} | Chariot Insights`}
@@ -189,7 +189,7 @@ export default function BlogPost() {
         <Button
           onClick={() => navigate(createPageUrl("Blogs"))}
           variant="ghost"
-          className="mb-6 text-[#3B3B3B] hover:text-[#111111] hover:bg-white"
+          className="mb-6 text-slate-600 hover:text-slate-900 hover:bg-white/80 rounded-2xl"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Insights
@@ -197,7 +197,7 @@ export default function BlogPost() {
 
         {/* Hero Image */}
         {blog.featured_image ? (
-          <div className="h-96 rounded-3xl overflow-hidden mb-8 shadow-xl">
+          <div className="h-96 rounded-3xl overflow-hidden mb-8 shadow-xl border border-purple-200">
             <img 
               src={blog.featured_image} 
               alt={blog.title}
@@ -205,36 +205,36 @@ export default function BlogPost() {
             />
           </div>
         ) : (
-          <div className="h-96 rounded-3xl bg-gradient-to-br from-[#FFD300]/20 to-[#FFC700]/20 flex items-center justify-center mb-8 border-2 border-[#FFD300]/30">
-            <Sparkles className="w-32 h-32 text-[#FFD300]" />
+          <div className="h-96 rounded-3xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center mb-8 border-2 border-purple-200">
+            <Sparkles className="w-32 h-32 text-purple-500" />
           </div>
         )}
 
         {/* Article Header */}
-        <div className="bg-white rounded-3xl p-8 mb-8 shadow-sm border-2 border-[#F7F7F7]">
-          <Badge className="mb-4 bg-[#FFD300] text-black border-0 font-bold">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 mb-8 shadow-lg border border-purple-200/50">
+          <Badge className="mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 font-bold shadow-md">
             {blog.category}
           </Badge>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-[#111111] mb-6 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-6 leading-tight">
             {blog.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-[#3B3B3B]/60 mb-6 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 mb-6 pb-6 border-b border-purple-100">
             <span className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 text-purple-500" />
               {format(new Date(blog.created_date), "MMMM dd, yyyy")}
             </span>
             <span className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+              <Clock className="w-4 h-4 text-purple-500" />
               {blog.read_time || 5} min read
             </span>
             <span className="flex items-center gap-2">
-              <Eye className="w-4 h-4" />
+              <Eye className="w-4 h-4 text-purple-500" />
               {blog.views_count || 0} views
             </span>
             {blog.ai_generated && (
-              <Badge variant="outline" className="border-[#3B3B3B]/20">
+              <Badge variant="outline" className="border-purple-200 text-purple-700">
                 <Sparkles className="w-3 h-3 mr-1" />
                 AI Verified Data
               </Badge>
@@ -246,14 +246,14 @@ export default function BlogPost() {
             <Button
               onClick={handleShare}
               variant="outline"
-              className="border-[#3B3B3B]/20 hover:bg-[#F7F7F7] font-semibold rounded-2xl"
+              className="border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-2xl"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
             <Button
               onClick={handleWhatsApp}
-              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-2xl"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
               WhatsApp
@@ -262,17 +262,17 @@ export default function BlogPost() {
         </div>
 
         {/* Article Content */}
-        <div className="bg-white rounded-3xl p-8 mb-8 shadow-sm border-2 border-[#F7F7F7]">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 mb-8 shadow-lg border border-purple-200/50">
           <ReactMarkdown 
             className="prose prose-lg max-w-none
-              prose-headings:text-[#111111] prose-headings:font-bold
-              prose-p:text-[#3B3B3B] prose-p:leading-relaxed
-              prose-a:text-[#FFD300] prose-a:font-semibold hover:prose-a:text-[#FFC700]
-              prose-strong:text-[#111111]
-              prose-ul:text-[#3B3B3B]
-              prose-ol:text-[#3B3B3B]
-              prose-blockquote:border-l-[#FFD300] prose-blockquote:bg-[#FFD300]/10 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl
-              prose-code:bg-[#F7F7F7] prose-code:px-2 prose-code:py-1 prose-code:rounded-lg prose-code:text-[#111111]"
+              prose-headings:text-slate-900 prose-headings:font-bold
+              prose-p:text-slate-700 prose-p:leading-relaxed
+              prose-a:text-purple-600 prose-a:font-semibold hover:prose-a:text-purple-700
+              prose-strong:text-slate-900
+              prose-ul:text-slate-700
+              prose-ol:text-slate-700
+              prose-blockquote:border-l-purple-500 prose-blockquote:bg-purple-50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl
+              prose-code:bg-purple-50 prose-code:px-2 prose-code:py-1 prose-code:rounded-lg prose-code:text-purple-900"
           >
             {blog.content}
           </ReactMarkdown>
@@ -280,14 +280,14 @@ export default function BlogPost() {
 
         {/* Tags */}
         {blog.tags && blog.tags.length > 0 && (
-          <div className="bg-white rounded-3xl p-6 mb-8 shadow-sm border-2 border-[#F7F7F7]">
-            <h3 className="text-sm font-bold text-[#3B3B3B] mb-3 uppercase tracking-wide">Tags</h3>
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 mb-8 shadow-sm border border-purple-200/50">
+            <h3 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {blog.tags.map((tag, idx) => (
                 <Badge 
                   key={idx}
                   variant="outline"
-                  className="border-[#FFD300] text-[#111111] font-semibold"
+                  className="border-purple-300 text-purple-700 font-semibold"
                 >
                   {tag}
                 </Badge>
@@ -322,23 +322,23 @@ export default function BlogPost() {
         )}
 
         {/* CTA */}
-        <div className="bg-gradient-to-br from-[#FFD300] to-[#FFC700] rounded-3xl p-8 text-center shadow-xl">
-          <h3 className="text-2xl font-bold text-black mb-3">
+        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-3xl p-8 text-center shadow-xl">
+          <h3 className="text-2xl font-bold text-white mb-3">
             Looking for Properties in Mumbai?
           </h3>
-          <p className="text-black/70 mb-6 font-medium">
+          <p className="text-white/90 mb-6 font-medium">
             Connect with Chariot Realty for personalized property recommendations
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
-              className="bg-white text-black hover:bg-gray-100 font-bold rounded-2xl"
+              className="bg-white text-purple-700 hover:bg-purple-50 font-bold rounded-2xl"
             >
               Browse Properties
             </Button>
             <Button
               onClick={() => window.open('https://wa.me/919819471310', '_blank')}
-              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-2xl"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
               WhatsApp Us

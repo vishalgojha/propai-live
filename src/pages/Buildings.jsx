@@ -78,7 +78,7 @@ export default function Buildings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       <SEO
         title="Mumbai Buildings Directory | Street-Level Intelligence"
         description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
@@ -91,52 +91,52 @@ export default function Buildings() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-2xl flex items-center justify-center shadow-sm">
-              <Building2 className="w-6 h-6 text-[#1a1816]" />
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+              <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Mumbai Buildings</h1>
-              <p className="text-sm text-[#3B3B3B] font-light">Street-level property intelligence</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Mumbai Buildings</h1>
+              <p className="text-sm text-slate-600 font-light">Street-level property intelligence</p>
             </div>
           </div>
         </div>
 
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-            <p className="text-xs text-[#3B3B3B] mb-1">Total Buildings</p>
-            <p className="text-2xl font-bold text-[#111111]">{buildings.length}</p>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+            <p className="text-xs text-slate-600 mb-1">Total Buildings</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">{buildings.length}</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-            <p className="text-xs text-[#3B3B3B] mb-1">Verified</p>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+            <p className="text-xs text-slate-600 mb-1">Verified</p>
             <p className="text-2xl font-bold text-green-600">{buildings.filter(b => b.verified).length}</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-            <p className="text-xs text-[#3B3B3B] mb-1">Total Listings</p>
-            <p className="text-2xl font-bold text-[#111111]">{buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+            <p className="text-xs text-slate-600 mb-1">Total Listings</p>
+            <p className="text-2xl font-bold text-purple-600">{buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
-            <p className="text-xs text-[#3B3B3B] mb-1">Active Listings</p>
-            <p className="text-2xl font-bold text-blue-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+            <p className="text-xs text-slate-600 mb-1">Active Listings</p>
+            <p className="text-2xl font-bold text-indigo-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-[#F7F7F7]">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200/50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Search buildings, developers, or areas..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11"
+                className="pl-11 border-purple-200 focus-visible:ring-purple-500"
               />
             </div>
             <select
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              className="h-11 rounded-xl border border-[#3B3B3B]/20 px-4 font-semibold"
+              className="h-11 rounded-xl border border-purple-200 px-4 font-semibold focus:ring-purple-500"
             >
               <option value="all">All Locations</option>
               {locations.map(loc => (
@@ -173,21 +173,21 @@ export default function Buildings() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => handleBuildingClick(building)}
-                className="bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-stone-200/50 cursor-pointer group"
+                className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-purple-200/50 hover:border-purple-400 cursor-pointer group"
               >
                 {/* Content */}
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-[#111111] mb-2 line-clamp-2">
+                      <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
                         {building.name}
                       </h3>
-                      <div className="flex items-center gap-1.5 text-sm text-stone-600 mb-2">
-                        <MapPin className="w-3.5 h-3.5 text-stone-500" />
+                      <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-2">
+                        <MapPin className="w-3.5 h-3.5 text-purple-500" />
                         <span>{building.location}</span>
                         {building.pocket && (
                           <>
-                            <span className="text-stone-400">•</span>
+                            <span className="text-slate-400">•</span>
                             <span className="text-xs">{building.pocket}</span>
                           </>
                         )}
@@ -200,7 +200,7 @@ export default function Buildings() {
                         </Badge>
                       )}
                       {!building.verified && (
-                        <Badge className="bg-amber-500/20 text-amber-700 border-amber-500 text-xs">
+                        <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
                           Auto
                         </Badge>
                       )}
@@ -210,12 +210,12 @@ export default function Buildings() {
                   {/* Building Type & Developer */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {building.building_type && (
-                      <Badge variant="outline" className="text-xs border-stone-300 text-stone-700 bg-white">
+                      <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 bg-purple-50">
                         {building.building_type}
                       </Badge>
                     )}
                     {building.management_quality && building.management_quality !== "Unknown" && (
-                      <Badge className="bg-amber-500/20 text-amber-700 border-amber-500 text-xs">
+                      <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
                         <Star className="w-3 h-3 mr-1" />
                         {building.management_quality}
                       </Badge>
@@ -226,7 +226,7 @@ export default function Buildings() {
                   {building.tags && building.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
                       {building.tags.slice(0, 3).map((tag, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50">
+                        <Badge key={idx} variant="outline" className="text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
                           {tag}
                         </Badge>
                       ))}
@@ -239,34 +239,34 @@ export default function Buildings() {
                   )}
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-white/60 rounded-2xl">
+                  <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-purple-50/60 rounded-2xl">
                     <div className="text-center">
-                      <p className="text-xs text-stone-500 mb-1">Active Listings</p>
-                      <p className="text-sm font-bold text-[#111111]">{building.active_listings || 0}</p>
+                      <p className="text-xs text-slate-600 mb-1">Active Listings</p>
+                      <p className="text-sm font-bold text-purple-800">{building.active_listings || 0}</p>
                     </div>
                     {building.year_built && (
                       <div className="text-center">
-                        <p className="text-xs text-stone-500 mb-1">Built</p>
-                        <p className="text-sm font-bold text-[#111111]">{building.year_built}</p>
+                        <p className="text-xs text-slate-600 mb-1">Built</p>
+                        <p className="text-sm font-bold text-purple-800">{building.year_built}</p>
                       </div>
                     )}
                   </div>
 
                   {/* Price Range */}
                   {(building.avg_rent_2bhk || building.avg_sale_2bhk) && (
-                    <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border border-amber-200/50">
-                      <p className="text-xs text-stone-600 mb-2 font-semibold">Average Pricing:</p>
+                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200/50">
+                      <p className="text-xs text-slate-600 mb-2 font-semibold">Average Pricing:</p>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {building.avg_rent_2bhk && (
                           <div>
-                            <p className="text-stone-500">2 BHK Rent</p>
-                            <p className="font-bold text-[#111111]">₹{building.avg_rent_2bhk}L</p>
+                            <p className="text-slate-500">2 BHK Rent</p>
+                            <p className="font-bold text-purple-800">₹{building.avg_rent_2bhk}L</p>
                           </div>
                         )}
                         {building.avg_sale_2bhk && (
                           <div>
-                            <p className="text-stone-500">2 BHK Sale</p>
-                            <p className="font-bold text-[#111111]">₹{building.avg_sale_2bhk} Cr</p>
+                            <p className="text-slate-500">2 BHK Sale</p>
+                            <p className="font-bold text-purple-800">₹{building.avg_sale_2bhk} Cr</p>
                           </div>
                         )}
                       </div>
@@ -275,7 +275,7 @@ export default function Buildings() {
 
                   {/* Action Button */}
                   <Button
-                    className="w-full bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#c9a532] hover:to-[#e8c43a] text-[#1a1816] font-bold rounded-2xl shadow-sm"
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-md"
                   >
                     View Details
                     <ArrowRight className="w-4 h-4 ml-2" />

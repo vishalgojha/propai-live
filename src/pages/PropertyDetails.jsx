@@ -155,7 +155,7 @@ export default function PropertyDetails() {
           title: property.ai_title || `${property.bhk} in ${property.location}`,
           text: getShareText(),
           url: getShareUrl()
-        });
+        );
         return;
       } catch (err) {
         // User cancelled or error - open modal instead
@@ -255,7 +255,7 @@ export default function PropertyDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       {property && (
         <SEO
           title={`${property.ai_title || `${property.bhk} in ${property.location}`} | Chariot Realty`}
@@ -272,7 +272,7 @@ export default function PropertyDetails() {
         <Button
           onClick={() => navigate(createPageUrl("SmartFeed"))}
           variant="ghost"
-          className="mb-6 text-[#3B3B3B] hover:text-[#111111] hover:bg-white rounded-2xl"
+          className="mb-6 text-slate-600 hover:text-slate-900 hover:bg-white/80 rounded-2xl"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Properties
@@ -282,7 +282,7 @@ export default function PropertyDetails() {
         {property.images && property.images.length > 0 && (
           <div className="mb-8">
             <div className="grid grid-cols-4 gap-3">
-              <div className="col-span-4 md:col-span-3 h-96 rounded-3xl overflow-hidden">
+              <div className="col-span-4 md:col-span-3 h-96 rounded-3xl overflow-hidden shadow-lg">
                 <img
                   src={property.images[0]}
                   alt={property.ai_title || "Property"}
@@ -291,7 +291,7 @@ export default function PropertyDetails() {
               </div>
               <div className="col-span-4 md:col-span-1 grid grid-cols-2 md:grid-cols-1 gap-3">
                 {property.images.slice(1, 4).map((img, idx) => (
-                  <div key={idx} className="h-28 md:h-[122px] rounded-2xl overflow-hidden">
+                  <div key={idx} className="h-28 md:h-[122px] rounded-2xl overflow-hidden shadow-md">
                     <img
                       src={img}
                       alt={`Property ${idx + 2}`}
@@ -305,14 +305,14 @@ export default function PropertyDetails() {
         )}
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-3xl shadow-lg border-2 border-[#F7F7F7] overflow-hidden mb-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-purple-200/50 overflow-hidden mb-8">
           
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 md:px-8 py-6 border-b border-stone-200/50">
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 md:px-8 py-6 border-b border-purple-100">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
               <div className="flex-1">
                 <div className="flex items-center flex-wrap gap-2 mb-3">
-                  <Badge className="bg-black text-white font-bold text-xs px-3 py-1 rounded-full border-0">
+                  <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs px-3 py-1 rounded-full border-0">
                     {property.bhk}
                   </Badge>
                   {property.jodi_flag && (
@@ -329,32 +329,32 @@ export default function PropertyDetails() {
                 </div>
                 
                 {property.ai_title && (
-                  <h1 className="text-2xl md:text-4xl font-bold text-[#111111] mb-3 leading-tight">
+                  <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 leading-tight">
                     {property.ai_title}
                   </h1>
                 )}
                 
-                <div className="flex items-center gap-2 text-stone-600 mb-3">
-                  <MapPin className="w-4 h-4 text-stone-500 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-slate-600 mb-3">
+                  <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
                   <p className="text-sm md:text-base">{getLocationDisplay()}</p>
                 </div>
 
-                <div className="flex items-center flex-wrap gap-3 text-xs md:text-sm text-stone-500">
+                <div className="flex items-center flex-wrap gap-3 text-xs md:text-sm text-slate-500">
                   <span className="flex items-center gap-1">
                     <Eye className="w-3 h-3" />
                     {property.views_count || 0} views
                   </span>
                   {property.custom_id && (
-                    <span className="font-mono">ID: {property.custom_id}</span>
+                    <span className="font-mono text-purple-600">{property.custom_id}</span>
                   )}
                 </div>
               </div>
 
               <div className="text-left md:text-right">
-                <p className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-2">
+                <p className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                   {formatPrice()}
                 </p>
-                <p className="text-xs md:text-sm text-stone-500 uppercase tracking-wide font-medium">
+                <p className="text-xs md:text-sm text-slate-500 uppercase tracking-wide font-medium">
                   {property.listing_type} • {property.property_type || "Apartment"}
                 </p>
               </div>
@@ -366,7 +366,7 @@ export default function PropertyDetails() {
                 onClick={handleShare}
                 variant="outline"
                 size="sm"
-                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
+                className="border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
               >
                 <Share2 className="w-3.5 h-3.5 mr-1.5" />
                 Share
@@ -379,10 +379,10 @@ export default function PropertyDetails() {
             
             {/* AI Description */}
             {property.ai_description && (
-              <div className="mb-8 p-4 md:p-5 bg-amber-50/50 rounded-2xl border border-amber-200/50">
+              <div className="mb-8 p-4 md:p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm md:text-base text-stone-700 leading-relaxed">
+                  <Sparkles className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm md:text-base text-slate-700 leading-relaxed">
                     {property.ai_description}
                   </p>
                 </div>
@@ -391,69 +391,69 @@ export default function PropertyDetails() {
 
             {/* Key Details Grid - Responsive */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
-                <Home className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-base md:text-lg font-bold text-[#111111]">{property.bhk}</p>
-                <p className="text-xs text-stone-500 mt-1">Config</p>
+              <div className="text-center p-4 md:p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
+                <Home className="w-5 h-5 md:w-6 md:h-6 text-purple-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-slate-900">{property.bhk}</p>
+                <p className="text-xs text-slate-500 mt-1">Config</p>
               </div>
-              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
-                <Maximize2 className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-base md:text-lg font-bold text-[#111111] truncate">
+              <div className="text-center p-4 md:p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
+                <Maximize2 className="w-5 h-5 md:w-6 md:h-6 text-purple-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-slate-900 truncate">
                   {property.carpet_area || "N/A"}
                 </p>
-                <p className="text-xs text-stone-500 mt-1">sq ft</p>
+                <p className="text-xs text-slate-500 mt-1">sq ft</p>
               </div>
-              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
-                <Armchair className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-base md:text-lg font-bold text-[#111111] truncate">{property.furnishing || "N/A"}</p>
-                <p className="text-xs text-stone-500 mt-1">Furnish</p>
+              <div className="text-center p-4 md:p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
+                <Armchair className="w-5 h-5 md:w-6 md:h-6 text-purple-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-slate-900 truncate">{property.furnishing || "N/A"}</p>
+                <p className="text-xs text-slate-500 mt-1">Furnish</p>
               </div>
-              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
-                <Car className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-base md:text-lg font-bold text-[#111111] truncate">{property.parking || "N/A"}</p>
-                <p className="text-xs text-stone-500 mt-1">Parking</p>
+              <div className="text-center p-4 md:p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
+                <Car className="w-5 h-5 md:w-6 md:h-6 text-purple-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-slate-900 truncate">{property.parking || "N/A"}</p>
+                <p className="text-xs text-slate-500 mt-1">Parking</p>
               </div>
             </div>
 
             {/* Additional Details */}
             <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
               {property.floor && (
-                <div className="p-4 bg-stone-50 rounded-2xl">
+                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <Layers className="w-4 h-4 text-stone-500" />
-                    <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Floor</p>
+                    <Layers className="w-4 h-4 text-purple-500" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Floor</p>
                   </div>
-                  <p className="text-sm md:text-base font-bold text-[#111111]">
+                  <p className="text-sm md:text-base font-bold text-slate-900">
                     {property.floor}
                     {property.total_floors && ` of ${property.total_floors}`}
                   </p>
                 </div>
               )}
               {property.possession && (
-                <div className="p-4 bg-stone-50 rounded-2xl">
+                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-stone-500" />
-                    <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Possession</p>
+                    <Calendar className="w-4 h-4 text-purple-500" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Possession</p>
                   </div>
-                  <p className="text-sm md:text-base font-bold text-[#111111]">{property.possession}</p>
+                  <p className="text-sm md:text-base font-bold text-slate-900">{property.possession}</p>
                 </div>
               )}
               {property.veg_nonveg && (
-                <div className="p-4 bg-stone-50 rounded-2xl">
+                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <Utensils className="w-4 h-4 text-stone-500" />
-                    <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Food Preference</p>
+                    <Utensils className="w-4 h-4 text-purple-500" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Food Preference</p>
                   </div>
-                  <p className="text-sm md:text-base font-bold text-[#111111]">{property.veg_nonveg}</p>
+                  <p className="text-sm md:text-base font-bold text-slate-900">{property.veg_nonveg}</p>
                 </div>
               )}
               {property.built_up_area && (
-                <div className="p-4 bg-stone-50 rounded-2xl">
+                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <Maximize2 className="w-4 h-4 text-stone-500" />
-                    <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Built-up Area</p>
+                    <Maximize2 className="w-4 h-4 text-purple-500" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Built-up Area</p>
                   </div>
-                  <p className="text-sm md:text-base font-bold text-[#111111]">{property.built_up_area} sq ft</p>
+                  <p className="text-sm md:text-base font-bold text-slate-900">{property.built_up_area} sq ft</p>
                 </div>
               )}
             </div>
@@ -461,8 +461,8 @@ export default function PropertyDetails() {
             {/* Full Description */}
             {property.description && property.description !== property.ai_description && (
               <div className="mb-8">
-                <h3 className="text-base md:text-lg font-bold text-[#111111] mb-3 uppercase tracking-wide">Description</h3>
-                <p className="text-sm md:text-base text-stone-700 leading-relaxed">
+                <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 uppercase tracking-wide">Description</h3>
+                <p className="text-sm md:text-base text-slate-700 leading-relaxed">
                   {property.description}
                 </p>
               </div>
@@ -471,11 +471,11 @@ export default function PropertyDetails() {
             {/* Amenities */}
             {property.amenities && property.amenities.length > 0 && (
               <div className="mb-8">
-                <h3 className="text-base md:text-lg font-bold text-[#111111] mb-4 uppercase tracking-wide">Amenities</h3>
+                <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4 uppercase tracking-wide">Amenities</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {property.amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs md:text-sm text-stone-700 bg-stone-50 p-3 rounded-xl">
-                      <Check className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    <div key={idx} className="flex items-center gap-2 text-xs md:text-sm text-slate-700 bg-purple-50 p-3 rounded-xl border border-purple-100">
+                      <Check className="w-4 h-4 text-purple-500 flex-shrink-0" />
                       <span className="line-clamp-1">{amenity}</span>
                     </div>
                   ))}
@@ -487,7 +487,7 @@ export default function PropertyDetails() {
             <div className="space-y-3 md:space-y-4">
               <Button
                 onClick={handleWhatsApp}
-                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
                 size="lg"
               >
                 <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
@@ -498,7 +498,7 @@ export default function PropertyDetails() {
                 <Button
                   onClick={() => window.open(`tel:+${getAgentPhone()}`, '_self')}
                   variant="outline"
-                  className="border-2 border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
+                  className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
                   <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   Call {getAgentName()}
@@ -506,7 +506,7 @@ export default function PropertyDetails() {
                 <Button
                   onClick={handleShare}
                   variant="outline"
-                  className="border-2 border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
+                  className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
                   <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   Share
@@ -516,9 +516,9 @@ export default function PropertyDetails() {
           </div>
 
           {/* Footer - Branding */}
-          <div className="px-6 md:px-8 py-4 md:py-5 bg-stone-50 border-t border-stone-200">
-            <div className="text-center text-xs md:text-sm text-stone-500">
-              Listed by <span className="font-semibold text-stone-700">Chariot Realty</span>
+          <div className="px-6 md:px-8 py-4 md:py-5 bg-purple-50 border-t border-purple-100">
+            <div className="text-center text-xs md:text-sm text-slate-500">
+              Listed by <span className="font-semibold text-purple-700">Chariot Realty</span>
               {property.created_date && (
                 <span className="ml-2">• {format(new Date(property.created_date), "MMM dd, yyyy")}</span>
               )}

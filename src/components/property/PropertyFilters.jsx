@@ -131,27 +131,27 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     filters.expat_mode;
 
   return (
-    <div className="bg-white rounded-[22px] shadow-sm border-2 border-[#F7F7F7] p-6 mb-8">
+    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-purple-200/50 p-6 mb-8">
 
       {/* Expat Mode Toggle */}
-      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+      <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center">
               <span className="text-2xl">🌍</span>
             </div>
             <div>
-              <h3 className="font-bold text-[#111111] text-sm">Expat Mode</h3>
-              <p className="text-xs text-[#3B3B3B]">Fully furnished • Great amenities • Expat-friendly buildings</p>
+              <h3 className="font-bold text-slate-900 text-sm">Expat Mode</h3>
+              <p className="text-xs text-slate-600">Fully furnished • Great amenities • Expat-friendly buildings</p>
             </div>
           </div>
           <button
             onClick={toggleExpatMode}
             className={`relative w-14 h-8 rounded-full transition-all ${
-              expatMode ? 'bg-blue-500' : 'bg-gray-300'
+              expatMode ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-gray-300'
             }`}
           >
-            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${
+            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow-md ${
               expatMode ? 'translate-x-7' : 'translate-x-1'
             }`} />
           </button>
@@ -161,37 +161,37 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       {/* AI-Powered Search */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-5 h-5 text-[#FFD300]" />
-          <h3 className="font-bold text-[#111111] text-lg">AI-Powered Search</h3>
+          <Sparkles className="w-5 h-5 text-purple-500" />
+          <h3 className="font-bold text-slate-900 text-lg">AI-Powered Search</h3>
         </div>
 
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3B3B3B]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Try: 3 BHK in Bandra under 2 Cr, furnished, for rent..."
               value={nlpInput}
               onChange={(e) => setNlpInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleNlpSearch()}
-              className="pl-11 border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-12 rounded-xl"
+              className="pl-11 border-purple-200 focus-visible:ring-purple-500 h-12 rounded-xl"
             />
           </div>
           <Button
             onClick={handleNlpSearch}
-            className="bg-[#FFD300] hover:bg-[#FFC700] text-black h-12 px-6 rounded-xl font-semibold"
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white h-12 px-6 rounded-xl font-semibold shadow-md"
           >
             Search
           </Button>
         </div>
 
-        <p className="text-xs text-[#3B3B3B]/60 mt-2">
+        <p className="text-xs text-slate-500 mt-2">
           💡 Just describe what you're looking for in plain English
         </p>
       </div>
 
-      {/* FIXED: Listing Type Selector with Toggle */}
+      {/* Listing Type Selector with Toggle */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-[#111111] mb-3 block">Rent / Sale / Pre Leased</label>
+        <label className="text-sm font-semibold text-slate-900 mb-3 block">Rent / Sale / Pre Leased</label>
         <div className="flex flex-wrap gap-2">
           {['Rent', 'Sale', 'Pre Leased'].map((type) => {
             const isSelected = filters.listingType === type;
@@ -203,8 +203,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-[#FFD300] text-black border-0"
-                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7] text-[#3B3B3B]"
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 {type}
@@ -212,14 +212,14 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             );
           })}
         </div>
-        <p className="text-xs text-[#3B3B3B]/60 mt-2">
+        <p className="text-xs text-slate-500 mt-2">
           💡 Click again to deselect
         </p>
       </div>
 
       {/* Multi-Select BHK */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-[#111111] mb-3 block">Select BHK (Multi-select)</label>
+        <label className="text-sm font-semibold text-slate-900 mb-3 block">Select BHK (Multi-select)</label>
         <div className="flex flex-wrap gap-2">
           {uniqueBhks.map((bhk) => {
             const isSelected = filters.bhk_multi?.includes(bhk);
@@ -231,8 +231,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-[#FFD300] text-black border-0"
-                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7] text-[#3B3B3B]"
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 {bhk}
@@ -244,7 +244,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
 
       {/* Multi-Select Location */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-[#111111] mb-3 block">Select Locations (Multi-select)</label>
+        <label className="text-sm font-semibold text-slate-900 mb-3 block">Select Locations (Multi-select)</label>
         <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
           {uniqueLocations.map((location) => {
             const isSelected = filters.location_multi?.includes(location);
@@ -256,8 +256,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-[#FFD300] text-black border-0"
-                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7] text-[#3B3B3B]"
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 {location}
@@ -270,7 +270,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       {/* Budget Range - Dynamic Unit */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <div>
-          <label className="text-sm font-semibold text-[#111111] mb-2 block">
+          <label className="text-sm font-semibold text-slate-900 mb-2 block">
             Min Price ({getPriceUnit()})
           </label>
           <Input
@@ -278,11 +278,11 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder={getPriceUnit() === 'Cr' ? "e.g., 1.5" : "e.g., 50"}
             value={filters.minPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
-            className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
+            className="border-purple-200 focus-visible:ring-purple-500 h-11 rounded-xl"
           />
         </div>
         <div>
-          <label className="text-sm font-semibold text-[#111111] mb-2 block">
+          <label className="text-sm font-semibold text-slate-900 mb-2 block">
             Max Price ({getPriceUnit()})
           </label>
           <Input
@@ -290,35 +290,35 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder={getPriceUnit() === 'Cr' ? "e.g., 5" : "e.g., 200"}
             value={filters.maxPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
-            className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
+            className="border-purple-200 focus-visible:ring-purple-500 h-11 rounded-xl"
           />
         </div>
       </div>
 
       {/* Clear Filters */}
       {hasActiveFilters && (
-        <div className="flex items-center justify-between pt-4 border-t border-[#F7F7F7]">
+        <div className="flex items-center justify-between pt-4 border-t border-purple-100">
           <div className="flex flex-wrap gap-2">
             {filters.listingType && filters.listingType !== "all" && (
-              <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {filters.listingType}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
               </Badge>
             )}
             {filters.bhk_multi?.map((bhk) => (
-              <Badge key={bhk} variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
+              <Badge key={bhk} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {bhk}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleBhk(bhk)} />
               </Badge>
             ))}
             {filters.location_multi?.map((location) => (
-              <Badge key={location} variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
+              <Badge key={location} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {location}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleLocation(location)} />
               </Badge>
             ))}
             {(filters.minPrice || filters.maxPrice) && (
-              <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 ₹{filters.minPrice || "0"}{getPriceUnit()} - ₹{filters.maxPrice || "∞"}{getPriceUnit()}
               </Badge>
             )}
@@ -329,19 +329,19 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               </Badge>
             )}
             {filters.furnishing && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-400 font-semibold">
                 {filters.furnishing}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: undefined })} />
               </Badge>
             )}
             {filters.search && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+              <Badge variant="secondary" className="bg-slate-100 text-slate-800 border-slate-400 font-semibold">
                 Search: "{filters.search}"
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, search: undefined })} />
               </Badge>
             )}
             {filters.propertyCategory && filters.propertyCategory !== "all" && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
+              <Badge variant="secondary" className="bg-slate-100 text-slate-800 border-slate-400 font-semibold">
                 Category: {filters.propertyCategory}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
               </Badge>
@@ -352,7 +352,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-[#3B3B3B] hover:text-[#111111] hover:bg-[#F7F7F7]"
+            className="text-slate-600 hover:text-slate-900 hover:bg-purple-50"
           >
             <X className="w-4 h-4 mr-1" />
             Clear all

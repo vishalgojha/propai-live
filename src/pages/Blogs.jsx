@@ -75,7 +75,7 @@ export default function Blogs() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       <SEO
         title="Chariot Insights | Mumbai Real Estate Guides & Market Data"
         description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."
@@ -88,23 +88,23 @@ export default function Blogs() {
         {/* Hero Section */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center shadow-md">
-              <BookOpen className="w-6 h-6 text-black" />
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+              <BookOpen className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Chariot Insights</h1>
-              <p className="text-sm text-[#3B3B3B] font-light">Mumbai real estate knowledge, simplified</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Chariot Insights</h1>
+              <p className="text-sm text-slate-600 font-light">Mumbai real estate knowledge, simplified</p>
             </div>
           </div>
 
           {/* Search */}
           <div className="relative max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3B3B3B]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <Input
               placeholder="Search articles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-12 rounded-2xl"
+              className="pl-12 border-purple-200 focus-visible:ring-purple-500 h-12 rounded-2xl"
             />
           </div>
         </div>
@@ -114,11 +114,11 @@ export default function Blogs() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12 bg-white rounded-3xl overflow-hidden shadow-lg border-2 border-[#FFD300]/30 cursor-pointer"
+            className="mb-12 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl border border-purple-200/50 cursor-pointer hover:shadow-2xl transition-all"
             onClick={() => navigate(createPageUrl("BlogPost") + `?slug=${featuredBlog.slug}`)}
           >
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="h-64 md:h-auto bg-gradient-to-br from-[#FFD300]/20 to-[#FFC700]/20 flex items-center justify-center">
+              <div className="h-64 md:h-auto bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
                 {featuredBlog.featured_image ? (
                   <img
                     src={featuredBlog.featured_image}
@@ -126,27 +126,27 @@ export default function Blogs() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Sparkles className="w-20 h-20 text-[#FFD300]" />
+                  <Sparkles className="w-20 h-20 text-purple-500" />
                 )}
               </div>
               <div className="p-8 flex flex-col justify-center">
-                <Badge className="mb-4 bg-[#FFD300] text-black border-0 w-fit font-bold">
+                <Badge className="mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 w-fit font-bold shadow-md">
                   ⭐ Featured
                 </Badge>
-                <h2 className="text-3xl font-bold text-[#111111] mb-3 leading-tight">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 leading-tight">
                   {featuredBlog.title}
                 </h2>
-                <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+                <p className="text-slate-700 mb-4 leading-relaxed">
                   {featuredBlog.excerpt}
                 </p>
-                <div className="flex items-center gap-4 text-sm text-[#3B3B3B]/60 mb-4">
+                <div className="flex items-center flex-wrap gap-3 text-sm text-slate-500 mb-4">
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {featuredBlog.read_time || 5} min read
                   </span>
                   <span>{format(new Date(featuredBlog.created_date), "MMM dd, yyyy")}</span>
                 </div>
-                <Button className="w-fit bg-[#111111] hover:bg-[#FFD300] hover:text-black font-semibold rounded-2xl">
+                <Button className="w-fit bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-2xl shadow-md">
                   Read Article
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -155,7 +155,7 @@ export default function Blogs() {
           </motion.div>
         )}
 
-        {/* Category Tabs - Stacked Vertically on Mobile, Grid on Desktop */}
+        {/* Category Tabs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
           {categories.map((cat) => {
             const Icon = cat.icon;
@@ -167,8 +167,8 @@ export default function Blogs() {
                 variant={isSelected ? "default" : "outline"}
                 className={`flex items-center justify-start gap-2 rounded-2xl font-semibold h-12 w-full transition-all ${
                   isSelected
-                    ? "bg-[#FFD300] text-black border-0 shadow-md"
-                    : "border-[#3B3B3B]/20 hover:bg-[#F7F7F7] text-[#3B3B3B]"
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -182,7 +182,7 @@ export default function Blogs() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-3xl p-6 shadow-sm border-2 border-[#F7F7F7]">
+              <div key={i} className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-sm border border-purple-200/50">
                 <Skeleton className="h-48 w-full mb-4 rounded-2xl" />
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-full mb-4" />
@@ -192,11 +192,11 @@ export default function Blogs() {
           </div>
         ) : filteredBlogs.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 bg-[#F7F7F7] rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <BookOpen className="w-10 h-10 text-[#3B3B3B]" />
+            <div className="w-20 h-20 bg-purple-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="w-10 h-10 text-slate-600" />
             </div>
-            <h3 className="text-2xl font-bold text-[#111111] mb-3">No articles found</h3>
-            <p className="text-[#3B3B3B]">Try adjusting your search or category filter</p>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">No articles found</h3>
+            <p className="text-slate-600">Try adjusting your search or category filter</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -205,10 +205,10 @@ export default function Blogs() {
                 key={blog.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/50 cursor-pointer"
+                className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-purple-200/50 hover:border-purple-400 cursor-pointer"
                 onClick={() => navigate(createPageUrl("BlogPost") + `?slug=${blog.slug}`)}
               >
-                <div className="h-48 bg-gradient-to-br from-[#FFD300]/10 to-[#FFC700]/10 flex items-center justify-center">
+                <div className="h-48 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
                   {blog.featured_image ? (
                     <img
                       src={blog.featured_image}
@@ -216,24 +216,24 @@ export default function Blogs() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <BookOpen className="w-12 h-12 text-[#FFD300]" />
+                    <BookOpen className="w-12 h-12 text-purple-500" />
                   )}
                 </div>
 
                 <div className="p-6">
-                  <Badge className="mb-3 bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold text-xs">
+                  <Badge className="mb-3 bg-purple-100 text-purple-800 border-purple-300 font-semibold text-xs">
                     {blog.category}
                   </Badge>
 
-                  <h3 className="text-xl font-bold text-[#111111] mb-2 leading-tight line-clamp-2">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 leading-tight line-clamp-2">
                     {blog.title}
                   </h3>
 
-                  <p className="text-sm text-[#3B3B3B] mb-4 line-clamp-3 leading-relaxed">
+                  <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
                     {blog.excerpt}
                   </p>
 
-                  <div className="flex items-center justify-between text-xs text-[#3B3B3B]/60">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {blog.read_time || 5} min
@@ -242,7 +242,7 @@ export default function Blogs() {
                   </div>
 
                   {blog.ai_generated && (
-                    <Badge variant="outline" className="mt-3 text-xs border-[#3B3B3B]/20">
+                    <Badge variant="outline" className="mt-3 text-xs border-purple-200 text-purple-700">
                       <Sparkles className="w-3 h-3 mr-1" />
                       AI Verified
                     </Badge>
