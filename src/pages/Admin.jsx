@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -511,89 +512,45 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Vertical Tabs - Stacked for mobile */}
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
-                activeTab === "overview"
-                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                <span>Overview</span>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => setActiveTab("properties")}
-              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
-                activeTab === "properties"
-                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Home className="w-4 h-4" />
-                <span>Properties</span>
-              </div>
-              <Badge className={activeTab === "properties" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
-                {stats.properties.active}
-              </Badge>
-            </button>
-            
-            <button
-              onClick={() => setActiveTab("duplicates")}
-              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
-                activeTab === "duplicates"
-                  ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Copy className="w-4 h-4" />
-                <span>Duplicates</span>
-              </div>
-              <Badge className={activeTab === "duplicates" ? "bg-white/20 text-white" : "bg-orange-100 text-orange-700"}>
-                {stats.properties.duplicates}
-              </Badge>
-            </button>
-            
-            <button
-              onClick={() => setActiveTab("brokers")}
-              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
-                activeTab === "brokers"
-                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                <span>Brokers</span>
-              </div>
-              <Badge className={activeTab === "brokers" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
-                {stats.brokers.active}
-              </Badge>
-            </button>
-            
-            <button
-              onClick={() => setActiveTab("requirements")}
-              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
-                activeTab === "requirements"
-                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                <span>Leads</span>
-              </div>
-              <Badge className={activeTab === "requirements" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
-                {stats.requirements.active}
-              </Badge>
-            </button>
+          {/* Dropdown Tab Selector */}
+          <div className="flex items-center gap-3">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full md:w-80 h-12 font-semibold text-base bg-white border-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="overview">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Overview</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="properties">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4" />
+                    <span>Properties ({stats.properties.active})</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="duplicates">
+                  <div className="flex items-center gap-2">
+                    <Copy className="w-4 h-4" />
+                    <span>Duplicates ({stats.properties.duplicates})</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="brokers">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    <span>Brokers ({stats.brokers.active})</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="requirements">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    <span>Leads ({stats.requirements.active})</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
