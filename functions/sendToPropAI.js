@@ -25,8 +25,9 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
     
-    // PropAI Live function URL - UPDATE THIS WITH YOUR ACTUAL URL
-    const propAIUrl = 'https://YOUR-PROPAI-APP.base44.app/api/functions/receiveFromChariotParser';
+    // PropAI Live function URL (App ID: 6904873ecc87e0c213ac013f)
+    const PROPAI_APP_ID = '6904873ecc87e0c213ac013f';
+    const propAIUrl = `https://app.base44.com/api/apps/${PROPAI_APP_ID}/functions/receiveFromChariotParser`;
     
     console.log(`📤 Sending ${data_type} to PropAI Live...`);
     
