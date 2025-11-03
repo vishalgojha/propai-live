@@ -1,12 +1,14 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
+import PropertyMatchmaker from "../components/property/PropertyMatchmaker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Sparkles, ChevronDown } from "lucide-react";
+import { AlertCircle, Sparkles, ChevronDown, Zap } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 
@@ -24,6 +26,7 @@ export default function SmartFeed() {
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24); // Pagination state
+  const [matchmakerOpen, setMatchmakerOpen] = useState(false);
 
   const ITEMS_PER_PAGE = 24;
 
@@ -192,13 +195,46 @@ export default function SmartFeed() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         {/* Hero Section */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-black" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-black" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Browse Properties</h1>
+                <p className="text-sm text-[#3B3B3B] font-light">AI-curated listings • Transparent pricing</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Browse Properties</h1>
-              <p className="text-sm text-[#3B3B3B] font-light">AI-curated listings • Transparent pricing</p>
+            
+            {/* AI Matchmaker Button */}
+            <Button
+              onClick={() => setMatchmakerOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg hidden md:flex"
+              size="lg"
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              AI Matchmaker
+            </Button>
+          </div>
+
+          {/* AI Matchmaker CTA Banner - Mobile/Tablet */}
+          <div className="md:hidden mb-4">
+            <div 
+              onClick={() => setMatchmakerOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 text-white cursor-pointer hover:shadow-xl transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold">AI Property Matchmaker</p>
+                    <p className="text-xs text-white/80">Find your perfect property in seconds</p>
+                  </div>
+                </div>
+                <Sparkles className="w-6 h-6" />
+              </div>
             </div>
           </div>
         </div>
@@ -312,6 +348,13 @@ export default function SmartFeed() {
           property={selectedProperty}
           isOpen={!!selectedProperty}
           onClose={() => setSelectedProperty(null)}
+        />
+
+        {/* AI Matchmaker Modal */}
+        <PropertyMatchmaker
+          isOpen={matchmakerOpen}
+          onClose={() => setMatchmakerOpen(false)}
+          allProperties={properties}
         />
       </div>
     </div>
