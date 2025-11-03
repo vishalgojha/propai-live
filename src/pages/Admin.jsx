@@ -1051,80 +1051,177 @@ export default function Admin() {
                     <p className="text-slate-500">Client requirements will appear here</p>
                   </div>
                 ) : (
-                  requirements.map((req) => (
-                    <div
-                      key={req.id}
-                      className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-slate-900">{req.client_name}</h3>
-                            <Badge className={
-                              req.status === "Active" ? "bg-green-500 text-white" :
-                              req.status === "Matched" ? "bg-blue-500 text-white" :
-                              "bg-gray-500 text-white"
-                            }>
-                              {req.status}
-                            </Badge>
-                          </div>
-                          {req.client_phone && (
-                            <p className="text-sm text-slate-600 flex items-center gap-1 mb-2">
-                              <Phone className="w-3 h-3" />
-                              {req.client_phone}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <span>{req.bhk_preference?.join(", ") || "Any"} BHK</span>
-                            <span>•</span>
-                            <span>{req.listing_type}</span>
-                            <span>•</span>
-                            <span>₹{req.budget_min}-{req.budget_max}{req.budget_unit === 'crores' ? ' Cr' : 'L'}</span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-slate-500">
-                          {format(new Date(req.created_date), "MMM dd")}
-                        </span>
-                      </div>
+                  requirements.map((req) => {
+                    // Calculate urgency indicator
+                    const daysOld = Math.floor((Date.now() - new Date(req.created_date).getTime()) / (1000 * 60 * 60 * 24));
+                    const isUrgent = daysOld <= 7;
+                    const isOld = daysOld > 30;
 
-                      {req.preferred_locations && req.preferred_locations.length > 0 && (
-                        <div className="mb-3">
-                          <div className="flex flex-wrap gap-2">
-                            {req.preferred_locations.map((loc, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                <MapPin className="w-3 h-3 mr-1" />
-                                {loc}
+                    return (
+                      <div
+                        key={req.id}
+                        className={`bg-gradient-to-br rounded-2xl p-6 border-2 hover:shadow-lg transition-all ${
+                          req.status === "Active" 
+                            ? "from-white to-green-50 border-green-200" 
+                            : req.status === "Matched"
+                            ? "from-white to-blue-50 border-blue-200"
+                            : "from-white to-slate-50 border-slate-200"
+                        }`}
+                      >
+                        {/* Header Row */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-xl font-bold text-slate-900">
+                                {req.client_name}
+                              </h3>
+                              <Badge className={`${
+                                req.status === "Active" ? "bg-green-500 text-white" :
+                                req.status === "Matched" ? "bg-blue-500 text-white" :
+                                "bg-slate-500 text-white"
+                              }`}>
+                                {req.status}
                               </Badge>
-                            ))}
+                              {isUrgent && (
+                                <Badge className="bg-orange-500 text-white">
+                                  🔥 New
+                                </Badge>
+                              )}
+                              {isOld && (
+                                <Badge variant="outline" className="text-slate-500">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {daysOld}d old
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {/* Client Type */}
+                            {req.client_type && (
+                              <Badge variant="outline" className="text-xs mb-2">
+                                {req.client_type}
+                              </Badge>
+                            )}
                           </div>
+                          
+                          <span className="text-sm text-slate-500 whitespace-nowrap ml-4">
+                            {format(new Date(req.created_date), "MMM dd, yyyy")}
+                          </span>
                         </div>
-                      )}
 
-                      <div className="flex gap-2">
+                        {/* Contact Info Row */}
                         {req.client_phone && (
-                          <Button
-                            onClick={() => {
-                              const message = `Hi ${req.client_name}, this is Chariot Realty. We have properties matching your requirement. Can we share details?`;
-                              window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                            }}
-                            className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
-                            size="sm"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            WhatsApp
-                          </Button>
+                          <div className="flex items-center gap-4 mb-4 text-sm text-slate-600">
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-slate-500" />
+                              <a 
+                                href={`tel:${req.client_phone}`}
+                                className="hover:text-[#FFD300] transition-colors"
+                              >
+                                {req.client_phone}
+                              </a>
+                            </div>
+                            {req.client_email && (
+                              <>
+                                <span className="text-slate-300">•</span>
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-4 h-4 text-slate-500" />
+                                  <a 
+                                    href={`mailto:${req.client_email}`}
+                                    className="hover:text-[#FFD300] transition-colors"
+                                  >
+                                    {req.client_email}
+                                  </a>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         )}
-                        <Button
-                          onClick={() => handleFindMatches(req)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Find Matches
-                        </Button>
+
+                        {/* Requirements Summary - Visual Cards */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                          {/* BHK */}
+                          <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                            <p className="text-xs text-slate-500 mb-1">Looking For</p>
+                            <p className="font-bold text-slate-900">
+                              {req.bhk_preference?.join(", ") || "Any"} BHK
+                            </p>
+                          </div>
+
+                          {/* Listing Type */}
+                          <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                            <p className="text-xs text-slate-500 mb-1">Type</p>
+                            <p className="font-bold text-slate-900">{req.listing_type}</p>
+                          </div>
+
+                          {/* Budget */}
+                          <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                            <p className="text-xs text-slate-500 mb-1">Budget</p>
+                            <p className="font-bold text-slate-900">
+                              ₹{req.budget_min}-{req.budget_max}
+                              {req.budget_unit === 'crores' ? ' Cr' : 'L'}
+                            </p>
+                          </div>
+
+                          {/* Furnishing */}
+                          {req.furnishing_preference && (
+                            <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                              <p className="text-xs text-slate-500 mb-1">Furnishing</p>
+                              <p className="font-bold text-slate-900">{req.furnishing_preference}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Preferred Locations */}
+                        {req.preferred_locations && req.preferred_locations.length > 0 && (
+                          <div className="mb-4">
+                            <p className="text-xs text-slate-500 mb-2">Preferred Locations:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {req.preferred_locations.map((loc, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs bg-white/50">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {loc}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {req.notes && (
+                          <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                            <p className="text-xs text-amber-700 font-semibold mb-1">Notes:</p>
+                            <p className="text-sm text-amber-900">{req.notes}</p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-3 border-t border-slate-200">
+                          {req.client_phone && (
+                            <Button
+                              onClick={() => {
+                                const message = `Hi ${req.client_name}, this is Chariot Realty. We have properties matching your requirement. Can we share details?`;
+                                window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                              }}
+                              className="bg-[#25D366] hover:bg-[#20BD5A] text-white flex-1"
+                              size="sm"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              WhatsApp Client
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => handleFindMatches(req)}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-[#FFD300] text-[#111111] hover:bg-[#FFD300]"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Find Matches
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>
