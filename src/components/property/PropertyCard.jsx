@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home
+  Armchair, Shield, Eye, Home, Camera
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -67,6 +67,8 @@ export default function PropertyCard({ property, onViewDetails }) {
     }
   };
 
+  const hasImages = property.images && property.images.length > 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -75,39 +77,33 @@ export default function PropertyCard({ property, onViewDetails }) {
       className="bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-purple-200/50 hover:border-purple-400 hover:shadow-xl transition-all duration-300 cursor-pointer group"
       onClick={handleCardClick}
     >
-      {/* Image Section */}
-      {property.images && property.images.length > 0 ? (
-        <div className="relative h-56 overflow-hidden">
-          <img
-            src={property.images[0]}
-            alt={property.ai_title || property.bhk}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute top-3 left-3 flex gap-2">
+      {/* Content Section */}
+      <div className="p-5">
+        {/* Header with Badges */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex flex-wrap gap-2">
             {property.listing_type && (
-              <Badge className="bg-white/90 backdrop-blur-sm text-purple-700 border-0 font-semibold shadow-sm">
+              <Badge className="bg-white border-2 border-purple-200 text-purple-700 font-semibold text-xs">
                 {property.listing_type}
               </Badge>
             )}
             {property.broker_trust_score >= 85 && (
-              <Badge className="bg-green-500/90 backdrop-blur-sm text-white border-0 font-semibold shadow-sm">
+              <Badge className="bg-green-500/20 text-green-700 border-green-500 font-semibold text-xs">
                 <Shield className="w-3 h-3 mr-1" />
                 Verified
               </Badge>
             )}
           </div>
+          
+          {/* Camera Icon - Show if images available */}
+          {hasImages && (
+            <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
+              <Camera className="w-3 h-3" />
+              <span className="font-medium">{property.images.length}</span>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="h-56 bg-gradient-to-br from-purple-100 via-indigo-100 to-purple-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-4xl mb-2">🏠</div>
-            <p className="text-xs text-purple-600 font-medium">No image available</p>
-          </div>
-        </div>
-      )}
 
-      {/* Content Section */}
-      <div className="p-5">
         {/* Price - Most Prominent */}
         <div className="mb-3">
           <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-1">
