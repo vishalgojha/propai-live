@@ -458,7 +458,7 @@ export default function Admin() {
       {/* Fixed Header */}
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-[#FFD300] to-[#FFA500] rounded-xl flex items-center justify-center">
                 <Shield className="w-5 h-5 text-black" />
@@ -470,7 +470,7 @@ export default function Admin() {
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={loadDealsRadar}
                 disabled={dealsLoading}
@@ -511,30 +511,34 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Vertical Tabs - Stacked for mobile */}
+          <div className="flex flex-col gap-2">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
                 activeTab === "overview"
                   ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
-              <BarChart3 className="w-4 h-4" />
-              Overview
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                <span>Overview</span>
+              </div>
             </button>
             
             <button
               onClick={() => setActiveTab("properties")}
-              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
                 activeTab === "properties"
                   ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
-              <Home className="w-4 h-4" />
-              Properties
+              <div className="flex items-center gap-2">
+                <Home className="w-4 h-4" />
+                <span>Properties</span>
+              </div>
               <Badge className={activeTab === "properties" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
                 {stats.properties.active}
               </Badge>
@@ -542,14 +546,16 @@ export default function Admin() {
             
             <button
               onClick={() => setActiveTab("duplicates")}
-              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
                 activeTab === "duplicates"
                   ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
-              <Copy className="w-4 h-4" />
-              Duplicates
+              <div className="flex items-center gap-2">
+                <Copy className="w-4 h-4" />
+                <span>Duplicates</span>
+              </div>
               <Badge className={activeTab === "duplicates" ? "bg-white/20 text-white" : "bg-orange-100 text-orange-700"}>
                 {stats.properties.duplicates}
               </Badge>
@@ -557,14 +563,16 @@ export default function Admin() {
             
             <button
               onClick={() => setActiveTab("brokers")}
-              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
                 activeTab === "brokers"
                   ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
-              <Users className="w-4 h-4" />
-              Brokers
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>Brokers</span>
+              </div>
               <Badge className={activeTab === "brokers" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
                 {stats.brokers.active}
               </Badge>
@@ -572,14 +580,16 @@ export default function Admin() {
             
             <button
               onClick={() => setActiveTab("requirements")}
-              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
                 activeTab === "requirements"
                   ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
-              <FileText className="w-4 h-4" />
-              Leads
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <span>Leads</span>
+              </div>
               <Badge className={activeTab === "requirements" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
                 {stats.requirements.active}
               </Badge>
