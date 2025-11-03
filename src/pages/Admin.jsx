@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tabs,
+  Tabs, // Keep this import as it's used within modals
   TabsContent,
   TabsList,
   TabsTrigger,
@@ -72,7 +72,7 @@ export default function Admin() {
   const [dealsData, setDealsData] = useState(null);
   const [dealsLoading, setDealsLoading] = useState(false);
 
-  // NEW: Image upload states
+  // Image upload states
   const [imageUploadModalOpen, setImageUploadModalOpen] = useState(false);
   const [selectedPropertyForImages, setSelectedPropertyForImages] = useState(null);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -159,7 +159,7 @@ export default function Admin() {
     },
   });
 
-  // NEW: Image upload handler
+  // Image upload handler
   const handleImageUpload = (propertyId) => {
     const property = properties.find(p => p.id === propertyId);
     setSelectedPropertyForImages(property);
@@ -249,7 +249,7 @@ export default function Admin() {
     }
   };
 
-  // NEW: Load Deals Radar
+  // Load Deals Radar
   const loadDealsRadar = async () => {
     setDealsLoading(true);
     try {
@@ -264,7 +264,7 @@ export default function Admin() {
     }
   };
 
-  // NEW: Calculate all broker trust scores
+  // Calculate all broker trust scores
   const recalculateBrokerTrust = async () => {
     if (!confirm('Recalculate trust scores for all brokers? This may take a minute.')) return;
 
@@ -1071,7 +1071,7 @@ export default function Admin() {
     );
   };
 
-  // NEW: Image Upload Modal
+  // Image Upload Modal
   const ImageUploadModal = () => {
     if (!selectedPropertyForImages) return null;
 
@@ -1191,21 +1191,29 @@ export default function Admin() {
           <p className="text-[#3B3B3B]">Manage properties, brokers, and requirements • Live updates every 10s</p>
         </div>
 
-        {/* NEW: Quick Actions Bar */}
+        {/* Quick Actions Bar - FIXED: Added proper event handlers */}
         <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-4 mb-8 border-2 border-amber-200">
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              onClick={loadDealsRadar}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                loadDealsRadar();
+              }}
               disabled={dealsLoading}
-              className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold"
+              className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold touch-manipulation"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               {dealsLoading ? 'Loading...' : 'AI Deals Radar'}
             </Button>
             <Button
-              onClick={recalculateBrokerTrust}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                recalculateBrokerTrust();
+              }}
               variant="outline"
-              className="border-2 border-amber-300"
+              className="border-2 border-amber-300 touch-manipulation"
             >
               <Shield className="w-4 h-4 mr-2" />
               Recalculate BrokerTrust™
@@ -1216,33 +1224,50 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Main Tabs - NOW VERTICAL */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-col w-full mb-8 h-auto space-y-2 bg-transparent">
-            <TabsTrigger 
-              value="properties" 
-              className="w-full justify-start gap-3 data-[state=active]:bg-[#FFD300] data-[state=active]:text-black h-12 rounded-xl"
+        {/* Main Tabs - FIXED: Proper button structure */}
+        <div className="w-full mb-8">
+          <div className="flex flex-col w-full space-y-2">
+            <button
+              onClick={() => setActiveTab("properties")}
+              className={`w-full flex items-center justify-start gap-3 px-4 py-3 rounded-xl transition-all font-semibold touch-manipulation ${
+                activeTab === "properties"
+                  ? "bg-[#FFD300] text-black shadow-sm"
+                  : "bg-white text-[#3B3B3B] hover:bg-stone-100"
+              }`}
             >
               <Home className="w-5 h-5" />
-              <span className="font-semibold">Properties</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="brokers" 
-              className="w-full justify-start gap-3 data-[state=active]:bg-[#FFD300] data-[state=active]:text-black h-12 rounded-xl"
+              <span>Properties</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("brokers")}
+              className={`w-full flex items-center justify-start gap-3 px-4 py-3 rounded-xl transition-all font-semibold touch-manipulation ${
+                activeTab === "brokers"
+                  ? "bg-[#FFD300] text-black shadow-sm"
+                  : "bg-white text-[#3B3B3B] hover:bg-stone-100"
+              }`}
             >
               <Users className="w-5 h-5" />
-              <span className="font-semibold">Brokers</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="requirements" 
-              className="w-full justify-start gap-3 data-[state=active]:bg-[#FFD300] data-[state=active]:text-black h-12 rounded-xl"
+              <span>Brokers</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("requirements")}
+              className={`w-full flex items-center justify-start gap-3 px-4 py-3 rounded-xl transition-all font-semibold touch-manipulation ${
+                activeTab === "requirements"
+                  ? "bg-[#FFD300] text-black shadow-sm"
+                  : "bg-white text-[#3B3B3B] hover:bg-stone-100"
+              }`}
             >
               <FileText className="w-5 h-5" />
-              <span className="font-semibold">Requirements</span>
-            </TabsTrigger>
-          </TabsList>
+              <span>Requirements</span>
+            </button>
+          </div>
+        </div>
 
-          <TabsContent value="properties">
+        {/* Tab Content - Properties */}
+        {activeTab === "properties" && (
+          <div>
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
@@ -1253,7 +1278,10 @@ export default function Admin() {
                 <p className="text-xs text-[#3B3B3B] mb-1">Active</p>
                 <p className="text-2xl font-bold text-green-600">{propStats.active}</p>
               </div>
-              <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7] cursor-pointer hover:border-orange-500/50" onClick={() => setPropViewMode('duplicates')}>
+              <div 
+                className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7] cursor-pointer hover:border-orange-500/50 touch-manipulation" 
+                onClick={() => setPropViewMode('duplicates')}
+              >
                 <p className="text-xs text-[#3B3B3B] mb-1">Duplicates</p>
                 <p className="text-2xl font-bold text-orange-600">{propStats.duplicates}</p>
               </div>
@@ -1273,7 +1301,7 @@ export default function Admin() {
                 onClick={() => setPropViewMode('properties')}
                 variant={propViewMode === 'properties' ? 'default' : 'ghost'}
                 size="sm"
-                className={propViewMode === 'properties' ? 'bg-[#FFD300] text-black' : ''}
+                className={`touch-manipulation ${propViewMode === 'properties' ? 'bg-[#FFD300] text-black' : ''}`}
               >
                 <Home className="w-4 h-4 mr-2" />
                 Properties
@@ -1282,7 +1310,7 @@ export default function Admin() {
                 onClick={() => setPropViewMode('duplicates')}
                 variant={propViewMode === 'duplicates' ? 'default' : 'ghost'}
                 size="sm"
-                className={propViewMode === 'duplicates' ? 'bg-[#FFD300] text-black' : ''}
+                className={`touch-manipulation ${propViewMode === 'duplicates' ? 'bg-[#FFD300] text-black' : ''}`}
               >
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicates ({propStats.duplicates})
@@ -1517,10 +1545,12 @@ export default function Admin() {
                 )}
               </div>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          {/* BROKERS TAB - keeping existing implementation */}
-          <TabsContent value="brokers">
+        {/* Tab Content - Brokers */}
+        {activeTab === "brokers" && (
+          <div>
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
               <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
@@ -1738,10 +1768,12 @@ export default function Admin() {
                 );
               })}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* REQUIREMENTS TAB - keeping existing implementation */}
-          <TabsContent value="requirements">
+        {/* Tab Content - Requirements */}
+        {activeTab === "requirements" && (
+          <div>
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white rounded-2xl p-4 border-2 border-[#F7F7F7]">
@@ -1947,8 +1979,8 @@ export default function Admin() {
                 ))}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
