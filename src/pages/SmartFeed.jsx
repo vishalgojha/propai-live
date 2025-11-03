@@ -184,7 +184,7 @@ export default function SmartFeed() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white">
       <SEO
         title="Browse Properties | AI-Curated Mumbai Listings | Chariot Realty"
         description="Browse verified properties in Bandra, Juhu, Andheri & more. AI-curated listings with transparent pricing — no bait-and-switch, ever."
@@ -197,12 +197,12 @@ export default function SmartFeed() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#FFD300] rounded-2xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-black" />
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Browse Properties</h1>
-                <p className="text-sm text-[#3B3B3B] font-light">AI-curated listings • Transparent pricing</p>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Browse Properties</h1>
+                <p className="text-sm text-slate-600 font-light">AI-curated listings • Transparent pricing</p>
               </div>
             </div>
             
@@ -304,7 +304,7 @@ export default function SmartFeed() {
                 <Button
                   onClick={loadMore}
                   size="lg"
-                  className="bg-gradient-to-r from-[#FFD300] to-[#FFC700] hover:from-[#FFC700] hover:to-[#FFB000] text-black font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
                 >
                   <ChevronDown className="w-5 h-5 mr-2" />
                   Load More Properties

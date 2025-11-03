@@ -34,7 +34,7 @@ export default function HomePage() {
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       <SEO
         title="Chariot Realty | AI-Powered Mumbai Real Estate | No Bait-and-Switch"
         description="Find verified properties in Mumbai with transparent pricing. Our AI filters duplicates, ranks by broker trust, and shows you only real deals. Bandra, Juhu, Andheri & more."
@@ -43,7 +43,7 @@ export default function HomePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white overflow-hidden">
         {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -57,7 +57,7 @@ export default function HomePage() {
             className="text-center max-w-4xl mx-auto"
           >
             {/* Badge */}
-            <Badge className="mb-6 bg-[#FFD300] text-black border-0 px-4 py-2 text-sm font-bold inline-flex items-center gap-2">
+            <Badge className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-lg">
               <Sparkles className="w-4 h-4" />
               Powered by Building-Level Intelligence
             </Badge>
@@ -66,24 +66,24 @@ export default function HomePage() {
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               Mumbai Real Estate,
               <br />
-              <span className="bg-gradient-to-r from-[#FFD300] via-[#FFC700] to-[#FFD300] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-purple-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
                 Decoded by AI
               </span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-xl md:text-2xl text-stone-300 mb-10 leading-relaxed font-light">
+            <p className="text-xl md:text-2xl text-purple-200 mb-10 leading-relaxed font-light">
               Every building has a story. Every street has a pulse. We don't just list properties—
               <br className="hidden md:block" />
-              <span className="text-[#FFD300] font-medium">we understand them at a contextual level.</span>
+              <span className="text-purple-300 font-medium">we understand them at a contextual level.</span>
             </p>
 
-            {/* CTA Buttons - WITH AI ASSISTANT */}
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold h-14 px-8 rounded-2xl shadow-xl text-lg group"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold h-14 px-8 rounded-2xl shadow-xl text-lg group"
               >
                 <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Explore SmartFeed
@@ -97,7 +97,6 @@ export default function HomePage() {
                 <Building2 className="w-5 h-5 mr-2" />
                 Building Intelligence
               </Button>
-              {/* NEW: WhatsApp AI Assistant Button */}
               <Button
                 onClick={() => window.open(whatsappAIUrl, '_blank')}
                 size="lg"
@@ -109,17 +108,17 @@ export default function HomePage() {
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-stone-400">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-purple-300">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
                 <span>AI-Verified Data</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
                 <span>No Bait-and-Switch</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#FFD300]" />
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
                 <span>Broker Trust Scoring</span>
               </div>
             </div>
@@ -130,7 +129,7 @@ export default function HomePage() {
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" className="w-full h-auto">
             <path
-              fill="#F7F7F7"
+              fill="#F7F9FC"
               d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
             />
           </svg>
