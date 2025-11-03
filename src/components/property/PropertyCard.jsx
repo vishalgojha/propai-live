@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,17 +36,20 @@ export default function PropertyCard({ property, onViewDetails }) {
   const formatPrice = () => {
     if (property.price_unit === "crores") {
       if (property.price < 1) {
-        return `₹${property.price * 100}L`;
+        const lakhs = property.price * 100;
+        return `₹${lakhs} ${lakhs === 1 ? 'Lakh' : 'Lakhs'}`;
       }
       return `₹${property.price} Cr`;
     }
     
     if (property.price >= 100) {
-      return `₹${(property.price / 100).toFixed(2)} Cr`;
+      const crores = (property.price / 100).toFixed(2);
+      return `₹${crores} Cr`;
     } else if (property.price < 1) {
-      return `₹${(property.price * 100).toFixed(0)}K`;
+      const thousands = (property.price * 100).toFixed(0);
+      return `₹${thousands}K`;
     }
-    return `₹${property.price}L`;
+    return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
   const getAgentPhone = () => {

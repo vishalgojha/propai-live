@@ -61,7 +61,7 @@ export default function PropertyDetails() {
     if (property.price_unit === "crores") {
       return `₹${property.price} Cr`;
     }
-    return `₹${property.price}L`;
+    return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
   const getAgentPhone = () => {
