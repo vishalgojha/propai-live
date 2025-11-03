@@ -97,7 +97,7 @@ export default function BlogPost() {
         "@type": "Article",
         "headline": blog.title,
         "description": blog.excerpt,
-        "image": blog.featured_image || "https://chariotrealtors.in/og-default.jpg",
+        "image": blog.featured_image || "https://chariotrealty.com/og-default.jpg",
         "datePublished": blog.created_date,
         "dateModified": blog.updated_date || blog.created_date,
         "author": {
@@ -109,14 +109,14 @@ export default function BlogPost() {
           "name": "Chariot Realty",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://chariotrealtors.in/logo.png"
+            "url": "https://chariotrealty.com/logo.png"
           }
         },
         "articleSection": blog.category,
         "keywords": blog.tags?.join(", "),
         "mainEntityOfPage": {
           "@type": "WebPage",
-          "@id": `https://chariotrealtors.in/insights/${blog.slug}`
+          "@id": `https://chariotrealty.com/insights/${blog.slug}`
         }
       },
       {
@@ -126,19 +126,19 @@ export default function BlogPost() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://chariotrealtors.in"
+            "item": "https://chariotrealty.com"
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Insights",
-            "item": "https://chariotrealtors.in/insights"
+            "item": "https://chariotrealty.com/insights"
           },
           {
             "@type": "ListItem",
             "position": 3,
             "name": blog.title,
-            "item": `https://chariotrealtors.in/insights/${blog.slug}`
+            "item": `https://chariotrealty.com/insights/${blog.slug}`
           }
         ]
       }
@@ -180,7 +180,7 @@ export default function BlogPost() {
           description={blog.excerpt || blog.title}
           ogImage={blog.featured_image}
           schema={articleSchema}
-          canonical={`https://chariotrealtors.in/insights/${blog.slug}`}
+          canonical={`https://chariotrealty.com/insights/${blog.slug}`}
         />
       )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -65,13 +65,13 @@ export default function Buildings() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://chariotrealtors.in"
+        "item": "https://chariotrealty.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Buildings",
-        "item": "https://chariotrealtors.in/buildings"
+        "item": "https://chariotrealty.com/buildings"
       }
     ]
   };
@@ -82,7 +82,7 @@ export default function Buildings() {
         title="Mumbai Buildings Directory | Street-Level Intelligence"
         description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
         schema={breadcrumbSchema}
-        canonical="https://chariotrealtors.in/buildings"
+        canonical="https://chariotrealty.com/buildings"
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">

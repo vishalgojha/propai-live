@@ -399,8 +399,8 @@ export default function Layout({ children, currentPageName }) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
-                  <a href="mailto:hello@chariotrealtors.in" className="hover:text-[#d4af37] transition-colors">
-                    hello@chariotrealtors.in
+                  <a href="mailto:hello@chariotrealty.com" className="hover:text-[#d4af37] transition-colors">
+                    hello@chariotrealty.com
                   </a>
                 </li>
               </ul>

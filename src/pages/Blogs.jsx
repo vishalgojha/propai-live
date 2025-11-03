@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -62,13 +63,13 @@ export default function Blogs() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://chariotrealtors.in"
+        "item": "https://chariotrealty.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Insights",
-        "item": "https://chariotrealtors.in/insights"
+        "item": "https://chariotrealty.com/insights"
       }
     ]
   };
@@ -79,7 +80,7 @@ export default function Blogs() {
         title="Chariot Insights | Mumbai Real Estate Guides & Market Data"
         description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."
         schema={breadcrumbSchema}
-        canonical="https://chariotrealtors.in/insights"
+        canonical="https://chariotrealty.com/insights"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">

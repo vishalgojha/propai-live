@@ -139,19 +139,19 @@ export default function BuildingProfile() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://chariotrealtors.in"
+            "item": "https://chariotrealty.com"
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Buildings",
-            "item": "https://chariotrealtors.in/buildings"
+            "item": "https://chariotrealty.com/buildings"
           },
           {
             "@type": "ListItem",
             "position": 3,
             "name": building.name,
-            "item": `https://chariotrealtors.in/building/${building.slug || building.id}`
+            "item": `https://chariotrealty.com/building/${building.slug || building.id}`
           }
         ]
       }
@@ -191,7 +191,7 @@ export default function BuildingProfile() {
           description={`${building.name} in ${building.location} — View active listings, average pricing, building amenities & verified reviews. Street-level property intelligence by Chariot Realty.`}
           ogImage={building.images?.[0]}
           schema={buildingSchema}
-          canonical={`https://chariotrealtors.in/building/${building.slug || building.id}`}
+          canonical={`https://chariotrealty.com/building/${building.slug || building.id}`}
         />
       )}
 

@@ -21,7 +21,7 @@ export default function Home() {
     "@type": "RealEstateAgent",
     "name": "Chariot Realty",
     "description": "AI-powered real estate platform for Mumbai, delivering transparent, verified property listings without the noise.",
-    "url": "https://chariotrealtors.in",
+    "url": "https://chariotrealty.com", // Changed from chariotrealtors.in to chariotrealty.com
     "areaServed": {
       "@type": "City",
       "name": "Mumbai"
@@ -38,7 +38,7 @@ export default function Home() {
         title="Chariot Realty | Mumbai Real Estate, Reimagined by AI"
         description="Find verified Mumbai properties with AI-powered intelligence. Building Memory™, BrokerTrust™ scoring, and Expat Mode — real estate without the noise."
         schema={homeSchema}
-        canonical="https://chariotrealtors.in"
+        canonical="https://chariotrealty.com" // Changed from chariotrealtors.in to chariotrealty.com
       />
 
       {/* Hero Section - FIXED: Removed white box by proper section closure */}
