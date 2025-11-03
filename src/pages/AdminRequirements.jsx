@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Search, MessageCircle, Phone, Mail, MapPin, Eye, Clock, Home as HomeIcon, IndianRupee, Shield
+  Search, MessageCircle, Phone, Mail, MapPin, Eye, Clock, Home as HomeIcon, IndianRupee, Shield, ArrowLeft
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -74,7 +74,17 @@ export default function AdminRequirements() {
     <div className="min-h-screen bg-[#F7F7F7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         
+        {/* Back Button + Header */}
         <div className="mb-8">
+          <Button
+            onClick={() => navigate(createPageUrl("Admin"))}
+            variant="ghost"
+            className="mb-4 -ml-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Admin Dashboard
+          </Button>
+
           <h1 className="text-3xl font-bold text-[#111111] mb-2">Requirements</h1>
           <p className="text-[#3B3B3B]">Client requirements & matching</p>
         </div>
