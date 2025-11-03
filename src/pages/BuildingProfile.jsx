@@ -207,77 +207,45 @@ export default function BuildingProfile() {
           Back to Buildings
         </Button>
 
-        {/* Hero Section */}
+        {/* Hero Section - NO IMAGE */}
         <div className="bg-white rounded-3xl overflow-hidden shadow-lg mb-8 border-2 border-[#F7F7F7]">
-          {/* Header Image */}
-          {building.images && building.images.length > 0 ? (
-            <div className="h-96 relative">
-              <img
-                src={building.images[0]}
-                alt={building.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8">
-                <div className="flex items-center gap-2 mb-3">
-                  {building.verified && (
-                    <Badge className="bg-green-500 text-white border-0">
-                      <Check className="w-3 h-3 mr-1" />
-                      Verified
-                    </Badge>
-                  )}
-                  {building.building_type && (
-                    <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
-                      {building.building_type}
-                    </Badge>
-                  )}
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
-                  {building.name}
-                </h1>
-                <div className="flex items-center gap-2 text-white/90">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-lg">{building.location}</span>
-                  {building.pocket && (
-                    <>
-                      <span>•</span>
-                      <span>{building.pocket}</span>
-                    </>
-                  )}
-                </div>
-              </div>
+          {/* Header - Text Only */}
+          <div className="bg-gradient-to-br from-stone-900 to-stone-800 text-white p-12">
+            <div className="flex items-center gap-2 mb-3">
+              {building.verified && (
+                <Badge className="bg-green-500 text-white border-0">
+                  <Check className="w-3 h-3 mr-1" />
+                  Verified
+                </Badge>
+              )}
+              {building.building_type && (
+                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
+                  {building.building_type}
+                </Badge>
+              )}
             </div>
-          ) : (
-            <div className="h-96 bg-gradient-to-br from-stone-200 to-stone-300 flex flex-col items-center justify-center">
-              <Building2 className="w-32 h-32 text-stone-400 mb-4" />
-              <h1 className="text-4xl font-bold text-[#111111] mb-2">{building.name}</h1>
-              <div className="flex items-center gap-2 text-[#3B3B3B]">
-                <MapPin className="w-4 h-4" />
-                <span>{building.location}</span>
-                {building.pocket && (
-                  <>
-                    <span>•</span>
-                    <span>{building.pocket}</span>
-                  </>
-                )}
-              </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+              {building.name}
+            </h1>
+            <div className="flex items-center gap-2 text-white/90">
+              <MapPin className="w-4 h-4" />
+              <span className="text-lg">{building.location}</span>
+              {building.pocket && (
+                <>
+                  <span>•</span>
+                  <span>{building.pocket}</span>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="p-8">
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {/* Quick Stats - REMOVED total_floors */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
               {building.active_listings > 0 && (
                 <div className="text-center p-4 bg-stone-50 rounded-2xl">
                   <p className="text-sm text-stone-600 mb-1">Active Listings</p>
                   <p className="text-3xl font-bold text-[#111111]">{building.active_listings}</p>
-                </div>
-              )}
-              {building.total_floors && (
-                <div className="text-center p-4 bg-stone-50 rounded-2xl">
-                  <Layers className="w-5 h-5 text-stone-600 mx-auto mb-2" />
-                  <p className="text-sm text-stone-600 mb-1">Total Floors</p>
-                  <p className="text-2xl font-bold text-[#111111]">{building.total_floors}</p>
                 </div>
               )}
               {building.total_units && (
