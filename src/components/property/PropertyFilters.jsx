@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,17 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       ? currentLocations.filter(l => l !== location)
       : [...currentLocations, location];
     onFilterChange({ ...filters, location_multi: newLocations });
+  };
+
+  // NEW: Toggle function for listing type
+  const toggleListingType = (type) => {
+    if (filters.listingType === type) {
+      // If clicking the same button, deselect it (go back to "all")
+      onFilterChange({ ...filters, listingType: "all" });
+    } else {
+      // Otherwise, select the new type
+      onFilterChange({ ...filters, listingType: type });
+    }
   };
 
   const toggleExpatMode = () => {
@@ -177,7 +189,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </p>
       </div>
 
-      {/* NEW: Listing Type Selector */}
+      {/* FIXED: Listing Type Selector with Toggle */}
       <div className="mb-6">
         <label className="text-sm font-semibold text-[#111111] mb-3 block">Rent / Sale / Pre Leased</label>
         <div className="flex flex-wrap gap-2">
@@ -186,7 +198,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             return (
               <Button
                 key={type}
-                onClick={() => onFilterChange({ ...filters, listingType: type })}
+                onClick={() => toggleListingType(type)}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
                 className={`rounded-xl font-semibold ${
@@ -200,6 +212,9 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             );
           })}
         </div>
+        <p className="text-xs text-[#3B3B3B]/60 mt-2">
+          💡 Click again to deselect
+        </p>
       </div>
 
       {/* Multi-Select BHK */}
