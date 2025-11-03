@@ -91,12 +91,13 @@ export default function Admin() {
     checkAuth();
   }, [navigate]);
 
-  // Queries
+  // Queries with LIVE UPDATES (refetchInterval: 10000 = 10 seconds)
   const { data: properties = [] } = useQuery({
     queryKey: ['admin-properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
+    refetchInterval: 10000, // ✅ LIVE UPDATES every 10 seconds
   });
 
   const { data: duplicates = [] } = useQuery({
@@ -104,6 +105,7 @@ export default function Admin() {
     queryFn: () => base44.entities.Property.filter({ is_duplicate: true }, '-created_date'),
     initialData: [],
     enabled: isAuthorized,
+    refetchInterval: 10000, // ✅ LIVE UPDATES
   });
 
   const { data: brokers = [] } = useQuery({
@@ -111,6 +113,7 @@ export default function Admin() {
     queryFn: () => base44.entities.Broker.list('-last_activity'),
     initialData: [],
     enabled: isAuthorized,
+    refetchInterval: 10000, // ✅ LIVE UPDATES
   });
 
   const { data: requirements = [] } = useQuery({
@@ -118,6 +121,7 @@ export default function Admin() {
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
+    refetchInterval: 10000, // ✅ LIVE UPDATES
   });
 
   // Mutations
@@ -1016,7 +1020,7 @@ export default function Admin() {
             </div>
             <h1 className="text-3xl font-bold text-[#111111]">Admin Dashboard</h1>
           </div>
-          <p className="text-[#3B3B3B]">Manage properties, brokers, and requirements</p>
+          <p className="text-[#3B3B3B]">Manage properties, brokers, and requirements • Live updates every 10s</p>
         </div>
 
         {/* NEW: Quick Actions Bar */}
@@ -1324,7 +1328,7 @@ export default function Admin() {
             )}
           </TabsContent>
 
-          {/* BROKERS TAB */}
+          {/* BROKERS TAB - keeping existing implementation */}
           <TabsContent value="brokers">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -1545,7 +1549,7 @@ export default function Admin() {
             </div>
           </TabsContent>
 
-          {/* REQUIREMENTS TAB */}
+          {/* REQUIREMENTS TAB - keeping existing implementation */}
           <TabsContent value="requirements">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
