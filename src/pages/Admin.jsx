@@ -1052,7 +1052,6 @@ export default function Admin() {
                   </div>
                 ) : (
                   requirements.map((req) => {
-                    // Calculate urgency indicator
                     const daysOld = Math.floor((Date.now() - new Date(req.created_date).getTime()) / (1000 * 60 * 60 * 24));
                     const isUrgent = daysOld <= 7;
                     const isOld = daysOld > 30;
@@ -1095,7 +1094,6 @@ export default function Admin() {
                               )}
                             </div>
                             
-                            {/* Client Type */}
                             {req.client_type && (
                               <Badge variant="outline" className="text-xs mb-2">
                                 {req.client_type}
