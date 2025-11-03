@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -22,11 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Shield, Home, Users, Building2, FileText, Search, Filter,
-  Eye, Edit2, Trash2, AlertTriangle, Copy, MessageCircle,
-  Phone, Star, MapPin, Download, Sparkles, Clock, TrendingUp,
-  Send, CheckCircle2, Upload, Image as ImageIcon, X, ChevronDown,
-  ExternalLink, Package, MoreVertical, RefreshCw, Zap, BarChart3
+  Shield, Home, Users, Building2, FileText, Search,
+  Eye, Trash2, AlertTriangle, Copy, Upload,
+  Image as ImageIcon, X, CheckCircle2, RefreshCw,
+  Sparkles, Clock, TrendingUp, BarChart3, ArrowLeft,
+  Package
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -42,8 +41,6 @@ export default function Admin() {
   // Properties state
   const [propSearchQuery, setPropSearchQuery] = useState("");
   const [propStatusFilter, setPropStatusFilter] = useState("Active");
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -278,7 +275,6 @@ export default function Admin() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Current Images */}
           {selectedPropertyForImages.images && selectedPropertyForImages.images.length > 0 && (
             <div className="mb-6">
               <h4 className="font-semibold mb-3 text-sm">Current ({selectedPropertyForImages.images.length})</h4>
@@ -303,7 +299,6 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Upload */}
           <div className="space-y-4">
             <Input
               type="file"
@@ -370,9 +365,9 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Fixed Header */}
-      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-[#FFD300] to-[#FFA500] rounded-xl flex items-center justify-center">
                 <Shield className="w-5 h-5 text-black" />
@@ -404,404 +399,500 @@ export default function Admin() {
               </Button>
             </div>
           </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+                activeTab === "overview"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Overview
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("properties")}
+              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+                activeTab === "properties"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+              }`}
+            >
+              <Home className="w-4 h-4" />
+              Properties
+              <Badge className={activeTab === "properties" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
+                {stats.properties.active}
+              </Badge>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("duplicates")}
+              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+                activeTab === "duplicates"
+                  ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+              }`}
+            >
+              <Copy className="w-4 h-4" />
+              Duplicates
+              <Badge className={activeTab === "duplicates" ? "bg-white/20 text-white" : "bg-orange-100 text-orange-700"}>
+                {stats.properties.duplicates}
+              </Badge>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("brokers")}
+              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+                activeTab === "brokers"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Brokers
+              <Badge className={activeTab === "brokers" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
+                {stats.brokers.active}
+              </Badge>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("requirements")}
+              className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+                activeTab === "requirements"
+                  ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Leads
+              <Badge className={activeTab === "requirements" ? "bg-black/20 text-black" : "bg-slate-200 text-slate-700"}>
+                {stats.requirements.active}
+              </Badge>
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`px-6 py-2.5 rounded-xl font-semibold whitespace-nowrap transition-all ${
-              activeTab === "overview"
-                ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
-                : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <BarChart3 className="w-4 h-4 inline mr-2" />
-            Overview
-          </button>
-          
-          <button
-            onClick={() => setActiveTab("properties")}
-            className={`px-6 py-2.5 rounded-xl font-semibold whitespace-nowrap transition-all ${
-              activeTab === "properties"
-                ? "bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black shadow-md"
-                : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <Home className="w-4 h-4 inline mr-2" />
-            Properties ({stats.properties.active})
-          </button>
-          
-          <button
-            onClick={() => setActiveTab("duplicates")}
-            className={`px-6 py-2.5 rounded-xl font-semibold whitespace-nowrap transition-all ${
-              activeTab === "duplicates"
-                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
-                : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <Copy className="w-4 h-4 inline mr-2" />
-            Duplicates ({stats.properties.duplicates})
-          </button>
-          
-          <button
-            onClick={() => navigate(createPageUrl("AdminBrokers"))}
-            className="px-6 py-2.5 rounded-xl font-semibold whitespace-nowrap bg-white text-slate-600 hover:bg-slate-50 transition-all"
-          >
-            <Users className="w-4 h-4 inline mr-2" />
-            Brokers ({stats.brokers.active})
-          </button>
-          
-          <button
-            onClick={() => navigate(createPageUrl("AdminRequirements"))}
-            className="px-6 py-2.5 rounded-xl font-semibold whitespace-nowrap bg-white text-slate-600 hover:bg-slate-50 transition-all"
-          >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Leads ({stats.requirements.active})
-          </button>
-        </div>
-
         {/* Overview Tab */}
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.active}</p>
-                <p className="text-sm text-slate-500">Active Properties</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <Copy className="w-5 h-5 text-orange-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.duplicates}</p>
-                <p className="text-sm text-slate-500">Duplicates</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <ImageIcon className="w-5 h-5 text-blue-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.needsPhotos}</p>
-                <p className="text-sm text-slate-500">Need Photos</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-5 h-5 text-purple-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.brokers.active}</p>
-                <p className="text-sm text-slate-500">Active Brokers</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-amber-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.requirements.active}</p>
-                <p className="text-sm text-slate-500">Active Leads</p>
-              </div>
-            </div>
-
-            {/* Quick Actions Grid */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-3">Properties needing photos</h3>
-                <p className="text-sm text-slate-600 mb-4">{stats.properties.needsPhotos} properties have no images</p>
-                <Button
-                  onClick={() => {
-                    setActiveTab("properties");
-                    setPropStatusFilter("Active");
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  View & Upload
-                </Button>
-              </div>
-
-              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-3">Duplicates to review</h3>
-                <p className="text-sm text-slate-600 mb-4">{stats.properties.duplicates} potential duplicates found</p>
-                <Button
-                  onClick={() => setActiveTab("duplicates")}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  Review Duplicates
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Properties Tab */}
-        {activeTab === "properties" && (
-          <div className="space-y-4">
-            {/* Search & Filters */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200">
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    placeholder="Search by building, location, ID..."
-                    value={propSearchQuery}
-                    onChange={(e) => {
-                      setPropSearchQuery(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={propStatusFilter} onValueChange={(val) => {
-                  setPropStatusFilter(val);
-                  setCurrentPage(1);
-                }}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Sold">Sold</SelectItem>
-                    <SelectItem value="Rented">Rented</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
-                <span>{filteredProperties.length} properties</span>
-                <span>Page {currentPage} of {totalPages}</span>
-              </div>
-            </div>
-
-            {/* Properties List - Compact Cards */}
-            {propertiesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {paginatedProperties.map((property) => (
-                  <motion.div
-                    key={property.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-center gap-4">
-                      {/* Image Thumbnail */}
-                      <div className="relative w-20 h-20 flex-shrink-0">
-                        {property.images?.[0] ? (
-                          <img 
-                            src={property.images[0]} 
-                            alt=""
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center">
-                            <Building2 className="w-8 h-8 text-slate-300" />
-                          </div>
-                        )}
-                        <Badge className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
-                          {property.images?.length || 0}
-                        </Badge>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2 mb-2">
-                          <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
-                            {property.bhk}
-                          </Badge>
-                          <Badge variant="outline" className={`text-xs ${
-                            property.status === "Active" ? "border-green-500 text-green-700" : ""
-                          }`}>
-                            {property.status}
-                          </Badge>
-                          {property.custom_id && (
-                            <Badge variant="outline" className="font-mono text-xs">
-                              {property.custom_id}
-                            </Badge>
-                          )}
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
-                          {property.ai_title || `${property.bhk} in ${property.location}`}
-                        </h3>
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <span>{property.location}</span>
-                          <span>•</span>
-                          <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
-                          {property.carpet_area && (
-                            <>
-                              <span>•</span>
-                              <span>{property.carpet_area} sqft</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <Button
-                          onClick={() => handleImageUpload(property)}
-                          size="sm"
-                          variant="outline"
-                          className="h-9"
-                        >
-                          <Upload className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleViewProperty(property.id)}
-                          size="sm"
-                          variant="outline"
-                          className="h-9"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteProperty(property.id)}
-                          size="sm"
-                          variant="outline"
-                          className="h-9 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+        <AnimatePresence mode="wait">
+          {activeTab === "overview" && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="space-y-6">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.active}</p>
+                    <p className="text-sm text-slate-500">Active Properties</p>
+                  </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-6">
-                <Button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                  size="sm"
-                >
-                  Previous
-                </Button>
-                <span className="px-4 py-2 text-sm text-slate-600">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                  size="sm"
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Duplicates Tab */}
-        {activeTab === "duplicates" && (
-          <div className="space-y-4">
-            {duplicates.length === 0 ? (
-              <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
-                <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">All Clean!</h3>
-                <p className="text-slate-500">No duplicates found</p>
-              </div>
-            ) : (
-              duplicates.map((property) => (
-                <div
-                  key={property.id}
-                  className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border-2 border-orange-200"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 flex-shrink-0">
-                      {property.images?.[0] ? (
-                        <img 
-                          src={property.images[0]} 
-                          alt=""
-                          className="w-full h-full object-cover rounded-xl"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-orange-100 rounded-xl flex items-center justify-center">
-                          <Copy className="w-8 h-8 text-orange-400" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className="bg-orange-600 text-white">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          DUPLICATE
-                        </Badge>
-                        <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
-                          {property.bhk}
-                        </Badge>
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <Copy className="w-5 h-5 text-orange-600" />
                       </div>
-                      <h3 className="font-bold text-slate-900 text-sm mb-1">
-                        {property.ai_title || `${property.bhk} in ${property.location}`}
-                      </h3>
-                      <p className="text-xs text-orange-700">
-                        {property.building_name} • ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
-                      </p>
                     </div>
+                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.duplicates}</p>
+                    <p className="text-sm text-slate-500">Duplicates</p>
+                  </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleViewProperty(property.id)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          if (confirm("Restore?")) {
-                            updatePropertyMutation.mutate({
-                              id: property.id,
-                              data: { is_duplicate: false, duplicate_of: null }
-                            });
-                          }
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-blue-600" />
+                      </div>
+                    </div>
+                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.needsPhotos}</p>
+                    <p className="text-sm text-slate-500">Need Photos</p>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Users className="w-5 h-5 text-purple-600" />
+                      </div>
+                    </div>
+                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.brokers.active}</p>
+                    <p className="text-sm text-slate-500">Active Brokers</p>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-amber-600" />
+                      </div>
+                    </div>
+                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.requirements.active}</p>
+                    <p className="text-sm text-slate-500">Active Leads</p>
+                  </div>
+                </div>
+
+                {/* Quick Actions Grid */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+                    <h3 className="text-lg font-bold text-slate-900 mb-3">Properties needing photos</h3>
+                    <p className="text-sm text-slate-600 mb-4">{stats.properties.needsPhotos} properties have no images</p>
+                    <Button
+                      onClick={() => {
+                        setActiveTab("properties");
+                        setPropStatusFilter("Active");
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      View & Upload
+                    </Button>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200">
+                    <h3 className="text-lg font-bold text-slate-900 mb-3">Duplicates to review</h3>
+                    <p className="text-sm text-slate-600 mb-4">{stats.properties.duplicates} potential duplicates found</p>
+                    <Button
+                      onClick={() => setActiveTab("duplicates")}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      Review Duplicates
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Properties Tab */}
+          {activeTab === "properties" && (
+            <motion.div
+              key="properties"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="space-y-4">
+                {/* Search & Filters */}
+                <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        placeholder="Search by building, location, ID..."
+                        value={propSearchQuery}
+                        onChange={(e) => {
+                          setPropSearchQuery(e.target.value);
+                          setCurrentPage(1);
                         }}
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        Restore
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteProperty(property.id)}
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        className="pl-10"
+                      />
                     </div>
+                    <Select value={propStatusFilter} onValueChange={(val) => {
+                      setPropStatusFilter(val);
+                      setCurrentPage(1);
+                    }}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Draft">Draft</SelectItem>
+                        <SelectItem value="Sold">Sold</SelectItem>
+                        <SelectItem value="Rented">Rented</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+                    <span>{filteredProperties.length} properties</span>
+                    <span>Page {currentPage} of {totalPages || 1}</span>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        )}
+
+                {/* Properties List */}
+                {propertiesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+                  </div>
+                ) : filteredProperties.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
+                    <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">No properties found</h3>
+                    <p className="text-slate-500">Try adjusting your search or filters</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {paginatedProperties.map((property) => (
+                        <motion.div
+                          key={property.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
+                        >
+                          <div className="flex items-center gap-4">
+                            {/* Image Thumbnail */}
+                            <div className="relative w-20 h-20 flex-shrink-0">
+                              {property.images?.[0] ? (
+                                <img 
+                                  src={property.images[0]} 
+                                  alt=""
+                                  className="w-full h-full object-cover rounded-xl"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center">
+                                  <Building2 className="w-8 h-8 text-slate-300" />
+                                </div>
+                              )}
+                              <Badge className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
+                                {property.images?.length || 0}
+                              </Badge>
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 mb-2">
+                                <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
+                                  {property.bhk}
+                                </Badge>
+                                <Badge variant="outline" className={`text-xs ${
+                                  property.status === "Active" ? "border-green-500 text-green-700" : ""
+                                }`}>
+                                  {property.status}
+                                </Badge>
+                                {property.custom_id && (
+                                  <Badge variant="outline" className="font-mono text-xs">
+                                    {property.custom_id}
+                                  </Badge>
+                                )}
+                              </div>
+                              <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                                {property.ai_title || `${property.bhk} in ${property.location}`}
+                              </h3>
+                              <div className="flex items-center gap-4 text-xs text-slate-500">
+                                <span>{property.location}</span>
+                                <span>•</span>
+                                <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                                {property.carpet_area && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{property.carpet_area} sqft</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Button
+                                onClick={() => handleImageUpload(property)}
+                                size="sm"
+                                variant="outline"
+                                className="h-9"
+                              >
+                                <Upload className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleViewProperty(property.id)}
+                                size="sm"
+                                variant="outline"
+                                className="h-9"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteProperty(property.id)}
+                                size="sm"
+                                variant="outline"
+                                className="h-9 text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-center gap-2 mt-6">
+                        <Button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Previous
+                        </Button>
+                        <span className="px-4 py-2 text-sm text-slate-600">
+                          {currentPage} / {totalPages}
+                        </span>
+                        <Button
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Duplicates Tab */}
+          {activeTab === "duplicates" && (
+            <motion.div
+              key="duplicates"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="space-y-4">
+                {duplicates.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
+                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">All Clean!</h3>
+                    <p className="text-slate-500">No duplicates found</p>
+                  </div>
+                ) : (
+                  duplicates.map((property) => (
+                    <div
+                      key={property.id}
+                      className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border-2 border-orange-200"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 flex-shrink-0">
+                          {property.images?.[0] ? (
+                            <img 
+                              src={property.images[0]} 
+                              alt=""
+                              className="w-full h-full object-cover rounded-xl"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-orange-100 rounded-xl flex items-center justify-center">
+                              <Copy className="w-8 h-8 text-orange-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className="bg-orange-600 text-white">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              DUPLICATE
+                            </Badge>
+                            <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
+                              {property.bhk}
+                            </Badge>
+                          </div>
+                          <h3 className="font-bold text-slate-900 text-sm mb-1">
+                            {property.ai_title || `${property.bhk} in ${property.location}`}
+                          </h3>
+                          <p className="text-xs text-orange-700">
+                            {property.building_name} • ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleViewProperty(property.id)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              if (confirm("Restore?")) {
+                                updatePropertyMutation.mutate({
+                                  id: property.id,
+                                  data: { is_duplicate: false, duplicate_of: null }
+                                });
+                              }
+                            }}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            Restore
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteProperty(property.id)}
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Brokers Tab - Navigate to dedicated page */}
+          {activeTab === "brokers" && (
+            <motion.div
+              key="brokers"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl p-12 text-center border border-slate-200"
+            >
+              <Users className="w-16 h-16 text-[#FFD300] mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Broker Management</h3>
+              <p className="text-slate-600 mb-6">View and manage all broker relationships</p>
+              <Button
+                onClick={() => navigate(createPageUrl("AdminBrokers"))}
+                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Go to Brokers Section
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Requirements Tab - Navigate to dedicated page */}
+          {activeTab === "requirements" && (
+            <motion.div
+              key="requirements"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl p-12 text-center border border-slate-200"
+            >
+              <FileText className="w-16 h-16 text-[#FFD300] mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Lead Management</h3>
+              <p className="text-slate-600 mb-6">View and manage client requirements</p>
+              <Button
+                onClick={() => navigate(createPageUrl("AdminRequirements"))}
+                className="bg-[#FFD300] hover:bg-[#FFC700] text-black font-bold"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Go to Requirements Section
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <ImageUploadModal />
