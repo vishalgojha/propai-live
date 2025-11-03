@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,9 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 
-export default function Home() {
+export default function HomePage() {
   const navigate = useNavigate();
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -33,15 +34,15 @@ export default function Home() {
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50">
       <SEO
-        title="Chariot Realty | Mumbai Real Estate, Reimagined by AI"
-        description="Find verified Mumbai properties with AI-powered intelligence. Building Memory™, BrokerTrust™ scoring, and Expat Mode — real estate without the noise."
+        title="Chariot Realty | AI-Powered Mumbai Real Estate | No Bait-and-Switch"
+        description="Find verified properties in Mumbai with transparent pricing. Our AI filters duplicates, ranks by broker trust, and shows you only real deals. Bandra, Juhu, Andheri & more."
+        canonical="https://chariotrealty.com"
         schema={homeSchema}
-        canonical="https://chariotrealty.com" // Changed from chariotrealtors.in to chariotrealty.com
       />
 
-      {/* Hero Section - FIXED: Removed white box by proper section closure */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 text-white overflow-hidden">
         {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -135,6 +136,63 @@ export default function Home() {
           </svg>
         </div>
       </section>
+
+      {/* NEW: Building Intelligence CTA - Add after Hero, before Quick Search */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 rounded-3xl p-8 border-2 border-amber-200 shadow-lg"
+        >
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <Building2 className="w-10 h-10 text-white" />
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-2xl font-bold text-amber-900 mb-2">
+                🧠 Building Memory™ AI Assistant
+              </h3>
+              <p className="text-amber-800 mb-4">
+                Ask anything about Mumbai buildings — pricing trends, tenant profiles, amenities, market activity.
+                Our AI uses real historical data, not generic descriptions.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start text-sm text-amber-700 mb-4">
+                <Badge className="bg-white/60 border-amber-300">📊 Historical Pricing</Badge>
+                <Badge className="bg-white/60 border-amber-300">📈 Market Trends</Badge>
+                <Badge className="bg-white/60 border-amber-300">🏡 Tenant Profiles</Badge>
+                <Badge className="bg-white/60 border-amber-300">✨ Smart Comparisons</Badge>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <a
+                href={base44.agents.getWhatsAppConnectURL('building_assistant')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Ask Building AI
+              </a>
+              <Button
+                onClick={() => navigate(createPageUrl("Buildings"))}
+                variant="outline"
+                className="border-2 border-amber-400 text-amber-800 hover:bg-amber-100 rounded-2xl font-semibold"
+              >
+                Browse All Buildings
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-amber-300">
+            <p className="text-xs text-amber-700 italic">
+              💡 Try: "Tell me about Maker Tower" • "Best buildings in Bandra for expats?" • "Average rent for 2 BHK in Oberoi Sky Heights?"
+            </p>
+          </div>
+        </motion.div>
+      </div>
 
       {/* Why Chariot - The Unfair Advantages */}
       <section className="py-20 bg-[#F7F7F7]">
