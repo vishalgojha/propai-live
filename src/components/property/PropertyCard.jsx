@@ -53,7 +53,7 @@ export default function PropertyCard({ property, onViewDetails }) {
         property.assigned_agent?.toLowerCase().includes('kapil')) {
       return "919773757759";
     }
-    return "919819471310"; // Vishal
+    return "919819471310";
   };
 
   const getAgentName = () => {
@@ -108,14 +108,12 @@ export default function PropertyCard({ property, onViewDetails }) {
     return parts.join(', ') || property.location_id || 'Mumbai';
   };
 
-  // Check if property has media available from source text
-  const hasMediaInSource = property.source_text && 
-    (property.source_text.toLowerCase().includes('pic') || 
-     property.source_text.toLowerCase().includes('photo') ||
-     property.source_text.toLowerCase().includes('video') ||
-     property.source_text.toLowerCase().includes('img'));
-
-  const showMediaIcon = (property.images && property.images.length > 0) || hasMediaInSource;
+  const showMediaIcon = (property.images && property.images.length > 0) || 
+    (property.source_text && 
+     (property.source_text.toLowerCase().includes('pic') || 
+      property.source_text.toLowerCase().includes('photo') ||
+      property.source_text.toLowerCase().includes('video') ||
+      property.source_text.toLowerCase().includes('img')));
 
   return (
     <motion.div
@@ -125,7 +123,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       onClick={handleCardClick}
       className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30 cursor-pointer group relative"
     >
-      {/* AI Title & Description Section (replaces image area) */}
+      {/* Header Section with AI Title & Description */}
       <div className="relative p-6 bg-gradient-to-br from-stone-50 via-white to-stone-50 border-b border-stone-100">
         
         {/* Camera Icon - Small, top-right corner */}
@@ -146,10 +144,15 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         )}
 
-        {/* Badges - Top left */}
+        {/* Badges - Top Row with Location */}
         <div className="flex flex-wrap gap-2 mb-4">
           <Badge className="bg-black text-white border-0 font-bold text-xs">
             {property.bhk}
+          </Badge>
+          {/* Location Badge */}
+          <Badge className="bg-stone-200 text-stone-700 border-0 font-semibold text-xs flex items-center gap-1">
+            <MapPin className="w-3 h-3" />
+            {property.location}
           </Badge>
           {property.jodi_flag && (
             <Badge className="bg-purple-600 text-white border-0 font-bold text-xs">
@@ -169,35 +172,45 @@ export default function PropertyCard({ property, onViewDetails }) {
           )}
         </div>
 
-        {/* AI Title - Full, no truncation */}
+        {/* AI Title */}
         <h3 className="text-xl font-bold text-[#111111] mb-3 leading-tight group-hover:text-[#FFD300] transition-colors">
           {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
         </h3>
         
-        {/* AI Description - Full, no truncation */}
+        {/* Price - Between Title and Description */}
+        <div className="mb-3">
+          <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent">
+            {formatPrice()}
+          </p>
+          <p className="text-xs text-stone-500 uppercase tracking-wide font-medium">
+            {property.listing_type}
+          </p>
+        </div>
+        
+        {/* AI Description */}
         {property.ai_description && (
           <p className="text-sm text-[#3B3B3B] leading-relaxed mb-4">
             {property.ai_description}
           </p>
         )}
 
-        {/* Location Info */}
-        <div className="space-y-2">
-          <div className="flex items-start gap-2 text-sm text-stone-600">
-            <MapPin className="w-4 h-4 text-stone-500 flex-shrink-0 mt-0.5" />
-            <span>{getLocationDisplay()}</span>
+        {/* Location Details */}
+        {property.pocket && (
+          <div className="flex items-center gap-2 text-sm text-stone-600 mb-2">
+            <MapPin className="w-4 h-4 text-stone-500 flex-shrink-0" />
+            <span>{property.pocket}</span>
           </div>
+        )}
 
-          {property.building_name && (
-            <div className="flex items-center gap-2 text-sm text-stone-600">
-              <Building2 className="w-4 h-4 text-stone-500 flex-shrink-0" />
-              <span className="line-clamp-1">{property.building_name}</span>
-            </div>
-          )}
-        </div>
+        {property.building_name && (
+          <div className="flex items-center gap-2 text-sm text-stone-600">
+            <Building2 className="w-4 h-4 text-stone-500 flex-shrink-0" />
+            <span className="line-clamp-1">{property.building_name}</span>
+          </div>
+        )}
       </div>
 
-      {/* Content Section */}
+      {/* Stats & Actions Section */}
       <div className="p-5">
         
         {/* Key Stats Grid */}
@@ -219,24 +232,21 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         </div>
 
-        {/* Price & Listing Type */}
+        {/* Property Type Badge */}
         <div className="flex items-center justify-between mb-4 pb-4 border-b border-stone-100">
-          <div>
-            <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent">
-              {formatPrice()}
-            </p>
-            <p className="text-xs text-stone-500 uppercase tracking-wide font-medium">
-              {property.listing_type}
-            </p>
-          </div>
           <Badge variant="outline" className="text-xs border-stone-300">
             {property.property_type || "Apartment"}
           </Badge>
+          {property.broker_trust_score && (
+            <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+              <Shield className="w-3 h-3" />
+              {property.broker_trust_score}% Trust
+            </span>
+          )}
         </div>
 
         {/* WhatsApp CTAs */}
         <div className="space-y-2">
-          {/* Main CTA - Always visible to all users */}
           <Button
             onClick={handleWhatsAppInquiry}
             className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-2xl h-11"
@@ -245,7 +255,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             Contact {getAgentName()} via WhatsApp
           </Button>
 
-          {/* Broker CTA - Only visible to admin users */}
           {user?.role === 'admin' && property.broker_contact && (
             <Button
               onClick={handleBrokerWhatsApp}
@@ -269,12 +278,6 @@ export default function PropertyCard({ property, onViewDetails }) {
               <span className="font-mono">{property.custom_id}</span>
             )}
           </div>
-          {property.broker_trust_score && (
-            <span className="flex items-center gap-1 text-green-600 font-semibold">
-              <Shield className="w-3 h-3" />
-              {property.broker_trust_score}% Trust
-            </span>
-          )}
         </div>
       </div>
     </motion.div>
