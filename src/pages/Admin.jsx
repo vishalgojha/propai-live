@@ -58,7 +58,7 @@ export default function Admin() {
   // Deals Radar state
   const [dealsLoading, setDealsLoading] = useState(false);
 
-  // Slug generation state
+  // Slug generation and building backfill state (reused for general processing)
   const [generatingSlugs, setGeneratingSlugs] = useState(false);
 
   useEffect(() => {
@@ -240,6 +240,20 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     } catch (error) {
       alert('Failed to generate slugs: ' + error.message);
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
+  const backfillBuildings = async () => {
+    if (!confirm('Generate buildings from all properties?\n\nThis will:\n1. Find properties with building names\n2. Create Building entities\n3. Link properties to buildings')) return;
+    setGeneratingSlugs(true); // Reuse loading state
+    try {
+      const response = await base44.functions.invoke('backfillBuildings', {});
+      alert(`✅ ${response.data.message}\n\n📊 Stats:\n- Properties processed: ${response.data.results.properties_processed}\n- Buildings created: ${response.data.results.buildings_created}\n- Linked to existing: ${response.data.results.buildings_linked}`);
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      alert('Failed to backfill buildings: ' + error.message);
     } finally {
       setGeneratingSlugs(false);
     }
@@ -482,7 +496,17 @@ export default function Admin() {
                 className="border-blue-300 text-blue-700 hover:bg-blue-50"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                {generatingSlugs ? 'Generating...' : 'SEO Slugs'}
+                {generatingSlugs ? 'Processing...' : 'SEO Slugs'}
+              </Button>
+              <Button
+                onClick={backfillBuildings}
+                disabled={generatingSlugs}
+                size="sm"
+                variant="outline"
+                className="border-green-300 text-green-700 hover:bg-green-50"
+              >
+                <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                {generatingSlugs ? 'Processing...' : 'Buildings'}
               </Button>
             </div>
           </div>
