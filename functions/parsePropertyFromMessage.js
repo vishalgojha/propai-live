@@ -1,10 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Parse Property From Broker Message
+ * Parse Property From Broker Message - MUMBAI STREET SMARTS EDITION
  * 
- * Takes raw broker text and extracts structured property data
- * GUARANTEES: broker_id, location, city populated
+ * CRITICAL RULES:
+ * 1. BHK = Residential (unless explicitly "office space" / "shop")
+ * 2. "On Lease" / "Lease" for BHK = RENT (not Pre-Leased)
+ * 3. "Pre-Leased" only if explicitly states tenant exists
+ * 4. Commercial only if "office" / "shop" / "showroom" / "warehouse" mentioned
  */
 
 // Mumbai location mapping (EXPANDED)
@@ -144,22 +147,44 @@ function extractParking(text) {
 function extractListingType(text) {
   const textLower = text.toLowerCase();
   
-  // Check for "on Lease" or "Pre Leased" → Commercial property
-  if (textLower.includes('on lease') || textLower.includes('pre leased') || textLower.includes('preleased')) {
-    return { listing_type: 'Pre Leased', property_category: 'Commercial' };
-  }
+  // CRITICAL: Check for BHK first - if BHK exists, it's 99% residential
+  const hasBHK = /\d+\s*bhk|bedroom|studio/i.test(text);
   
+  // COMMERCIAL KEYWORDS - explicit commercial mentions
+  const isCommercialExplicit = /\b(office|shop|showroom|warehouse|commercial|retail|co-?working)\b/i.test(text);
+  
+  // RESIDENTIAL LEASE/RENT DETECTION
+  // "On Lease" for BHK = Residential Rent, NOT Commercial Pre-Leased
   if (textLower.includes('rent') || textLower.includes('rental')) {
     return { listing_type: 'Rent', property_category: 'Residential' };
   }
-  if (textLower.includes('sale') || textLower.includes('buy') || textLower.includes('sell')) {
-    return { listing_type: 'Sale', property_category: 'Residential' };
+  
+  // "Lease" or "On Lease" with BHK = Residential Rent
+  if ((textLower.includes('lease') || textLower.includes('on lease')) && hasBHK && !isCommercialExplicit) {
+    return { listing_type: 'Rent', property_category: 'Residential' };
   }
-  if (textLower.includes('lease')) {
+  
+  // PRE-LEASED - Only if explicitly mentions "pre leased" or "preleased" + commercial context
+  if ((textLower.includes('pre leased') || textLower.includes('preleased')) && isCommercialExplicit) {
+    return { listing_type: 'Pre Leased', property_category: 'Commercial' };
+  }
+  
+  // COMMERCIAL LEASE (explicit commercial + lease, no BHK)
+  if (textLower.includes('lease') && isCommercialExplicit && !hasBHK) {
     return { listing_type: 'Lease', property_category: 'Commercial' };
   }
   
-  return { listing_type: 'Rent', property_category: 'Residential' }; // Default
+  // SALE
+  if (textLower.includes('sale') || textLower.includes('buy') || textLower.includes('sell')) {
+    // Check if commercial or residential
+    if (isCommercialExplicit) {
+      return { listing_type: 'Sale', property_category: 'Commercial' };
+    }
+    return { listing_type: 'Sale', property_category: 'Residential' };
+  }
+  
+  // DEFAULT: If BHK present → Residential Rent, else Residential Rent
+  return { listing_type: 'Rent', property_category: 'Residential' };
 }
 
 function extractBuildingName(text) {
