@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
-  MapPin, Maximize2, Car, Eye, MessageCircle,
-  Armchair, Shield, Camera, Building2, Phone, Home
+  MapPin, Maximize2, MessageCircle,
+  Armchair, Shield, Eye, Home
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -68,8 +67,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     }
   };
 
-  const hasImages = property.images && property.images.length > 0;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -101,8 +98,11 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         </div>
       ) : (
-        <div className="h-56 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
-          <Building2 className="w-16 h-16 text-purple-400" />
+        <div className="h-56 bg-gradient-to-br from-purple-100 via-indigo-100 to-purple-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-4xl mb-2">🏠</div>
+            <p className="text-xs text-purple-600 font-medium">No image available</p>
+          </div>
         </div>
       )}
 
