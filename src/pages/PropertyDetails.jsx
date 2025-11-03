@@ -485,33 +485,59 @@ export default function PropertyDetails() {
 
             {/* CTA Section - Responsive */}
             <div className="space-y-3 md:space-y-4">
-              <Button
-                onClick={handleWhatsApp}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
-                size="lg"
-              >
-                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                Contact {getAgentName()} via WhatsApp
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => {
+                    const message = `Hi Vishal, I'm interested in this property from Chariot Realty:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                    window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                  size="lg"
+                >
+                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                  WhatsApp Vishal
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    const message = `Hi Kapil, I'm interested in this property from Chariot Realty:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                    window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                  size="lg"
+                >
+                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                  WhatsApp Kapil
+                </Button>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={() => window.open(`tel:+${getAgentPhone()}`, '_self')}
+                  onClick={() => window.open(`tel:+919819471310`, '_self')}
                   variant="outline"
                   className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
                   <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                  Call {getAgentName()}
+                  Call Vishal
                 </Button>
                 <Button
-                  onClick={handleShare}
+                  onClick={() => window.open(`tel:+919773757759`, '_self')}
                   variant="outline"
                   className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
-                  <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                  Share
+                  <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                  Call Kapil
                 </Button>
               </div>
+
+              <Button
+                onClick={handleShare}
+                variant="outline"
+                className="w-full border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
+              >
+                <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                Share Property
+              </Button>
             </div>
           </div>
 
