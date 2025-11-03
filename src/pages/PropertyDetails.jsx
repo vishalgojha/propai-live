@@ -11,7 +11,7 @@ import {
   Building2, MapPin, Home, Maximize2, Car, MessageCircle,
   Calendar, Armchair, Check, Utensils, ArrowLeft, Share2,
   Eye, Sparkles, Phone, Instagram, Facebook, Twitter,
-  Link as LinkIcon, Layers
+  Link as LinkIcon, Layers, Download, X
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import html2canvas from "html2canvas";
 
 export default function PropertyDetails() {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ export default function PropertyDetails() {
   const propertyId = urlParams.get('id');
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [generatingImage, setGeneratingImage] = React.useState(false);
+  const shareCardRef = React.useRef(null);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', propertyId],
@@ -119,6 +122,8 @@ export default function PropertyDetails() {
   };
 
   const getShareUrl = () => {
+    // Use custom domain if available, otherwise window.location.href
+    // The previous outline example was redundant, keeping the simpler original.
     return window.location.href;
   };
 
@@ -149,7 +154,7 @@ export default function PropertyDetails() {
         });
         return;
       } catch (err) {
-        // User cancelled or error
+        // User cancelled or error - open modal instead
       }
     }
     setShareModalOpen(true);
@@ -160,7 +165,6 @@ export default function PropertyDetails() {
     setCopied(true);
     setTimeout(() => {
       setCopied(false);
-      setShareModalOpen(false);
     }, 2000);
   };
 
@@ -180,8 +184,39 @@ export default function PropertyDetails() {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
+  const generateShareImage = async () => {
+    if (!shareCardRef.current) return;
+    
+    setGeneratingImage(true);
+    
+    try {
+      const canvas = await html2canvas(shareCardRef.current, {
+        backgroundColor: '#FFFFFF',
+        scale: 2, // Increase scale for higher resolution
+        logging: false,
+        useCORS: true // Essential for images hosted on different domains
+      });
+      
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `chariot-property-${property.custom_id || property.id}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setGeneratingImage(false);
+        setShareModalOpen(false); // Close modal after download
+      }, 'image/png');
+    } catch (error) {
+      console.error('Error generating image:', error);
+      alert('Failed to generate image. Please try again.');
+      setGeneratingImage(false);
+    }
+  };
+
   const handleInstagram = () => {
-    window.open('https://instagram.com/chariotrealty.in', '_blank');
+    // This button will directly trigger the image generation for Instagram
+    generateShareImage();
   };
 
   const getLocationDisplay = () => {
@@ -304,10 +339,10 @@ export default function PropertyDetails() {
         <div className="bg-white rounded-3xl shadow-lg border-2 border-[#F7F7F7] overflow-hidden mb-8">
           
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-8 py-6 border-b border-stone-200/50">
-            <div className="flex items-start justify-between mb-4">
+          <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 md:px-8 py-6 border-b border-stone-200/50">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center flex-wrap gap-2 mb-3">
                   <Badge className="bg-black text-white font-bold text-xs px-3 py-1 rounded-full border-0">
                     {property.bhk}
                   </Badge>
@@ -317,25 +352,25 @@ export default function PropertyDetails() {
                     </Badge>
                   )}
                   <Badge className={
-                    property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500" :
-                    "bg-gray-500/20 text-gray-700 border-gray-500"
+                    property.status === "Active" ? "bg-green-500/20 text-green-700 border-green-500 text-xs px-3 py-1 rounded-full" :
+                    "bg-gray-500/20 text-gray-700 border-gray-500 text-xs px-3 py-1 rounded-full"
                   }>
                     {property.status}
                   </Badge>
                 </div>
                 
                 {property.ai_title && (
-                  <h1 className="text-3xl md:text-4xl font-bold text-[#111111] mb-3 leading-tight">
+                  <h1 className="text-2xl md:text-4xl font-bold text-[#111111] mb-3 leading-tight">
                     {property.ai_title}
                   </h1>
                 )}
                 
                 <div className="flex items-center gap-2 text-stone-600 mb-3">
-                  <MapPin className="w-4 h-4 text-stone-500" />
-                  <p className="text-base">{getLocationDisplay()}</p>
+                  <MapPin className="w-4 h-4 text-stone-500 flex-shrink-0" />
+                  <p className="text-sm md:text-base">{getLocationDisplay()}</p>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-stone-500">
+                <div className="flex items-center flex-wrap gap-3 text-xs md:text-sm text-stone-500">
                   <span className="flex items-center gap-1">
                     <Eye className="w-3 h-3" />
                     {property.views_count || 0} views
@@ -346,23 +381,23 @@ export default function PropertyDetails() {
                 </div>
               </div>
 
-              <div className="text-right">
-                <p className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-2">
+              <div className="text-left md:text-right">
+                <p className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-2">
                   {formatPrice()}
                 </p>
-                <p className="text-sm text-stone-500 uppercase tracking-wide font-medium">
+                <p className="text-xs md:text-sm text-stone-500 uppercase tracking-wide font-medium">
                   {property.listing_type} • {property.property_type || "Apartment"}
                 </p>
               </div>
             </div>
 
-            {/* Share Buttons */}
-            <div className="flex gap-2">
+            {/* Share Buttons - Fixed layout */}
+            <div className="flex flex-wrap gap-2">
               <Button
                 onClick={handleShare}
                 variant="outline"
                 size="sm"
-                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
+                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
               >
                 <Share2 className="w-3.5 h-3.5 mr-1.5" />
                 Share
@@ -371,64 +406,65 @@ export default function PropertyDetails() {
                 onClick={handleInstagram}
                 variant="outline"
                 size="sm"
-                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl"
+                className="border-stone-300 hover:bg-white text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
+                disabled={generatingImage}
               >
-                <Instagram className="w-3.5 h-3.5 mr-1.5" />
-                Instagram
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                {generatingImage ? 'Generating...' : 'Download Card'}
               </Button>
             </div>
           </div>
 
           {/* Content Section */}
-          <div className="p-8">
+          <div className="p-6 md:p-8">
             
             {/* AI Description */}
             {property.ai_description && (
-              <div className="mb-8 p-5 bg-amber-50/50 rounded-2xl border border-amber-200/50">
+              <div className="mb-8 p-4 md:p-5 bg-amber-50/50 rounded-2xl border border-amber-200/50">
                 <div className="flex items-start gap-3">
                   <Sparkles className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-base text-stone-700 leading-relaxed">
+                  <p className="text-sm md:text-base text-stone-700 leading-relaxed">
                     {property.ai_description}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Key Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="text-center p-5 bg-stone-50 rounded-2xl">
-                <Home className="w-6 h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-lg font-bold text-[#111111]">{property.bhk}</p>
-                <p className="text-xs text-stone-500 mt-1">Configuration</p>
+            {/* Key Details Grid - Responsive */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
+                <Home className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-[#111111]">{property.bhk}</p>
+                <p className="text-xs text-stone-500 mt-1">Config</p>
               </div>
-              <div className="text-center p-5 bg-stone-50 rounded-2xl">
-                <Maximize2 className="w-6 h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-lg font-bold text-[#111111]">
+              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
+                <Maximize2 className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-[#111111] truncate">
                   {property.carpet_area || "N/A"}
                 </p>
-                <p className="text-xs text-stone-500 mt-1">sq ft Carpet</p>
+                <p className="text-xs text-stone-500 mt-1">sq ft</p>
               </div>
-              <div className="text-center p-5 bg-stone-50 rounded-2xl">
-                <Armchair className="w-6 h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-lg font-bold text-[#111111]">{property.furnishing || "N/A"}</p>
-                <p className="text-xs text-stone-500 mt-1">Furnishing</p>
+              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
+                <Armchair className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-[#111111] truncate">{property.furnishing || "N/A"}</p>
+                <p className="text-xs text-stone-500 mt-1">Furnish</p>
               </div>
-              <div className="text-center p-5 bg-stone-50 rounded-2xl">
-                <Car className="w-6 h-6 text-stone-600 mx-auto mb-2" />
-                <p className="text-lg font-bold text-[#111111]">{property.parking || "N/A"}</p>
+              <div className="text-center p-4 md:p-5 bg-stone-50 rounded-2xl">
+                <Car className="w-5 h-5 md:w-6 md:h-6 text-stone-600 mx-auto mb-2" />
+                <p className="text-base md:text-lg font-bold text-[#111111] truncate">{property.parking || "N/A"}</p>
                 <p className="text-xs text-stone-500 mt-1">Parking</p>
               </div>
             </div>
 
             {/* Additional Details */}
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
               {property.floor && (
                 <div className="p-4 bg-stone-50 rounded-2xl">
                   <div className="flex items-center gap-2 mb-2">
                     <Layers className="w-4 h-4 text-stone-500" />
                     <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Floor</p>
                   </div>
-                  <p className="text-base font-bold text-[#111111]">
+                  <p className="text-sm md:text-base font-bold text-[#111111]">
                     {property.floor}
                     {property.total_floors && ` of ${property.total_floors}`}
                   </p>
@@ -440,7 +476,7 @@ export default function PropertyDetails() {
                     <Calendar className="w-4 h-4 text-stone-500" />
                     <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Possession</p>
                   </div>
-                  <p className="text-base font-bold text-[#111111]">{property.possession}</p>
+                  <p className="text-sm md:text-base font-bold text-[#111111]">{property.possession}</p>
                 </div>
               )}
               {property.veg_nonveg && (
@@ -449,7 +485,7 @@ export default function PropertyDetails() {
                     <Utensils className="w-4 h-4 text-stone-500" />
                     <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Food Preference</p>
                   </div>
-                  <p className="text-base font-bold text-[#111111]">{property.veg_nonveg}</p>
+                  <p className="text-sm md:text-base font-bold text-[#111111]">{property.veg_nonveg}</p>
                 </div>
               )}
               {property.built_up_area && (
@@ -458,7 +494,7 @@ export default function PropertyDetails() {
                     <Maximize2 className="w-4 h-4 text-stone-500" />
                     <p className="text-xs text-stone-500 uppercase tracking-wide font-semibold">Built-up Area</p>
                   </div>
-                  <p className="text-base font-bold text-[#111111]">{property.built_up_area} sq ft</p>
+                  <p className="text-sm md:text-base font-bold text-[#111111]">{property.built_up_area} sq ft</p>
                 </div>
               )}
             </div>
@@ -466,8 +502,8 @@ export default function PropertyDetails() {
             {/* Full Description */}
             {property.description && property.description !== property.ai_description && (
               <div className="mb-8">
-                <h3 className="text-lg font-bold text-[#111111] mb-3 uppercase tracking-wide">Description</h3>
-                <p className="text-base text-stone-700 leading-relaxed">
+                <h3 className="text-base md:text-lg font-bold text-[#111111] mb-3 uppercase tracking-wide">Description</h3>
+                <p className="text-sm md:text-base text-stone-700 leading-relaxed">
                   {property.description}
                 </p>
               </div>
@@ -476,26 +512,26 @@ export default function PropertyDetails() {
             {/* Amenities */}
             {property.amenities && property.amenities.length > 0 && (
               <div className="mb-8">
-                <h3 className="text-lg font-bold text-[#111111] mb-4 uppercase tracking-wide">Amenities</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <h3 className="text-base md:text-lg font-bold text-[#111111] mb-4 uppercase tracking-wide">Amenities</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {property.amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-stone-700 bg-stone-50 p-3 rounded-xl">
+                    <div key={idx} className="flex items-center gap-2 text-xs md:text-sm text-stone-700 bg-stone-50 p-3 rounded-xl">
                       <Check className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                      <span>{amenity}</span>
+                      <span className="line-clamp-1">{amenity}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* CTA Section */}
-            <div className="space-y-4">
+            {/* CTA Section - Responsive */}
+            <div className="space-y-3 md:space-y-4">
               <Button
                 onClick={handleWhatsApp}
-                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 rounded-2xl shadow-lg"
+                className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
                 size="lg"
               >
-                <MessageCircle className="w-5 h-5 mr-2" />
+                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                 Contact {getAgentName()} via WhatsApp
               </Button>
 
@@ -503,17 +539,17 @@ export default function PropertyDetails() {
                 <Button
                   onClick={() => window.open(`tel:+${getAgentPhone()}`, '_self')}
                   variant="outline"
-                  className="border-2 border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl"
+                  className="border-2 border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
-                  <Phone className="w-4 h-4 mr-2" />
+                  <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   Call {getAgentName()}
                 </Button>
                 <Button
                   onClick={handleShare}
                   variant="outline"
-                  className="border-2 border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl"
+                  className="border-2 border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
-                  <Share2 className="w-4 h-4 mr-2" />
+                  <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   Share
                 </Button>
               </div>
@@ -521,8 +557,8 @@ export default function PropertyDetails() {
           </div>
 
           {/* Footer - Branding */}
-          <div className="px-8 py-5 bg-stone-50 border-t border-stone-200">
-            <div className="text-center text-sm text-stone-500">
+          <div className="px-6 md:px-8 py-4 md:py-5 bg-stone-50 border-t border-stone-200">
+            <div className="text-center text-xs md:text-sm text-stone-500">
               Listed by <span className="font-semibold text-stone-700">Chariot Realty</span>
               {property.created_date && (
                 <span className="ml-2">• {format(new Date(property.created_date), "MMM dd, yyyy")}</span>
@@ -533,60 +569,122 @@ export default function PropertyDetails() {
 
       </div>
 
-      {/* Share Modal */}
+      {/* Share Modal - Enhanced */}
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#FFD300] rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-black" />
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#FFD300] rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-black" />
+                </div>
+                Share Property
               </div>
-              Share Property
             </DialogTitle>
           </DialogHeader>
           
-          {/* Property Preview in Share Modal */}
-          <div className="bg-[#F7F7F7] rounded-2xl p-4 mb-4">
-            {property.images && property.images.length > 0 && (
-              <img 
-                src={property.images[0]} 
-                alt={property.ai_title || 'Property'} 
-                className="w-full h-32 object-cover rounded-xl mb-3"
-              />
-            )}
-            
-            <h4 className="font-bold text-sm text-[#111111] mb-2">
-              {property.ai_title || `${property.bhk} in ${property.location}`}
-            </h4>
-            
-            <div className="space-y-1 text-xs text-[#3B3B3B]">
-              <p className="font-bold text-lg text-amber-600">{formatPrice()}</p>
-              <p className="text-stone-500">{property.listing_type} • {property.property_type || 'Apartment'}</p>
-              {property.building_name && <p>🏢 {property.building_name}</p>}
-              <p>📍 {getLocationDisplay()}</p>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {property.carpet_area && <p>📐 {property.carpet_area} sq.ft</p>}
-                {property.furnishing && <p>🪑 {property.furnishing}</p>}
-                {property.parking && <p>🚗 {property.parking}</p>}
-                {property.floor && <p>🏗️ Floor {property.floor}</p>}
-              </div>
-            </div>
-            
-            {/* Chariot Branding */}
-            <div className="mt-4 pt-3 border-t border-stone-200">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-black" />
+          {/* Property Preview - Visual Share Card */}
+          <div 
+            ref={shareCardRef}
+            className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-2xl p-6 mb-4 text-white relative overflow-hidden"
+          >
+            {/* Subtle pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }}></div>
+
+            <div className="relative z-10">
+              {/* Logo */}
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-black" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[#111111]">Chariot Realty</p>
-                  <p className="text-xs text-[#3B3B3B]">Verified • Transparent • No spam</p>
+                  <p className="font-bold text-lg">Chariot Realty</p>
+                  <p className="text-xs text-stone-400">Mumbai Real Estate</p>
                 </div>
+              </div>
+
+              {/* Property Image */}
+              {property.images && property.images.length > 0 && (
+                <img 
+                  src={property.images[0]} 
+                  alt={property.ai_title || 'Property'} 
+                  className="w-full h-40 object-cover rounded-xl mb-4"
+                  crossOrigin="anonymous"
+                />
+              )}
+              
+              {/* Property Info */}
+              <h4 className="font-bold text-xl text-white mb-3">
+                {property.ai_title || `${property.bhk} in ${property.location}`}
+              </h4>
+              
+              {/* Price - Prominent */}
+              <div className="mb-4">
+                <p className="text-3xl font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 bg-clip-text text-transparent">
+                  {formatPrice()}
+                </p>
+                <p className="text-sm text-stone-300">{property.listing_type} • {property.property_type || 'Apartment'}</p>
+              </div>
+
+              {/* Key Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {property.building_name && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs text-stone-400">Building</p>
+                    <p className="text-sm font-semibold text-white truncate">{property.building_name}</p>
+                  </div>
+                )}
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                  <p className="text-xs text-stone-400">Location</p>
+                  <p className="text-sm font-semibold text-white truncate">{property.location}</p>
+                </div>
+                {property.carpet_area && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs text-stone-400">Area</p>
+                    <p className="text-sm font-semibold text-white">{property.carpet_area} sq.ft</p>
+                  </div>
+                )}
+                {property.furnishing && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs text-stone-400">Furnishing</p>
+                    <p className="text-sm font-semibold text-white truncate">{property.furnishing}</p>
+                  </div>
+                )}
+                {property.parking && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs text-stone-400">Parking</p>
+                    <p className="text-sm font-semibold text-white">{property.parking}</p>
+                  </div>
+                )}
+                {property.floor && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs text-stone-400">Floor</p>
+                    <p className="text-sm font-semibold text-white">Floor {property.floor}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer CTA */}
+              <div className="border-t border-white/20 pt-4">
+                <p className="text-sm text-stone-300 mb-2">📱 View full details & contact agent:</p>
+                <p className="text-xs text-amber-400 font-mono break-all">chariotrealtors.in</p>
+                <p className="text-xs text-stone-400 mt-2">✨ Verified listings • No spam • Transparent pricing</p>
               </div>
             </div>
           </div>
 
+          {/* Share Buttons */}
           <div className="space-y-3">
+            <Button
+              onClick={generateShareImage}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white justify-start"
+              disabled={generatingImage}
+            >
+              <Download className="w-5 h-5 mr-3" />
+              {generatingImage ? 'Generating Image...' : 'Download as Image (Instagram)'}
+            </Button>
             <Button
               onClick={shareToWhatsApp}
               className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white justify-start"
@@ -625,6 +723,109 @@ export default function PropertyDetails() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden Share Card for Image Generation */}
+      {property && (
+        <div className="fixed -left-[9999px] -top-[9999px]">
+          <div 
+            ref={shareCardRef} 
+            style={{ 
+              width: '1080px', 
+              height: '1920px', 
+              backgroundColor: '#1E1E1E', // Ensure a solid background for html2canvas
+              fontFamily: 'sans-serif', // Default font for consistency
+              boxSizing: 'border-box' // Include padding in width/height
+            }}
+          >
+            {/* The content identical to the share card in the modal, for screenshotting */}
+            <div className="relative z-10 p-12"> {/* Increased padding for hidden card */}
+              {/* Subtle pattern overlay */}
+              <div className="absolute inset-0 opacity-[0.03]" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+              }}></div>
+
+              {/* Logo */}
+              <div className="flex items-center gap-4 mb-10"> {/* Adjusted spacing for hidden card */}
+                <div className="w-20 h-20 bg-gradient-to-br from-[#d4af37] to-[#f4d03f] rounded-3xl flex items-center justify-center">
+                  <Sparkles className="w-10 h-10 text-black" />
+                </div>
+                <div>
+                  <p className="font-bold text-4xl text-white">Chariot Realty</p> {/* Larger text */}
+                  <p className="text-xl text-stone-400">Mumbai Real Estate</p> {/* Larger text */}
+                </div>
+              </div>
+
+              {/* Property Image */}
+              {property.images && property.images.length > 0 && (
+                <img 
+                  src={property.images[0]} 
+                  alt={property.ai_title || 'Property'} 
+                  className="w-full h-[400px] object-cover rounded-3xl mb-8" // Larger image, rounded
+                  crossOrigin="anonymous"
+                />
+              )}
+              
+              {/* Property Info */}
+              <h4 className="font-bold text-5xl text-white mb-6 leading-tight"> {/* Larger text */}
+                {property.ai_title || `${property.bhk} in ${property.location}`}
+              </h4>
+              
+              {/* Price - Prominent */}
+              <div className="mb-8"> {/* Adjusted spacing */}
+                <p className="text-7xl font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 bg-clip-text text-transparent">
+                  {formatPrice()}
+                </p>
+                <p className="text-3xl text-stone-300 mt-2">{property.listing_type} • {property.property_type || 'Apartment'}</p> {/* Larger text */}
+              </div>
+
+              {/* Key Details Grid */}
+              <div className="grid grid-cols-2 gap-6 mb-10"> {/* Adjusted spacing */}
+                {property.building_name && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6"> {/* Larger padding, rounded */}
+                    <p className="text-xl text-stone-400">Building</p>
+                    <p className="text-3xl font-semibold text-white truncate">{property.building_name}</p>
+                  </div>
+                )}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                  <p className="text-xl text-stone-400">Location</p>
+                  <p className="text-3xl font-semibold text-white truncate">{property.location}</p>
+                </div>
+                {property.carpet_area && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <p className="text-xl text-stone-400">Area</p>
+                    <p className="text-3xl font-semibold text-white">{property.carpet_area} sq.ft</p>
+                  </div>
+                )}
+                {property.furnishing && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <p className="text-xl text-stone-400">Furnishing</p>
+                    <p className="text-3xl font-semibold text-white truncate">{property.furnishing}</p>
+                  </div>
+                )}
+                {property.parking && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <p className="text-xl text-stone-400">Parking</p>
+                    <p className="text-3xl font-semibold text-white">{property.parking}</p>
+                  </div>
+                )}
+                {property.floor && (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <p className="text-xl text-stone-400">Floor</p>
+                    <p className="text-3xl font-semibold text-white">Floor {property.floor}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer CTA */}
+              <div className="border-t border-white/20 pt-8"> {/* Adjusted padding */}
+                <p className="text-xl text-stone-300 mb-4">📱 View full details & contact agent:</p>
+                <p className="text-3xl text-amber-400 font-mono break-all mb-4">chariotrealtors.in</p>
+                <p className="text-xl text-stone-400">✨ Verified listings • No spam • Transparent pricing</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
