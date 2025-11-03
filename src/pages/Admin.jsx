@@ -26,7 +26,7 @@ import {
   Eye, Trash2, AlertTriangle, Copy, Upload, MessageCircle,
   Image as ImageIcon, X, CheckCircle2, RefreshCw, MapPin,
   Sparkles, Clock, TrendingUp, BarChart3, Phone, Mail,
-  Package, Star, Zap
+  Package, Star, Zap, BookOpen
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -62,6 +62,14 @@ export default function Admin() {
 
   // Slug generation and building backfill state (reused for general processing)
   const [generatingSlugs, setGeneratingSlugs] = useState(false);
+
+  // Blog generation states
+  const [blogGenModalOpen, setBlogGenModalOpen] = useState(false);
+  const [generatingBlog, setGeneratingBlog] = useState(false);
+  const [blogPrompt, setBlogPrompt] = useState("");
+  const [blogCategory, setBlogCategory] = useState("Neighborhood Guide");
+  const [blogTags, setBlogTags] = useState("");
+  const [blogRelatedLocations, setBlogRelatedLocations] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -114,6 +122,14 @@ export default function Admin() {
     refetchInterval: 15000,
   });
 
+  const { data: blogs = [] } = useQuery({
+    queryKey: ['admin-blogs'],
+    queryFn: () => base44.entities.Blog.list('-created_date'),
+    initialData: [],
+    enabled: isAuthorized,
+    refetchInterval: 15000,
+  });
+
   // Mutations
   const deletePropertyMutation = useMutation({
     mutationFn: (id) => base44.entities.Property.delete(id),
@@ -130,6 +146,29 @@ export default function Admin() {
       setImageUploadModalOpen(false);
       setSelectedPropertyForImages(null);
       setImagesToUpload([]);
+    },
+  });
+
+  const deleteBlogMutation = useMutation({
+    mutationFn: (id) => base44.entities.Blog.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-blogs'] });
+      toast.success('Blog deleted!', {
+        description: 'Blog post has been removed.',
+        className: 'bg-slate-600 text-white border-0',
+        duration: 2000
+      });
+    },
+  });
+
+  const updateBlogMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Blog.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-blogs'] });
+      toast.success('Blog updated!', {
+        className: 'bg-green-600 text-white border-0',
+        duration: 2000
+      });
     },
   });
 
@@ -484,6 +523,80 @@ export default function Admin() {
     navigate(createPageUrl("SmartFeed") + "?" + searchParams.toString());
   };
 
+  const handleGenerateBlog = async () => {
+    if (!blogPrompt.trim()) {
+      toast.error('Please provide a topic/prompt', {
+        className: 'bg-red-600 text-white border-0'
+      });
+      return;
+    }
+
+    setGeneratingBlog(true);
+
+    const loadingToast = toast.loading('🤖 AI Blog Generator Running...', {
+      description: 'Researching topic, pulling building data, crafting content...',
+      className: 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0',
+    });
+
+    try {
+      const tags = blogTags.split(',').map(t => t.trim()).filter(Boolean);
+      const relatedLocs = blogRelatedLocations.split(',').map(l => l.trim()).filter(Boolean);
+
+      const response = await base44.agents.invoke('blog_generator', {
+        prompt: blogPrompt,
+        category: blogCategory,
+        tags: tags,
+        related_locations: relatedLocs
+      });
+
+      toast.dismiss(loadingToast);
+
+      toast.success('✅ Blog Post Generated!', {
+        description: `"${response.title}" is ready for review`,
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 5000
+      });
+
+      // Reset form
+      setBlogPrompt("");
+      setBlogTags("");
+      setBlogRelatedLocations("");
+      setBlogGenModalOpen(false);
+
+      queryClient.invalidateQueries({ queryKey: ['admin-blogs'] });
+
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('❌ Blog Generation Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0'
+      });
+    } finally {
+      setGeneratingBlog(false);
+    }
+  };
+
+  const handleDeleteBlog = (blogId) => {
+    if (confirm("Delete this blog post?")) {
+      deleteBlogMutation.mutate(blogId);
+    }
+  };
+
+  const handleToggleFeatured = async (blog) => {
+    await updateBlogMutation.mutateAsync({
+      id: blog.id,
+      data: { featured: !blog.featured }
+    });
+  };
+
+  const handleToggleStatus = async (blog) => {
+    const newStatus = blog.status === "Published" ? "Draft" : "Published";
+    await updateBlogMutation.mutateAsync({
+      id: blog.id,
+      data: { status: newStatus }
+    });
+  };
+
   // Stats
   const stats = {
     properties: {
@@ -500,6 +613,12 @@ export default function Admin() {
     requirements: {
       total: requirements.length,
       active: requirements.filter(r => r.status === "Active").length,
+    },
+    blogs: {
+      total: blogs.length,
+      published: blogs.filter(b => b.status === "Published").length,
+      draft: blogs.filter(b => b.status === "Draft").length,
+      aiGenerated: blogs.filter(b => b.ai_generated).length,
     }
   };
 
@@ -628,6 +747,106 @@ export default function Admin() {
     );
   };
 
+  // Blog Generation Modal
+  const BlogGenModal = () => (
+    <Dialog open={blogGenModalOpen} onOpenChange={setBlogGenModalOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+            Generate Blog with AI
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Topic / Prompt</label>
+            <Input
+              placeholder="e.g., Write a guide about living in Pali Hill for expats"
+              value={blogPrompt}
+              onChange={(e) => setBlogPrompt(e.target.value)}
+              className="mb-2"
+            />
+            <p className="text-xs text-slate-500">Be specific about what you want the blog to cover</p>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Category</label>
+            <Select value={blogCategory} onValueChange={setBlogCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Neighborhood Guide">Neighborhood Guide</SelectItem>
+                <SelectItem value="Expat Series">Expat Series</SelectItem>
+                <SelectItem value="Market Insights">Market Insights</SelectItem>
+                <SelectItem value="Rental & Legal">Rental & Legal</SelectItem>
+                <SelectItem value="Real Stories">Real Stories</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Tags (comma-separated)</label>
+            <Input
+              placeholder="e.g., Bandra, Expat, Luxury, Sea View"
+              value={blogTags}
+              onChange={(e) => setBlogTags(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Related Locations (comma-separated)</label>
+            <Input
+              placeholder="e.g., Pali Hill, Bandra West, Juhu"
+              value={blogRelatedLocations}
+              onChange={(e) => setBlogRelatedLocations(e.target.value)}
+            />
+            <p className="text-xs text-slate-500 mt-1">Properties from these locations will be suggested at the end</p>
+          </div>
+
+          <div className="bg-purple-50 rounded-lg p-3 text-sm text-purple-700">
+            <p className="font-semibold mb-1">🤖 AI will:</p>
+            <ul className="space-y-1 text-xs">
+              <li>• Research the topic with web search</li>
+              <li>• Pull real building data if locations mentioned</li>
+              <li>• Generate SEO-optimized title & content</li>
+              <li>• Create excerpt and meta description</li>
+              <li>• Auto-publish to your blog (status: Published)</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              onClick={handleGenerateBlog}
+              disabled={generatingBlog || !blogPrompt.trim()}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white flex-1"
+            >
+              {generatingBlog ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Blog Post
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => setBlogGenModalOpen(false)}
+              variant="outline"
+              disabled={generatingBlog}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -747,6 +966,12 @@ export default function Admin() {
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     <span>Leads ({stats.requirements.active})</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="blogs">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Blogs ({stats.blogs.published})</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -1420,10 +1645,162 @@ export default function Admin() {
               </div>
             </motion.div>
           )}
+
+          {/* Blogs Tab */}
+          {activeTab === "blogs" && (
+            <motion.div
+              key="blogs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <div className="space-y-4">
+                {/* Header with Generate Button */}
+                <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-slate-900">Blog Posts</h3>
+                    <p className="text-sm text-slate-500">{blogs.length} total • {stats.blogs.published} published • {stats.blogs.aiGenerated} AI-generated</p>
+                  </div>
+                  <Button
+                    onClick={() => setBlogGenModalOpen(true)}
+                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate with AI
+                  </Button>
+                </div>
+
+                {/* Blog List */}
+                {blogs.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
+                    <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">No blog posts yet</h3>
+                    <p className="text-slate-500 mb-4">Create your first AI-generated blog post</p>
+                    <Button
+                      onClick={() => setBlogGenModalOpen(true)}
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Blog Post
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {blogs.map((blog) => (
+                      <div
+                        key={blog.id}
+                        className={`bg-white rounded-2xl p-5 border-2 transition-all ${
+                          blog.status === "Published" 
+                            ? "border-green-200 hover:border-green-300" 
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Featured Image or Placeholder */}
+                          <div className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-indigo-100">
+                            {blog.featured_image ? (
+                              <img src={blog.featured_image} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <BookOpen className="w-10 h-10 text-purple-400" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Blog Info */}
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="text-lg font-bold text-slate-900 line-clamp-1">{blog.title}</h3>
+                                  {blog.featured && (
+                                    <Badge className="bg-[#FFD300] text-black border-0">
+                                      ⭐ Featured
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-slate-500 mb-2">
+                                  <Badge className={`${
+                                    blog.status === "Published" ? "bg-green-500/20 text-green-700 border-green-500" :
+                                    "bg-slate-500/20 text-slate-700 border-slate-500"
+                                  }`}>
+                                    {blog.status}
+                                  </Badge>
+                                  <Badge variant="outline">{blog.category}</Badge>
+                                  {blog.ai_generated && (
+                                    <Badge variant="outline" className="border-purple-300 text-purple-700">
+                                      <Sparkles className="w-3 h-3 mr-1" />
+                                      AI
+                                    </Badge>
+                                  )}
+                                  <span>{format(new Date(blog.created_date), "MMM dd, yyyy")}</span>
+                                  <span>• {blog.views_count || 0} views</span>
+                                </div>
+                                <p className="text-sm text-slate-600 line-clamp-2">{blog.excerpt}</p>
+                              </div>
+                            </div>
+
+                            {/* Tags */}
+                            {blog.tags && blog.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {blog.tags.slice(0, 5).map((tag, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => navigate(createPageUrl("BlogPost") + `?slug=${blog.slug}`)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                onClick={() => handleToggleStatus(blog)}
+                                size="sm"
+                                variant="outline"
+                                className={blog.status === "Published" ? "text-orange-600" : "text-green-600"}
+                              >
+                                {blog.status === "Published" ? "Unpublish" : "Publish"}
+                              </Button>
+                              <Button
+                                onClick={() => handleToggleFeatured(blog)}
+                                size="sm"
+                                variant="outline"
+                                className="text-[#FFD300]"
+                              >
+                                <Star className={`w-4 h-4 ${blog.featured ? 'fill-current' : ''}`} />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteBlog(blog.id)}
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
       <ImageUploadModal />
+      <BlogGenModal />
     </div>
   );
 }
