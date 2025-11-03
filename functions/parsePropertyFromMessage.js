@@ -7,7 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * GUARANTEES: broker_id, location, city populated
  */
 
-// Mumbai location mapping
+// Mumbai location mapping (EXPANDED)
 const LOCATION_MAPPING = {
   'bandra': 'Bandra West',
   'bandra west': 'Bandra West',
@@ -32,19 +32,51 @@ const LOCATION_MAPPING = {
   'bandra kurla': 'Bandra Kurla Complex',
   'powai': 'Powai',
   'lower parel': 'Lower Parel',
+  // South Mumbai
+  'cuffe parade': 'Cuffe Parade',
+  'cuff parade': 'Cuffe Parade',
+  'colaba': 'Colaba',
+  'nariman point': 'Nariman Point',
+  'marine drive': 'Marine Drive',
+  'malabar hill': 'Malabar Hill',
+  'breach candy': 'Breach Candy',
+  'tardeo': 'Tardeo',
+  'kemps corner': 'Kemps Corner',
+  // Central
+  'dadar': 'Dadar',
+  'matunga': 'Matunga',
+  'sion': 'Sion',
+  'wadala': 'Wadala',
+  // Suburbs
+  'goregaon': 'Goregaon',
+  'malad': 'Malad',
+  'borivali': 'Borivali',
+  'kandivali': 'Kandivali',
+  'chembur': 'Chembur',
+  'ghatkopar': 'Ghatkopar',
+  'mulund': 'Mulund',
+  'thane': 'Thane',
+  'mumbai': 'Mumbai'
 };
 
 function extractBHK(text) {
-  const bhkMatch = text.match(/(\d+)\s*(?:bhk|bedroom|bed|br)/i);
+  // Handle "Large 2 BHK", "Spacious 3 BHK", "Compact 1 BHK"
+  const bhkMatch = text.match(/(?:large|spacious|compact)?\s*(\d+)\s*(?:bhk|bedroom|bed|br)/i);
   if (bhkMatch) {
     return `${bhkMatch[1]} BHK`;
   }
+  
+  // Handle "Studio"
+  if (/\bstudio\b/i.test(text)) {
+    return 'Studio';
+  }
+  
   return null;
 }
 
 function extractPrice(text) {
-  // Match patterns like "80L", "1.5Cr", "50 lakhs", "2 crores"
-  const priceMatch = text.match(/₹?\s*(\d+(?:\.\d+)?)\s*(l|lakh|lakhs|cr|crore|crores|k)/i);
+  // Match patterns like "80L", "1.5Cr", "50 lakhs", "2 crores", "3.50 Lacs"
+  const priceMatch = text.match(/₹?\s*(\d+(?:\.\d+)?)\s*(l|lakh|lakhs|lacs|cr|crore|crores|k)/i);
   
   if (priceMatch) {
     const amount = parseFloat(priceMatch[1]);
@@ -52,7 +84,7 @@ function extractPrice(text) {
     
     if (unit.startsWith('cr')) {
       return { price: amount, price_unit: 'crores' };
-    } else if (unit.startsWith('l')) {
+    } else if (unit.startsWith('l') || unit === 'lacs') {
       return { price: amount, price_unit: 'lakhs' };
     } else if (unit === 'k') {
       return { price: amount / 100, price_unit: 'lakhs' };
@@ -69,7 +101,7 @@ function extractLocation(text) {
   for (const [key, value] of Object.entries(LOCATION_MAPPING)) {
     if (textLower.includes(key)) {
       // Extract pocket if it's a micro-area
-      const pocketAreas = ['pali hill', 'carter road', 'jvpd', 'lokhandwala', 'versova'];
+      const pocketAreas = ['pali hill', 'carter road', 'jvpd', 'lokhandwala', 'versova', 'cuffe parade', 'colaba'];
       const pocket = pocketAreas.find(p => textLower.includes(p)) || null;
       
       return {
@@ -112,24 +144,31 @@ function extractParking(text) {
 function extractListingType(text) {
   const textLower = text.toLowerCase();
   
-  if (textLower.includes('rent') || textLower.includes('rental')) {
-    return 'Rent';
-  }
-  if (textLower.includes('sale') || textLower.includes('buy') || textLower.includes('sell')) {
-    return 'Sale';
-  }
-  if (textLower.includes('lease') || textLower.includes('pre leased') || textLower.includes('preleased')) {
-    return 'Lease';
+  // Check for "on Lease" or "Pre Leased" → Commercial property
+  if (textLower.includes('on lease') || textLower.includes('pre leased') || textLower.includes('preleased')) {
+    return { listing_type: 'Pre Leased', property_category: 'Commercial' };
   }
   
-  return 'Rent'; // Default
+  if (textLower.includes('rent') || textLower.includes('rental')) {
+    return { listing_type: 'Rent', property_category: 'Residential' };
+  }
+  if (textLower.includes('sale') || textLower.includes('buy') || textLower.includes('sell')) {
+    return { listing_type: 'Sale', property_category: 'Residential' };
+  }
+  if (textLower.includes('lease')) {
+    return { listing_type: 'Lease', property_category: 'Commercial' };
+  }
+  
+  return { listing_type: 'Rent', property_category: 'Residential' }; // Default
 }
 
 function extractBuildingName(text) {
   // Common patterns for building names
   const buildingPatterns = [
-    /(?:in|at)\s+([A-Z][a-zA-Z\s]+(?:Heights|Tower|Residency|Apartments|Society|Complex|Building))/,
-    /([A-Z][a-zA-Z\s]+(?:Heights|Tower|Residency|Apartments|Society|Complex|Building))/,
+    /(?:in|at)\s+([A-Z][a-zA-Z\s]+(?:Heights|Tower|Residency|Apartments|Society|Complex|Building|Towers))/,
+    /([A-Z][a-zA-Z\s]+(?:Heights|Tower|Residency|Apartments|Society|Complex|Building|Towers))/,
+    // Standalone building names like "Maker Tower", "Lodha Paradise"
+    /\n([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\n/,
   ];
   
   for (const pattern of buildingPatterns) {
@@ -140,6 +179,28 @@ function extractBuildingName(text) {
   }
   
   return null;
+}
+
+function extractBrokers(text) {
+  // Extract broker names and phone numbers
+  // Pattern: Name: Phone or Name - Phone or just Name Phone
+  const brokerPattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*[:−-]?\s*(\+?\d{10,})/g;
+  const brokers = [];
+  let match;
+  
+  while ((match = brokerPattern.exec(text)) !== null) {
+    const name = match[1].trim();
+    let phone = match[2].trim();
+    
+    // Ensure phone has +91 prefix
+    if (!phone.startsWith('+')) {
+      phone = `+91${phone.replace(/\D/g, '')}`;
+    }
+    
+    brokers.push({ name, phone });
+  }
+  
+  return brokers;
 }
 
 Deno.serve(async (req) => {
@@ -163,36 +224,64 @@ Deno.serve(async (req) => {
     }
 
     // ═══════════════════════════════════════════
-    // STEP 1: FIND OR CREATE BROKER
+    // STEP 1: FIND OR CREATE BROKERS (MULTIPLE)
     // ═══════════════════════════════════════════
-    let broker = null;
-    let brokerId = null;
+    let brokerIds = [];
+    let primaryBrokerId = null;
 
-    if (broker_phone) {
-      // Search for existing broker by phone
+    // Try to extract brokers from message
+    const extractedBrokers = extractBrokers(message_text);
+    
+    // If brokers extracted from message, process them
+    if (extractedBrokers.length > 0) {
+      for (const brokerData of extractedBrokers) {
+        const existingBrokers = await base44.asServiceRole.entities.Broker.filter({
+          phone: brokerData.phone
+        });
+
+        let brokerId;
+        if (existingBrokers.length > 0) {
+          brokerId = existingBrokers[0].id;
+        } else {
+          // Create new broker
+          const newBroker = await base44.asServiceRole.entities.Broker.create({
+            name: brokerData.name,
+            phone: brokerData.phone,
+            status: 'Active',
+            total_listings_count: 0,
+            active_listings_count: 0,
+          });
+          brokerId = newBroker.id;
+        }
+        
+        brokerIds.push(brokerId);
+        if (!primaryBrokerId) primaryBrokerId = brokerId; // First broker is primary
+      }
+    } 
+    // Fallback to provided broker_phone/broker_name
+    else if (broker_phone) {
       const existingBrokers = await base44.asServiceRole.entities.Broker.filter({
         phone: broker_phone
       });
 
       if (existingBrokers.length > 0) {
-        broker = existingBrokers[0];
-        brokerId = broker.id;
+        primaryBrokerId = existingBrokers[0].id;
       } else if (broker_name) {
-        // Create new broker
-        broker = await base44.asServiceRole.entities.Broker.create({
+        const newBroker = await base44.asServiceRole.entities.Broker.create({
           name: broker_name,
           phone: broker_phone,
           status: 'Active',
           total_listings_count: 0,
           active_listings_count: 0,
         });
-        brokerId = broker.id;
+        primaryBrokerId = newBroker.id;
       }
+      brokerIds.push(primaryBrokerId);
     }
 
-    if (!brokerId) {
+    if (!primaryBrokerId) {
       return Response.json({
-        error: 'Could not find or create broker. broker_phone and broker_name required.'
+        error: 'Could not find or create broker. broker_phone and broker_name required or brokers must be in message.'
       }, { status: 400 });
     }
 
@@ -205,7 +294,7 @@ Deno.serve(async (req) => {
     const furnishing = extractFurnishing(message_text);
     const carpet_area = extractCarpetArea(message_text);
     const parking = extractParking(message_text);
-    const listing_type = extractListingType(message_text);
+    const { listing_type, property_category } = extractListingType(message_text);
     const building_name = extractBuildingName(message_text);
 
     // MANDATORY FIELDS CHECK
@@ -229,7 +318,7 @@ Deno.serve(async (req) => {
             building_name,
             location: location || 'Mumbai',
             pocket,
-            broker_id: brokerId,
+            broker_id: primaryBrokerId,
             action: 'enrich'
           }
         );
@@ -259,9 +348,8 @@ Deno.serve(async (req) => {
     const propertyData = {
       custom_id: customId,
       slug,
-      broker_id: brokerId,
-      broker_contact: broker_phone,
-      broker_trust_score: broker.trust_score || 50,
+      broker_id: primaryBrokerId,
+      broker_contact: extractedBrokers.length > 0 ? extractedBrokers[0].phone : broker_phone,
       
       // MANDATORY FIELDS - ALWAYS SET
       city: 'Mumbai',
@@ -272,7 +360,7 @@ Deno.serve(async (req) => {
       price,
       price_unit,
       listing_type,
-      property_category: 'Residential',
+      property_category,
       status: 'Active',
       
       // OPTIONAL FIELDS
@@ -287,29 +375,36 @@ Deno.serve(async (req) => {
 
     const property = await base44.asServiceRole.entities.Property.create(propertyData);
 
-    // Update broker stats
-    await base44.asServiceRole.entities.Broker.update(brokerId, {
-      total_listings_count: (broker.total_listings_count || 0) + 1,
-      active_listings_count: (broker.active_listings_count || 0) + 1,
-      last_activity: new Date().toISOString(),
-    });
+    // Update all linked brokers
+    for (const brokerId of brokerIds) {
+      const broker = await base44.asServiceRole.entities.Broker.filter({ id: brokerId });
+      if (broker.length > 0) {
+        await base44.asServiceRole.entities.Broker.update(brokerId, {
+          total_listings_count: (broker[0].total_listings_count || 0) + 1,
+          active_listings_count: (broker[0].active_listings_count || 0) + 1,
+          last_activity: new Date().toISOString(),
+        });
+      }
+    }
 
     return Response.json({
       success: true,
       property,
-      broker,
+      brokers: extractedBrokers.length > 0 ? extractedBrokers : [{ name: broker_name, phone: broker_phone }],
       extracted_data: {
         bhk,
         price,
         price_unit,
         location: location || 'Mumbai (default)',
         pocket,
+        property_category,
         building_name,
         building_linked: !!building_id,
         furnishing,
         carpet_area,
         parking,
         listing_type,
+        brokers_found: extractedBrokers.length
       }
     });
 
