@@ -96,26 +96,23 @@ export default function SmartFeed() {
         if (!property.expat_friendly) return false;
       }
 
-      // Budget - Dynamic based on listing type
+      // Budget filtering with dynamic unit handling
       if (filters.minPrice || filters.maxPrice) {
-        let priceInFilterUnit = property.price;
+        // Determine if we're filtering by crores or lakhs based on listing type
+        const filterUnit = (filters.listingType === 'Sale' || filters.listingType === 'Pre Leased') ? 'crores' : 'lakhs';
         
-        // Convert property.price to the unit expected by the filter
-        if (filters.listingType === "Rent") {
-          // Filter is expected to be in Lakhs (e.g., rent of 50k is 0.5 lakhs)
-          // Convert property price to lakhs
-          priceInFilterUnit = property.price_unit === "crores" ? property.price * 100 : property.price;
-        } else if (filters.listingType === "Sale" || filters.listingType === "Pre Leased") {
-          // Filter is expected to be in Crores
-          // Convert property price to crores
-          priceInFilterUnit = property.price_unit === "lakhs" ? property.price / 100 : property.price;
+        // Normalize property price to the filter unit
+        let propertyPriceNormalized;
+        if (filterUnit === 'crores') {
+          // Filtering in Cr, normalize property price to Cr
+          propertyPriceNormalized = property.price_unit === "crores" ? property.price : property.price / 100;
         } else {
-          // Default or "all" listingType: treat prices as Lakhs
-          priceInFilterUnit = property.price_unit === "crores" ? property.price * 100 : property.price;
+          // Filtering in Lakhs, normalize property price to Lakhs
+          propertyPriceNormalized = property.price_unit === "crores" ? property.price * 100 : property.price;
         }
 
-        if (filters.minPrice && priceInFilterUnit < parseFloat(filters.minPrice)) return false;
-        if (filters.maxPrice && priceInFilterUnit > parseFloat(filters.maxPrice)) return false;
+        if (filters.minPrice && propertyPriceNormalized < parseFloat(filters.minPrice)) return false;
+        if (filters.maxPrice && propertyPriceNormalized > parseFloat(filters.maxPrice)) return false;
       }
 
       return true;

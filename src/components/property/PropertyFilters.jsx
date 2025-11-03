@@ -9,11 +9,9 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
   const [nlpInput, setNlpInput] = useState("");
   const [expatMode, setExpatMode] = useState(false);
 
-  // Extract unique BHKs and locations from actual property data
   const uniqueBhks = [...new Set(allProperties.map(p => p.bhk).filter(Boolean))].sort();
   const uniqueLocations = [...new Set(allProperties.map(p => p.location).filter(Boolean))].sort();
 
-  // Multi-select toggle functions
   const toggleBhk = (bhk) => {
     const currentBhks = filters.bhk_multi || [];
     const newBhks = currentBhks.includes(bhk)
@@ -30,13 +28,6 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     onFilterChange({ ...filters, location_multi: newLocations });
   };
 
-  // Listing Type toggle
-  const toggleListingType = (type) => {
-    const newListingType = filters.listingType === type ? "all" : type;
-    onFilterChange({ ...filters, listingType: newListingType });
-  };
-
-  // Expat Mode toggle handler
   const toggleExpatMode = () => {
     const newExpatMode = !expatMode;
     setExpatMode(newExpatMode);
@@ -53,17 +44,6 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     }
   };
 
-  // Get price unit label based on listing type
-  const getPriceUnit = () => {
-    if (filters.listingType === "Rent") {
-      return "Lakhs";
-    } else if (filters.listingType === "Sale" || filters.listingType === "Pre Leased") {
-      return "Cr";
-    }
-    return "Lakhs"; // Default
-  };
-
-  // AI/NLP search handler
   const handleNlpSearch = () => {
     if (!nlpInput.trim()) return;
 
@@ -86,7 +66,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       newFilters.listingType = 'Rent';
     } else if (input.includes('sale') || input.includes('buy')) {
       newFilters.listingType = 'Sale';
-    } else if (input.includes('pre leased') || input.includes('pre-leased')) {
+    } else if (input.includes('pre leased') || input.includes('preleased')) {
       newFilters.listingType = 'Pre Leased';
     }
 
@@ -115,6 +95,16 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     }
 
     onFilterChange(newFilters);
+  };
+
+  // Determine price unit based on listing type
+  const getPriceUnit = () => {
+    if (filters.listingType === 'Rent') {
+      return 'Lakhs';
+    } else if (filters.listingType === 'Sale' || filters.listingType === 'Pre Leased') {
+      return 'Cr';
+    }
+    return 'Lakhs'; // default
   };
 
   const hasActiveFilters =
@@ -187,16 +177,16 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </p>
       </div>
 
-      {/* Listing Type Filter - Rent/Sale/Pre Leased */}
+      {/* NEW: Listing Type Selector */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-[#111111] mb-3 block">Looking For</label>
+        <label className="text-sm font-semibold text-[#111111] mb-3 block">Rent / Sale / Pre Leased</label>
         <div className="flex flex-wrap gap-2">
           {['Rent', 'Sale', 'Pre Leased'].map((type) => {
             const isSelected = filters.listingType === type;
             return (
               <Button
                 key={type}
-                onClick={() => toggleListingType(type)}
+                onClick={() => onFilterChange({ ...filters, listingType: type })}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
                 className={`rounded-xl font-semibold ${
@@ -262,7 +252,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </div>
       </div>
 
-      {/* Budget Range - Dynamic based on listing type */}
+      {/* Budget Range - Dynamic Unit */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <div>
           <label className="text-sm font-semibold text-[#111111] mb-2 block">
@@ -270,7 +260,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           </label>
           <Input
             type="number"
-            placeholder={filters.listingType === "Rent" ? "e.g., 50" : "e.g., 1"}
+            placeholder={getPriceUnit() === 'Cr' ? "e.g., 1.5" : "e.g., 50"}
             value={filters.minPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
             className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
@@ -282,7 +272,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           </label>
           <Input
             type="number"
-            placeholder={filters.listingType === "Rent" ? "e.g., 200" : "e.g., 5"}
+            placeholder={getPriceUnit() === 'Cr' ? "e.g., 5" : "e.g., 200"}
             value={filters.maxPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
             className="border-[#3B3B3B]/20 focus-visible:ring-[#FFD300] h-11 rounded-xl"
@@ -294,6 +284,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       {hasActiveFilters && (
         <div className="flex items-center justify-between pt-4 border-t border-[#F7F7F7]">
           <div className="flex flex-wrap gap-2">
+            {filters.listingType && filters.listingType !== "all" && (
+              <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
+                {filters.listingType}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
+              </Badge>
+            )}
             {filters.bhk_multi?.map((bhk) => (
               <Badge key={bhk} variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
                 {bhk}
@@ -308,7 +304,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             ))}
             {(filters.minPrice || filters.maxPrice) && (
               <Badge variant="secondary" className="bg-[#FFD300]/20 text-black border-[#FFD300] font-semibold">
-                ₹{filters.minPrice || "0"} - ₹{filters.maxPrice || "∞"} {getPriceUnit()}
+                ₹{filters.minPrice || "0"}{getPriceUnit()} - ₹{filters.maxPrice || "∞"}{getPriceUnit()}
               </Badge>
             )}
             {filters.expat_mode && (
@@ -321,12 +317,6 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
                 {filters.furnishing}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: undefined })} />
-              </Badge>
-            )}
-            {filters.listingType && filters.listingType !== "all" && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-400 font-semibold">
-                For {filters.listingType}
-                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
               </Badge>
             )}
             {filters.search && (
