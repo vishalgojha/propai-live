@@ -33,7 +33,7 @@ import {
   Eye, Edit2, Trash2, AlertTriangle, Copy, MessageCircle,
   Phone, Star, MapPin, Download, Sparkles, Clock, TrendingUp,
   MessageSquare, Send, CheckCircle2, Mail, Calendar, IndianRupee,
-  HomeIcon
+  HomeIcon, Upload, Image as ImageIcon, X
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -67,10 +67,16 @@ export default function Admin() {
   const [brokerAnalytics, setBrokerAnalytics] = useState(null);
   const [conversationText, setConversationText] = useState("");
 
-  // NEW: Deals Radar state
+  // Deals Radar state
   const [showDealsRadar, setShowDealsRadar] = useState(false);
   const [dealsData, setDealsData] = useState(null);
   const [dealsLoading, setDealsLoading] = useState(false);
+
+  // NEW: Image upload states
+  const [imageUploadModalOpen, setImageUploadModalOpen] = useState(false);
+  const [selectedPropertyForImages, setSelectedPropertyForImages] = useState(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [imagesToUpload, setImagesToUpload] = useState([]);
 
   // Check if user is admin
   useEffect(() => {
@@ -138,6 +144,9 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
+      setImageUploadModalOpen(false);
+      setSelectedPropertyForImages(null);
+      setImagesToUpload([]);
     },
   });
 
@@ -149,6 +158,76 @@ export default function Admin() {
       setSelectedBroker(null);
     },
   });
+
+  // NEW: Image upload handler
+  const handleImageUpload = (propertyId) => {
+    const property = properties.find(p => p.id === propertyId);
+    setSelectedPropertyForImages(property);
+    setImageUploadModalOpen(true);
+    setImagesToUpload([]); // Clear previous selections
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setImagesToUpload(files);
+  };
+
+  const handleUploadImages = async () => {
+    if (imagesToUpload.length === 0 || !selectedPropertyForImages) return;
+
+    setUploadingImages(true);
+
+    try {
+      const uploadedUrls = [];
+
+      for (const file of imagesToUpload) {
+        // Assuming base44.integrations.Core.UploadFile expects an object with a file property
+        const response = await base44.integrations.Core.UploadFile({ file });
+        if (response && response.file_url) {
+          uploadedUrls.push(response.file_url);
+        } else {
+          console.error("File upload response missing file_url:", response);
+          throw new Error("Failed to get file URL from upload response.");
+        }
+      }
+
+      // Update property with new images
+      const existingImages = selectedPropertyForImages.images || [];
+      const updatedImages = [...existingImages, ...uploadedUrls];
+
+      await updatePropertyMutation.mutateAsync({
+        id: selectedPropertyForImages.id,
+        data: { images: updatedImages }
+      });
+
+      alert(`✅ Successfully uploaded ${uploadedUrls.length} image(s)!`);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleRemoveImage = async (propertyId, imageUrl) => {
+    const property = properties.find(p => p.id === propertyId);
+    if (!property) return;
+
+    if (!confirm('Are you sure you want to remove this image?')) return;
+
+    const updatedImages = (property.images || []).filter(img => img !== imageUrl);
+
+    try {
+      await updatePropertyMutation.mutateAsync({
+        id: propertyId,
+        data: { images: updatedImages }
+      });
+      alert('✅ Image removed successfully!');
+    } catch (error) {
+      console.error('Error removing image:', error);
+      alert('Failed to remove image');
+    }
+  };
 
   // Property functions
   const handleViewProperty = (propertyId) => {
@@ -761,7 +840,7 @@ export default function Admin() {
 
                   {brokerAnalytics.recentInteractions && brokerAnalytics.recentInteractions.length > 0 && (
                     <div>
-                      <h4 className="font-semibold mb-3">Recent Interactions</h4>
+                      <h4 className="font-semibold mb-3">Recent Interacti ons</h4>
                       <div className="space-y-2">
                         {brokerAnalytics.recentInteractions.map((interaction, idx) => (
                           <div key={idx} className="bg-[#F7F7F7] rounded-xl p-3 text-sm">
@@ -993,6 +1072,96 @@ export default function Admin() {
     );
   };
 
+  // NEW: Image Upload Modal
+  const ImageUploadModal = () => {
+    if (!selectedPropertyForImages) return null;
+
+    return (
+      <Dialog open={imageUploadModalOpen} onOpenChange={setImageUploadModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Images: {selectedPropertyForImages.ai_title || `${selectedPropertyForImages.bhk} in ${selectedPropertyForImages.location}`}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Current Images */}
+          {selectedPropertyForImages.images && selectedPropertyForImages.images.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3 text-sm">Current Images ({selectedPropertyForImages.images.length})</h4>
+              <div className="grid grid-cols-3 gap-3">
+                {selectedPropertyForImages.images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img 
+                      src={img} 
+                      alt={`Property ${idx + 1}`} 
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <Button
+                      onClick={() => handleRemoveImage(selectedPropertyForImages.id, img)}
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upload New Images */}
+          <div>
+            <h4 className="font-semibold mb-3 text-sm">Upload New Images</h4>
+            <div className="space-y-4">
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="cursor-pointer"
+              />
+              
+              {imagesToUpload.length > 0 && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-blue-700 mb-2">
+                    {imagesToUpload.length} image(s) selected
+                  </p>
+                  <div className="space-y-1">
+                    {imagesToUpload.map((file, idx) => (
+                      <p key={idx} className="text-xs text-blue-600">{file.name}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleUploadImages}
+                  disabled={uploadingImages || imagesToUpload.length === 0}
+                  className="bg-[#FFD300] text-black hover:bg-[#FFC700] flex-1"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploadingImages ? 'Uploading...' : `Upload ${imagesToUpload.length} Image(s)`}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setImageUploadModalOpen(false);
+                    setImagesToUpload([]);
+                  }}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
@@ -1142,7 +1311,7 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Properties View */}
+            {/* Properties View - WITH IMAGE MANAGEMENT */}
             {propViewMode === 'properties' && (
               <div className="space-y-4">
                 {filteredProperties.filter(p => !p.is_duplicate).map((property) => (
@@ -1170,6 +1339,11 @@ export default function Admin() {
                               {property.custom_id}
                             </Badge>
                           )}
+                          {/* Image Count Badge */}
+                          <Badge variant="outline" className="text-xs">
+                            <ImageIcon className="w-3 h-3 mr-1" />
+                            {property.images?.length || 0} photos
+                          </Badge>
                         </div>
                         <h3 className="text-lg font-bold text-[#111111] mb-2">
                           {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
@@ -1204,7 +1378,17 @@ export default function Admin() {
                           Added {format(new Date(property.created_date), "MMM dd, yyyy")}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        {/* NEW: Upload Images Button */}
+                        <Button
+                          onClick={() => handleImageUpload(property.id)}
+                          size="sm"
+                          variant="outline"
+                          className="border-[#FFD300] text-black hover:bg-[#FFD300]"
+                        >
+                          <Upload className="w-4 h-4 mr-1" />
+                          Images
+                        </Button>
                         <Button
                           onClick={() => handleViewProperty(property.id)}
                           size="sm"
@@ -1765,6 +1949,7 @@ export default function Admin() {
       <BrokerPropertiesModal />
       <AIAssistantModal />
       <DealsRadarModal />
+      <ImageUploadModal />
     </div>
   );
 }
