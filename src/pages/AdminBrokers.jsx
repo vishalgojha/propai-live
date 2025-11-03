@@ -31,7 +31,7 @@ import {
 import {
   Users, MessageCircle, Phone, Star, Search, Filter,
   Eye, CheckCircle2, Edit2, Download, MapPin, Shield, Building2,
-  Sparkles, Clock, TrendingUp, MessageSquare, Send
+  Sparkles, Clock, TrendingUp, MessageSquare, Send, ArrowLeft
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -704,7 +704,17 @@ export default function AdminBrokers() {
     <div className="min-h-screen bg-[#F7F7F7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
 
+        {/* Back Button + Header */}
         <div className="mb-8">
+          <Button
+            onClick={() => navigate(createPageUrl("Admin"))}
+            variant="ghost"
+            className="mb-4 -ml-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Admin Dashboard
+          </Button>
+          
           <h1 className="text-3xl font-bold text-[#111111] mb-2">Brokers</h1>
           <p className="text-[#3B3B3B]">Manage broker relationships & intelligence</p>
         </div>
