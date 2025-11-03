@@ -184,7 +184,7 @@ export default function SmartFeed() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white">
+    <div className="min-h-screen">
       <SEO
         title="Browse Properties | AI-Curated Mumbai Listings | Chariot Realty"
         description="Browse verified properties in Bandra, Juhu, Andheri & more. AI-curated listings with transparent pricing — no bait-and-switch, ever."

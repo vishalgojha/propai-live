@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
+import {
   Building2, Search, MapPin, Star, TrendingUp,
   Home, Users, AlertCircle, ArrowRight
 } from "lucide-react";
@@ -38,14 +38,14 @@ export default function Buildings() {
 
   // Filter buildings
   const filteredBuildings = buildings.filter(building => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       building.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       building.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       building.pocket?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       building.developer_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesLocation = locationFilter === "all" || building.location === locationFilter;
-    
+
     return matchesSearch && matchesLocation;
   });
 
@@ -78,16 +78,17 @@ export default function Buildings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen">
+
       <SEO
         title="Mumbai Buildings Directory | Street-Level Intelligence"
         description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
         schema={breadcrumbSchema}
         canonical="https://chariotrealty.com/buildings"
       />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

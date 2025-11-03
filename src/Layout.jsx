@@ -96,14 +96,16 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC]">
+    <div className="min-h-screen bg-[#FAFBFC]" style={{
+      backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.02' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E")`
+    }}>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100/50 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
                 <Zap className="w-6 h-6 text-white fill-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Chariot Realty</span>
@@ -250,83 +252,78 @@ export default function Layout({ children, currentPageName }) {
         )}
       </header>
 
-      {/* Main Content - No extra bottom padding needed now */}
+      {/* Main Content */}
       <main className="min-h-[calc(100vh-4rem)]">
         {children}
       </main>
 
-      {/* Enhanced Footer */}
-      <footer className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white py-16 border-t border-purple-800/30">
-        {/* Subtle background pattern */}
-        <div className="absolute inset-0 opacity-[0.02]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Light Modern Footer */}
+      <footer className="bg-white border-t border-purple-100 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
             
-            {/* Brand Section - Spans 4 columns */}
+            {/* Brand Section */}
             <div className="md:col-span-4">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg">
                   <Zap className="w-7 h-7 text-white fill-white" />
                 </div>
-                <span className="text-2xl font-bold text-white tracking-tight">Chariot Realty</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Chariot Realty</span>
               </div>
-              <p className="text-purple-200 text-base font-light leading-relaxed mb-4">
+              <p className="text-slate-700 text-base font-light leading-relaxed mb-4">
                 Real guidance. Real homes. No noise.
               </p>
-              <p className="text-purple-400/70 text-sm font-light italic">
+              <p className="text-slate-500 text-sm font-light italic">
                 Built in Mumbai. Powered by AI. Driven by people.
               </p>
             </div>
 
             {/* Quick Links - Explore */}
             <div className="md:col-span-2">
-              <h4 className="font-bold mb-4 text-white text-sm uppercase tracking-wider">Explore</h4>
-              <ul className="space-y-3 text-sm text-purple-300 font-light">
+              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Explore</h4>
+              <ul className="space-y-3 text-sm text-slate-600 font-light">
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Residential"} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Residential
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Commercial"} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Commercial
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?listingType=Rent"} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Rent
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?listingType=Sale"} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Buy
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Blogs")} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Blog & Guides
                   </Link>
                 </li>
@@ -335,41 +332,41 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Resources */}
             <div className="md:col-span-3">
-              <h4 className="font-bold mb-4 text-white text-sm uppercase tracking-wider">Resources</h4>
-              <ul className="space-y-3 text-sm text-purple-300 font-light">
+              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Resources</h4>
+              <ul className="space-y-3 text-sm text-slate-600 font-light">
                 <li>
                   <Link 
                     to={createPageUrl("Home") + "#how-it-works"} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     How It Works
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Buildings")} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Building Directory
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed")} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     SmartFeed Explained
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Blogs") + "?category=Expat%20Series"} 
-                    className="hover:text-purple-400 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-purple-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     <span>Expat Corner</span>
                     <span className="ml-1 text-xs">🌍</span>
                   </Link>
@@ -379,27 +376,27 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Contact & Social */}
             <div className="md:col-span-3">
-              <h4 className="font-bold mb-4 text-white text-sm uppercase tracking-wider">Contact</h4>
-              <ul className="space-y-3 text-sm text-purple-300 font-light mb-6">
+              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Contact</h4>
+              <ul className="space-y-3 text-sm text-slate-600 font-light mb-6">
                 <li className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                   <span>Bandra West, Mumbai<br />Maharashtra, India</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <a href="tel:+919819471310" className="hover:text-purple-400 transition-colors">
+                  <Phone className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <a href="tel:+919819471310" className="hover:text-purple-600 transition-colors">
                     +91 98194 71310
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <a href="tel:+919773757759" className="hover:text-purple-400 transition-colors">
+                  <Phone className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <a href="tel:+919773757759" className="hover:text-purple-600 transition-colors">
                     +91 97737 57759
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <a href="mailto:hello@chariotrealty.com" className="hover:text-purple-400 transition-colors">
+                  <Mail className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <a href="mailto:hello@chariotrealty.com" className="hover:text-purple-600 transition-colors">
                     hello@chariotrealty.com
                   </a>
                 </li>
@@ -411,36 +408,36 @@ export default function Layout({ children, currentPageName }) {
                   href="https://instagram.com/chariotrealty.in" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-white/5 hover:bg-purple-600 rounded-xl flex items-center justify-center transition-all group"
+                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group"
                 >
-                  <Instagram className="w-5 h-5 text-purple-300 group-hover:text-white transition-colors" />
+                  <Instagram className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors" />
                 </a>
                 <a 
                   href="https://linkedin.com/company/chariot-realty" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-white/5 hover:bg-purple-600 rounded-xl flex items-center justify-center transition-all group"
+                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group"
                 >
-                  <Linkedin className="w-5 h-5 text-purple-300 group-hover:text-white transition-colors" />
+                  <Linkedin className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors" />
                 </a>
               </div>
             </div>
           </div>
 
           {/* Bottom Strip */}
-          <div className="border-t border-purple-800/30 pt-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-purple-300">
+          <div className="border-t border-purple-100 pt-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-600">
               <div>
                 <p>© 2025 Chariot Realty. All rights reserved</p>
-                <p className="text-xs mt-1">AI-assisted real estate, verified the Mumbai way.</p>
+                <p className="text-xs mt-1 text-slate-500">AI-assisted real estate, verified the Mumbai way.</p>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-purple-400">⚡ Powered by</span>
+                <span className="text-slate-500">⚡ Powered by</span>
                 <a 
                   href="https://base44.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-purple-300 hover:text-white transition-colors font-semibold"
+                  className="text-purple-600 hover:text-purple-700 transition-colors font-semibold"
                 >
                   Base44 AI
                 </a>

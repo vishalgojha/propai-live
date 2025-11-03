@@ -75,7 +75,7 @@ export default function Blogs() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen">
       <SEO
         title="Chariot Insights | Mumbai Real Estate Guides & Market Data"
         description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."

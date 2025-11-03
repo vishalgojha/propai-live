@@ -34,7 +34,7 @@ export default function HomePage() {
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen">
       <SEO
         title="Chariot Realty | AI-Powered Mumbai Real Estate | No Bait-and-Switch"
         description="Find verified properties in Mumbai with transparent pricing. Our AI filters duplicates, ranks by broker trust, and shows you only real deals. Bandra, Juhu, Andheri & more."
@@ -42,14 +42,13 @@ export default function HomePage() {
         schema={homeSchema}
       />
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white overflow-hidden">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
+      {/* Hero Section - Light & Clean */}
+      <section className="relative bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 overflow-hidden">
+        {/* Subtle decorative elements */}
+        <div className="absolute top-20 right-20 w-64 h-64 bg-purple-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-indigo-200/20 rounded-full blur-3xl"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 pb-28">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -57,25 +56,25 @@ export default function HomePage() {
             className="text-center max-w-4xl mx-auto"
           >
             {/* Badge */}
-            <Badge className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-lg">
+            <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
               <Sparkles className="w-4 h-4" />
               Powered by Building-Level Intelligence
             </Badge>
 
             {/* Headline */}
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
               Mumbai Real Estate,
               <br />
-              <span className="bg-gradient-to-r from-purple-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Decoded by AI
               </span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-xl md:text-2xl text-purple-200 mb-10 leading-relaxed font-light">
+            <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
               Every building has a story. Every street has a pulse. We don't just list properties—
               <br className="hidden md:block" />
-              <span className="text-purple-300 font-medium">we understand them at a contextual level.</span>
+              <span className="text-slate-700 font-medium">we understand them at a contextual level.</span>
             </p>
 
             {/* CTA Buttons */}
@@ -83,7 +82,7 @@ export default function HomePage() {
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold h-14 px-8 rounded-2xl shadow-xl text-lg group"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
               >
                 <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Explore SmartFeed
@@ -92,7 +91,7 @@ export default function HomePage() {
               <Button
                 onClick={() => navigate(createPageUrl("Buildings"))}
                 size="lg"
-                className="bg-white/10 hover:bg-white/20 border-2 border-white/40 text-white font-semibold h-14 px-8 rounded-2xl backdrop-blur-sm text-lg"
+                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg"
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Building Intelligence
@@ -100,7 +99,7 @@ export default function HomePage() {
               <Button
                 onClick={() => window.open(whatsappAIUrl, '_blank')}
                 size="lg"
-                className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-xl text-lg group"
+                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
               >
                 <Bot className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                 Chat with AI Assistant
@@ -108,47 +107,37 @@ export default function HomePage() {
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-purple-300">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <span>AI-Verified Data</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <span>No Bait-and-Switch</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <span>Broker Trust Scoring</span>
               </div>
             </div>
           </motion.div>
-        </div>
-
-        {/* Wave separator */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" className="w-full h-auto">
-            <path
-              fill="#F7F9FC"
-              d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
-            />
-          </svg>
         </div>
       </section>
 
       {/* REMOVED: Building Intelligence CTA - Now admin-only in dashboard */}
 
       {/* Why Chariot - The Unfair Advantages */}
-      <section className="py-20 bg-[#F7F7F7]">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-stone-900 text-white border-0 px-4 py-2">
+            <Badge className="mb-4 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2">
               What Makes Us Different
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#111111] mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
               Your Unfair Advantages
             </h2>
-            <p className="text-xl text-[#3B3B3B] max-w-2xl mx-auto font-light">
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto font-light">
               Features MagicBricks and Housing will never build
             </p>
           </div>
@@ -165,12 +154,12 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Brain className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-[#111111] mb-3">Building Memory™</h3>
-              <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Building Memory™</h3>
+              <p className="text-slate-700 mb-4 leading-relaxed">
                 Every building becomes a living knowledge object. Historical pricing, broker activity, tenant profiles—
                 <span className="font-semibold text-amber-700"> auto-learned from parsed data.</span>
               </p>
-              <div className="space-y-2 text-sm text-[#3B3B3B]">
+              <div className="space-y-2 text-sm text-slate-700">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                   <span>"Oberoi Sky Heights: 47 listings, avg ₹2.34L for 2BHK, High Activity"</span>
@@ -197,12 +186,12 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-[#111111] mb-3">BrokerTrust™ Layer</h3>
-              <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">BrokerTrust™ Layer</h3>
+              <p className="text-slate-700 mb-4 leading-relaxed">
                 Invisible quality filter. Properties from high-trust brokers rise to the top—
                 <span className="font-semibold text-blue-700"> you see the clean data first.</span>
               </p>
-              <div className="space-y-2 text-sm text-[#3B3B3B]">
+              <div className="space-y-2 text-sm text-slate-700">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                   <span>Auto-scores brokers: duplicate rate, response time, photo sharing</span>
@@ -229,12 +218,12 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-[#111111] mb-3">AI Deals Radar</h3>
-              <p className="text-[#3B3B3B] mb-4 leading-relaxed">
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">AI Deals Radar</h3>
+              <p className="text-slate-700 mb-4 leading-relaxed">
                 Spot underpriced listings, price drops, and hidden matches—
                 <span className="font-semibold text-emerald-700"> before they hit portals.</span>
               </p>
-              <div className="space-y-2 text-sm text-[#3B3B3B]">
+              <div className="space-y-2 text-sm text-slate-700">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                   <span>Flags properties 15%+ below building avg</span>
@@ -255,20 +244,20 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-6 mt-8">
             <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
               <Globe className="w-10 h-10 text-[#FFD300] mb-4" />
-              <h4 className="font-bold text-[#111111] mb-2">Expat Mode™</h4>
-              <p className="text-sm text-[#3B3B3B]">One-toggle curation: Fully furnished + expat-friendly buildings + good amenities. Built for the global crowd.</p>
+              <h4 className="font-bold text-slate-900 mb-2">Expat Mode™</h4>
+              <p className="text-sm text-slate-700">One-toggle curation: Fully furnished + expat-friendly buildings + good amenities. Built for the global crowd.</p>
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
               <Eye className="w-10 h-10 text-[#FFD300] mb-4" />
-              <h4 className="font-bold text-[#111111] mb-2">Semantic Search</h4>
-              <p className="text-sm text-[#3B3B3B]">"Modern flat near Pali Hill with balcony" understands context—not just keyword matching. Google-level property discovery.</p>
+              <h4 className="font-bold text-slate-900 mb-2">Semantic Search</h4>
+              <p className="text-sm text-slate-700">"Modern flat near Pali Hill with balcony" understands context—not just keyword matching. Google-level property discovery.</p>
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
               <Zap className="w-10 h-10 text-[#FFD300] mb-4" />
-              <h4 className="font-bold text-[#111111] mb-2">Mumbai Street Smarts</h4>
-              <p className="text-sm text-[#3B3B3B]">AI trained on broker lingo, location vibes, and cultural nuances. Pali Hill ≠ Hill Road—we get it.</p>
+              <h4 className="font-bold text-slate-900 mb-2">Mumbai Street Smarts</h4>
+              <p className="text-sm text-slate-700">AI trained on broker lingo, location vibes, and cultural nuances. Pali Hill ≠ Hill Road—we get it.</p>
             </div>
           </div>
         </div>
@@ -278,10 +267,10 @@ export default function HomePage() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[#111111] mb-4">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
               The Intelligence Layer
             </h2>
-            <p className="text-xl text-[#3B3B3B] max-w-3xl mx-auto font-light">
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light">
               You see properties. We see patterns, relationships, and context that generic portals miss.
             </p>
           </div>
@@ -334,12 +323,12 @@ export default function HomePage() {
 
             {/* Right: Benefits for Clients Only */}
             <div className="space-y-6">
-              <div className="bg-[#F7F7F7] rounded-2xl p-6">
-                <h4 className="font-bold text-[#111111] mb-3 flex items-center gap-2">
+              <div className="bg-white rounded-2xl p-6">
+                <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-[#FFD300]" />
                   What You Get
                 </h4>
-                <ul className="space-y-2 text-[#3B3B3B]">
+                <ul className="space-y-2 text-slate-700">
                   <li>→ See building context (pricing, activity, vibes) upfront</li>
                   <li>→ Trust the data—it's ranked by broker reliability</li>
                   <li>→ No spam, no duplicates, no bait-and-switch</li>
@@ -361,20 +350,20 @@ export default function HomePage() {
       </section>
 
       {/* Social Proof / Trust Section */}
-      <section className="py-20 bg-[#F7F7F7]">
+      <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-[#111111] mb-6">
+          <h2 className="text-3xl font-bold text-slate-900 mb-6">
             Built in Mumbai. Powered by AI. Driven by People.
           </h2>
-          <p className="text-lg text-[#3B3B3B] mb-8 leading-relaxed max-w-3xl mx-auto">
-            We're not a portal dumping 10,000 listings. We're a boutique consultancy that uses AI to understand Mumbai real estate at a <span className="font-semibold text-[#111111]">contextual, street-level depth</span>—then shows you the 3 properties that actually fit.
+          <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+            We're not a portal dumping 10,000 listings. We're a boutique consultancy that uses AI to understand Mumbai real estate at a <span className="font-semibold text-slate-900">contextual, street-level depth</span>—then shows you the 3 properties that actually fit.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-[#111111] hover:bg-[#FFD300] hover:text-black text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <Search className="w-5 h-5 mr-2" />
               Browse Properties
@@ -382,8 +371,7 @@ export default function HomePage() {
             <Button
               onClick={() => navigate(createPageUrl("Blogs"))}
               size="lg"
-              variant="outline"
-              className="border-2 border-[#111111] hover:bg-[#111111] hover:text-white font-semibold h-14 px-8 rounded-2xl"
+              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl"
             >
               <BookOpen className="w-5 h-5 mr-2" />
               Read Insights
@@ -392,20 +380,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section - with AI + Vishal + Kapil */}
-      <section className="py-16 bg-gradient-to-br from-stone-900 to-stone-800 text-white">
+      {/* CTA Section - Light */}
+      <section className="py-16 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
             Ready to See the Difference?
           </h2>
-          <p className="text-xl text-stone-300 mb-8">
+          <p className="text-xl text-slate-600 mb-8">
             Chat with our AI Assistant or connect directly with Vishal & Kapil
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => window.open(whatsappAIUrl, '_blank')}
               size="lg"
-              className="bg-[#128C7E] hover:bg-[#0F7A6E] text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <Bot className="w-5 h-5 mr-2" />
               Chat with AI Assistant
@@ -413,7 +401,7 @@ export default function HomePage() {
             <Button
               onClick={() => window.open('https://wa.me/919819471310?text=Hi%20Vishal,%20I%20found%20Chariot%20Realty%20and%20would%20love%20to%20explore%20properties%20in%20Mumbai', '_blank')}
               size="lg"
-              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
               WhatsApp Vishal
@@ -421,7 +409,7 @@ export default function HomePage() {
             <Button
               onClick={() => window.open('https://wa.me/919773757759?text=Hi%20Kapil,%20I%20found%20Chariot%20Realty%20and%20would%20love%20to%20explore%20properties%20in%20Mumbai', '_blank')}
               size="lg"
-              className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
               WhatsApp Kapil
