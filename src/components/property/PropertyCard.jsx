@@ -7,7 +7,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, Car, Eye, MessageCircle,
-  Armchair, Shield, Camera, Building2, Phone
+  Armchair, Shield, Camera, Building2, Phone, Home
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -68,13 +68,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     }
   };
 
-  const getLocationDisplay = () => {
-    const parts = [];
-    if (property.pocket) parts.push(property.pocket);
-    if (property.location) parts.push(property.location);
-    return parts.join(', ') || property.location_id || 'Mumbai';
-  };
-
   const hasImages = property.images && property.images.length > 0;
 
   return (
@@ -85,64 +78,33 @@ export default function PropertyCard({ property, onViewDetails }) {
       className="bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-purple-200/50 hover:border-purple-400 hover:shadow-xl transition-all duration-300 cursor-pointer group"
       onClick={handleCardClick}
     >
-      {/* Image Section with Fallback */}
-      <div className="relative h-48 bg-gradient-to-br from-stone-100 to-stone-200 overflow-hidden">
-        {hasImages ? (
-          <>
-            <img 
-              src={property.images[0]} 
-              alt={property.ai_title || property.bhk}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-stone-400">
-            <Building2 className="w-16 h-16 mb-2" />
-            <span className="text-sm">No photos yet</span>
-          </div>
-        )}
-        
-        {/* Top Badges Row */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-          <div className="flex flex-wrap gap-2">
-            <Badge className="bg-black/90 backdrop-blur text-white border-0 font-bold text-xs px-2 py-1">
-              {property.bhk}
-            </Badge>
-            {property.jodi_flag && (
-              <Badge className="bg-purple-600/90 backdrop-blur text-white border-0 font-bold text-xs px-2 py-1">
-                JODI
+      {/* Image Section */}
+      {property.images && property.images.length > 0 ? (
+        <div className="relative h-56 overflow-hidden">
+          <img
+            src={property.images[0]}
+            alt={property.ai_title || property.bhk}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+          <div className="absolute top-3 left-3 flex gap-2">
+            {property.listing_type && (
+              <Badge className="bg-white/90 backdrop-blur-sm text-purple-700 border-0 font-semibold shadow-sm">
+                {property.listing_type}
               </Badge>
             )}
-            {property.broker_trust_score && property.broker_trust_score >= 70 && (
-              <Badge className="bg-green-600/90 backdrop-blur text-white border-0 flex items-center gap-1 text-xs px-2 py-1">
-                <Shield className="w-3 h-3" />
+            {property.broker_trust_score >= 85 && (
+              <Badge className="bg-green-500/90 backdrop-blur-sm text-white border-0 font-semibold shadow-sm">
+                <Shield className="w-3 h-3 mr-1" />
                 Verified
               </Badge>
             )}
           </div>
-          {hasImages && (
-            <Badge className="bg-white/90 backdrop-blur text-stone-700 border-0 text-xs px-2 py-1 flex items-center gap-1">
-              <Camera className="w-3 h-3" />
-              {property.images.length}
-            </Badge>
-          )}
         </div>
-
-        {/* Status & ID Bottom Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pb-4">
-          <div className="flex items-center justify-between">
-            <Badge className="bg-green-500 text-white border-0 text-xs px-2 py-1">
-              Active
-            </Badge>
-            {property.custom_id && (
-              <span className="text-xs font-mono text-white/90 bg-black/40 backdrop-blur px-2 py-1 rounded">
-                {property.custom_id}
-              </span>
-            )}
-          </div>
+      ) : (
+        <div className="h-56 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+          <Building2 className="w-16 h-16 text-purple-400" />
         </div>
-      </div>
+      )}
 
       {/* Content Section */}
       <div className="p-5">
@@ -161,40 +123,31 @@ export default function PropertyCard({ property, onViewDetails }) {
           {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
         </h3>
 
-        {/* Location Details */}
-        <div className="space-y-1.5 mb-4">
-          <div className="flex items-center gap-2 text-sm text-stone-600">
-            <MapPin className="w-4 h-4 text-stone-500 flex-shrink-0" />
-            <span className="line-clamp-1">{getLocationDisplay()}</span>
-          </div>
-          {property.building_name && (
-            <div className="flex items-center gap-2 text-sm text-stone-600">
-              <Building2 className="w-4 h-4 text-stone-500 flex-shrink-0" />
-              <span className="line-clamp-1">{property.building_name}</span>
-            </div>
-          )}
+        {/* Location */}
+        <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-4">
+          <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
+          <span className="line-clamp-1">
+            {[property.building_name, property.pocket, property.location].filter(Boolean).join(', ')}
+          </span>
         </div>
 
-        {/* Key Stats Grid - Compact */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="text-center p-2 bg-stone-50 rounded-xl">
-            <Maximize2 className="w-4 h-4 text-stone-600 mx-auto mb-1" />
-            <p className="text-sm font-bold text-[#111111]">{property.carpet_area || 'N/A'}</p>
-            <p className="text-xs text-stone-500">sq ft</p>
+          <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
+            <Home className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+            <p className="text-xs font-bold text-slate-900">{property.bhk}</p>
           </div>
-          <div className="text-center p-2 bg-stone-50 rounded-xl">
-            <Armchair className="w-4 h-4 text-stone-600 mx-auto mb-1" />
-            <p className="text-xs font-bold text-[#111111] truncate px-1">{property.furnishing || 'N/A'}</p>
-            <p className="text-xs text-stone-500">Furnish</p>
+          <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
+            <Maximize2 className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+            <p className="text-xs font-bold text-slate-900">{property.carpet_area || 'N/A'}</p>
           </div>
-          <div className="text-center p-2 bg-stone-50 rounded-xl">
-            <Car className="w-4 h-4 text-stone-600 mx-auto mb-1" />
-            <p className="text-sm font-bold text-[#111111]">{property.parking || '0'}</p>
-            <p className="text-xs text-stone-500">Parking</p>
+          <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
+            <Armchair className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+            <p className="text-xs font-bold text-slate-900 truncate">{property.furnishing || 'N/A'}</p>
           </div>
         </div>
 
-        {/* WhatsApp Contact Buttons - Stacked on Mobile */}
+        {/* WhatsApp Contact Buttons */}
         <div className="space-y-2">
           <Button
             onClick={(e) => handleWhatsAppContact(e, '919819471310', 'Vishal')}
@@ -214,17 +167,17 @@ export default function PropertyCard({ property, onViewDetails }) {
         </div>
 
         {/* Footer Metadata */}
-        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-          <div className="flex items-center gap-1">
-            <Eye className="w-3 h-3" />
-            <span>{property.views_count || 0} views</span>
+        {property.custom_id && (
+          <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
+            <span className="font-mono text-purple-600">{property.custom_id}</span>
+            {property.views_count > 0 && (
+              <span className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {property.views_count}
+              </span>
+            )}
           </div>
-          {property.expat_friendly && (
-            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
-              🌍 Expat Friendly
-            </Badge>
-          )}
-        </div>
+        )}
       </div>
     </motion.div>
   );

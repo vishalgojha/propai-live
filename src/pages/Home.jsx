@@ -128,7 +128,7 @@ export default function HomePage() {
       {/* REMOVED: Building Intelligence CTA - Now admin-only in dashboard */}
 
       {/* Why Chariot - The Unfair Advantages */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2">
@@ -242,20 +242,20 @@ export default function HomePage() {
 
           {/* Additional Features Row */}
           <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
-              <Globe className="w-10 h-10 text-[#FFD300] mb-4" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 hover:shadow-md transition-all">
+              <Globe className="w-10 h-10 text-purple-600 mb-4" />
               <h4 className="font-bold text-slate-900 mb-2">Expat Mode™</h4>
               <p className="text-sm text-slate-700">One-toggle curation: Fully furnished + expat-friendly buildings + good amenities. Built for the global crowd.</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
-              <Eye className="w-10 h-10 text-[#FFD300] mb-4" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 hover:shadow-md transition-all">
+              <Eye className="w-10 h-10 text-purple-600 mb-4" />
               <h4 className="font-bold text-slate-900 mb-2">Semantic Search</h4>
               <p className="text-sm text-slate-700">"Modern flat near Pali Hill with balcony" understands context—not just keyword matching. Google-level property discovery.</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:shadow-md transition-all">
-              <Zap className="w-10 h-10 text-[#FFD300] mb-4" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 hover:shadow-md transition-all">
+              <Zap className="w-10 h-10 text-purple-600 mb-4" />
               <h4 className="font-bold text-slate-900 mb-2">Mumbai Street Smarts</h4>
               <p className="text-sm text-slate-700">AI trained on broker lingo, location vibes, and cultural nuances. Pali Hill ≠ Hill Road—we get it.</p>
             </div>
@@ -264,7 +264,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Actually Works */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-slate-900 mb-4">
@@ -277,45 +277,45 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left: Visual */}
-            <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-3xl p-8 text-white">
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-black">1</span>
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-purple-600">1</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">WhatsApp → Structured Data</h4>
-                    <p className="text-sm text-stone-300">Broker forwards: "2bhk sf mod kit 2cp Pali Hill 80L". AI parses, links to building, extracts intelligence.</p>
+                    <p className="text-sm text-purple-100">Broker forwards: "2bhk sf mod kit 2cp Pali Hill 80L". AI parses, links to building, extracts intelligence.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-black">2</span>
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-purple-600">2</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">Building Becomes Knowledge Node</h4>
-                    <p className="text-sm text-stone-300">"Raheja Classique" accumulates context: pricing, broker trust, tenant profiles, amenities—self-learning.</p>
+                    <p className="text-sm text-purple-100">"Raheja Classique" accumulates context: pricing, broker trust, tenant profiles, amenities—self-learning.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-black">3</span>
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-purple-600">3</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">SmartFeed Ranks by Trust</h4>
-                    <p className="text-sm text-stone-300">High-trust brokers rise. Duplicates hidden. You see the clean, curated feed—decades ahead of MagicBricks.</p>
+                    <p className="text-sm text-purple-100">High-trust brokers rise. Duplicates hidden. You see the clean, curated feed—decades ahead of MagicBricks.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-[#FFD300] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-black">4</span>
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-purple-600">4</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">Intelligence Compounds</h4>
-                    <p className="text-sm text-stone-300">Every parse enriches the system. Building Memory™ grows. Deals Radar gets smarter. Your advantage scales.</p>
+                    <p className="text-sm text-purple-100">Every parse enriches the system. Building Memory™ grows. Deals Radar gets smarter. Your advantage scales.</p>
                   </div>
                 </div>
               </div>
@@ -323,9 +323,9 @@ export default function HomePage() {
 
             {/* Right: Benefits for Clients Only */}
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200">
                 <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#FFD300]" />
+                  <CheckCircle2 className="w-5 h-5 text-purple-600" />
                   What You Get
                 </h4>
                 <ul className="space-y-2 text-slate-700">
@@ -338,10 +338,10 @@ export default function HomePage() {
                 </ul>
               </div>
 
-              <div className="bg-gradient-to-r from-[#FFD300] to-[#FFC700] rounded-2xl p-6">
-                <h4 className="font-bold text-black mb-2">The Moat</h4>
-                <p className="text-sm text-black/80">
-                  MagicBricks has listings. You have <span className="font-bold">living intelligence</span>. That's not a feature gap—it's a decade gap.
+              <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl p-6 border border-purple-200">
+                <h4 className="font-bold text-slate-900 mb-2">The Moat</h4>
+                <p className="text-sm text-slate-700">
+                  MagicBricks has listings. You have <span className="font-bold text-purple-700">living intelligence</span>. That's not a feature gap—it's a decade gap.
                 </p>
               </div>
             </div>
@@ -350,7 +350,7 @@ export default function HomePage() {
       </section>
 
       {/* Social Proof / Trust Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-6">
             Built in Mumbai. Powered by AI. Driven by People.

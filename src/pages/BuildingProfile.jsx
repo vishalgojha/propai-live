@@ -184,7 +184,7 @@ export default function BuildingProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen">
       {building && (
         <SEO
           title={`${building.name}, ${building.location} | Pricing, Amenities & Listings | Chariot`}
@@ -208,12 +208,12 @@ export default function BuildingProfile() {
         </Button>
 
         {/* Hero Section - NO IMAGE */}
-        <div className="bg-white rounded-3xl overflow-hidden shadow-lg mb-8 border-2 border-[#F7F7F7]">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden shadow-lg mb-8 border border-purple-200/50">
           {/* Header - Text Only */}
-          <div className="bg-gradient-to-br from-stone-900 to-stone-800 text-white p-12">
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white p-12">
             <div className="flex items-center gap-2 mb-3">
               {building.verified && (
-                <Badge className="bg-green-500 text-white border-0">
+                <Badge className="bg-white text-purple-700 border-0 font-bold">
                   <Check className="w-3 h-3 mr-1" />
                   Verified
                 </Badge>
@@ -240,59 +240,59 @@ export default function BuildingProfile() {
           </div>
 
           <div className="p-8">
-            {/* Quick Stats - REMOVED total_floors */}
+            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
               {building.active_listings > 0 && (
-                <div className="text-center p-4 bg-stone-50 rounded-2xl">
-                  <p className="text-sm text-stone-600 mb-1">Active Listings</p>
-                  <p className="text-3xl font-bold text-[#111111]">{building.active_listings}</p>
+                <div className="text-center p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                  <p className="text-sm text-slate-600 mb-1">Active Listings</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">{building.active_listings}</p>
                 </div>
               )}
               {building.total_units && (
-                <div className="text-center p-4 bg-stone-50 rounded-2xl">
-                  <Home className="w-5 h-5 text-stone-600 mx-auto mb-2" />
-                  <p className="text-sm text-stone-600 mb-1">Total Units</p>
-                  <p className="text-2xl font-bold text-[#111111]">{building.total_units}</p>
+                <div className="text-center p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                  <Home className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+                  <p className="text-sm text-slate-600 mb-1">Total Units</p>
+                  <p className="text-2xl font-bold text-slate-900">{building.total_units}</p>
                 </div>
               )}
               {building.year_built && (
-                <div className="text-center p-4 bg-stone-50 rounded-2xl">
-                  <Calendar className="w-5 h-5 text-stone-600 mx-auto mb-2" />
-                  <p className="text-sm text-stone-600 mb-1">Year Built</p>
-                  <p className="text-2xl font-bold text-[#111111]">{building.year_built}</p>
+                <div className="text-center p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                  <Calendar className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+                  <p className="text-sm text-slate-600 mb-1">Year Built</p>
+                  <p className="text-2xl font-bold text-slate-900">{building.year_built}</p>
                 </div>
               )}
             </div>
 
             {/* NEW: Building Memory - Market Intelligence */}
             {buildingIntelligence && buildingIntelligence.totalListings > 0 && (
-              <div className="mb-8 p-6 bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50 rounded-3xl border-2 border-amber-200 shadow-sm">
+              <div className="mb-8 p-6 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-3xl border-2 border-purple-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-amber-600" />
-                  <h3 className="text-lg font-bold text-[#111111]">Building Memory™</h3>
-                  <Badge className="bg-amber-500 text-white text-xs">Street Intelligence</Badge>
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-bold text-slate-900">Building Memory™</h3>
+                  <Badge className="bg-purple-600 text-white text-xs">Street Intelligence</Badge>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                    <p className="text-xs text-amber-700 mb-1">Total Listings</p>
+                    <p className="text-xs text-purple-700 mb-1">Total Listings</p>
                     <p className="text-2xl font-bold text-[#111111]">{buildingIntelligence.totalListings}</p>
-                    <p className="text-xs text-[#3B3B3B] mt-1">All time</p>
+                    <p className="text-xs text-slate-900 mt-1">All time</p>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                    <p className="text-xs text-amber-700 mb-1">Last 6 Months</p>
+                    <p className="text-xs text-purple-700 mb-1">Last 6 Months</p>
                     <p className="text-2xl font-bold text-blue-600">{buildingIntelligence.listingsLast6Months}</p>
-                    <p className="text-xs text-[#3B3B3B] mt-1">{buildingIntelligence.activityTrend}</p>
+                    <p className="text-xs text-slate-900 mt-1">{buildingIntelligence.activityTrend}</p>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                    <p className="text-xs text-amber-700 mb-1">Active Now</p>
+                    <p className="text-xs text-purple-700 mb-1">Active Now</p>
                     <p className="text-2xl font-bold text-green-600">{buildingIntelligence.activeListings}</p>
-                    <p className="text-xs text-[#3B3B3B] mt-1">Available</p>
+                    <p className="text-xs text-slate-900 mt-1">Available</p>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                    <p className="text-xs text-amber-700 mb-1">Deals Closed</p>
+                    <p className="text-xs text-purple-700 mb-1">Deals Closed</p>
                     <p className="text-2xl font-bold text-purple-600">{buildingIntelligence.completedDeals}</p>
-                    <p className="text-xs text-[#3B3B3B] mt-1">Sold/Rented</p>
+                    <p className="text-xs text-slate-900 mt-1">Sold/Rented</p>
                   </div>
                 </div>
 
@@ -450,7 +450,7 @@ export default function BuildingProfile() {
             <div className="flex gap-3">
               <Button
                 onClick={handleWhatsApp}
-                className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-12 rounded-2xl shadow-sm"
+                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 rounded-2xl shadow-md"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Inquire via WhatsApp
