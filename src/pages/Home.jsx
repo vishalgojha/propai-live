@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Sparkles, TrendingUp, Shield, Building2,
   CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
-  Zap, BookOpen, Globe
+  Zap, BookOpen, Globe, Bot
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 
 export default function Home() {
@@ -27,6 +28,9 @@ export default function Home() {
     },
     "priceRange": "$$"
   };
+
+  // WhatsApp AI Assistant URL
+  const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
@@ -73,7 +77,7 @@ export default function Home() {
               <span className="text-[#FFD300] font-medium">we understand them at a contextual level.</span>
             </p>
 
-            {/* CTA Buttons - FIXED: Made second button visible on mobile */}
+            {/* CTA Buttons - WITH AI ASSISTANT */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
@@ -91,6 +95,15 @@ export default function Home() {
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Building Intelligence
+              </Button>
+              {/* NEW: WhatsApp AI Assistant Button */}
+              <Button
+                onClick={() => window.open(whatsappAIUrl, '_blank')}
+                size="lg"
+                className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold h-14 px-8 rounded-2xl shadow-xl text-lg group"
+              >
+                <Bot className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
+                Chat with AI Assistant
               </Button>
             </div>
 
@@ -377,16 +390,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section - with AI + Vishal + Kapil */}
       <section className="py-16 bg-gradient-to-br from-stone-900 to-stone-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to See the Difference?
           </h2>
           <p className="text-xl text-stone-300 mb-8">
-            Start with SmartFeed or connect with Vishal & Kapil on WhatsApp
+            Chat with our AI Assistant or connect directly with Vishal & Kapil
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => window.open(whatsappAIUrl, '_blank')}
+              size="lg"
+              className="bg-[#128C7E] hover:bg-[#0F7A6E] text-white font-bold h-14 px-8 rounded-2xl"
+            >
+              <Bot className="w-5 h-5 mr-2" />
+              Chat with AI Assistant
+            </Button>
             <Button
               onClick={() => window.open('https://wa.me/919819471310?text=Hi%20Vishal,%20I%20found%20Chariot%20Realty%20and%20would%20love%20to%20explore%20properties%20in%20Mumbai', '_blank')}
               size="lg"
