@@ -174,8 +174,8 @@ export default function SmartFeed() {
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <SEO
-        title="SmartFeed | AI-Curated Mumbai Properties | Chariot Realty"
-        description="Browse verified properties in Bandra, Juhu, Andheri & more. SmartFeed delivers AI-curated listings with transparent pricing — no bait-and-switch, ever."
+        title="Browse Properties | AI-Curated Mumbai Listings | Chariot Realty"
+        description="Browse verified properties in Bandra, Juhu, Andheri & more. AI-curated listings with transparent pricing — no bait-and-switch, ever."
         schema={breadcrumbSchema}
         canonical="https://chariotrealty.com/properties"
       />
@@ -188,8 +188,8 @@ export default function SmartFeed() {
               <Sparkles className="w-6 h-6 text-black" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#111111] tracking-tight">SmartFeed</h1>
-              <p className="text-sm text-[#3B3B3B] font-light">AI-curated properties • Transparent pricing</p>
+              <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Browse Properties</h1>
+              <p className="text-sm text-[#3B3B3B] font-light">AI-curated listings • Transparent pricing</p>
             </div>
           </div>
         </div>
