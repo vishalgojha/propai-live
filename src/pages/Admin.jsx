@@ -58,6 +58,9 @@ export default function Admin() {
   // Deals Radar state
   const [dealsLoading, setDealsLoading] = useState(false);
 
+  // Slug generation state
+  const [generatingSlugs, setGeneratingSlugs] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -223,6 +226,22 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['brokers'] });
     } catch (error) {
       alert('Failed to calculate scores');
+    }
+  };
+
+  const generatePropertySlugs = async () => {
+    if (!confirm('Generate SEO slugs for all properties without slugs?')) return;
+    setGeneratingSlugs(true);
+    try {
+      const response = await base44.functions.invoke('generatePropertySlugs', { 
+        generateForAll: true 
+      });
+      alert(`✅ Generated ${response.data.successCount} slugs!\n\nAll properties now have SEO-friendly URLs.`);
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      alert('Failed to generate slugs: ' + error.message);
+    } finally {
+      setGeneratingSlugs(false);
     }
   };
 
@@ -454,6 +473,16 @@ export default function Admin() {
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Trust
+              </Button>
+              <Button
+                onClick={generatePropertySlugs}
+                disabled={generatingSlugs}
+                size="sm"
+                variant="outline"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                {generatingSlugs ? 'Generating...' : 'SEO Slugs'}
               </Button>
             </div>
           </div>
