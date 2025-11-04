@@ -1,36 +1,27 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
-
+// functions/sendToPropAI.js
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
+    // Parse the request payload
     const { data_type, data, source_app } = await req.json();
-    
+
     if (!data_type || !data) {
-      return Response.json({ 
-        error: 'Missing required fields: data_type, data' 
-      }, { status: 400 });
+      return Response.json({ error: 'Missing required fields: data_type, data' }, { status: 400 });
     }
-    
+
+    // 🔐 Load PropAI secret key from environment
     const apiKey = Deno.env.get('PROPAI_LIVE_API_KEY');
-    
     if (!apiKey) {
-      return Response.json({ 
-        error: 'PROPAI_LIVE_API_KEY not configured' 
-      }, { status: 500 });
+      return Response.json({ error: 'PROPAI_LIVE_API_KEY not configured' }, { status: 500 });
     }
-    
-    // PropAI Live function URL (App ID: 6904873ecc87e0c213ac013f)
+
+    // 🛰️ Your PropAI app URL
     const PROPAI_APP_ID = '6904873ecc87e0c213ac013f';
     const propAIUrl = `https://app.base44.com/api/apps/${PROPAI_APP_ID}/functions/receiveFromChariotParser`;
-    
-    console.log(`📤 Sending ${data_type} to PropAI Live...`);
-    
+
+    console.log(`📤 Sending ${data_type} to PropAI Live at: ${propAIUrl}`);
+    console.log(`🔑 API Key loaded: ${apiKey ? 'YES (length: ' + apiKey.length + ')' : 'NO'}`);
+
+    // 🚀 Send data to PropAI
     const response = await fetch(propAIUrl, {
       method: 'POST',
       headers: {
@@ -40,36 +31,17 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         data_type,
         data,
-        source_app: source_app || 'Chariot Realty',
+        source_app: source_app || 'Chariot Parser',
         timestamp: new Date().toISOString()
       })
     });
-    
+
     const result = await response.json();
-    
-    if (!response.ok) {
-      console.error('❌ PropAI Live rejected:', result);
-      return Response.json({ 
-        success: false,
-        error: result.error || 'PropAI Live rejected the data',
-        details: result
-      }, { status: response.status });
-    }
-    
-    console.log('✅ Successfully sent to PropAI Live:', result);
-    
-    return Response.json({
-      success: true,
-      propai_response: result,
-      sent_at: new Date().toISOString()
-    });
-    
+    console.log('✅ PropAI Live responded:', result);
+
+    return Response.json(result, { status: response.status });
   } catch (error) {
-    console.error('❌ Error sending to PropAI Live:', error);
-    return Response.json({ 
-      success: false,
-      error: error.message,
-      stack: error.stack
-    }, { status: 500 });
+    console.error('❌ sendToPropAI error:', error);
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });
