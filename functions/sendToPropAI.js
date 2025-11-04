@@ -1,81 +1,115 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Send Data to PropAI Live - WITH USER AUTHENTICATION
+ * sendToPropAI - Pure Data Sender
  * 
- * This function forwards property, requirement, building, location, and broker data
- * from Chariot Realty to PropAI Live for centralized data management.
+ * Job: Push structured truth from Chariot Parser to PropAI Live database
+ * 
+ * What it sends:
+ * - Parsed property data
+ * - Real broker attribution (broker_id, name, phone, agency)
+ * - Building relationships
+ * - Source metadata
+ * 
+ * What it DOESN'T do:
+ * - No UI logic
+ * - No hardcoded Vishal/Kapil
+ * - No display formatting
+ * 
+ * PropAI Live receives authentic source data and decides what to do with it.
  */
 
 Deno.serve(async (req) => {
   try {
-    // 🔐 AUTHENTICATE USER FIRST
     const base44 = createClientFromRequest(req);
     
     const user = await base44.auth.me();
     if (!user || user.role !== 'admin') {
-      return Response.json({ 
-        error: 'Unauthorized - Admin access required' 
-      }, { status: 401 });
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse the request payload
-    const { data_type, data, source_app } = await req.json();
-
+    const { data_type, data } = await req.json();
+    
     if (!data_type || !data) {
       return Response.json({ 
-        error: 'Missing required fields: data_type, data' 
+        error: 'data_type and data are required',
+        example: {
+          data_type: 'property',
+          data: { /* property object */ }
+        }
       }, { status: 400 });
     }
 
-    // 🔐 Load PropAI secret key from environment
-    const apiKey = Deno.env.get('PROPAI_LIVE_API_KEY');
-    if (!apiKey) {
+    const PROPAI_URL = 'https://propai-live.deno.dev/api/receive';
+    const PROPAI_API_KEY = Deno.env.get('PROPAI_LIVE_API_KEY');
+
+    if (!PROPAI_API_KEY) {
       return Response.json({ 
-        error: 'PROPAI_LIVE_API_KEY not configured in environment secrets' 
+        error: 'PROPAI_LIVE_API_KEY not set in environment variables' 
       }, { status: 500 });
     }
 
-    // 🛰️ PropAI Live endpoint
-    const PROPAI_APP_ID = '6904873ecc87e0c213ac013f';
-    const propAIUrl = `https://app.base44.com/api/apps/${PROPAI_APP_ID}/functions/receiveFromChariotParser`;
+    // Build payload with authentic source data
+    const payload = {
+      data_type,
+      data: {
+        ...data,
+        // Metadata
+        source: "chariot_parser",
+        timestamp: new Date().toISOString(),
+        parser_version: "2.0_broker_attribution"
+      },
+      // Authentication
+      api_key: PROPAI_API_KEY
+    };
 
-    console.log(`📤 [${user.email}] Sending ${data_type} to PropAI Live`);
-    console.log(`🔑 API Key loaded: YES (length: ${apiKey.length})`);
-    console.log(`📦 Data payload:`, JSON.stringify(data, null, 2).substring(0, 200) + '...');
+    console.log('Sending to PropAI Live:', {
+      data_type,
+      property_id: data.custom_id || data.id,
+      broker_id: data.broker_id,
+      broker_name: data.broker_name,
+      location: data.location
+    });
 
-    // 🚀 Send data to PropAI
-    const response = await fetch(propAIUrl, {
+    // Send to PropAI Live
+    const response = await fetch(PROPAI_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey
+        'x-api-key': PROPAI_API_KEY
       },
-      body: JSON.stringify({
-        data_type,
-        data,
-        source_app: source_app || 'Chariot Parser',
-        timestamp: new Date().toISOString(),
-        sent_by: user.email // Track who sent the data
-      })
+      body: JSON.stringify(payload)
     });
 
-    const result = await response.json();
-    
-    if (response.ok) {
-      console.log(`✅ PropAI Live accepted ${data_type}:`, result);
-    } else {
-      console.error(`❌ PropAI Live rejected ${data_type}:`, result);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`PropAI Live rejected request: ${response.status} - ${errorText}`);
     }
 
-    return Response.json(result, { status: response.status });
+    const result = await response.json();
+
+    console.log('✅ PropAI Live accepted:', result);
+
+    return Response.json({
+      success: true,
+      propai_response: result,
+      sent_data: {
+        data_type,
+        property_id: data.custom_id || data.id,
+        broker_attribution: {
+          broker_id: data.broker_id,
+          broker_name: data.broker_name,
+          broker_phone: data.broker_phone,
+          broker_agency: data.broker_agency
+        }
+      }
+    });
 
   } catch (error) {
-    console.error('❌ sendToPropAI error:', error);
+    console.error('sendToPropAI error:', error);
     return Response.json({ 
-      success: false, 
-      error: error.message,
-      details: 'Check function logs for more info'
+      success: false,
+      error: error.message 
     }, { status: 500 });
   }
 });

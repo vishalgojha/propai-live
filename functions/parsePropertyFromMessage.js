@@ -94,10 +94,14 @@ Important:
     );
 
     if (!broker) {
-      // Create new broker
-      console.log(`Creating new broker: ${extractedData.broker_name}`);
+      // Generate broker custom_id
+      const brokerCount = allBrokers.length + 1;
+      const brokerCustomId = `CHR-BRK-${String(brokerCount).padStart(4, '0')}`;
+      
+      console.log(`Creating new broker: ${extractedData.broker_name} with ID ${brokerCustomId}`);
       
       broker = await base44.asServiceRole.entities.Broker.create({
+        custom_id: brokerCustomId,
         name: extractedData.broker_name,
         phone: extractedData.broker_phone,
         agency_name: extractedData.broker_agency,
@@ -108,10 +112,10 @@ Important:
         last_activity: new Date().toISOString()
       });
       
-      console.log(`✅ Broker created: ${broker.id}`);
+      console.log(`✅ Broker created: ${broker.id} (${brokerCustomId})`);
     } else {
       // Update existing broker
-      console.log(`Found existing broker: ${broker.id}`);
+      console.log(`Found existing broker: ${broker.id} (${broker.custom_id})`);
       
       const updatedAreasSet = new Set(broker.areas_covered || []);
       if (extractedData.location) updatedAreasSet.add(extractedData.location);
@@ -135,9 +139,20 @@ Important:
       
       if (building) {
         buildingId = building.id;
+        
+        // Update building stats
+        await base44.asServiceRole.entities.Building.update(building.id, {
+          total_listings: (building.total_listings || 0) + 1,
+          active_listings: (building.active_listings || 0) + 1
+        });
       } else {
+        // Generate building custom_id
+        const buildingCount = allBuildings.length + 1;
+        const buildingCustomId = `CHR-BLD-${String(buildingCount).padStart(4, '0')}`;
+        
         // Create basic building record
         const newBuilding = await base44.asServiceRole.entities.Building.create({
+          custom_id: buildingCustomId,
           name: extractedData.building_name,
           location: extractedData.location,
           pocket: extractedData.pocket,
@@ -145,11 +160,24 @@ Important:
           active_listings: 1
         });
         buildingId = newBuilding.id;
-        console.log(`✅ Building created: ${buildingId}`);
+        console.log(`✅ Building created: ${buildingId} (${buildingCustomId})`);
       }
     }
 
-    // 3. GENERATE AI TITLE & DESCRIPTION
+    // 3. GENERATE PROPERTY CUSTOM ID AND SLUG
+    const idResponse = await base44.asServiceRole.functions.invoke('generatePropertyId', {
+      location: extractedData.location,
+      property: {
+        bhk: extractedData.bhk,
+        location: extractedData.location,
+        pocket: extractedData.pocket,
+        building_name: extractedData.building_name
+      }
+    });
+
+    const { customId, slug } = idResponse.data;
+
+    // 4. GENERATE AI TITLE & DESCRIPTION
     const aiPrompt = `Create a compelling property listing title and description.
 
 Property Details:
@@ -181,8 +209,10 @@ Return as JSON:
       }
     });
 
-    // 4. CREATE PROPERTY with proper broker_id linking
+    // 5. CREATE PROPERTY with proper broker_id linking
     const propertyData = {
+      custom_id: customId,
+      slug: slug,
       bhk: extractedData.bhk,
       property_category: extractedData.property_category || "Residential",
       price: extractedData.price,
@@ -212,19 +242,23 @@ Return as JSON:
 
     const property = await base44.asServiceRole.entities.Property.create(propertyData);
 
-    console.log(`✅ Property created: ${property.id} | Broker: ${broker.id}`);
+    console.log(`✅ Property created: ${property.id} (${customId}) | Broker: ${broker.id} (${broker.custom_id})`);
 
     return Response.json({
       success: true,
       property: {
         id: property.id,
         custom_id: property.custom_id,
+        slug: property.slug,
         ai_title: property.ai_title,
         broker_id: broker.id,
-        broker_name: broker.name
+        broker_custom_id: broker.custom_id,
+        broker_name: broker.name,
+        building_id: buildingId
       },
       broker: {
         id: broker.id,
+        custom_id: broker.custom_id,
         name: broker.name,
         phone: broker.phone
       }

@@ -1,12 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Backfill Buildings from Properties
+ * Building Backfill System
  * 
- * Goes through all properties and:
- * 1. Finds properties with building_name but no building_id
- * 2. Calls buildingIntelligence to create/link buildings
- * 3. Updates property with building_id
+ * Scans all properties with building_name and:
+ * 1. Creates Building entities (with custom_id)
+ * 2. Uses fuzzy matching to avoid duplicates
+ * 3. Links properties to buildings via building_id
+ * 4. Updates building stats (total_listings, active_listings)
  */
 
 Deno.serve(async (req) => {
@@ -18,73 +19,117 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get ALL properties
-    const allProperties = await base44.asServiceRole.entities.Property.list();
-    
-    // Filter: has building_name but no building_id
-    const needsBuilding = allProperties.filter(p => 
+    console.log('🏗️ Starting Building Backfill...');
+
+    // Get all properties and buildings
+    const properties = await base44.asServiceRole.entities.Property.list();
+    const existingBuildings = await base44.asServiceRole.entities.Building.list();
+
+    console.log(`Found ${properties.length} properties, ${existingBuildings.length} existing buildings`);
+
+    // Filter properties that have building_name but no building_id
+    const propertiesNeedingBuilding = properties.filter(p => 
       p.building_name && !p.building_id
     );
 
-    console.log(`Found ${needsBuilding.length} properties needing building linkage`);
+    console.log(`${propertiesNeedingBuilding.length} properties need building linkage`);
 
-    const results = {
-      total_properties: allProperties.length,
-      properties_processed: 0,
-      buildings_created: 0,
-      buildings_linked: 0,
-      errors: []
-    };
+    if (propertiesNeedingBuilding.length === 0) {
+      return Response.json({
+        message: 'All properties already linked to buildings',
+        results: {
+          properties_processed: 0,
+          buildings_created: 0,
+          buildings_linked: 0,
+          total_properties: properties.filter(p => p.building_name).length
+        }
+      });
+    }
 
-    for (const property of needsBuilding) {
+    let buildingsCreated = 0;
+    let buildingsLinked = 0;
+    let propertiesProcessed = 0;
+
+    // Process each property
+    for (const property of propertiesNeedingBuilding) {
       try {
-        // Call buildingIntelligence to create/match building
-        const bisResponse = await base44.asServiceRole.functions.invoke(
-          'buildingIntelligence',
-          {
-            building_name: property.building_name,
-            location: property.location,
-            pocket: property.pocket,
-            broker_id: property.broker_id,
-            property_data: property,
-            action: 'enrich'
-          }
+        const buildingName = property.building_name.trim();
+        const location = property.location;
+
+        // Fuzzy match: find existing building with same name in same location
+        const matchingBuilding = existingBuildings.find(b => 
+          b.name.toLowerCase() === buildingName.toLowerCase() &&
+          b.location === location
         );
 
-        if (bisResponse.data?.success) {
-          const buildingId = bisResponse.data.building.id;
+        let buildingId;
+
+        if (matchingBuilding) {
+          // Link to existing building
+          buildingId = matchingBuilding.id;
+          buildingsLinked++;
           
-          // Update property with building_id
-          await base44.asServiceRole.entities.Property.update(property.id, {
-            building_id: buildingId
+          // Update building stats
+          await base44.asServiceRole.entities.Building.update(matchingBuilding.id, {
+            total_listings: (matchingBuilding.total_listings || 0) + 1,
+            active_listings: property.status === 'Active' 
+              ? (matchingBuilding.active_listings || 0) + 1 
+              : matchingBuilding.active_listings
           });
 
-          results.properties_processed++;
-          
-          if (bisResponse.data.action === 'created') {
-            results.buildings_created++;
-          } else {
-            results.buildings_linked++;
-          }
+          console.log(`✓ Linked property ${property.custom_id} to existing building ${matchingBuilding.custom_id}`);
+        } else {
+          // Create new building with custom_id
+          const buildingCount = existingBuildings.length + buildingsCreated + 1;
+          const buildingCustomId = `CHR-BLD-${String(buildingCount).padStart(4, '0')}`;
+
+          const newBuilding = await base44.asServiceRole.entities.Building.create({
+            custom_id: buildingCustomId,
+            name: buildingName,
+            location: location,
+            pocket: property.pocket,
+            total_listings: 1,
+            active_listings: property.status === 'Active' ? 1 : 0,
+            verified: false
+          });
+
+          buildingId = newBuilding.id;
+          existingBuildings.push(newBuilding); // Add to cache
+          buildingsCreated++;
+
+          console.log(`✓ Created new building ${buildingCustomId}: ${buildingName} in ${location}`);
         }
+
+        // Link property to building
+        await base44.asServiceRole.entities.Property.update(property.id, {
+          building_id: buildingId
+        });
+
+        propertiesProcessed++;
+
       } catch (error) {
         console.error(`Error processing property ${property.custom_id}:`, error.message);
-        results.errors.push({
-          property_id: property.custom_id,
-          building_name: property.building_name,
-          error: error.message
-        });
       }
     }
 
+    const summary = {
+      properties_processed: propertiesProcessed,
+      buildings_created: buildingsCreated,
+      buildings_linked: buildingsLinked
+    };
+
+    console.log('✅ Backfill complete:', summary);
+
     return Response.json({
       success: true,
-      message: `Backfill complete! Created ${results.buildings_created} buildings, linked ${results.buildings_linked} to existing buildings.`,
-      results
+      message: `Processed ${propertiesProcessed} properties, created ${buildingsCreated} buildings, linked ${buildingsLinked} to existing`,
+      results: summary
     });
 
   } catch (error) {
     console.error('Backfill error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      error: error.message 
+    }, { status: 500 });
   }
 });
