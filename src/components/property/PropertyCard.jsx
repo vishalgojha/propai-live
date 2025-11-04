@@ -14,6 +14,7 @@ export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [broker, setBroker] = useState(null);
+  const [brokerLoading, setBrokerLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -31,16 +32,25 @@ export default function PropertyCard({ property, onViewDetails }) {
     const loadBroker = async () => {
       if (property.broker_id) {
         try {
+          setBrokerLoading(true);
           const brokers = await base44.entities.Broker.list();
           const foundBroker = brokers.find(b => b.id === property.broker_id);
           setBroker(foundBroker);
+          
+          if (!foundBroker) {
+            console.warn(`Broker with ID ${property.broker_id} not found for property ${property.custom_id}`);
+          }
         } catch (error) {
           console.error("Failed to load broker:", error);
+        } finally {
+          setBrokerLoading(false);
         }
+      } else {
+        setBrokerLoading(false);
       }
     };
     loadBroker();
-  }, [property.broker_id]);
+  }, [property.broker_id, property.custom_id]);
 
   const formatPrice = () => {
     if (property.price_unit === "crores") {
@@ -78,8 +88,20 @@ export default function PropertyCard({ property, onViewDetails }) {
   const handleCheckAvailability = (e) => {
     e.stopPropagation();
     
-    if (!broker || !broker.phone) {
-      alert('Broker contact not available');
+    // Check if broker data is still loading
+    if (brokerLoading) {
+      alert('Loading broker information...');
+      return;
+    }
+    
+    // Check if broker exists and has phone
+    if (!broker) {
+      alert(`⚠️ Broker not found in database.\n\nProperty ID: ${property.custom_id}\nBroker ID: ${property.broker_id || 'Not set'}\n\nPlease contact admin to fix broker mapping.`);
+      return;
+    }
+    
+    if (!broker.phone) {
+      alert(`⚠️ Broker "${broker.name}" has no phone number.\n\nBroker ID: ${broker.id}\n\nPlease update broker contact info in Admin → Brokers.`);
       return;
     }
 
@@ -184,10 +206,13 @@ export default function PropertyCard({ property, onViewDetails }) {
         {isAdmin && (
           <Button
             onClick={handleCheckAvailability}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md mb-2"
+            disabled={brokerLoading}
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm">Check Availability</span>
+            <span className="text-sm">
+              {brokerLoading ? 'Loading...' : broker ? 'Check Availability' : 'Broker Missing'}
+            </span>
           </Button>
         )}
 
