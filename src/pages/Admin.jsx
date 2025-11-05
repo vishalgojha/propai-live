@@ -2074,7 +2074,7 @@ export default function Admin() {
                         )}
 
                         {/* Requirements Summary - Visual Cards */}
-                        <div className="grid grid-cols-2 md::grid-cols-4 gap-3 mb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                           {/* BHK */}
                           <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
                             <p className="text-xs text-slate-500 mb-1">Looking For</p>
