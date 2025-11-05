@@ -51,7 +51,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 401 });
     }
 
-    const { mode = 'dry_run' } = await req.json(); // 'dry_run' or 'fix'
+    // Parse request body safely
+    let mode = 'dry_run';
+    try {
+      const body = await req.json();
+      mode = body.mode || 'dry_run';
+    } catch (e) {
+      // If no body or invalid JSON, default to dry_run
+      mode = 'dry_run';
+    }
 
     // ============================================
     // ANALYZE PHASE
