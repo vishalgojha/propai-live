@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, Clock, Copy, Eye, FileText, Home,
+  AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
   Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
   Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap
 } from "lucide-react";
@@ -1420,79 +1420,219 @@ export default function Admin() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {requirements.length === 0 ? (
                   <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
                     <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-slate-900 mb-2">No requirements yet</h3>
                   </div>
                 ) : (
-                  requirements.map((req) => (
-                    <div
-                      key={req.id}
-                      className="bg-white rounded-2xl p-6 border border-slate-200"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xl font-bold text-slate-900">{req.client_name}</h3>
-                        <Badge className="bg-green-500 text-white">{req.status}</Badge>
-                      </div>
-                      
-                      {req.client_phone && (
-                        <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-                          <Phone className="w-4 h-4" />
-                          {req.client_phone}
+                  requirements.map((req) => {
+                    // Extract broker info from notes if it's a broker referral
+                    const isBrokerReferral = req.client_type === "Broker Referral";
+                    const brokerInfo = isBrokerReferral && req.notes 
+                      ? req.notes.split('|')[0]?.replace('Broker:', '').trim()
+                      : null;
+
+                    // Normalize budget display
+                    const budgetMin = req.budget_min || 0;
+                    const budgetMax = req.budget_max || 0;
+                    const budgetUnit = req.budget_unit === 'crores' ? 'Cr' : 'L';
+                    const budgetDisplay = budgetMin && budgetMax 
+                      ? `₹${budgetMin}-${budgetMax}${budgetUnit}`
+                      : budgetMin 
+                        ? `₹${budgetMin}${budgetUnit}+`
+                        : budgetMax
+                          ? `Up to ₹${budgetMax}${budgetUnit}`
+                          : 'Budget not specified';
+
+                    return (
+                      <div
+                        key={req.id}
+                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-purple-300 transition-all"
+                      >
+                        {/* Header - Always Visible */}
+                        <div className="p-4 flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <h3 className="font-bold text-slate-900 text-base truncate">
+                                {req.client_name}
+                              </h3>
+                              {req.custom_id && (
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {req.custom_id}
+                                </Badge>
+                              )}
+                              <Badge 
+                                className={
+                                  req.status === "Active" 
+                                    ? "bg-green-500 text-white" 
+                                    : "bg-slate-400 text-white"
+                                }
+                              >
+                                {req.status}
+                              </Badge>
+                            </div>
+
+                            {/* Quick Summary */}
+                            <div className="flex items-center gap-3 text-xs text-slate-600">
+                              {isBrokerReferral && brokerInfo && (
+                                <>
+                                  <span className="flex items-center gap-1">
+                                    <Users className="w-3 h-3" />
+                                    Broker: {brokerInfo}
+                                  </span>
+                                  <span>•</span>
+                                </>
+                              )}
+                              {req.client_phone && (
+                                <>
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    {req.client_phone}
+                                  </span>
+                                  <span>•</span>
+                                </>
+                              )}
+                              <span>{req.bhk_preference?.join(", ") || "Any"}</span>
+                              <span>•</span>
+                              <span>{budgetDisplay}</span>
+                            </div>
+                          </div>
                         </div>
-                      )}
 
-                      {req.custom_id && (
-                        <Badge variant="outline" className="font-mono text-xs mb-3">
-                          {req.custom_id}
-                        </Badge>
-                      )}
+                        {/* Collapsible Details */}
+                        <details className="group">
+                          <summary className="px-4 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors flex items-center justify-between text-sm font-semibold text-slate-700">
+                            <span>View Details</span>
+                            <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+                          </summary>
+                          
+                          <div className="p-4 space-y-4 border-t border-slate-100">
+                            {/* Source Info */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-xs text-slate-500 mb-1">Source</p>
+                                <p className="font-semibold text-slate-900 text-sm">
+                                  {req.client_type || "Direct Client"}
+                                </p>
+                              </div>
 
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-slate-50 rounded-xl p-3">
-                          <p className="text-xs text-slate-500 mb-1">Looking For</p>
-                          <p className="font-bold text-slate-900">
-                            {req.bhk_preference?.join(", ") || "Any"} BHK
-                          </p>
-                        </div>
+                              {isBrokerReferral && brokerInfo && (
+                                <div className="bg-purple-50 rounded-xl p-3">
+                                  <p className="text-xs text-slate-500 mb-1">Broker</p>
+                                  <p className="font-semibold text-purple-900 text-sm">
+                                    {brokerInfo}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
 
-                        <div className="bg-slate-50 rounded-xl p-3">
-                          <p className="text-xs text-slate-500 mb-1">Budget</p>
-                          <p className="font-bold text-slate-900">
-                            ₹{req.budget_min}-{req.budget_max}
-                            {req.budget_unit === 'crores' ? ' Cr' : 'L'}
-                          </p>
-                        </div>
+                            {/* Requirements Grid */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-xs text-slate-500 mb-1">BHK</p>
+                                <p className="font-bold text-slate-900">
+                                  {req.bhk_preference?.join(", ") || "Any"}
+                                </p>
+                              </div>
+
+                              <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-xs text-slate-500 mb-1">Budget</p>
+                                <p className="font-bold text-slate-900">
+                                  {budgetDisplay}
+                                </p>
+                              </div>
+
+                              <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-xs text-slate-500 mb-1">Type</p>
+                                <p className="font-bold text-slate-900">
+                                  {req.listing_type}
+                                </p>
+                              </div>
+
+                              {req.furnishing_preference && req.furnishing_preference !== "Any" && (
+                                <div className="bg-slate-50 rounded-xl p-3">
+                                  <p className="text-xs text-slate-500 mb-1">Furnishing</p>
+                                  <p className="font-bold text-slate-900">
+                                    {req.furnishing_preference}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Locations */}
+                            {req.preferred_locations && req.preferred_locations.length > 0 && (
+                              <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-xs text-slate-500 mb-2">Preferred Locations</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {req.preferred_locations.map((loc, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      <MapPin className="w-3 h-3 mr-1" />
+                                      {loc}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Additional Requirements */}
+                            {(req.parking_required || req.amenities_required?.length > 0 || req.veg_nonveg || req.possession_timeline) && (
+                              <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-xs text-slate-500 mb-2">Additional Requirements</p>
+                                <div className="space-y-1 text-xs text-slate-700">
+                                  {req.parking_required && <p>• Parking Required</p>}
+                                  {req.veg_nonveg && <p>• {req.veg_nonveg}</p>}
+                                  {req.amenities_required?.length > 0 && (
+                                    <p>• {req.amenities_required.join(", ")}</p>
+                                  )}
+                                  {req.possession_timeline && (
+                                    <p>• Possession: {req.possession_timeline}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Notes */}
+                            {req.notes && (
+                              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                                <p className="text-xs text-amber-700 mb-1">Notes</p>
+                                <p className="text-xs text-slate-700 whitespace-pre-line">
+                                  {req.notes}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex gap-2 pt-2 border-t border-slate-200">
+                              {req.client_phone && (
+                                <Button
+                                  onClick={() => {
+                                    const message = `Hi ${req.client_name}, this is Chariot Realty. Regarding your requirement for ${req.bhk_preference?.join("/")} in Mumbai.`;
+                                    window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                                  }}
+                                  className="bg-[#25D366] hover:bg-[#20BD5A] text-white flex-1"
+                                  size="sm"
+                                >
+                                  <MessageCircle className="w-4 h-4 mr-2" />
+                                  WhatsApp
+                                </Button>
+                              )}
+                              <Button
+                                onClick={() => handleFindMatches(req)}
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Find Matches
+                              </Button>
+                            </div>
+                          </div>
+                        </details>
                       </div>
-
-                      <div className="flex gap-2">
-                        {req.client_phone && (
-                          <Button
-                            onClick={() => {
-                              const message = `Hi ${req.client_name}, this is Chariot Realty.`;
-                              window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                            }}
-                            className="bg-[#25D366] hover:bg-[#20BD5A] text-white flex-1"
-                            size="sm"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            WhatsApp
-                          </Button>
-                        )}
-                        <Button
-                          onClick={() => handleFindMatches(req)}
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Find Matches
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>
