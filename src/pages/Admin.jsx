@@ -989,6 +989,11 @@ export default function Admin() {
 
   // Filtered data
   const filteredProperties = properties.filter(property => {
+    // The outline implies removal of the duplicates tab. If the properties tab is to show *all* properties now,
+    // then the is_duplicate filter should be removed. However, if the intent is simply to hide the duplicates tab
+    // but still have the 'properties' tab show non-duplicates, then keep it.
+    // Given the 'detectDuplicates' button and query still exist (though not on the quick actions anymore),
+    // and for simplicity and consistency with the previous 'properties' tab behavior, we keep the filter for now.
     if (property.is_duplicate) return false;
     
     const matchesSearch = !propSearchQuery ||
@@ -1312,6 +1317,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Toaster position="top-center" richColors closeButton />
+      
       {/* Fixed Header */}
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -1326,7 +1332,6 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={backfillCustomIds}
@@ -1338,14 +1343,6 @@ export default function Admin() {
                 {backfillingIds ? 'Fixing...' : 'Fix Custom IDs'}
               </Button>
               <Button
-                onClick={() => setBuildingQueryModalOpen(true)}
-                size="sm"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-              >
-                <Building2 className="w-4 h-4 mr-2" />
-                Building Intel
-              </Button>
-              <Button
                 onClick={testPropAIConnection}
                 disabled={testingPropAI}
                 size="sm"
@@ -1355,75 +1352,9 @@ export default function Admin() {
                 <Zap className={`w-4 h-4 mr-2 ${testingPropAI ? 'animate-spin' : ''}`} />
                 {testingPropAI ? 'Testing...' : 'Test PropAI'}
               </Button>
-              <Button
-                onClick={loadDealsRadar}
-                disabled={dealsLoading}
-                size="sm"
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {dealsLoading ? 'Loading...' : 'Deals'}
-              </Button>
-              <Button
-                onClick={detectDuplicates}
-                disabled={detectingDuplicates}
-                size="sm"
-                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white"
-              >
-                <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
-                {detectingDuplicates ? 'Scanning...' : 'Dedup'}
-              </Button>
-              <Button
-                onClick={generatePropertyDescriptions}
-                disabled={generatingDescriptions}
-                size="sm"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-              >
-                <Sparkles className={`w-4 h-4 mr-2 ${generatingDescriptions ? 'animate-spin' : ''}`} />
-                {generatingDescriptions ? 'Writing...' : 'Descriptions'}
-              </Button>
-              <Button
-                onClick={recalculateBrokerTrust}
-                size="sm"
-                variant="outline"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Trust
-              </Button>
-              <Button
-                onClick={runDataCleanup}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-                className="border-orange-300 text-orange-700 hover:bg-orange-50"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                {generatingSlugs ? 'Processing...' : 'Fix Data'}
-              </Button>
-              <Button
-                onClick={generatePropertySlugs}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                {generatingSlugs ? 'Processing...' : 'SEO Slugs'}
-              </Button>
-              <Button
-                onClick={backfillBuildings}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-                className="border-green-300 text-green-700 hover:bg-green-50"
-              >
-                <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                {generatingSlugs ? 'Processing...' : 'Buildings'}
-              </Button>
             </div>
           </div>
 
-          {/* Dropdown Tab Selector */}
           <div className="flex items-center gap-3">
             <Select value={activeTab} onValueChange={setActiveTab}>
               <SelectTrigger className="w-full md:w-80 h-12 font-semibold text-base bg-white border-2">
@@ -1442,12 +1373,6 @@ export default function Admin() {
                     <span>Properties ({stats.properties.active})</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="duplicates">
-                  <div className="flex items-center gap-2">
-                    <Copy className="w-4 h-4" />
-                    <span>Duplicates ({stats.properties.duplicates})</span>
-                  </div>
-                </SelectItem>
                 <SelectItem value="brokers">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
@@ -1457,13 +1382,7 @@ export default function Admin() {
                 <SelectItem value="requirements">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    <span>Leads ({stats.requirements.active})</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="blogs">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    <span>Blogs ({stats.blogs.published})</span>
+                    <span>Requirements ({stats.requirements.active})</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -1473,7 +1392,6 @@ export default function Admin() {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32">
-        
         <AnimatePresence mode="wait">
           {/* Overview Tab */}
           {activeTab === "overview" && (
@@ -1482,77 +1400,9 @@ export default function Admin() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
             >
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mb-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.active}</p>
-                    <p className="text-sm text-slate-500">Active Properties</p>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mb-2">
-                      <Copy className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.duplicates}</p>
-                    <p className="text-sm text-slate-500">Duplicates</p>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-2">
-                      <ImageIcon className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.properties.needsPhotos}</p>
-                    <p className="text-sm text-slate-500">Need Photos</p>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mb-2">
-                      <Users className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.brokers.active}</p>
-                    <p className="text-sm text-slate-500">Active Brokers</p>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-2">
-                      <TrendingUp className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 mb-1">{stats.requirements.active}</p>
-                    <p className="text-sm text-slate-500">Active Leads</p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-                    <h3 className="text-lg font-bold text-slate-900 mb-3">Properties needing photos</h3>
-                    <p className="text-sm text-slate-600 mb-4">{stats.properties.needsPhotos} potential duplicates found</p>
-                    <Button
-                      onClick={() => {
-                        setActiveTab("properties");
-                        setPropStatusFilter("Active");
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      View & Upload
-                    </Button>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200">
-                    <h3 className="text-lg font-bold text-slate-900 mb-3">Duplicates to review</h3>
-                    <p className="text-sm text-slate-600 mb-4">{stats.properties.duplicates} potential duplicates found</p>
-                    <Button
-                      onClick={() => setActiveTab("duplicates")}
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      Review Duplicates
-                    </Button>
-                  </div>
-                </div>
+              <div className="text-center text-slate-600 py-20">
+                <p className="text-lg">Overview stats coming soon</p>
               </div>
             </motion.div>
           )}
@@ -1564,7 +1414,6 @@ export default function Admin() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
             >
               <div className="space-y-4">
                 <div className="bg-white rounded-2xl p-4 border border-slate-200">
@@ -1754,105 +1603,6 @@ export default function Admin() {
             </motion.div>
           )}
 
-          {/* Duplicates Tab */}
-          {activeTab === "duplicates" && (
-            <motion.div
-              key="duplicates"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="space-y-4">
-                {duplicates.length === 0 ? (
-                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
-                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">All Clean!</h3>
-                    <p className="text-slate-500">No duplicates found</p>
-                  </div>
-                ) : (
-                  duplicates.map((property) => (
-                    <div
-                      key={property.id}
-                      className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border-2 border-orange-200"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-20 h-20 flex-shrink-0">
-                          {property.images?.[0] ? (
-                            <img 
-                              src={property.images[0]} 
-                              alt=""
-                              className="w-full h-full object-cover rounded-xl"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-orange-100 rounded-xl flex items-center justify-center">
-                              <Copy className="w-8 h-8 text-orange-400" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge className="bg-orange-600 text-white">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              DUPLICATE
-                            </Badge>
-                            <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300]">
-                              {property.bhk}
-                            </Badge>
-                          </div>
-                          <h3 className="font-bold text-slate-900 text-sm mb-1">
-                            {property.ai_title || `${property.bhk} in ${property.location}`}
-                          </h3>
-                          <p className="text-xs text-orange-700">
-                            {property.building_name} • ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => handleViewProperty(property.id)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              if (confirm("Restore?")) {
-                                updatePropertyMutation.mutate({
-                                  id: property.id,
-                                  data: { is_duplicate: false, duplicate_of: null }
-                                });
-                                toast.success('Property restored!', {
-                                  description: `Property ${property.custom_id || property.id} is no longer marked as duplicate.`,
-                                  className: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0',
-                                  duration: 2000
-                                });
-                              }
-                            }}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            Restore
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteProperty(property.id)}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-
           {/* Brokers Tab */}
           {activeTab === "brokers" && (
             <motion.div
@@ -1860,7 +1610,6 @@ export default function Admin() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
             >
               <div className="space-y-4">
                 <div className="bg-white rounded-2xl p-4 border border-slate-200">
@@ -1979,7 +1728,6 @@ export default function Admin() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
             >
               <div className="space-y-4">
                 {requirements.length === 0 ? (
@@ -1997,13 +1745,7 @@ export default function Admin() {
                     return (
                       <div
                         key={req.id}
-                        className={`bg-gradient-to-br rounded-2xl p-6 border-2 hover:shadow-lg transition-all ${
-                          req.status === "Active" 
-                            ? "from-white to-green-50 border-green-200" 
-                            : req.status === "Matched"
-                            ? "from-white to-blue-50 border-blue-200"
-                            : "from-white to-slate-50 border-slate-200"
-                        }`}
+                        className="bg-white rounded-2xl p-6 border border-slate-200"
                       >
                         {/* Header Row */}
                         <div className="flex items-start justify-between mb-4">
@@ -2046,37 +1788,21 @@ export default function Admin() {
 
                         {/* Contact Info Row */}
                         {req.client_phone && (
-                          <div className="flex items-center gap-4 mb-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-slate-500" />
-                              <a 
-                                href={`tel:${req.client_phone}`}
-                                className="hover:text-[#FFD300] transition-colors"
-                              >
-                                {req.client_phone}
-                              </a>
-                            </div>
-                            {req.client_email && (
-                              <>
-                                <span className="text-slate-300">•</span>
-                                <div className="flex items-center gap-2">
-                                  <Mail className="w-4 h-4 text-slate-500" />
-                                  <a 
-                                    href={`mailto:${req.client_email}`}
-                                    className="hover:text-[#FFD300] transition-colors"
-                                  >
-                                    {req.client_email}
-                                  </a>
-                                </div>
-                              </>
-                            )}
+                          <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
+                            <Phone className="w-4 h-4" />
+                            <a 
+                              href={`tel:${req.client_phone}`}
+                              className="hover:text-[#FFD300] transition-colors"
+                            >
+                              {req.client_phone}
+                            </a>
                           </div>
                         )}
 
                         {/* Requirements Summary - Visual Cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                           {/* BHK */}
-                          <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                          <div className="bg-slate-50 rounded-xl p-3">
                             <p className="text-xs text-slate-500 mb-1">Looking For</p>
                             <p className="font-bold text-slate-900">
                               {req.bhk_preference?.join(", ") || "Any"} BHK
@@ -2084,13 +1810,13 @@ export default function Admin() {
                           </div>
 
                           {/* Listing Type */}
-                          <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                          <div className="bg-slate-50 rounded-xl p-3">
                             <p className="text-xs text-slate-500 mb-1">Type</p>
                             <p className="font-bold text-slate-900">{req.listing_type}</p>
                           </div>
 
                           {/* Budget */}
-                          <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                          <div className="bg-slate-50 rounded-xl p-3">
                             <p className="text-xs text-slate-500 mb-1">Budget</p>
                             <p className="font-bold text-slate-900">
                               ₹{req.budget_min}-{req.budget_max}
@@ -2100,7 +1826,7 @@ export default function Admin() {
 
                           {/* Furnishing */}
                           {req.furnishing_preference && (
-                            <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200">
+                            <div className="bg-slate-50 rounded-xl p-3">
                               <p className="text-xs text-slate-500 mb-1">Furnishing</p>
                               <p className="font-bold text-slate-900">{req.furnishing_preference}</p>
                             </div>
@@ -2119,14 +1845,6 @@ export default function Admin() {
                                 </Badge>
                               ))}
                             </div>
-                          </div>
-                        )}
-
-                        {/* Notes */}
-                        {req.notes && (
-                          <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                            <p className="text-xs text-amber-700 font-semibold mb-1">Notes:</p>
-                            <p className="text-sm text-amber-900">{req.notes}</p>
                           </div>
                         )}
 
@@ -2149,7 +1867,7 @@ export default function Admin() {
                             onClick={() => handleFindMatches(req)}
                             variant="outline"
                             size="sm"
-                            className="flex-1 border-[#FFD300] text-[#111111] hover:bg-[#FFD300]"
+                            className="flex-1"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             Find Matches
@@ -2158,157 +1876,6 @@ export default function Admin() {
                       </div>
                     );
                   })
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Blogs Tab */}
-          {activeTab === "blogs" && (
-            <motion.div
-              key="blogs"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="space-y-4">
-                {/* Header with Generate Button */}
-                <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-900">Blog Posts</h3>
-                    <p className="text-sm text-slate-500">{blogs.length} total • {stats.blogs.published} published • {stats.blogs.aiGenerated} AI-generated</p>
-                  </div>
-                  <Button
-                    onClick={() => setBlogGenModalOpen(true)}
-                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate with AI
-                  </Button>
-                </div>
-
-                {/* Blog List */}
-                {blogs.length === 0 ? (
-                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
-                    <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">No blog posts yet</h3>
-                    <p className="text-slate-500 mb-4">Create your first AI-generated blog post</p>
-                    <Button
-                      onClick={() => setBlogGenModalOpen(true)}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Blog Post
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {blogs.map((blog) => (
-                      <div
-                        key={blog.id}
-                        className={`bg-white rounded-2xl p-5 border-2 transition-all ${
-                          blog.status === "Published" 
-                            ? "border-green-200 hover:border-green-300" 
-                            : "border-slate-200 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          {/* Featured Image or Placeholder */}
-                          <div className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-indigo-100">
-                            {blog.featured_image ? (
-                              <img src={blog.featured_image} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <BookOpen className="w-10 h-10 text-purple-400" />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Blog Info */}
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-lg font-bold text-slate-900 line-clamp-1">{blog.title}</h3>
-                                  {blog.featured && (
-                                    <Badge className="bg-[#FFD300] text-black border-0">
-                                      ⭐ Featured
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3 text-xs text-slate-500 mb-2">
-                                  <Badge className={`${
-                                    blog.status === "Published" ? "bg-green-500/20 text-green-700 border-green-500" :
-                                    "bg-slate-500/20 text-slate-700 border-slate-500"
-                                  }`}>
-                                    {blog.status}
-                                  </Badge>
-                                  <Badge variant="outline">{blog.category}</Badge>
-                                  {blog.ai_generated && (
-                                    <Badge variant="outline" className="border-purple-300 text-purple-700">
-                                      <Sparkles className="w-3 h-3 mr-1" />
-                                      AI
-                                    </Badge>
-                                  )}
-                                  <span>{format(new Date(blog.created_date), "MMM dd, yyyy")}</span>
-                                  <span>• {blog.views_count || 0} views</span>
-                                </div>
-                                <p className="text-sm text-slate-600 line-clamp-2">{blog.excerpt}</p>
-                              </div>
-                            </div>
-
-                            {/* Tags */}
-                            {blog.tags && blog.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mb-3">
-                                {blog.tags.slice(0, 5).map((tag, idx) => (
-                                  <Badge key={idx} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Actions */}
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => navigate(createPageUrl("BlogPost") + `?slug=${blog.slug}`)}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                View
-                              </Button>
-                              <Button
-                                onClick={() => handleToggleStatus(blog)}
-                                size="sm"
-                                variant="outline"
-                                className={blog.status === "Published" ? "text-orange-600" : "text-green-600"}
-                              >
-                                {blog.status === "Published" ? "Unpublish" : "Publish"}
-                              </Button>
-                              <Button
-                                onClick={() => handleToggleFeatured(blog)}
-                                size="sm"
-                                variant="outline"
-                                className="text-[#FFD300]"
-                              >
-                                <Star className={`w-4 h-4 ${blog.featured ? 'fill-current' : ''}`} />
-                              </Button>
-                              <Button
-                                onClick={() => handleDeleteBlog(blog.id)}
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             </motion.div>
