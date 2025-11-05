@@ -86,6 +86,9 @@ export default function Admin() {
   // PropAI Connection Test State
   const [testingPropAI, setTestingPropAI] = useState(false);
 
+  // Custom ID Backfill State
+  const [backfillingIds, setBackfillingIds] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -867,6 +870,98 @@ export default function Admin() {
     }
   };
 
+  const backfillCustomIds = async () => {
+    if (!confirm('🔧 Backfill Custom IDs?\n\nThis will:\n• Generate CHT-{LOC}-XXXX for Properties\n• Generate CHR-BRK-XXXX for Brokers\n• Generate CHR-REQ-XXXX for Requirements\n\nRun dry-run first?')) {
+      return;
+    }
+
+    setBackfillingIds(true);
+
+    // Dry run first
+    toast.loading('🔍 Analyzing missing custom IDs...', {
+      description: 'Running dry-run to detect records without custom_id',
+      className: 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0',
+      id: 'customid-dry-run'
+    });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('backfillCustomIds', { mode: 'dry_run' });
+      toast.dismiss('customid-dry-run');
+
+      const analysis = dryRunResponse.data.analysis;
+      const totalMissing = analysis.total_missing;
+
+      if (totalMissing === 0) {
+        toast.success('✅ All Custom IDs Present!', {
+          description: 'Every record already has a custom_id',
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 4000
+        });
+        setBackfillingIds(false);
+        return;
+      }
+
+      // Show results and confirm fix
+      const shouldFix = confirm(
+        `Found ${totalMissing} records missing custom_id:\n\n` +
+        `• Properties: ${analysis.properties_missing}\n` +
+        `• Brokers: ${analysis.brokers_missing}\n` +
+        `• Requirements: ${analysis.requirements_missing}\n\n` +
+        `Generate custom IDs now?`
+      );
+
+      if (!shouldFix) {
+        setBackfillingIds(false);
+        return;
+      }
+
+      // Run fix mode
+      toast.loading('🔧 Generating custom IDs...', {
+        description: 'Creating unique IDs for all records...',
+        className: 'bg-gradient-to-r from-orange-600 to-amber-600 text-white border-0',
+        id: 'customid-fix'
+      });
+
+      const fixResponse = await base44.functions.invoke('backfillCustomIds', { mode: 'fix' });
+      toast.dismiss('customid-fix');
+
+      const results = fixResponse.data.results;
+
+      toast.success('✅ Custom IDs Generated!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">All records now have custom IDs</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>✓ Properties: {results.properties_fixed} fixed</div>
+              <div>✓ Brokers: {results.brokers_fixed} fixed</div>
+              <div>✓ Requirements: {results.requirements_fixed} fixed</div>
+              {results.errors.length > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors.length}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+      queryClient.invalidateQueries({ queryKey: ['requirements'] });
+
+    } catch (error) {
+      toast.dismiss('customid-dry-run');
+      toast.dismiss('customid-fix');
+      toast.error('❌ Custom ID Backfill Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setBackfillingIds(false);
+    }
+  };
+
   // Stats
   const stats = {
     properties: {
@@ -1233,6 +1328,15 @@ export default function Admin() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={backfillCustomIds}
+                disabled={backfillingIds}
+                size="sm"
+                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold"
+              >
+                <AlertTriangle className={`w-4 h-4 mr-2 ${backfillingIds ? 'animate-spin' : ''}`} />
+                {backfillingIds ? 'Fixing...' : 'Fix Custom IDs'}
+              </Button>
               <Button
                 onClick={() => setBuildingQueryModalOpen(true)}
                 size="sm"
