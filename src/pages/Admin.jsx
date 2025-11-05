@@ -1525,7 +1525,7 @@ export default function Admin() {
                           >
                             <div className="flex items-center gap-4">
                               <div className="relative w-20 h-20 flex-shrink-0">
-                                {property.images && property.images[0] ? (
+                                {property.images && property.images.length > 0 ? (
                                   <img 
                                     src={property.images[0]} 
                                     alt=""
