@@ -385,6 +385,82 @@ export default function Admin() {
     }
   };
 
+  const detectBrokerDuplicates = async () => {
+    if (!confirm('🔍 Detect Broker Duplicates?\n\nThis will:\n• Scan all brokers for duplicates\n• Match by phone numbers and similar names\n• Merge duplicates (oldest kept as original)\n• Reassign all properties to original broker\n\nRun analysis first?')) {
+      return;
+    }
+
+    setDetectingDuplicates(true);
+    toast.loading('🔍 Analyzing brokers for duplicates...', { id: 'broker-dedup-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('detectBrokerDuplicates', { mode: 'dry_run' });
+      toast.dismiss('broker-dedup-analysis');
+
+      const summary = dryRunResponse.data.summary;
+      if (summary.total_duplicates === 0) {
+        toast.success('✅ No Broker Duplicates Found!', {
+          description: `Scanned ${summary.total_brokers_scanned} brokers - all unique`,
+          duration: 4000
+        });
+        setDetectingDuplicates(false);
+        return;
+      }
+
+      const shouldMerge = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found ${summary.duplicate_groups_found} duplicate groups:\n` +
+        `• ${summary.total_duplicates} duplicate brokers\n` +
+        `• ${summary.total_brokers_scanned - summary.total_duplicates} unique brokers\n\n` +
+        `Merge duplicates now?\n` +
+        `(Oldest broker in each group will be kept as original, all properties will be reassigned)`
+      );
+
+      if (!shouldMerge) {
+        setDetectingDuplicates(false);
+        return;
+      }
+
+      toast.loading('🔧 Merging duplicate brokers...', { id: 'broker-dedup-merge' });
+      const mergeResponse = await base44.functions.invoke('detectBrokerDuplicates', { mode: 'live' });
+      toast.dismiss('broker-dedup-merge');
+
+      const results = mergeResponse.data.summary;
+
+      toast.success('✅ Broker Deduplication Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Brokers cleaned up successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Scanned: {results.total_brokers_scanned} brokers</div>
+              <div>• Found: {results.duplicate_groups_found} duplicate groups</div>
+              <div>• Merged: {results.duplicates_merged} duplicates</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('broker-dedup-analysis');
+      toast.dismiss('broker-dedup-merge');
+      toast.error('❌ Broker Deduplication Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setDetectingDuplicates(false);
+    }
+  };
+
   const generatePropertyDescriptions = async () => {
     if (!confirm('🤖 Generate AI Descriptions?')) return;
     setGeneratingDescriptions(true);
@@ -794,7 +870,16 @@ export default function Admin() {
                 className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white"
               >
                 <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
-                {detectingDuplicates ? 'Scanning...' : 'Dedup'}
+                {detectingDuplicates ? 'Scanning...' : 'Dedup Props'}
+              </Button>
+              <Button
+                onClick={detectBrokerDuplicates}
+                disabled={detectingDuplicates}
+                size="sm"
+                className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white"
+              >
+                <Users className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
+                {detectingDuplicates ? 'Scanning...' : 'Dedup Brokers'}
               </Button>
               <Button
                 onClick={generatePropertyDescriptions}
@@ -811,7 +896,7 @@ export default function Admin() {
               </Button>
               <Button
                 onClick={runDataCleanup}
-                disabled={generatingSlugs} // Reusing generatingSlugs for data cleanup loading state
+                disabled={generatingSlugs}
                 size="sm"
                 variant="outline"
               >
@@ -829,7 +914,7 @@ export default function Admin() {
               </Button>
               <Button
                 onClick={backfillBuildings}
-                disabled={generatingSlugs} // Reusing generatingSlugs for backfillBuildings loading state
+                disabled={generatingSlugs}
                 size="sm"
                 variant="outline"
               >
