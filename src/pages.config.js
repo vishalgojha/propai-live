@@ -8,6 +8,7 @@ import BuildingProfile from './pages/BuildingProfile';
 import AdminBrokers from './pages/AdminBrokers';
 import AdminRequirements from './pages/AdminRequirements';
 import PropertyDetails from './pages/PropertyDetails';
+import BrokerPerformance from './pages/BrokerPerformance';
 import Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "AdminBrokers": AdminBrokers,
     "AdminRequirements": AdminRequirements,
     "PropertyDetails": PropertyDetails,
+    "BrokerPerformance": BrokerPerformance,
 }
 
 export const pagesConfig = {
