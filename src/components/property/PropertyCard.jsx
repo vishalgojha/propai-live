@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
 import { motion } from "framer-motion";
 
 export default function PropertyCard({ property, onViewDetails }) {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // This navigate will now be unused unless onViewDetails uses it
   const [user, setUser] = useState(null);
   const [broker, setBroker] = useState(null);
   const [brokerLoading, setBrokerLoading] = useState(true);
@@ -52,6 +53,8 @@ export default function PropertyCard({ property, onViewDetails }) {
     loadBroker();
   }, [property.broker_id, property.custom_id]);
 
+  // This function is no longer used for displaying the main price due to outline changes,
+  // but kept as it's part of the original file and not explicitly removed by the outline.
   const formatPrice = () => {
     if (property.price_unit === "crores") {
       if (property.price < 1) {
@@ -117,6 +120,8 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  // This function is no longer called due to outline changes,
+  // but kept as it's part of the original file and not explicitly removed by the outline.
   const handleCardClick = () => {
     if (property.slug) {
       navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
@@ -132,13 +137,13 @@ export default function PropertyCard({ property, onViewDetails }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-purple-200/50 hover:border-purple-400 hover:shadow-xl transition-all duration-300 cursor-pointer group"
-      onClick={handleCardClick}
+      whileHover={{ y: -4 }}
+      className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+      onClick={() => onViewDetails(property)}
     >
       {/* Content Section */}
       <div className="p-5">
-        {/* Header with Badges */}
+        {/* Header with Badges (retained from original structure, prior to outline's 'Content' section) */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-wrap gap-2">
             {property.listing_type && (
@@ -163,30 +168,46 @@ export default function PropertyCard({ property, onViewDetails }) {
           )}
         </div>
 
-        {/* Price - Most Prominent */}
-        <div className="mb-3">
-          <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-1">
-            {formatPrice()}
-          </p>
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            {property.listing_type}
-          </p>
-        </div>
-
         {/* Title */}
-        <h3 className="text-lg font-bold text-slate-900 mb-2 leading-tight line-clamp-2 group-hover:text-purple-600 transition-colors">
-          {property.ai_title || `${property.bhk} in ${property.location || 'Mumbai'}`}
+        <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
+          {property.ai_title || `${property.bhk} in ${property.location}`}
         </h3>
 
-        {/* Location */}
-        <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-4">
+        {/* Location & Building */}
+        <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
           <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
-          <span className="line-clamp-1">
-            {[property.building_name, property.pocket, property.location].filter(Boolean).join(', ')}
+          <span className="truncate">
+            {property.building_name ? `${property.building_name}, ` : ''}
+            {property.location}
+            {property.pocket ? ` (${property.pocket})` : ''}
           </span>
         </div>
 
-        {/* Stats Grid */}
+        {/* AI Description - NEW: Always show below price */}
+        {property.ai_description && (
+          <p className="text-sm text-slate-600 mb-3 line-clamp-3 leading-relaxed">
+            {property.ai_description}
+          </p>
+        )}
+
+        {/* Price & Key Details */}
+        <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
+          <div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              ₹{property.price}
+            </span>
+            <span className="text-lg text-slate-600 ml-1">
+              {property.price_unit === 'crores' ? 'Cr' : 'L'}
+            </span>
+            {property.carpet_area && (
+              <span className="text-xs text-slate-500 ml-2">
+                • {property.carpet_area} sq.ft
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Grid (retained from original code) */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
             <Home className="w-4 h-4 text-purple-600 mx-auto mb-1" />
@@ -202,7 +223,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         </div>
 
-        {/* Admin Check Availability Button */}
+        {/* Admin Check Availability Button (retained from original code) */}
         {isAdmin && (
           <Button
             onClick={handleCheckAvailability}
@@ -216,7 +237,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </Button>
         )}
 
-        {/* WhatsApp Contact Buttons */}
+        {/* WhatsApp Contact Buttons (retained from original code) */}
         <div className="space-y-2">
           <Button
             onClick={(e) => handleWhatsAppContact(e, '919819471310', 'Vishal')}
@@ -235,7 +256,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </Button>
         </div>
 
-        {/* Footer Metadata */}
+        {/* Footer Metadata (retained from original code) */}
         {property.custom_id && (
           <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
             <span className="font-mono text-purple-600">{property.custom_id}</span>

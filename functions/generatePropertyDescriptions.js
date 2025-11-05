@@ -1,0 +1,148 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * AI Description Generator for Properties
+ * 
+ * Generates compelling 3-4 line descriptions for properties that:
+ * - Don't have ai_description
+ * - Have ai_description but it's too short/generic
+ * 
+ * Uses property data + building context to create natural, engaging descriptions
+ */
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { propertyId, regenerateAll } = await req.json();
+
+    console.log('🤖 Starting AI Description Generator...');
+
+    let properties = [];
+    
+    if (propertyId) {
+      // Single property
+      const prop = await base44.asServiceRole.entities.Property.filter({ id: propertyId });
+      if (prop.length === 0) {
+        return Response.json({ error: 'Property not found' }, { status: 404 });
+      }
+      properties = prop;
+    } else if (regenerateAll) {
+      // All properties
+      properties = await base44.asServiceRole.entities.Property.list();
+    } else {
+      // Only properties missing ai_description or with very short ones
+      const allProps = await base44.asServiceRole.entities.Property.list();
+      properties = allProps.filter(p => 
+        !p.ai_description || p.ai_description.length < 50
+      );
+    }
+
+    console.log(`Found ${properties.length} properties needing descriptions`);
+
+    if (properties.length === 0) {
+      return Response.json({
+        success: true,
+        message: 'All properties already have AI descriptions',
+        generated_count: 0
+      });
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+    const errors = [];
+
+    for (const property of properties) {
+      try {
+        console.log(`Generating description for: ${property.custom_id || property.id}`);
+
+        // Build context for AI
+        const prompt = `Write a compelling 3-4 line property description (40-60 words) for this Mumbai listing:
+
+**Property:**
+- ${property.bhk} in ${property.location}
+${property.building_name ? `- Building: ${property.building_name}` : ''}
+${property.pocket ? `- Area: ${property.pocket}` : ''}
+- Price: ₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}
+- Type: ${property.listing_type}
+${property.carpet_area ? `- Carpet Area: ${property.carpet_area} sq.ft` : ''}
+${property.furnishing ? `- Furnishing: ${property.furnishing}` : ''}
+${property.floor ? `- Floor: ${property.floor}` : ''}
+${property.parking ? `- Parking: ${property.parking}` : ''}
+${property.view ? `- View: ${property.view}` : ''}
+${property.amenities && property.amenities.length > 0 ? `- Amenities: ${property.amenities.slice(0, 5).join(', ')}` : ''}
+${property.possession ? `- Possession: ${property.possession}` : ''}
+
+**Style Guidelines:**
+- Natural, conversational tone (not robotic)
+- Highlight 2-3 key selling points
+- Mention location vibe if relevant (e.g., "Pali Hill's quiet streets", "Juhu's beach lifestyle")
+- Include practical details (parking, furnishing, floor/view)
+- NO generic fluff ("world-class", "premium lifestyle", "luxury living")
+- 3-4 lines max, flows naturally
+
+**Example Good Description:**
+"Spacious 2 BHK in Oberoi Sky Heights, BKC with stunning city views from the 18th floor. Fully furnished with modular kitchen, 2 covered parking spots. Walking distance to offices, perfect for corporate professionals. Available immediately."
+
+Write ONLY the description (no title, no "Description:" label):`;
+
+        const aiDescription = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: prompt,
+          add_context_from_internet: false
+        });
+
+        // Clean up response (remove quotes, extra whitespace)
+        const cleanedDescription = aiDescription
+          .replace(/^["']|["']$/g, '')
+          .trim();
+
+        // Update property
+        await base44.asServiceRole.entities.Property.update(property.id, {
+          ai_description: cleanedDescription
+        });
+
+        successCount++;
+        console.log(`✅ Generated description for ${property.custom_id || property.id}`);
+
+      } catch (error) {
+        console.error(`❌ Error for property ${property.custom_id || property.id}:`, error.message);
+        errorCount++;
+        errors.push({
+          property_id: property.id,
+          custom_id: property.custom_id,
+          error: error.message
+        });
+      }
+
+      // Rate limiting - small delay between requests
+      if (properties.length > 10) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    console.log(`✅ Description generation complete: ${successCount} success, ${errorCount} errors`);
+
+    return Response.json({
+      success: true,
+      message: `Generated ${successCount} AI descriptions`,
+      results: {
+        total_processed: properties.length,
+        success_count: successCount,
+        error_count: errorCount,
+        errors: errors.slice(0, 10) // Return first 10 errors
+      }
+    });
+
+  } catch (error) {
+    console.error('Description generation error:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message 
+    }, { status: 500 });
+  }
+});

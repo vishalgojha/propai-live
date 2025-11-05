@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -190,7 +191,14 @@ ${extractedData.amenities ? `- Amenities: ${extractedData.amenities.join(', ')}`
 
 Generate:
 1. A natural, engaging title (12-18 words) that highlights key features
-2. A compelling description (40-80 words) that sells the property
+2. A compelling description (40-60 words, 3-4 lines) that sells the property
+
+**Description Guidelines:**
+- Natural, conversational tone
+- Highlight 2-3 key selling points
+- Include practical details
+- NO generic fluff ("world-class", "premium lifestyle")
+- 3-4 lines that flow naturally
 
 Return as JSON:
 {

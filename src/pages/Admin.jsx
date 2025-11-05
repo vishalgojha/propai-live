@@ -66,6 +66,9 @@ export default function Admin() {
   // Duplicate detection state
   const [detectingDuplicates, setDetectingDuplicates] = useState(false);
 
+  // AI Description generation state
+  const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
+
   // Blog generation states
   const [blogGenModalOpen, setBlogGenModalOpen] = useState(false);
   const [generatingBlog, setGeneratingBlog] = useState(false);
@@ -585,6 +588,67 @@ export default function Admin() {
       });
     } finally {
       setDetectingDuplicates(false);
+    }
+  };
+
+  const generatePropertyDescriptions = async () => {
+    if (!confirm('🤖 Generate AI Descriptions?\n\nThis will:\n• Find properties without ai_description\n• Generate compelling 3-4 line descriptions\n• Use property + building context\n\nThis may take a few minutes for many properties. Continue?')) {
+      return;
+    }
+
+    setGeneratingDescriptions(true);
+
+    toast.loading('🤖 AI Description Generator running...', {
+      description: 'Analyzing properties and crafting descriptions...',
+      className: 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0',
+      id: 'desc-gen'
+    });
+
+    try {
+      const response = await base44.functions.invoke('generatePropertyDescriptions', { 
+        regenerateAll: false // Only properties missing descriptions
+      });
+
+      toast.dismiss('desc-gen');
+
+      const { results } = response.data;
+
+      if (results.success_count === 0) {
+        toast.info('✅ All Descriptions Present', {
+          description: 'Every property already has an AI-generated description!',
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 4000
+        });
+      } else {
+        toast.success('✅ Descriptions Generated!', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">AI descriptions added successfully</div>
+              <div className="text-xs opacity-90 space-y-1">
+                <div>✓ Generated: {results.success_count}</div>
+                <div>✓ Total processed: {results.total_processed}</div>
+                {results.error_count > 0 && (
+                  <div className="text-red-300">⚠ Errors: {results.error_count}</div>
+                )}
+              </div>
+            </div>
+          ),
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 6000
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('desc-gen');
+      toast.error('❌ Description Generation Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setGeneratingDescriptions(false);
     }
   };
 
@@ -1132,6 +1196,15 @@ export default function Admin() {
               >
                 <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
                 {detectingDuplicates ? 'Scanning...' : 'Dedup'}
+              </Button>
+              <Button
+                onClick={generatePropertyDescriptions}
+                disabled={generatingDescriptions}
+                size="sm"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+              >
+                <Sparkles className={`w-4 h-4 mr-2 ${generatingDescriptions ? 'animate-spin' : ''}`} />
+                {generatingDescriptions ? 'Writing...' : 'Descriptions'}
               </Button>
               <Button
                 onClick={recalculateBrokerTrust}
