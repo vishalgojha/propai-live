@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,10 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Shield, Home, Users, FileText, Search,
-  Eye, Trash2, AlertTriangle, Upload, MessageCircle,
-  Image as ImageIcon, X, RefreshCw, MapPin,
-  Phone, Mail, Package, BarChart3, CheckCircle2, Zap
+  AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, Clock, Copy, Eye, FileText, Home,
+  Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
+  Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -56,8 +56,18 @@ export default function Admin() {
   const [imagesToUpload, setImagesToUpload] = useState([]);
 
   // Processing states
+  const [dealsLoading, setDealsLoading] = useState(false);
+  const [generatingSlugs, setGeneratingSlugs] = useState(false);
+  const [detectingDuplicates, setDetectingDuplicates] = useState(false);
+  const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   const [testingPropAI, setTestingPropAI] = useState(false);
   const [backfillingIds, setBackfillingIds] = useState(false);
+
+  // Building query modal states
+  const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
+  const [buildingQuery, setBuildingQuery] = useState("");
+  const [buildingQueryResult, setBuildingQueryResult] = useState(null);
+  const [queryingBuilding, setQueryingBuilding] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -86,6 +96,14 @@ export default function Admin() {
     refetchInterval: 15000,
   });
 
+  const { data: duplicates = [], isLoading: duplicatesLoading } = useQuery({
+    queryKey: ['duplicate-properties'],
+    queryFn: () => base44.entities.Property.filter({ is_duplicate: true }, '-created_date'),
+    initialData: [],
+    enabled: isAuthorized,
+    refetchInterval: 15000,
+  });
+
   const { data: brokers = [] } = useQuery({
     queryKey: ['brokers'],
     queryFn: () => base44.entities.Broker.list('-last_activity'),
@@ -107,6 +125,7 @@ export default function Admin() {
     mutationFn: (id) => base44.entities.Property.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
     },
   });
 
@@ -200,6 +219,220 @@ export default function Admin() {
     }
   };
 
+  const loadDealsRadar = async () => {
+    setDealsLoading(true);
+    try {
+      const response = await base44.functions.invoke('getDealsRadar', {});
+      toast.success('Deals Radar Loaded', {
+        description: `💎 ${response.data.summary.underpricedDeals} Underpriced | 📉 ${response.data.summary.priceDrops} Price Drops`,
+        duration: 5000,
+        className: 'bg-gradient-to-r from-purple-600 to-purple-700 text-white border-0'
+      });
+    } catch (error) {
+      toast.error('Failed to load deals radar', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
+    } finally {
+      setDealsLoading(false);
+    }
+  };
+
+  const recalculateBrokerTrust = async () => {
+    if (!confirm('Recalculate all broker trust scores?')) return;
+    try {
+      const response = await base44.functions.invoke('calculateBrokerTrust', { recalculateAll: true });
+      toast.success('✅ Broker Trust Scores Updated', {
+        description: `Scored ${response.data.brokersScored} brokers successfully`,
+        className: 'bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black border-0',
+        duration: 4000
+      });
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+    } catch (error) {
+      toast.error('Failed to calculate scores', {
+        description: error.message,
+        className: 'bg-red-600 text-white border-0'
+      });
+    }
+  };
+
+  const generatePropertySlugs = async () => {
+    if (!confirm('Generate SEO slugs for all properties without slugs?')) return;
+    setGeneratingSlugs(true);
+    try {
+      const response = await base44.functions.invoke('generatePropertySlugs', { generateForAll: true });
+      toast.success('✅ SEO Slugs Generated', {
+        description: `Generated ${response.data.successCount} slugs`,
+        className: 'bg-gradient-to-r from-[#FFD300] to-[#FFA500] text-black border-0',
+        duration: 4000
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      toast.error('Failed to generate slugs', {
+        description: error.message
+      });
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
+  const backfillBuildings = async () => {
+    if (!confirm('Generate buildings from all properties?')) return;
+    setGeneratingSlugs(true);
+    toast.loading('🏗️ Building Intelligence System running...', { id: 'building-backfill' });
+
+    try {
+      const response = await base44.functions.invoke('backfillBuildings', {});
+      toast.dismiss('building-backfill');
+      toast.success('✅ Backfill Complete!', {
+        description: `Created ${response.data.results.buildings_created} buildings`,
+        duration: 6000
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      toast.dismiss('building-backfill');
+      toast.error('❌ Building Backfill Failed', {
+        description: error.message
+      });
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
+  const runDataCleanup = async () => {
+    if (!confirm('🧹 Run Data Cleanup?\n\nRun dry-run first?')) return;
+    setGeneratingSlugs(true);
+    toast.loading('🔍 Analyzing data issues...', { id: 'cleanup-dry-run' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('dataCleanup', { mode: 'dry_run' });
+      toast.dismiss('cleanup-dry-run');
+
+      const issues = dryRunResponse.data.issues;
+      const totalIssues = Object.values(issues).reduce((sum, count) => sum + count, 0);
+
+      if (totalIssues === 0) {
+        toast.success('✅ All data is clean!');
+        setGeneratingSlugs(false);
+        return;
+      }
+
+      const shouldFix = confirm(`Found ${totalIssues} issues. Fix now?`);
+      if (!shouldFix) {
+        setGeneratingSlugs(false);
+        return;
+      }
+
+      toast.loading('🔧 Fixing data issues...', { id: 'cleanup-fix' });
+      const fixResponse = await base44.functions.invoke('dataCleanup', { mode: 'fix' });
+      toast.dismiss('cleanup-fix');
+
+      toast.success('✅ Data Cleanup Complete!', {
+        duration: 8000
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      toast.dismiss('cleanup-dry-run');
+      toast.dismiss('cleanup-fix');
+      toast.error('❌ Data Cleanup Failed', {
+        description: error.message
+      });
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
+  const detectDuplicates = async () => {
+    if (!confirm('🔍 Detect Duplicates?')) return;
+    setDetectingDuplicates(true);
+    toast.loading('🔍 Analyzing properties for duplicates...', { id: 'dedup-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('detectDuplicates', { mode: 'dry_run' });
+      toast.dismiss('dedup-analysis');
+
+      const summary = dryRunResponse.data.summary;
+      if (summary.total_duplicates === 0) {
+        toast.success('✅ No Duplicates Found!');
+        setDetectingDuplicates(false);
+        return;
+      }
+
+      const shouldMark = confirm(`Found ${summary.total_duplicates} duplicates. Mark them now?`);
+      if (!shouldMark) {
+        setDetectingDuplicates(false);
+        return;
+      }
+
+      toast.loading('🔧 Marking duplicates...', { id: 'dedup-mark' });
+      const markResponse = await base44.functions.invoke('detectDuplicates', { mode: 'live' });
+      toast.dismiss('dedup-mark');
+
+      toast.success('✅ Deduplication Complete!', {
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
+    } catch (error) {
+      toast.dismiss('dedup-analysis');
+      toast.dismiss('dedup-mark');
+      toast.error('❌ Deduplication Failed', {
+        description: error.message
+      });
+    } finally {
+      setDetectingDuplicates(false);
+    }
+  };
+
+  const generatePropertyDescriptions = async () => {
+    if (!confirm('🤖 Generate AI Descriptions?')) return;
+    setGeneratingDescriptions(true);
+    toast.loading('🤖 AI Description Generator running...', { id: 'desc-gen' });
+
+    try {
+      const response = await base44.functions.invoke('generatePropertyDescriptions', { regenerateAll: false });
+      toast.dismiss('desc-gen');
+
+      toast.success('✅ Descriptions Generated!', {
+        duration: 6000
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      toast.dismiss('desc-gen');
+      toast.error('❌ Description Generation Failed', {
+        description: error.message
+      });
+    } finally {
+      setGeneratingDescriptions(false);
+    }
+  };
+
+  const handleBuildingQuery = async () => {
+    if (!buildingQuery.trim()) {
+      toast.error('Please enter a building query');
+      return;
+    }
+
+    setQueryingBuilding(true);
+    setBuildingQueryResult(null);
+
+    try {
+      const response = await base44.agents.invoke('building_assistant', {
+        query: buildingQuery
+      });
+
+      setBuildingQueryResult(response);
+      toast.success('✅ Query Complete!');
+    } catch (error) {
+      toast.error('❌ Query Failed', {
+        description: error.message
+      });
+    } finally {
+      setQueryingBuilding(false);
+    }
+  };
+
   const testPropAIConnection = async () => {
     setTestingPropAI(true);
     toast.loading('🔌 Testing PropAI Live connection...', { id: 'propai-test' });
@@ -222,8 +455,7 @@ export default function Admin() {
     } catch (error) {
       toast.dismiss('propai-test');
       toast.error('❌ Test Failed', {
-        description: error.message,
-        duration: 5000
+        description: error.message
       });
     } finally {
       setTestingPropAI(false);
@@ -231,10 +463,7 @@ export default function Admin() {
   };
 
   const backfillCustomIds = async () => {
-    if (!confirm('🔧 Backfill Custom IDs?\n\nThis will:\n• Generate CHT-{LOC}-XXXX for Properties\n• Generate CHR-BRK-XXXX for Brokers\n• Generate CHR-REQ-XXXX for Requirements\n\nRun dry-run first?')) {
-      return;
-    }
-
+    if (!confirm('🔧 Backfill Custom IDs?\n\nRun dry-run first?')) return;
     setBackfillingIds(true);
     toast.loading('🔍 Analyzing missing custom IDs...', { id: 'customid-dry-run' });
 
@@ -246,22 +475,12 @@ export default function Admin() {
       const totalMissing = analysis.total_missing;
 
       if (totalMissing === 0) {
-        toast.success('✅ All Custom IDs Present!', {
-          description: 'Every record already has a custom_id',
-          duration: 4000
-        });
+        toast.success('✅ All Custom IDs Present!');
         setBackfillingIds(false);
         return;
       }
 
-      const shouldFix = confirm(
-        `Found ${totalMissing} records missing custom_id:\n\n` +
-        `• Properties: ${analysis.properties_missing}\n` +
-        `• Brokers: ${analysis.brokers_missing}\n` +
-        `• Requirements: ${analysis.requirements_missing}\n\n` +
-        `Generate custom IDs now?`
-      );
-
+      const shouldFix = confirm(`Found ${totalMissing} records missing custom_id. Generate now?`);
       if (!shouldFix) {
         setBackfillingIds(false);
         return;
@@ -271,23 +490,18 @@ export default function Admin() {
       const fixResponse = await base44.functions.invoke('backfillCustomIds', { mode: 'fix' });
       toast.dismiss('customid-fix');
 
-      const results = fixResponse.data.results;
-
       toast.success('✅ Custom IDs Generated!', {
-        description: `Properties: ${results.properties_fixed} • Brokers: ${results.brokers_fixed} • Requirements: ${results.requirements_fixed}`,
         duration: 8000
       });
 
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
       queryClient.invalidateQueries({ queryKey: ['brokers'] });
       queryClient.invalidateQueries({ queryKey: ['requirements'] });
-
     } catch (error) {
       toast.dismiss('customid-dry-run');
       toast.dismiss('customid-fix');
       toast.error('❌ Custom ID Backfill Failed', {
-        description: error.message || 'Something went wrong',
-        duration: 5000
+        description: error.message
       });
     } finally {
       setBackfillingIds(false);
@@ -322,10 +536,13 @@ export default function Admin() {
     properties: {
       total: properties.length,
       active: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
+      duplicates: duplicates.length,
+      needsPhotos: properties.filter(p => !p.images || p.images.length === 0).length,
     },
     brokers: {
       total: brokers.length,
       active: brokers.filter(b => b.status === "Active").length,
+      verified: brokers.filter(b => b.verified).length,
     },
     requirements: {
       total: requirements.length,
@@ -458,6 +675,47 @@ export default function Admin() {
     );
   };
 
+  // Building Query Modal
+  const BuildingQueryModal = () => (
+    <Dialog open={buildingQueryModalOpen} onOpenChange={setBuildingQueryModalOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-blue-500" />
+            Building Intelligence Tool
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            placeholder='e.g., "Tell me about Maker Tower"'
+            value={buildingQuery}
+            onChange={(e) => setBuildingQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleBuildingQuery()}
+          />
+          <div className="flex gap-2">
+            <Button
+              onClick={handleBuildingQuery}
+              disabled={queryingBuilding || !buildingQuery.trim()}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex-1"
+            >
+              {queryingBuilding ? 'Querying...' : 'Query Buildings'}
+            </Button>
+            <Button onClick={() => setBuildingQueryModalOpen(false)} variant="outline">
+              Close
+            </Button>
+          </div>
+          {buildingQueryResult && (
+            <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+              <pre className="whitespace-pre-wrap text-sm">
+                {typeof buildingQueryResult === 'string' ? buildingQueryResult : JSON.stringify(buildingQueryResult, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -491,6 +749,7 @@ export default function Admin() {
               </div>
             </div>
 
+            {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={backfillCustomIds}
@@ -502,6 +761,14 @@ export default function Admin() {
                 {backfillingIds ? 'Fixing...' : 'Fix Custom IDs'}
               </Button>
               <Button
+                onClick={() => setBuildingQueryModalOpen(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Building Intel
+              </Button>
+              <Button
                 onClick={testPropAIConnection}
                 disabled={testingPropAI}
                 size="sm"
@@ -511,9 +778,68 @@ export default function Admin() {
                 <Zap className={`w-4 h-4 mr-2 ${testingPropAI ? 'animate-spin' : ''}`} />
                 {testingPropAI ? 'Testing...' : 'Test PropAI'}
               </Button>
+              <Button
+                onClick={loadDealsRadar}
+                disabled={dealsLoading}
+                size="sm"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {dealsLoading ? 'Loading...' : 'Deals'}
+              </Button>
+              <Button
+                onClick={detectDuplicates}
+                disabled={detectingDuplicates}
+                size="sm"
+                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white"
+              >
+                <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
+                {detectingDuplicates ? 'Scanning...' : 'Dedup'}
+              </Button>
+              <Button
+                onClick={generatePropertyDescriptions}
+                disabled={generatingDescriptions}
+                size="sm"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+              >
+                <Sparkles className={`w-4 h-4 mr-2 ${generatingDescriptions ? 'animate-spin' : ''}`} />
+                {generatingDescriptions ? 'Writing...' : 'Descriptions'}
+              </Button>
+              <Button onClick={recalculateBrokerTrust} size="sm" variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Trust
+              </Button>
+              <Button
+                onClick={runDataCleanup}
+                disabled={generatingSlugs} // Reusing generatingSlugs for data cleanup loading state
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                Fix Data
+              </Button>
+              <Button
+                onClick={generatePropertySlugs}
+                disabled={generatingSlugs}
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                SEO Slugs
+              </Button>
+              <Button
+                onClick={backfillBuildings}
+                disabled={generatingSlugs} // Reusing generatingSlugs for backfillBuildings loading state
+                size="sm"
+                variant="outline"
+              >
+                <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                Buildings
+              </Button>
             </div>
           </div>
 
+          {/* Tab Selector */}
           <div className="flex items-center gap-3">
             <Select value={activeTab} onValueChange={setActiveTab}>
               <SelectTrigger className="w-full md:w-80 h-12 font-semibold text-base bg-white border-2">
@@ -530,6 +856,12 @@ export default function Admin() {
                   <div className="flex items-center gap-2">
                     <Home className="w-4 h-4" />
                     <span>Properties ({stats.properties.active})</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="duplicates">
+                  <div className="flex items-center gap-2">
+                    <Copy className="w-4 h-4" />
+                    <span>Duplicates ({stats.properties.duplicates})</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="brokers">
@@ -754,6 +1086,107 @@ export default function Admin() {
             </motion.div>
           )}
 
+          {/* Duplicates Tab */}
+          {activeTab === "duplicates" && (
+            <motion.div
+              key="duplicates"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="space-y-4">
+                <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                  <p className="text-sm text-slate-500">Showing {duplicates.length} potential duplicate properties.</p>
+                </div>
+                {duplicatesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+                  </div>
+                ) : duplicates.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
+                    <Copy className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">No duplicates found</h3>
+                    <p className="text-slate-500">All properties are unique (or haven't been scanned yet).</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {duplicates.map((property) => (
+                      <div
+                        key={property.id}
+                        className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="relative w-20 h-20 flex-shrink-0">
+                            {property.images && property.images[0] ? (
+                              <img 
+                                src={property.images[0]} 
+                                alt=""
+                                className="w-full h-full object-cover rounded-xl"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center">
+                                <Home className="w-8 h-8 text-slate-300" />
+                              </div>
+                            )}
+                            <Badge className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
+                              {property.images?.length || 0}
+                            </Badge>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-2 mb-2 flex-wrap">
+                              <Badge className="bg-orange-400/20 text-orange-900 border-orange-400 text-xs">
+                                Duplicate
+                              </Badge>
+                              <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
+                                {property.bhk}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {property.status}
+                              </Badge>
+                              {property.custom_id && (
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {property.custom_id}
+                                </Badge>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                              {property.ai_title || `${property.bhk} in ${property.location}`}
+                            </h3>
+                            <div className="flex items-center gap-4 text-xs text-slate-500">
+                              <span>{property.location}</span>
+                              <span>•</span>
+                              <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              onClick={() => handleViewProperty(property.id)}
+                              size="sm"
+                              variant="outline"
+                              className="h-9"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteProperty(property.id)}
+                              size="sm"
+                              variant="outline"
+                              className="h-9 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Brokers Tab */}
           {activeTab === "brokers" && (
             <motion.div
@@ -927,6 +1360,7 @@ export default function Admin() {
       </div>
 
       <ImageUploadModal />
+      <BuildingQueryModal />
     </div>
   );
 }
