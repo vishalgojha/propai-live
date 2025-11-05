@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -204,6 +205,8 @@ IMPORTANT:
 
     // STEP 4: HANDLE BUILDING WITH FUZZY MATCHING (~300ms)
     let buildingId = null;
+    let createdNewBuilding = false;
+    
     if (extractedData.building_name) {
       try {
         const allBuildings = await base44.asServiceRole.entities.Building.list();
@@ -268,6 +271,7 @@ IMPORTANT:
             verified: false
           });
           buildingId = newBuilding.id;
+          createdNewBuilding = true;
           console.log(`✓ Created new building ${buildingCustomId}: ${extractedData.building_name}`);
         }
       } catch (buildingError) {
@@ -361,10 +365,17 @@ IMPORTANT:
 
     // STEP 7: BACKGROUND TASKS (non-blocking, fire-and-forget)
     Promise.all([
-      // Building Intelligence (if building exists)
+      // Building Intelligence with Auto-Enrichment
       buildingId ? 
         base44.asServiceRole.functions.invoke('buildingIntelligence', { 
-          building_id: buildingId 
+          building_id: buildingId,
+          building_name: extractedData.building_name,
+          location: extractedData.location
+        }).then(() => {
+          console.log(`✓ Building intelligence queued for ${extractedData.building_name}`);
+          if (createdNewBuilding) {
+            console.log('  └─ Auto-enrichment will fetch: developer, amenities, year built, etc.');
+          }
         }).catch(err => console.warn('Building intelligence failed:', err.message))
         : Promise.resolve(),
       
@@ -386,6 +397,9 @@ IMPORTANT:
     ]).catch(err => console.warn('Background tasks failed:', err.message));
 
     console.log(`✅ Property parsed successfully in ~1-2 seconds`);
+    if (createdNewBuilding) {
+      console.log(`🏗️ New building created - auto-enrichment running in background`);
+    }
 
     return Response.json({
       success: true,
@@ -397,7 +411,8 @@ IMPORTANT:
         broker_custom_id: broker.custom_id,
         broker_name: broker.name,
         building_custom_id: buildingId ? 
-          (allBuildings.find(b => b.id === buildingId)?.custom_id) : null
+          (allBuildings.find(b => b.id === buildingId)?.custom_id) : null,
+        building_enrichment_queued: !!buildingId
       }
     });
 
