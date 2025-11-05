@@ -1426,7 +1426,7 @@ export default function Admin() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
                     <h3 className="text-lg font-bold text-slate-900 mb-3">Properties needing photos</h3>
-                    <p className="text-sm text-slate-600 mb-4">{stats.properties.needsPhotos} properties have no images</p>
+                    <p className="text-sm text-slate-600 mb-4">{stats.properties.needsPhotos} potential duplicates found</p>
                     <Button
                       onClick={() => {
                         setActiveTab("properties");
@@ -1525,7 +1525,7 @@ export default function Admin() {
                           >
                             <div className="flex items-center gap-4">
                               <div className="relative w-20 h-20 flex-shrink-0">
-                                {property.images?.[0] ? (
+                                {property.images && property.images[0] ? (
                                   <img 
                                     src={property.images[0]} 
                                     alt=""
@@ -1542,7 +1542,7 @@ export default function Admin() {
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-start gap-2 mb-2">
+                                <div className="flex items-start gap-2 mb-2 flex-wrap">
                                   <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
                                     {property.bhk}
                                   </Badge>
