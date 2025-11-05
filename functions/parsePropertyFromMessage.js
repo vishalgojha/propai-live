@@ -233,16 +233,33 @@ Return as JSON:
       source_text: message,
       ai_title: aiContent.title,
       ai_description: aiContent.description,
-      broker_id: broker.id, // ✅ CRITICAL: Link to actual broker
-      broker_contact: broker.phone, // Cache for performance
+      broker_id: broker.id,
+      broker_contact: broker.phone,
       broker_trust_score: broker.trust_score || 50,
       status: "Active",
-      assigned_agent_name: "Vishal" // UI layer routing
+      assigned_agent_name: "Vishal"
     };
 
     const property = await base44.asServiceRole.entities.Property.create(propertyData);
 
     console.log(`✅ Property created: ${property.id} (${customId}) | Broker: ${broker.id} (${broker.custom_id})`);
+
+    // 6. SEND TO PROPAI LIVE
+    try {
+      await base44.asServiceRole.functions.invoke('sendToPropAI', {
+        data_type: 'property',
+        data: {
+          ...propertyData,
+          id: property.id,
+          broker_name: broker.name,
+          broker_phone: broker.phone,
+          broker_agency: broker.agency_name
+        }
+      });
+      console.log('✅ Sent to PropAI Live');
+    } catch (propaiError) {
+      console.error('⚠️ PropAI sync failed (non-blocking):', propaiError.message);
+    }
 
     return Response.json({
       success: true,

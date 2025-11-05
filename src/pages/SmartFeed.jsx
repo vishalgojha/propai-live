@@ -53,15 +53,17 @@ export default function SmartFeed() {
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.filter({ 
-      status: "Active",
-      is_duplicate: false
-    }, "-created_date"),
+    queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
   });
 
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
+      // Exclude inactive and duplicate properties
+      if (property.status !== "Active" || property.is_duplicate === true) {
+        return false;
+      }
+
       // Text search
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -147,7 +149,7 @@ export default function SmartFeed() {
   const hasMore = itemsToShow < filteredProperties.length;
 
   const loadMore = () => {
-    setItemsToShow(prev => prev + ITEMS_PER_PAGE);
+    setItemsToShow(prev => Math.min(prev + ITEMS_PER_PAGE, filteredProperties.length));
   };
 
   const clearFilters = () => {
