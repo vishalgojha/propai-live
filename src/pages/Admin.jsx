@@ -63,6 +63,9 @@ export default function Admin() {
   // Slug generation and building backfill state (reused for general processing)
   const [generatingSlugs, setGeneratingSlugs] = useState(false);
 
+  // Duplicate detection state
+  const [detectingDuplicates, setDetectingDuplicates] = useState(false);
+
   // Blog generation states
   const [blogGenModalOpen, setBlogGenModalOpen] = useState(false);
   const [generatingBlog, setGeneratingBlog] = useState(false);
@@ -491,6 +494,97 @@ export default function Admin() {
       });
     } finally {
       setGeneratingSlugs(false);
+    }
+  };
+
+  const detectDuplicates = async () => {
+    if (!confirm('🔍 Detect Duplicates?\n\nThis will:\n• Scan all active properties\n• Find exact/similar matches\n• Mark duplicates automatically\n\nRun analysis first?')) {
+      return;
+    }
+
+    setDetectingDuplicates(true);
+
+    // Dry run first
+    toast.loading('🔍 Analyzing properties for duplicates...', {
+      description: 'Checking for matching building, BHK, price, floor...',
+      className: 'bg-gradient-to-r from-orange-600 to-amber-600 text-white border-0',
+      id: 'dedup-analysis'
+    });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('detectDuplicates', { mode: 'dry_run' });
+      toast.dismiss('dedup-analysis');
+
+      const summary = dryRunResponse.data.summary;
+
+      if (summary.total_duplicates === 0) {
+        toast.success('✅ No Duplicates Found!', {
+          description: `Scanned ${summary.total_properties_scanned} properties - all unique`,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 4000
+        });
+        setDetectingDuplicates(false);
+        return;
+      }
+
+      // Show results and confirm marking
+      const shouldMark = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found ${summary.duplicate_groups_found} duplicate groups:\n` +
+        `• ${summary.total_duplicates} properties are duplicates\n` +
+        `• ${summary.total_properties_scanned - summary.total_duplicates} unique properties\n\n` +
+        `Mark duplicates now?\n` +
+        `(Oldest listing in each group will be kept as original)`
+      );
+
+      if (!shouldMark) {
+        setDetectingDuplicates(false);
+        return;
+      }
+
+      // Run live mode
+      toast.loading('🔧 Marking duplicates...', {
+        description: 'Updating property records...',
+        className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0',
+        id: 'dedup-mark'
+      });
+
+      const markResponse = await base44.functions.invoke('detectDuplicates', { mode: 'live' });
+      toast.dismiss('dedup-mark');
+
+      const results = markResponse.data.summary;
+
+      toast.success('✅ Deduplication Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Properties cleaned up successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Scanned: {results.total_properties_scanned} properties</div>
+              <div>• Found: {results.duplicate_groups_found} duplicate groups</div>
+              <div>• Marked: {results.duplicates_marked} as duplicates</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
+
+    } catch (error) {
+      toast.dismiss('dedup-analysis');
+      toast.dismiss('dedup-mark');
+      toast.error('❌ Deduplication Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setDetectingDuplicates(false);
     }
   };
 
@@ -1029,6 +1123,15 @@ export default function Admin() {
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 {dealsLoading ? 'Loading...' : 'Deals'}
+              </Button>
+              <Button
+                onClick={detectDuplicates}
+                disabled={detectingDuplicates}
+                size="sm"
+                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white"
+              >
+                <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
+                {detectingDuplicates ? 'Scanning...' : 'Dedup'}
               </Button>
               <Button
                 onClick={recalculateBrokerTrust}
