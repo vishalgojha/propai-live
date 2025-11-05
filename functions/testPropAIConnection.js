@@ -20,10 +20,10 @@ Deno.serve(async (req) => {
       return Response.json({ 
         success: false,
         error: 'Unauthorized - Admin access required' 
-      }, { status: 401 });
+      });
     }
 
-    const PROPAI_URL = 'https://propai-live.deno.dev/api/receive';
+    const PROPAI_URL = Deno.env.get('PROPAI_LIVE_URL') || 'https://propai-live.deno.dev/api/receive';
     const PROPAI_API_KEY = Deno.env.get('PROPAI_LIVE_API_KEY');
 
     console.log('🧪 Testing PropAI Live connection...');
@@ -32,8 +32,8 @@ Deno.serve(async (req) => {
     if (!PROPAI_API_KEY) {
       return Response.json({ 
         success: false,
-        error: 'PROPAI_LIVE_API_KEY not set in environment variables',
-        solution: 'Go to Dashboard → Settings → Environment Variables and add PROPAI_LIVE_API_KEY'
+        error: 'PROPAI_LIVE_API_KEY not set',
+        help: '⚙️ PropAI sync is optional. If you want to enable it:\n\n1. Deploy PropAI Live endpoint\n2. Go to Dashboard → Settings → Environment Variables\n3. Add PROPAI_LIVE_API_KEY with your key\n\nOtherwise, property parsing will work fine without it.'
       });
     }
 
@@ -43,12 +43,11 @@ Deno.serve(async (req) => {
     const testPayload = {
       data_type: 'test_ping',
       data: {
-        source: 'chariot_parser',
+        source: 'chariot_realty',
         test: true,
         timestamp: new Date().toISOString(),
         message: 'Testing connection from Chariot Realty'
-      },
-      api_key: PROPAI_API_KEY
+      }
     };
 
     console.log('📤 Sending test payload to:', PROPAI_URL);
@@ -68,43 +67,48 @@ Deno.serve(async (req) => {
 
       responseText = await response.text();
       console.log('📥 PropAI response status:', response.status);
-      console.log('📥 PropAI response:', responseText.substring(0, 200));
 
     } catch (fetchError) {
       console.error('❌ Network error:', fetchError);
       return Response.json({
         success: false,
-        error: `Network error: ${fetchError.message}`,
-        details: 'Could not reach PropAI Live endpoint',
-        possible_causes: [
-          'PropAI Live endpoint is down',
-          'Network/DNS issue',
-          'Firewall blocking connection',
-          'Invalid URL'
-        ],
-        endpoint: PROPAI_URL
+        error: 'Network Error',
+        details: `Could not reach PropAI endpoint: ${fetchError.message}`,
+        help: '🔧 Possible fixes:\n\n1. Check if PropAI Live is deployed at: ' + PROPAI_URL + '\n2. Verify the endpoint URL is correct\n3. Check network/firewall settings\n\n💡 PropAI sync is optional - property parsing works without it!'
       });
     }
 
+    // Handle 404 specifically
+    if (response.status === 404) {
+      return Response.json({
+        success: false,
+        error: 'PropAI Endpoint Not Found (404)',
+        details: `The endpoint ${PROPAI_URL} returned 404 - it might not be deployed yet.`,
+        help: '🚀 To set up PropAI Live:\n\n1. Deploy the PropAI Live Deno app to Deno Deploy\n2. Create an endpoint at /api/receive that accepts POST requests\n3. Verify the URL matches: ' + PROPAI_URL + '\n\n💡 Meanwhile, property parsing works fine without PropAI sync!\n\nIf you don\'t need PropAI, you can remove the PROPAI_LIVE_API_KEY from environment variables.'
+      });
+    }
+
+    // Handle other errors
     if (!response.ok) {
       return Response.json({
         success: false,
-        error: `PropAI rejected connection (HTTP ${response.status})`,
+        error: `PropAI Error (HTTP ${response.status})`,
         details: responseText,
         possible_causes: [
-          response.status === 401 || response.status === 403 ? 'Invalid API key' : 'Unknown error',
-          'PropAI Live endpoint configuration issue',
-          'API key not matching on PropAI side'
+          response.status === 401 || response.status === 403 ? '🔑 Invalid API key' : '❌ Server error',
+          '🔌 PropAI endpoint configuration issue',
+          '🔐 API key mismatch between Chariot and PropAI'
         ],
         connection_info: {
           endpoint: PROPAI_URL,
           status_code: response.status,
           api_key_preview: PROPAI_API_KEY.substring(0, 8) + '...'
-        }
+        },
+        help: 'Check PropAI Live logs for more details'
       });
     }
 
-    // Try to parse response
+    // Success!
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(responseText);
@@ -116,7 +120,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: '✅ PropAI Live connection working!',
+      message: '✅ PropAI Live Connected Successfully!',
       propai_response: parsedResponse,
       connection_details: {
         endpoint: PROPAI_URL,
@@ -124,16 +128,17 @@ Deno.serve(async (req) => {
         api_key_preview: PROPAI_API_KEY.substring(0, 8) + '...',
         response_status: response.status,
         timestamp: new Date().toISOString()
-      }
+      },
+      next_steps: 'PropAI sync is active. Property data will be synced automatically in the background.'
     });
 
   } catch (error) {
     console.error('❌ PropAI connection test failed:', error);
     return Response.json({ 
       success: false,
-      error: `Unexpected error: ${error.message}`,
+      error: `Unexpected Error: ${error.message}`,
       stack: error.stack,
-      help: 'Check Deno logs for more details'
+      help: 'Check Deno logs for more details. PropAI sync is optional - property parsing works without it.'
     });
   }
 });
