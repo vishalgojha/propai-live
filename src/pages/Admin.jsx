@@ -1514,7 +1514,6 @@ export default function Admin() {
                   <>
                     <div className="space-y-3">
                       {paginatedProperties.map((property) => {
-                        // PropAI sync status
                         const syncStatus = property.propai_sync_status;
                         const isSynced = syncStatus?.success === true;
                         const syncFailed = syncStatus?.attempted === true && syncStatus?.success === false;
@@ -1558,7 +1557,6 @@ export default function Admin() {
                                     </Badge>
                                   )}
                                   
-                                  {/* PropAI Sync Status Badge */}
                                   {isSynced && (
                                     <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
                                       <Zap className="w-3 h-3 mr-1" />
