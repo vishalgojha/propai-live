@@ -83,6 +83,9 @@ export default function Admin() {
   const [buildingQueryResult, setBuildingQueryResult] = useState(null);
   const [queryingBuilding, setQueryingBuilding] = useState(false);
 
+  // PropAI Connection Test State
+  const [testingPropAI, setTestingPropAI] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -805,6 +808,65 @@ export default function Admin() {
     }
   };
 
+  const testPropAIConnection = async () => {
+    setTestingPropAI(true);
+
+    toast.loading('🔌 Testing PropAI Live connection...', {
+      description: 'Checking API key, endpoint, and sending test payload...',
+      className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0',
+      id: 'propai-test'
+    });
+
+    try {
+      const response = await base44.functions.invoke('testPropAIConnection', {});
+      toast.dismiss('propai-test');
+
+      if (response.data.success) {
+        toast.success('✅ PropAI Live Connected!', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">Connection working perfectly</div>
+              <div className="text-xs opacity-90 space-y-1">
+                <div>✓ Endpoint: {response.data.connection_details.endpoint}</div>
+                <div>✓ API Key: {response.data.connection_details.api_key_preview}</div>
+                <div>✓ Status: {response.data.connection_details.response_status}</div>
+              </div>
+            </div>
+          ),
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 6000
+        });
+      } else {
+        toast.error('❌ PropAI Connection Failed', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">{response.data.error}</div>
+              {response.data.possible_causes && (
+                <div className="text-xs opacity-90 space-y-1">
+                  <div>Possible causes:</div>
+                  {response.data.possible_causes.map((cause, idx) => (
+                    <div key={idx}>• {cause}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ),
+          className: 'bg-red-600 text-white border-0',
+          duration: 8000
+        });
+      }
+    } catch (error) {
+      toast.dismiss('propai-test');
+      toast.error('❌ Test Failed', {
+        description: error.message || 'Unable to test PropAI connection',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setTestingPropAI(false);
+    }
+  };
+
   // Stats
   const stats = {
     properties: {
@@ -1180,6 +1242,16 @@ export default function Admin() {
                 Building Intel
               </Button>
               <Button
+                onClick={testPropAIConnection}
+                disabled={testingPropAI}
+                size="sm"
+                variant="outline"
+                className="border-green-300 text-green-700 hover:bg-green-50"
+              >
+                <Zap className={`w-4 h-4 mr-2 ${testingPropAI ? 'animate-spin' : ''}`} />
+                {testingPropAI ? 'Testing...' : 'Test PropAI'}
+              </Button>
+              <Button
                 onClick={loadDealsRadar}
                 disabled={dealsLoading}
                 size="sm"
@@ -1441,90 +1513,114 @@ export default function Admin() {
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {paginatedProperties.map((property) => (
-                        <div
-                          key={property.id}
-                          className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="relative w-20 h-20 flex-shrink-0">
-                              {property.images?.[0] ? (
-                                <img 
-                                  src={property.images[0]} 
-                                  alt=""
-                                  className="w-full h-full object-cover rounded-xl"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center">
-                                  <Building2 className="w-8 h-8 text-slate-300" />
-                                </div>
-                              )}
-                              <Badge className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
-                                {property.images?.length || 0}
-                              </Badge>
-                            </div>
+                      {paginatedProperties.map((property) => {
+                        // PropAI sync status
+                        const syncStatus = property.propai_sync_status;
+                        const isSynced = syncStatus?.success === true;
+                        const syncFailed = syncStatus?.attempted === true && syncStatus?.success === false;
+                        
+                        return (
+                          <div
+                            key={property.id}
+                            className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-[#FFD300] hover:shadow-md transition-all"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="relative w-20 h-20 flex-shrink-0">
+                                {property.images?.[0] ? (
+                                  <img 
+                                    src={property.images[0]} 
+                                    alt=""
+                                    className="w-full h-full object-cover rounded-xl"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center">
+                                    <Building2 className="w-8 h-8 text-slate-300" />
+                                  </div>
+                                )}
+                                <Badge className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
+                                  {property.images?.length || 0}
+                                </Badge>
+                              </div>
 
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start gap-2 mb-2">
-                                <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
-                                  {property.bhk}
-                                </Badge>
-                                <Badge variant="outline" className={`text-xs ${
-                                  property.status === "Active" ? "border-green-500 text-green-700" : ""
-                                }`}>
-                                  {property.status}
-                                </Badge>
-                                {property.custom_id && (
-                                  <Badge variant="outline" className="font-mono text-xs">
-                                    {property.custom_id}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-2 mb-2">
+                                  <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] text-xs">
+                                    {property.bhk}
                                   </Badge>
-                                )}
+                                  <Badge variant="outline" className={`text-xs ${
+                                    property.status === "Active" ? "border-green-500 text-green-700" : ""
+                                  }`}>
+                                    {property.status}
+                                  </Badge>
+                                  {property.custom_id && (
+                                    <Badge variant="outline" className="font-mono text-xs">
+                                      {property.custom_id}
+                                    </Badge>
+                                  )}
+                                  
+                                  {/* PropAI Sync Status Badge */}
+                                  {isSynced && (
+                                    <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
+                                      <Zap className="w-3 h-3 mr-1" />
+                                      PropAI ✓
+                                    </Badge>
+                                  )}
+                                  {syncFailed && (
+                                    <Badge 
+                                      className="bg-red-500/20 text-red-700 border-red-500 text-xs cursor-help"
+                                      title={`PropAI sync failed: ${syncStatus.error || 'Unknown error'}`}
+                                    >
+                                      <AlertTriangle className="w-3 h-3 mr-1" />
+                                      Sync Failed
+                                    </Badge>
+                                  )}
+                                </div>
+                                <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                                  {property.ai_title || `${property.bhk} in ${property.location}`}
+                                </h3>
+                                <div className="flex items-center gap-4 text-xs text-slate-500">
+                                  <span>{property.location}</span>
+                                  <span>•</span>
+                                  <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                                  {property.carpet_area && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{property.carpet_area} sqft</span>
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                              <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
-                                {property.ai_title || `${property.bhk} in ${property.location}`}
-                              </h3>
-                              <div className="flex items-center gap-4 text-xs text-slate-500">
-                                <span>{property.location}</span>
-                                <span>•</span>
-                                <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
-                                {property.carpet_area && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{property.carpet_area} sqft</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
 
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <Button
-                                onClick={() => handleImageUpload(property)}
-                                size="sm"
-                                variant="outline"
-                                className="h-9"
-                              >
-                                <Upload className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                onClick={() => handleViewProperty(property.id)}
-                                size="sm"
-                                variant="outline"
-                                className="h-9"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                onClick={() => handleDeleteProperty(property.id)}
-                                size="sm"
-                                variant="outline"
-                                className="h-9 text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Button
+                                  onClick={() => handleImageUpload(property)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-9"
+                                >
+                                  <Upload className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => handleViewProperty(property.id)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-9"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => handleDeleteProperty(property.id)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-9 text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {totalPages > 1 && (
@@ -1765,7 +1861,7 @@ export default function Admin() {
                           </div>
                         </div>
                       );
-                    }))}
+                    })}
                 </div>
               </div>
             </motion.div>
