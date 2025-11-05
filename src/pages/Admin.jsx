@@ -544,21 +544,40 @@ export default function Admin() {
       const response = await base44.functions.invoke('testPropAIConnection', {});
       toast.dismiss('propai-test');
 
+      console.log('PropAI Test Response:', response.data);
+
       if (response.data.success) {
         toast.success('✅ PropAI Live Connected!', {
           description: 'Connection working perfectly',
-          duration: 6000
+          duration: 6000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
         });
       } else {
+        // Show detailed error with help text
+        const errorMessage = response.data.error || 'Unknown error';
+        
         toast.error('❌ PropAI Connection Failed', {
-          description: response.data.error,
-          duration: 8000
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">{errorMessage}</div>
+              {response.data.help && (
+                <div className="text-xs opacity-90 whitespace-pre-line">
+                  {response.data.help}
+                </div>
+              )}
+            </div>
+          ),
+          duration: 10000,
+          className: 'bg-red-600 text-white border-0'
         });
       }
     } catch (error) {
       toast.dismiss('propai-test');
+      console.error('PropAI Test Error:', error);
       toast.error('❌ Test Failed', {
-        description: error.message
+        description: error.response?.data?.error || error.message || 'Unknown error occurred',
+        duration: 8000,
+        className: 'bg-red-600 text-white border-0'
       });
     } finally {
       setTestingPropAI(false);
