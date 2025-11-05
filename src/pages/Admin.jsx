@@ -57,7 +57,7 @@ export default function Admin() {
 
   // Processing states
   const [dealsLoading, setDealsLoading] = useState(false);
-  const [generatingSlugs, setGeneratingSlugs] = useState(false);
+  const [generatingSlugs, setGeneratingSlugs] = useState(false); // Used for multiple background tasks
   const [detectingDuplicates, setDetectingDuplicates] = useState(false);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   const [testingPropAI, setTestingPropAI] = useState(false);
@@ -292,6 +292,33 @@ export default function Admin() {
     } catch (error) {
       toast.dismiss('building-backfill');
       toast.error('❌ Building Backfill Failed', {
+        description: error.message
+      });
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
+  const recalculateBuildingStats = async () => {
+    if (!confirm('🔢 Recalculate Building Stats?\n\nThis will fix all building listing counts.')) return;
+    setGeneratingSlugs(true);
+    toast.loading('🔢 Recalculating building stats...', { id: 'building-stats' });
+
+    try {
+      const response = await base44.functions.invoke('recalculateBuildingStats', {});
+      toast.dismiss('building-stats');
+      
+      const summary = response.data.summary;
+      toast.success('✅ Building Stats Updated!', {
+        description: `Updated ${summary.buildings_updated} buildings (${summary.buildings_unchanged} unchanged)`,
+        duration: 6000
+      });
+      
+      // Refresh property data as building stats might affect how properties are displayed or linked
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      toast.dismiss('building-stats');
+      toast.error('❌ Stats Recalculation Failed', {
         description: error.message
       });
     } finally {
@@ -920,6 +947,16 @@ export default function Admin() {
               >
                 <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
                 Buildings
+              </Button>
+              <Button
+                onClick={recalculateBuildingStats}
+                disabled={generatingSlugs}
+                size="sm"
+                variant="outline"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              >
+                <TrendingUp className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                Building Stats
               </Button>
             </div>
           </div>

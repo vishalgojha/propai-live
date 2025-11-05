@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -108,15 +109,42 @@ Important:
       }, { status: 400 });
     }
 
-    // STEP 3: HANDLE BROKER (fast - no extra calls)
+    // STEP 3: HANDLE BROKER WITH FUZZY MATCHING
     let broker = null;
     try {
       const allBrokers = await base44.asServiceRole.entities.Broker.list();
       const normalizedPhone = extractedData.broker_phone.replace(/\D/g, '');
+      const normalizedName = extractedData.broker_name.toLowerCase().trim();
       
+      // Try phone match first (most reliable)
       broker = allBrokers.find(b => 
         b.phone && b.phone.replace(/\D/g, '').includes(normalizedPhone.slice(-10))
       );
+
+      // If no phone match, try fuzzy name matching
+      if (!broker) {
+        broker = allBrokers.find(b => {
+          const brokerNameNorm = b.name.toLowerCase().trim();
+          
+          // Exact match
+          if (brokerNameNorm === normalizedName) return true;
+          
+          // Contains match (e.g., "Rahul" matches "Rahul Sharma")
+          if (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm)) {
+            return true;
+          }
+          
+          // Check if same agency
+          if (extractedData.broker_agency && b.agency_name) {
+            const agencyMatch = b.agency_name.toLowerCase() === extractedData.broker_agency.toLowerCase();
+            if (agencyMatch && (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm))) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+      }
 
       if (!broker) {
         const brokerCount = allBrokers.length + 1;
@@ -133,6 +161,7 @@ Important:
           active_listings_count: 1,
           last_activity: new Date().toISOString()
         });
+        console.log(`✓ Created new broker ${brokerCustomId}: ${extractedData.broker_name}`);
       } else {
         const updatedAreasSet = new Set(broker.areas_covered || []);
         if (extractedData.location) updatedAreasSet.add(extractedData.location);
@@ -143,6 +172,7 @@ Important:
           last_activity: new Date().toISOString(),
           areas_covered: Array.from(updatedAreasSet)
         });
+        console.log(`✓ Linked to existing broker ${broker.custom_id}: ${broker.name}`);
       }
     } catch (brokerError) {
       return Response.json({ 
@@ -153,35 +183,84 @@ Important:
       }, { status: 500 });
     }
 
-    // STEP 4: HANDLE BUILDING (fast - minimal logic)
+    // STEP 4: HANDLE BUILDING WITH FUZZY MATCHING
     let buildingId = null;
+    let finalBuildingCustomId = null; // Variable to store custom_id for response
     if (extractedData.building_name) {
       try {
         const allBuildings = await base44.asServiceRole.entities.Building.list();
-        const building = allBuildings.find(b => 
-          b.name.toLowerCase() === extractedData.building_name.toLowerCase() &&
+        const normalizedBuildingName = extractedData.building_name.toLowerCase().trim();
+        
+        // Try exact match first
+        let building = allBuildings.find(b => 
+          b.name.toLowerCase().trim() === normalizedBuildingName &&
           b.location === extractedData.location
         );
         
+        // Try fuzzy match with known variants
+        if (!building) {
+          building = allBuildings.find(b => {
+            if (b.location !== extractedData.location) return false;
+            
+            const buildingNameNorm = b.name.toLowerCase().trim();
+            
+            // Check known variants
+            if (b.known_variants && Array.isArray(b.known_variants)) {
+              const variantMatch = b.known_variants.some(v => 
+                v.toLowerCase().trim() === normalizedBuildingName
+              );
+              if (variantMatch) return true;
+            }
+            
+            // Remove common suffixes for matching
+            const cleanName1 = normalizedBuildingName
+              .replace(/\s+(tower|building|apartments|residency|heights|complex|chs|society)$/i, '');
+            const cleanName2 = buildingNameNorm
+              .replace(/\s+(tower|building|apartments|residency|heights|complex|chs|society)$/i, '');
+            
+            if (cleanName1 === cleanName2 && cleanName1 !== '') return true; // Ensure names aren't empty after cleaning
+            
+            // Contains match (80% similarity)
+            const similarity = calculateSimilarity(normalizedBuildingName, buildingNameNorm);
+            return similarity > 0.8;
+          });
+        }
+        
         if (building) {
           buildingId = building.id;
+          finalBuildingCustomId = building.custom_id;
+          
+          // Add this name as a known variant if not already present
+          const knownVariants = building.known_variants || [];
+          if (!knownVariants.some(v => v.toLowerCase().trim() === normalizedBuildingName)) {
+            knownVariants.push(extractedData.building_name);
+          }
+          
+          // Update building stats
           await base44.asServiceRole.entities.Building.update(building.id, {
             total_listings: (building.total_listings || 0) + 1,
-            active_listings: (building.active_listings || 0) + 1
+            active_listings: (building.active_listings || 0) + 1,
+            known_variants: knownVariants
           });
+          console.log(`✓ Linked to existing building ${building.custom_id}: ${building.name}`);
         } else {
+          // Create new building
           const buildingCount = allBuildings.length + 1;
           const buildingCustomId = `CHR-BLD-${String(buildingCount).padStart(4, '0')}`;
           
           const newBuilding = await base44.asServiceRole.entities.Building.create({
             custom_id: buildingCustomId,
             name: extractedData.building_name,
+            known_variants: [extractedData.building_name],
             location: extractedData.location,
             pocket: extractedData.pocket,
             total_listings: 1,
-            active_listings: 1
+            active_listings: 1,
+            verified: false
           });
           buildingId = newBuilding.id;
+          finalBuildingCustomId = newBuilding.custom_id;
+          console.log(`✓ Created new building ${buildingCustomId}: ${extractedData.building_name}`);
         }
       } catch (buildingError) {
         console.warn('Building link failed (non-blocking):', buildingError.message);
@@ -314,7 +393,8 @@ Return JSON:
         slug: property.slug,
         ai_title: property.ai_title,
         broker_custom_id: broker.custom_id,
-        broker_name: broker.name
+        broker_name: broker.name,
+        building_custom_id: finalBuildingCustomId 
       }
     });
 
@@ -327,3 +407,42 @@ Return JSON:
     }, { status: 500 });
   }
 });
+
+// Helper: Calculate string similarity (Levenshtein-based)
+function calculateSimilarity(str1, str2) {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[str2.length][str1.length];
+}
