@@ -1,29 +1,76 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Building2, Search, MapPin, Star, TrendingUp,
-  Home, Users, AlertCircle, ArrowRight
+  Home, Users, AlertCircle, ArrowRight, Edit, Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import SEO from "../components/SEO";
 
 export default function Buildings() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  
+  // Enrichment modal state
+  const [enrichModalOpen, setEnrichModalOpen] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [enrichFormData, setEnrichFormData] = useState({
+    full_address: '',
+    developer_name: '',
+    year_built: '',
+    total_floors: '',
+    total_units: '',
+    amenities: '',
+    veg_only: false,
+    pet_friendly: false,
+    expat_friendly: false,
+    admin_notes: ''
+  });
+  const [isEnriching, setIsEnriching] = useState(false);
+
+  // Load user for admin check
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        setIsLoadingUser(true);
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
 
   // FIXED: Remove verified filter to show all buildings
   const { data: buildings = [], isLoading } = useQuery({
     queryKey: ['buildings'],
-    queryFn: () => base44.entities.Building.list('-total_listings'),
+    queryFn: () => base44.entities.Building.list('-active_listings'), // Changed from -total_listings to -active_listings as per outline
     initialData: [],
   });
 
@@ -31,6 +78,22 @@ export default function Buildings() {
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.filter({ status: "Active" }),
     initialData: [],
+  });
+
+  const updateBuildingMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Building.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['buildings'] });
+      setEnrichModalOpen(false);
+      setSelectedBuilding(null);
+      toast.success('Building enriched successfully!');
+    },
+    onError: (error) => {
+      console.error("Failed to enrich building:", error);
+      toast.error('Failed to enrich building', {
+        description: error.message || 'An unknown error occurred.'
+      });
+    }
   });
 
   // Get unique locations
@@ -53,9 +116,54 @@ export default function Buildings() {
     navigate(createPageUrl("BuildingProfile") + `?id=${building.id}`);
   };
 
-  const formatPrice = (price, unit) => {
-    if (!price) return "N/A";
-    return unit === "crores" ? `₹${price} Cr` : `₹${price}L`;
+  const handleEnrichClick = (e, building) => {
+    e.stopPropagation(); // Prevent card click
+    setSelectedBuilding(building);
+    setEnrichFormData({
+      full_address: building.full_address || '',
+      developer_name: building.developer_name || '',
+      year_built: building.year_built || '',
+      total_floors: building.total_floors || '',
+      total_units: building.total_units || '',
+      amenities: building.amenities ? building.amenities.join(', ') : '',
+      veg_only: building.veg_only || false,
+      pet_friendly: building.pet_friendly || false,
+      expat_friendly: building.expat_friendly || false,
+      admin_notes: building.admin_notes || ''
+    });
+    setEnrichModalOpen(true);
+  };
+
+  const handleEnrichSubmit = async () => {
+    if (!selectedBuilding) return;
+    
+    setIsEnriching(true);
+    try {
+      const updateData = {
+        full_address: enrichFormData.full_address.trim() || null,
+        developer_name: enrichFormData.developer_name.trim() || null,
+        year_built: enrichFormData.year_built ? parseInt(enrichFormData.year_built, 10) : null,
+        total_floors: enrichFormData.total_floors ? parseInt(enrichFormData.total_floors, 10) : null,
+        total_units: enrichFormData.total_units ? parseInt(enrichFormData.total_units, 10) : null,
+        amenities: enrichFormData.amenities.trim() 
+          ? enrichFormData.amenities.split(',').map(a => a.trim()).filter(Boolean)
+          : [],
+        veg_only: enrichFormData.veg_only,
+        pet_friendly: enrichFormData.pet_friendly,
+        expat_friendly: enrichFormData.expat_friendly,
+        admin_notes: enrichFormData.admin_notes.trim() || null,
+        verified: true // Mark as verified when admin enriches
+      };
+
+      await updateBuildingMutation.mutateAsync({
+        id: selectedBuilding.id,
+        data: updateData
+      });
+    } catch (error) {
+      // Error handled by mutation's onError callback
+    } finally {
+      setIsEnriching(false);
+    }
   };
 
   const breadcrumbSchema = {
@@ -79,6 +187,7 @@ export default function Buildings() {
 
   return (
     <div className="min-h-screen">
+      <Toaster position="top-center" richColors closeButton />
 
       <SEO
         title="Mumbai Buildings Directory | Street-Level Intelligence"
@@ -174,8 +283,20 @@ export default function Buildings() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => handleBuildingClick(building)}
-                className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-purple-200/50 hover:border-purple-400 cursor-pointer group"
+                className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-purple-200/50 hover:border-purple-400 cursor-pointer group relative"
               >
+                {/* Admin Enrich Button */}
+                {isAdmin && (
+                  <Button
+                    onClick={(e) => handleEnrichClick(e, building)}
+                    size="sm"
+                    className="absolute top-4 right-4 z-10 bg-amber-500 hover:bg-amber-600 text-white shadow-md rounded-lg p-2 h-auto"
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    Enrich
+                  </Button>
+                )}
+
                 {/* Content */}
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
@@ -209,19 +330,23 @@ export default function Buildings() {
                   </div>
 
                   {/* Building Type & Developer */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {building.building_type && (
-                      <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 bg-purple-50">
-                        {building.building_type}
-                      </Badge>
-                    )}
-                    {building.management_quality && building.management_quality !== "Unknown" && (
-                      <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
-                        <Star className="w-3 h-3 mr-1" />
-                        {building.management_quality}
-                      </Badge>
-                    )}
-                  </div>
+                  {/* Changed conditional rendering to wrap both badges under building.building_type presence */}
+                  {(building.building_type || building.management_quality) && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {building.building_type && (
+                        <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 bg-purple-50">
+                          {building.building_type}
+                        </Badge>
+                      )}
+                      {building.management_quality && building.management_quality !== "Unknown" && (
+                        <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
+                          <Star className="w-3 h-3 mr-1" />
+                          {building.management_quality}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
 
                   {/* Tags */}
                   {building.tags && building.tags.length > 0 && (
@@ -239,16 +364,25 @@ export default function Buildings() {
                     </div>
                   )}
 
-                  {/* Stats Grid */}
+                  {/* Stats Grid - FIX: Show actual counts OR 0 */}
                   <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-purple-50/60 rounded-2xl">
                     <div className="text-center">
                       <p className="text-xs text-slate-600 mb-1">Active Listings</p>
-                      <p className="text-sm font-bold text-purple-800">{building.active_listings || 0}</p>
+                      <p className="text-lg font-bold text-purple-800">
+                        {building.active_listings !== undefined && building.active_listings !== null 
+                          ? building.active_listings 
+                          : 0}
+                      </p>
                     </div>
-                    {building.year_built && (
+                    {building.year_built ? (
                       <div className="text-center">
                         <p className="text-xs text-slate-600 mb-1">Built</p>
-                        <p className="text-sm font-bold text-purple-800">{building.year_built}</p>
+                        <p className="text-lg font-bold text-purple-800">{building.year_built}</p>
+                      </div>
+                    ) : (building.total_listings !== undefined && building.total_listings !== null) && (
+                      <div className="text-center">
+                        <p className="text-xs text-slate-600 mb-1">Total Listings</p>
+                        <p className="text-lg font-bold text-indigo-800">{building.total_listings || 0}</p>
                       </div>
                     )}
                   </div>
@@ -287,6 +421,147 @@ export default function Buildings() {
           </div>
         )}
       </div>
+
+      {/* Enrichment Modal */}
+      <Dialog open={enrichModalOpen} onOpenChange={setEnrichModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-amber-500" />
+              Enrich Building: {selectedBuilding?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4"> {/* Added padding to dialog content */}
+            <div>
+              <label htmlFor="full_address" className="text-sm font-semibold text-slate-700 mb-1 block">Full Address</label>
+              <Input
+                id="full_address"
+                value={enrichFormData.full_address}
+                onChange={(e) => setEnrichFormData({...enrichFormData, full_address: e.target.value})}
+                placeholder="Complete address with pincode"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="developer_name" className="text-sm font-semibold text-slate-700 mb-1 block">Developer Name</label>
+                <Input
+                  id="developer_name"
+                  value={enrichFormData.developer_name}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, developer_name: e.target.value})}
+                  placeholder="e.g., Lodha, Oberoi"
+                />
+              </div>
+              <div>
+                <label htmlFor="year_built" className="text-sm font-semibold text-slate-700 mb-1 block">Year Built</label>
+                <Input
+                  id="year_built"
+                  type="number"
+                  value={enrichFormData.year_built}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, year_built: e.target.value})}
+                  placeholder="e.g., 2015"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="total_floors" className="text-sm font-semibold text-slate-700 mb-1 block">Total Floors</label>
+                <Input
+                  id="total_floors"
+                  type="number"
+                  value={enrichFormData.total_floors}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, total_floors: e.target.value})}
+                  placeholder="e.g., 45"
+                />
+              </div>
+              <div>
+                <label htmlFor="total_units" className="text-sm font-semibold text-slate-700 mb-1 block">Total Units</label>
+                <Input
+                  id="total_units"
+                  type="number"
+                  value={enrichFormData.total_units}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, total_units: e.target.value})}
+                  placeholder="e.g., 200"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="amenities" className="text-sm font-semibold text-slate-700 mb-1 block">Amenities (comma-separated)</label>
+              <Textarea
+                id="amenities"
+                value={enrichFormData.amenities}
+                onChange={(e) => setEnrichFormData({...enrichFormData, amenities: e.target.value})}
+                placeholder="e.g., Swimming Pool, Gym, Club House, Garden"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-4"> {/* Changed gap to flex-wrap for better responsiveness */}
+              <label htmlFor="veg_only" className="flex items-center gap-2 cursor-pointer">
+                <input
+                  id="veg_only"
+                  type="checkbox"
+                  checked={enrichFormData.veg_only}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, veg_only: e.target.checked})}
+                  className="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                />
+                <span className="text-sm text-slate-700">Veg Only</span>
+              </label>
+              <label htmlFor="pet_friendly" className="flex items-center gap-2 cursor-pointer">
+                <input
+                  id="pet_friendly"
+                  type="checkbox"
+                  checked={enrichFormData.pet_friendly}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, pet_friendly: e.target.checked})}
+                  className="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                />
+                <span className="text-sm text-slate-700">Pet Friendly</span>
+              </label>
+              <label htmlFor="expat_friendly" className="flex items-center gap-2 cursor-pointer">
+                <input
+                  id="expat_friendly"
+                  type="checkbox"
+                  checked={enrichFormData.expat_friendly}
+                  onChange={(e) => setEnrichFormData({...enrichFormData, expat_friendly: e.target.checked})}
+                  className="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                />
+                <span className="text-sm text-slate-700">Expat Friendly</span>
+              </label>
+            </div>
+
+            <div>
+              <label htmlFor="admin_notes" className="text-sm font-semibold text-slate-700 mb-1 block">Admin Notes (Internal)</label>
+              <Textarea
+                id="admin_notes"
+                value={enrichFormData.admin_notes}
+                onChange={(e) => setEnrichFormData({...enrichFormData, admin_notes: e.target.value})}
+                placeholder="Internal notes about this building..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={handleEnrichSubmit}
+                disabled={isEnriching}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              >
+                {isEnriching ? 'Enriching...' : 'Save Enrichment'}
+              </Button>
+              <Button
+                onClick={() => setEnrichModalOpen(false)}
+                variant="outline"
+                disabled={isEnriching}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
