@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import {
   Building2, MapPin, Star, TrendingUp, Home,
   ArrowLeft, Check, Phone, MessageCircle, Sparkles,
-  Users, Calendar, Layers, IndianRupee
+  Users, Calendar, Layers, IndianRupee, Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SEO from "../components/SEO";
@@ -22,6 +22,26 @@ export default function BuildingProfile() {
   const urlParams = new URLSearchParams(window.location.search);
   const buildingId = urlParams.get('id');
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  // Load user for admin check
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        setIsLoadingUser(true);
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
 
   const { data: building, isLoading: buildingLoading } = useQuery({
     queryKey: ['building', buildingId],
@@ -171,7 +191,7 @@ export default function BuildingProfile() {
     );
   }
 
-  if (buildingLoading || !building) {
+  if (buildingLoading || !building || isLoadingUser) {
     return (
       <div className="min-h-screen bg-[#F7F7F7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -438,11 +458,14 @@ export default function BuildingProfile() {
               </div>
             )}
 
-            {/* Admin Notes (if any) */}
-            {building.admin_notes && (
-              <div className="mb-8 p-4 bg-stone-100 rounded-2xl border border-stone-200">
-                <p className="text-xs text-stone-500 mb-2 uppercase tracking-wide">Internal Notes</p>
-                <p className="text-sm text-[#111111]">{building.admin_notes}</p>
+            {/* Admin Notes - ONLY SHOW TO ADMINS */}
+            {isAdmin && building.admin_notes && (
+              <div className="mb-8 p-4 bg-red-50 rounded-2xl border-2 border-red-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4 text-red-600" />
+                  <p className="text-xs text-red-600 font-bold uppercase tracking-wide">⚠️ Admin Only - Internal Notes</p>
+                </div>
+                <p className="text-sm text-slate-900">{building.admin_notes}</p>
               </div>
             )}
 
