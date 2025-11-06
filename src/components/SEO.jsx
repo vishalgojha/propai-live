@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 
 export default function SEO({ 
@@ -41,7 +40,7 @@ export default function SEO({
 
     setOGTag('og:title', title);
     setOGTag('og:description', description);
-    setOGTag('og:image', ogImage || 'https://chariotrealty.com/og-default.jpg');
+    setOGTag('og:image', ogImage || 'https://propai.live/og-default.jpg');
     setOGTag('og:type', 'website');
     setOGTag('og:url', window.location.href);
 
@@ -62,7 +61,7 @@ export default function SEO({
     setTwitterTag('twitter:card', 'summary_large_image');
     setTwitterTag('twitter:title', title);
     setTwitterTag('twitter:description', description);
-    setTwitterTag('twitter:image', ogImage || 'https://chariotrealty.com/og-default.jpg');
+    setTwitterTag('twitter:image', ogImage || 'https://propai.live/og-default.jpg');
 
     // Set canonical URL
     if (canonical) {
