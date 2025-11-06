@@ -97,7 +97,7 @@ export default function HomePage() {
                 className="bg-white hover:bg-sky-50 border-2 border-sky-200 text-sky-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
               >
                 <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Post to Admin +91 226 962 2278
+                Post to Admin
               </Button>
               <Button
                 onClick={() => window.open(whatsappAIUrl, '_blank')}
