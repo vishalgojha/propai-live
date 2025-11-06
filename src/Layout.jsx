@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -330,7 +331,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Resources */}
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
               <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Resources</h4>
               <ul className="space-y-3 text-sm text-slate-600 font-light">
                 <li>
@@ -373,8 +374,42 @@ export default function Layout({ children, currentPageName }) {
               </ul>
             </div>
 
+            {/* Legal - NEW */}
+            <div className="md:col-span-2">
+              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Legal</h4>
+              <ul className="space-y-3 text-sm text-slate-600 font-light">
+                <li>
+                  <Link 
+                    to={createPageUrl("PrivacyPolicy")} 
+                    className="hover:text-sky-600 transition-colors flex items-center group"
+                  >
+                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("TermsOfService")} 
+                    className="hover:text-sky-600 transition-colors flex items-center group"
+                  >
+                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("Disclaimer")} 
+                    className="hover:text-sky-600 transition-colors flex items-center group"
+                  >
+                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Disclaimer
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
             {/* Contact & Social */}
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
               <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Contact</h4>
               <ul className="space-y-3 text-sm text-slate-600 font-light mb-6">
                 <li className="flex items-start gap-2">
