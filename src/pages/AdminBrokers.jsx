@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +50,7 @@ export default function AdminBrokers() {
     refetchInterval: 15000,
   });
 
-  const { data: properties = [] } = useQuery({
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery({
     queryKey: ['admin-properties'],
     queryFn: () => base44.entities.Property.list(),
     initialData: [],
@@ -127,7 +128,7 @@ export default function AdminBrokers() {
     setProfileModalOpen(true);
   };
 
-  // WhatsApp broker
+  // WhatsApp broker (used in modal)
   const handleWhatsApp = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id);
     
@@ -174,6 +175,78 @@ export default function AdminBrokers() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // NEW: WhatsApp Message Generators
+  const generateWelcomeMessage = (broker, property) => {
+    if (!property) return "";
+    return `👋 Hi ${broker.name}! Your property is now LIVE on PropAI SmartFeed!
+
+🏠 ${property.bhk} in ${property.location}
+📍 Custom ID: ${property.custom_id}
+✅ Status: Active & searchable
+
+We're Mumbai's AI-powered property platform. Your listings get matched with verified buyer/tenant requirements automatically.
+
+🌐 propai.live`;
+  };
+
+  const generateMatchAlertMessage = (broker, requirement) => {
+    // This function assumes 'requirement' object structure. For now, it's a placeholder.
+    // In a real app, 'requirement' would be passed from an actual requirement object.
+    // For the UI button, we're making a generic message as we don't have requirement data here.
+    const genericRequirementMessage = `🎯 New client requirements available on PropAI!\n\nCheck SmartFeed for matches in your areas:\n${broker.areas_covered?.join(', ') || 'Mumbai'}\n\n📱 propai.live`;
+    
+    if (!requirement) return genericRequirementMessage;
+
+    return `🎯 URGENT MATCH!
+
+New client requirement:
+🔍 ${requirement.bhk_preference?.join(', ') || 'Property'} in ${requirement.preferred_locations?.join(', ') || 'Mumbai'}
+💰 Budget: ₹${requirement.budget_min || ''}${requirement.budget_max ? `-${requirement.budget_max}` : ''}L
+⏰ Possession: ${requirement.possession_timeline || 'ASAP'}
+
+You have properties in this area. Check SmartFeed to connect!
+
+📱 View matches: propai.live`;
+  };
+
+  const generatePerformanceMessage = (broker) => {
+    const activeLis = broker.active_listings_count || 0;
+    const totalListings = broker.total_listings_count || 0;
+    
+    return `📊 Your PropAI Update
+
+This month:
+✅ ${activeLis} listings live on SmartFeed
+💯 ${broker.trust_score || 50} BrokerTrust™ Score
+${totalListings > 0 ? `📈 ${totalListings} total properties listed` : ''}
+
+Keep sharing quality listings - more views = faster closures!
+
+🌐 propai.live`;
+  };
+
+  const generateQualityRecognitionMessage = (broker) => {
+    return `⭐ Great work, ${broker.name}!
+
+Your listings stand out:
+✅ Complete details
+${broker.trust_score >= 70 ? '📸 Quality photos' : ''}
+💯 ${broker.trust_score || 50} BrokerTrust™ Score
+
+High-quality listings get 3x more views on SmartFeed. Keep it up!
+
+🌐 propai.live`;
+  };
+
+  const handleWhatsAppMessage = (messageText, phone) => {
+    const cleanPhone = phone?.replace(/\D/g, '');
+    if (!cleanPhone) {
+      toast.error('No phone number available');
+      return;
+    }
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
+  };
 
   // Broker Profile Modal
   const BrokerProfileModal = () => {
@@ -469,21 +542,24 @@ export default function AdminBrokers() {
           </div>
         </div>
 
-        {/* Broker List */}
-        {brokersLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+        {/* Broker Cards Grid */}
+        {brokersLoading || propertiesLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-96 rounded-3xl" />
+            ))}
           </div>
         ) : filteredBrokers.length === 0 ? (
-          <div className="bg-white rounded-2xl p-16 text-center border border-slate-200">
-            <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <div className="bg-white rounded-3xl p-16 text-center border-2 border-slate-200">
+            <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-slate-900 mb-2">No brokers found</h3>
             <p className="text-slate-500">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBrokers.map((broker) => {
-              const brokerProps = properties.filter(p => p.broker_id === broker.id);
+              const brokerProperties = properties.filter(p => p.broker_id === broker.id);
+              const mostRecentProperty = brokerProperties.length > 0 ? brokerProperties[0] : null; // Get the first property as "most recent"
               const hasProfile = broker.ai_profile_summary;
               const hasTeam = broker.team_members && broker.team_members.length > 0;
               
@@ -492,112 +568,138 @@ export default function AdminBrokers() {
                   key={broker.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-purple-300 hover:shadow-lg transition-all"
+                  className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all border-2 border-slate-200 overflow-hidden"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="p-5">
                     {/* Broker Icon */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0 mb-4">
                       <Users className="w-8 h-8 text-purple-600" />
                     </div>
 
                     {/* Broker Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-slate-900">{broker.name}</h3>
-                            {broker.verified && (
-                              <Badge className="bg-green-500/20 text-green-700 border-green-500">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Verified
-                              </Badge>
-                            )}
-                            {hasTeam && (
-                              <Badge className="bg-blue-500/20 text-blue-700 border-blue-500">
-                                <Users className="w-3 h-3 mr-1" />
-                                Team of {broker.team_members.length + 1}
-                              </Badge>
-                            )}
-                          </div>
-                          {broker.custom_id && (
-                            <p className="text-xs text-slate-500 font-mono mb-2">{broker.custom_id}</p>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-bold text-slate-900">{broker.name}</h3>
+                          {broker.verified && (
+                            <Badge className="bg-green-500/20 text-green-700 border-green-500">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Verified
+                            </Badge>
+                          )}
+                          {hasTeam && (
+                            <Badge className="bg-blue-500/20 text-blue-700 border-blue-500">
+                              <Users className="w-3 h-3 mr-1" />
+                              Team of {broker.team_members.length + 1}
+                            </Badge>
                           )}
                         </div>
-                        {broker.trust_score && (
-                          <Badge className="bg-[#FFD300] text-black text-lg px-3 py-1">
-                            <Star className="w-4 h-4 mr-1" fill="currentColor" />
-                            {broker.trust_score}
+                        {broker.custom_id && (
+                          <p className="text-xs text-slate-500 font-mono mb-2">{broker.custom_id}</p>
+                        )}
+                      </div>
+                      {broker.trust_score && (
+                        <Badge className="bg-[#FFD300] text-black text-lg px-3 py-1">
+                          <Star className="w-4 h-4 mr-1" fill="currentColor" />
+                          {broker.trust_score}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Contact & Agency */}
+                    <div className="flex flex-col gap-2 text-sm text-slate-600 mb-3">
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        {broker.phone}
+                      </span>
+                      {broker.agency_name && (
+                        <span className="flex items-center gap-1">
+                          <Building2 className="w-3 h-3" />
+                          {broker.agency_name}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Package className="w-3 h-3" />
+                        {brokerProperties.length} listings
+                      </span>
+                    </div>
+
+                    {/* Specializations Preview */}
+                    {broker.specializations && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {broker.specializations.primary_locations?.slice(0, 3).map((loc, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {loc}
+                          </Badge>
+                        ))}
+                        {broker.specializations.listing_type_focus && (
+                          <Badge variant="outline" className="text-xs">
+                            <Target className="w-3 h-3 mr-1" />
+                            {broker.specializations.listing_type_focus}
                           </Badge>
                         )}
                       </div>
+                    )}
 
-                      {/* Contact & Agency */}
-                      <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          {broker.phone}
-                        </span>
-                        {broker.agency_name && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <Building2 className="w-3 h-3" />
-                              {broker.agency_name}
-                            </span>
-                          </>
-                        )}
-                        <span>•</span>
-                        <span>{brokerProps.length} listings</span>
-                      </div>
+                    {/* Contact Actions */}
+                    <div className="flex gap-2 mb-4">
+                      <Button
+                        onClick={() => window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}`, '_blank')}
+                        size="sm"
+                        className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        View Profile
+                      </Button>
+                    </div>
 
-                      {/* Specializations Preview */}
-                      {broker.specializations && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {broker.specializations.primary_locations?.slice(0, 3).map((loc, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {loc}
-                            </Badge>
-                          ))}
-                          {broker.specializations.listing_type_focus && (
-                            <Badge variant="outline" className="text-xs">
-                              <Target className="w-3 h-3 mr-1" />
-                              {broker.specializations.listing_type_focus}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex gap-2">
+                    {/* NEW: WhatsApp Quick Messages */}
+                    <div className="border-t border-slate-200 pt-4">
+                      <p className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">Quick Messages</p>
+                      <div className="grid grid-cols-2 gap-2">
                         <Button
-                          onClick={() => viewBrokerProfile(broker)}
+                          onClick={() => handleWhatsAppMessage(generateWelcomeMessage(broker, mostRecentProperty), broker.phone)}
                           size="sm"
                           variant="outline"
-                          className="gap-1"
+                          className="text-xs h-8"
+                          disabled={!mostRecentProperty}
                         >
-                          <Eye className="w-4 h-4" />
-                          {hasProfile ? 'View Profile' : 'View'}
+                          📲 Welcome
                         </Button>
                         <Button
-                          onClick={() => handleWhatsApp(broker)}
+                          onClick={() => handleWhatsAppMessage(generatePerformanceMessage(broker), broker.phone)}
                           size="sm"
-                          className="bg-[#25D366] hover:bg-[#20BD5A] text-white gap-1"
+                          variant="outline"
+                          className="text-xs h-8"
                         >
-                          <MessageCircle className="w-4 h-4" />
-                          WhatsApp
+                          📊 Stats
                         </Button>
-                        {!hasProfile && (
-                          <Button
-                            onClick={() => buildBrokerProfile(broker.id)}
-                            disabled={buildingProfile}
-                            size="sm"
-                            className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white gap-1"
-                          >
-                            <Sparkles className="w-4 h-4" />
-                            Build Profile
-                          </Button>
-                        )}
+                        <Button
+                          onClick={() => handleWhatsAppMessage(generateQualityRecognitionMessage(broker), broker.phone)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-8"
+                          disabled={broker.trust_score < 60}
+                        >
+                          ⭐ Recognition
+                        </Button>
+                        <Button
+                          onClick={() => handleWhatsAppMessage(generateMatchAlertMessage(broker, null), broker.phone)} // Passing null for requirement as we don't have it here
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-8"
+                        >
+                          🎯 Match Alert
+                        </Button>
                       </div>
                     </div>
                   </div>
