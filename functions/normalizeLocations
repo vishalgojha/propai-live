@@ -1,0 +1,316 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * Location Normalization & Deduplication
+ * 
+ * Normalizes all location names to canonical form:
+ * - "Bandra" → "Bandra West"
+ * - "Khar" → "Khar West"
+ * - "Andheri" → "Andheri West"
+ * - "Santacruz" → "Santacruz West"
+ * etc.
+ * 
+ * Updates all properties, buildings, and requirements.
+ */
+
+const LOCATION_NORMALIZATION_MAP = {
+  // Bandra
+  'bandra': 'Bandra West',
+  'bandra w': 'Bandra West',
+  'bandra west': 'Bandra West',
+  'bandra (west)': 'Bandra West',
+  'bandra-west': 'Bandra West',
+  'bandra east': 'Bandra East',
+  'bandra e': 'Bandra East',
+  'bandra (east)': 'Bandra East',
+  
+  // Khar
+  'khar': 'Khar West',
+  'khar w': 'Khar West',
+  'khar west': 'Khar West',
+  'khar (west)': 'Khar West',
+  'khar-west': 'Khar West',
+  'khar east': 'Khar East',
+  'khar e': 'Khar East',
+  'khar (east)': 'Khar East',
+  
+  // Santacruz / Santa Cruz
+  'santacruz': 'Santacruz West',
+  'santa cruz': 'Santacruz West',
+  'santacruz w': 'Santacruz West',
+  'santacruz west': 'Santacruz West',
+  'santa cruz west': 'Santacruz West',
+  'santacruz (west)': 'Santacruz West',
+  'santacruz east': 'Santacruz East',
+  'santa cruz east': 'Santacruz East',
+  'santacruz e': 'Santacruz East',
+  'santacruz (east)': 'Santacruz East',
+  
+  // Andheri
+  'andheri': 'Andheri West',
+  'andheri w': 'Andheri West',
+  'andheri west': 'Andheri West',
+  'andheri (west)': 'Andheri West',
+  'andheri-west': 'Andheri West',
+  'andheri east': 'Andheri East',
+  'andheri e': 'Andheri East',
+  'andheri (east)': 'Andheri East',
+  
+  // Juhu
+  'juhu': 'Juhu',
+  'juhu beach': 'Juhu',
+  'juhu tara road': 'Juhu',
+  
+  // Versova
+  'versova': 'Versova',
+  'versova beach': 'Versova',
+  
+  // BKC
+  'bkc': 'Bandra Kurla Complex',
+  'bandra kurla complex': 'Bandra Kurla Complex',
+  'bandra kurla': 'Bandra Kurla Complex',
+  
+  // Pali Hill (part of Bandra West, but specific pocket)
+  'pali hill': 'Bandra West',
+  'pali': 'Bandra West',
+  
+  // Carter Road (part of Bandra West)
+  'carter road': 'Bandra West',
+  
+  // Other locations
+  'worli': 'Worli',
+  'lower parel': 'Lower Parel',
+  'dadar': 'Dadar',
+  'dadar west': 'Dadar West',
+  'dadar east': 'Dadar East',
+  'mahim': 'Mahim',
+  'prabhadevi': 'Prabhadevi',
+  'powai': 'Powai',
+  'goregaon': 'Goregaon West',
+  'goregaon west': 'Goregaon West',
+  'goregaon east': 'Goregaon East',
+  'malad': 'Malad West',
+  'malad west': 'Malad West',
+  'malad east': 'Malad East',
+  'borivali': 'Borivali West',
+  'borivali west': 'Borivali West',
+  'borivali east': 'Borivali East',
+  'kandivali': 'Kandivali West',
+  'kandivali west': 'Kandivali West',
+  'kandivali east': 'Kandivali East',
+  'chembur': 'Chembur',
+  'mumbai': 'Mumbai',
+};
+
+function normalizeLocation(location) {
+  if (!location) return null;
+  
+  const normalized = location.toLowerCase().trim();
+  
+  // Direct match
+  if (LOCATION_NORMALIZATION_MAP[normalized]) {
+    return LOCATION_NORMALIZATION_MAP[normalized];
+  }
+  
+  // Try to find partial matches
+  for (const [key, value] of Object.entries(LOCATION_NORMALIZATION_MAP)) {
+    if (normalized.includes(key)) {
+      return value;
+    }
+  }
+  
+  // Return original with proper capitalization if no match
+  return location.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { mode = 'dry_run' } = await req.json();
+    const isDryRun = mode === 'dry_run';
+
+    console.log(`🗺️ Starting location normalization (${isDryRun ? 'DRY RUN' : 'LIVE MODE'})...`);
+
+    // Fetch all entities
+    const [properties, buildings, requirements] = await Promise.all([
+      base44.asServiceRole.entities.Property.list(),
+      base44.asServiceRole.entities.Building.list(),
+      base44.asServiceRole.entities.Requirement.list()
+    ]);
+
+    const changes = {
+      properties: [],
+      buildings: [],
+      requirements: [],
+      unique_locations_before: new Set(),
+      unique_locations_after: new Set()
+    };
+
+    // Analyze properties
+    for (const property of properties) {
+      if (property.location) {
+        changes.unique_locations_before.add(property.location);
+        const normalized = normalizeLocation(property.location);
+        
+        if (normalized !== property.location) {
+          changes.properties.push({
+            id: property.id,
+            custom_id: property.custom_id,
+            old_location: property.location,
+            new_location: normalized
+          });
+        }
+        
+        changes.unique_locations_after.add(normalized);
+      }
+    }
+
+    // Analyze buildings
+    for (const building of buildings) {
+      if (building.location) {
+        const normalized = normalizeLocation(building.location);
+        
+        if (normalized !== building.location) {
+          changes.buildings.push({
+            id: building.id,
+            custom_id: building.custom_id,
+            name: building.name,
+            old_location: building.location,
+            new_location: normalized
+          });
+        }
+      }
+    }
+
+    // Analyze requirements
+    for (const requirement of requirements) {
+      if (requirement.preferred_locations && requirement.preferred_locations.length > 0) {
+        const normalizedLocations = requirement.preferred_locations.map(loc => normalizeLocation(loc));
+        const hasChanges = requirement.preferred_locations.some((loc, idx) => loc !== normalizedLocations[idx]);
+        
+        if (hasChanges) {
+          changes.requirements.push({
+            id: requirement.id,
+            custom_id: requirement.custom_id,
+            old_locations: requirement.preferred_locations,
+            new_locations: normalizedLocations
+          });
+        }
+      }
+    }
+
+    if (isDryRun) {
+      return Response.json({
+        success: true,
+        mode: 'dry_run',
+        summary: {
+          properties_to_update: changes.properties.length,
+          buildings_to_update: changes.buildings.length,
+          requirements_to_update: changes.requirements.length,
+          unique_locations_before: changes.unique_locations_before.size,
+          unique_locations_after: changes.unique_locations_after.size,
+          reduction: changes.unique_locations_before.size - changes.unique_locations_after.size
+        },
+        location_mapping: {
+          before: Array.from(changes.unique_locations_before).sort(),
+          after: Array.from(changes.unique_locations_after).sort()
+        },
+        sample_changes: {
+          properties: changes.properties.slice(0, 10),
+          buildings: changes.buildings.slice(0, 10),
+          requirements: changes.requirements.slice(0, 10)
+        }
+      });
+    }
+
+    // LIVE MODE - Apply changes
+    const results = {
+      properties_updated: 0,
+      buildings_updated: 0,
+      requirements_updated: 0,
+      errors: []
+    };
+
+    // Update properties
+    for (const change of changes.properties) {
+      try {
+        await base44.asServiceRole.entities.Property.update(change.id, {
+          location: change.new_location
+        });
+        results.properties_updated++;
+      } catch (error) {
+        results.errors.push({
+          type: 'property',
+          id: change.id,
+          error: error.message
+        });
+      }
+    }
+
+    // Update buildings
+    for (const change of changes.buildings) {
+      try {
+        await base44.asServiceRole.entities.Building.update(change.id, {
+          location: change.new_location
+        });
+        results.buildings_updated++;
+      } catch (error) {
+        results.errors.push({
+          type: 'building',
+          id: change.id,
+          error: error.message
+        });
+      }
+    }
+
+    // Update requirements
+    for (const change of changes.requirements) {
+      try {
+        await base44.asServiceRole.entities.Requirement.update(change.id, {
+          preferred_locations: change.new_locations
+        });
+        results.requirements_updated++;
+      } catch (error) {
+        results.errors.push({
+          type: 'requirement',
+          id: change.id,
+          error: error.message
+        });
+      }
+    }
+
+    return Response.json({
+      success: true,
+      mode: 'live',
+      summary: {
+        properties_updated: results.properties_updated,
+        buildings_updated: results.buildings_updated,
+        requirements_updated: results.requirements_updated,
+        unique_locations_before: changes.unique_locations_before.size,
+        unique_locations_after: changes.unique_locations_after.size,
+        reduction: changes.unique_locations_before.size - changes.unique_locations_after.size,
+        errors: results.errors.length
+      },
+      location_mapping: {
+        before: Array.from(changes.unique_locations_before).sort(),
+        after: Array.from(changes.unique_locations_after).sort()
+      },
+      errors: results.errors
+    });
+
+  } catch (error) {
+    console.error('Location normalization error:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message 
+    }, { status: 500 });
+  }
+});

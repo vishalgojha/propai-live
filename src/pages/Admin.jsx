@@ -63,6 +63,7 @@ export default function Admin() {
   const [testingPropAI, setTestingPropAI] = useState(false);
   const [backfillingIds, setBackfillingIds] = useState(false);
   const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
+  const [normalizingLocations, setNormalizingLocations] = useState(false); // NEW
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -706,6 +707,87 @@ export default function Admin() {
     }
   };
 
+  const normalizeLocations = async () => {
+    if (!confirm('🗺️ Normalize All Locations?\n\nThis will:\n• Fix "Bandra" → "Bandra West"\n• Fix "Khar" → "Khar West"\n• Standardize all location names\n• Update properties, buildings, requirements\n\nRun analysis first?')) {
+      return;
+    }
+
+    setNormalizingLocations(true);
+    toast.loading('🔍 Analyzing location inconsistencies...', { id: 'location-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('normalizeLocations', { mode: 'dry_run' });
+      toast.dismiss('location-analysis');
+
+      const summary = dryRunResponse.data.summary;
+      const totalChanges = summary.properties_to_update + summary.buildings_to_update + summary.requirements_to_update;
+
+      if (totalChanges === 0) {
+        toast.success('✅ All Locations Already Normalized!', {
+          description: `${summary.unique_locations_after} unique locations`,
+          duration: 4000
+        });
+        setNormalizingLocations(false);
+        return;
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found location inconsistencies:\n` +
+        `• ${summary.properties_to_update} properties to update\n` +
+        `• ${summary.buildings_to_update} buildings to update\n` +
+        `• ${summary.requirements_to_update} requirements to update\n\n` +
+        `Will reduce ${summary.unique_locations_before} locations to ${summary.unique_locations_after} (${summary.reduction} duplicates removed)\n\n` +
+        `Fix now?`
+      );
+
+      if (!shouldFix) {
+        setNormalizingLocations(false);
+        return;
+      }
+
+      toast.loading('🔧 Normalizing all locations...', { id: 'location-fix' });
+      const fixResponse = await base44.functions.invoke('normalizeLocations', { mode: 'live' });
+      toast.dismiss('location-fix');
+
+      const results = fixResponse.data.summary;
+
+      toast.success('✅ Location Normalization Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Locations standardized successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Properties: {results.properties_updated} updated</div>
+              <div>• Buildings: {results.buildings_updated} updated</div>
+              <div>• Requirements: {results.requirements_updated} updated</div>
+              <div>• Locations reduced: {results.unique_locations_before} → {results.unique_locations_after}</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['brokers'] }); // Brokers might have locations in their listings
+      queryClient.invalidateQueries({ queryKey: ['requirements'] }); // Requirements have preferred_locations
+
+    } catch (error) {
+      toast.dismiss('location-analysis');
+      toast.dismiss('location-fix');
+      toast.error('❌ Location Normalization Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setNormalizingLocations(false);
+    }
+  };
+
   // Broker handlers
   const handleWhatsApp = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id);
@@ -1011,6 +1093,15 @@ export default function Admin() {
               >
                 <Building2 className={`w-4 h-4 mr-2 ${detectingBuildingDuplicates ? 'animate-spin' : ''}`} />
                 {detectingBuildingDuplicates ? 'Scanning...' : 'Dedup Buildings'}
+              </Button>
+              <Button
+                onClick={normalizeLocations}
+                disabled={normalizingLocations}
+                size="sm"
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+              >
+                <MapPin className={`w-4 h-4 mr-2 ${normalizingLocations ? 'animate-spin' : ''}`} />
+                {normalizingLocations ? 'Fixing...' : 'Fix Locations'}
               </Button>
               <Button
                 onClick={generatePropertyDescriptions}
