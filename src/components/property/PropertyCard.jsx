@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,27 +6,14 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera, CheckCircle2
+  Armchair, Shield, Eye, Home, Camera
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function PropertyCard({ property, onViewDetails }) {
-  const navigate = useNavigate(); // This navigate will now be unused unless onViewDetails uses it
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const [broker, setBroker] = useState(null);
   const [brokerLoading, setBrokerLoading] = useState(true);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        setUser(null);
-      }
-    };
-    loadUser();
-  }, []);
 
   useEffect(() => {
     const loadBroker = async () => {
@@ -53,8 +39,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     loadBroker();
   }, [property.broker_id, property.custom_id]);
 
-  // This function is no longer used for displaying the main price due to outline changes,
-  // but kept as it's part of the original file and not explicitly removed by the outline.
   const formatPrice = () => {
     if (property.price_unit === "crores") {
       if (property.price < 1) {
@@ -77,6 +61,11 @@ export default function PropertyCard({ property, onViewDetails }) {
   const handleWhatsAppContact = (e, phone, name) => {
     e.stopPropagation();
     
+    if (!phone) {
+      alert(`⚠️ Broker "${name}" has no phone number.\n\nPlease update broker contact info in Admin → Brokers.`);
+      return;
+    }
+    
     const message = `Hi ${name}, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
@@ -88,50 +77,31 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  const handleCheckAvailability = (e) => {
-    e.stopPropagation();
+  // Get broker contacts (primary + up to 1 team member)
+  const getBrokerContacts = () => {
+    if (!broker) return [];
     
-    // Check if broker data is still loading
-    if (brokerLoading) {
-      alert('Loading broker information...');
-      return;
+    const contacts = [{
+      name: broker.name,
+      phone: broker.phone
+    }];
+    
+    // Add first team member if available
+    if (broker.team_members && broker.team_members.length > 0) {
+      const teamMember = broker.team_members[0];
+      if (teamMember.phone) {
+        contacts.push({
+          name: teamMember.name,
+          phone: teamMember.phone
+        });
+      }
     }
     
-    // Check if broker exists and has phone
-    if (!broker) {
-      alert(`⚠️ Broker not found in database.\n\nProperty ID: ${property.custom_id}\nBroker ID: ${property.broker_id || 'Not set'}\n\nPlease contact admin to fix broker mapping.`);
-      return;
-    }
-    
-    if (!broker.phone) {
-      alert(`⚠️ Broker "${broker.name}" has no phone number.\n\nBroker ID: ${broker.id}\n\nPlease update broker contact info in Admin → Brokers.`);
-      return;
-    }
-
-    const message = `Hi ${broker.name}, checking availability for:\n\n` +
-      `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
-      `💰 ${formatPrice()} | ${property.listing_type}\n` +
-      `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
-      `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
-      `\n✅ Is this property still available?\n` +
-      `📸 Can you share latest photos?\n\n` +
-      `- Chariot Realty Team`;
-    
-    window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  // This function is no longer called due to outline changes,
-  // but kept as it's part of the original file and not explicitly removed by the outline.
-  const handleCardClick = () => {
-    if (property.slug) {
-      navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
-    } else {
-      navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
-    }
+    return contacts.slice(0, 2); // Max 2 contacts
   };
 
   const hasImages = property.images && property.images.length > 0;
-  const isAdmin = user?.role === 'admin';
+  const brokerContacts = getBrokerContacts();
 
   return (
     <motion.div
@@ -143,7 +113,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     >
       {/* Content Section */}
       <div className="p-5">
-        {/* Header with Badges (retained from original structure, prior to outline's 'Content' section) */}
+        {/* Header with Badges */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-wrap gap-2">
             {property.listing_type && (
@@ -183,7 +153,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </span>
         </div>
 
-        {/* AI Description - NEW: Always show below price */}
+        {/* AI Description */}
         {property.ai_description && (
           <p className="text-sm text-slate-600 mb-3 line-clamp-3 leading-relaxed">
             {property.ai_description}
@@ -207,7 +177,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         </div>
 
-        {/* Stats Grid (retained from original code) */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
             <Home className="w-4 h-4 text-purple-600 mx-auto mb-1" />
@@ -223,40 +193,35 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         </div>
 
-        {/* Admin Check Availability Button (retained from original code) */}
-        {isAdmin && (
-          <Button
-            onClick={handleCheckAvailability}
-            disabled={brokerLoading}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm">
-              {brokerLoading ? 'Loading...' : broker ? 'Check Availability' : 'Broker Missing'}
-            </span>
-          </Button>
+        {/* Broker WhatsApp Contact Buttons */}
+        {brokerLoading ? (
+          <div className="space-y-2">
+            <div className="h-11 bg-slate-100 rounded-2xl animate-pulse" />
+          </div>
+        ) : brokerContacts.length > 0 ? (
+          <div className="space-y-2">
+            {brokerContacts.map((contact, idx) => (
+              <Button
+                key={idx}
+                onClick={(e) => handleWhatsAppContact(e, contact.phone, contact.name)}
+                className={`w-full ${
+                  idx === 0 
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
+                    : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700'
+                } text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="text-sm truncate">WhatsApp {contact.name}</span>
+              </Button>
+            ))}
+          </div>
+        ) : (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center">
+            <p className="text-xs text-amber-800">Broker contact not available</p>
+          </div>
         )}
 
-        {/* WhatsApp Contact Buttons (retained from original code) */}
-        <div className="space-y-2">
-          <Button
-            onClick={(e) => handleWhatsAppContact(e, '919819471310', 'Vishal')}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">WhatsApp Vishal</span>
-          </Button>
-
-          <Button
-            onClick={(e) => handleWhatsAppContact(e, '919773757759', 'Kapil')}
-            className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">WhatsApp Kapil</span>
-          </Button>
-        </div>
-
-        {/* Footer Metadata (retained from original code) */}
+        {/* Footer Metadata */}
         {property.custom_id && (
           <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
             <span className="font-mono text-purple-600">{property.custom_id}</span>
