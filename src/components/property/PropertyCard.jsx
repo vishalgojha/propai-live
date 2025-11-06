@@ -6,14 +6,16 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera
+  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
   const [broker, setBroker] = useState(null);
   const [brokerLoading, setBrokerLoading] = useState(true);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     const loadBroker = async () => {
@@ -77,6 +79,19 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleCardClick = () => {
+    // Navigate to PropertyDetails page with slug
+    if (property.slug) {
+      navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
+    } else if (property.id) {
+      // Fallback to ID if slug not available
+      navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+    } else {
+      // Fallback to modal if no slug or id
+      onViewDetails(property);
+    }
+  };
+
   // Get broker contacts (primary + up to 1 team member)
   const getBrokerContacts = () => {
     if (!broker) return [];
@@ -102,6 +117,12 @@ export default function PropertyCard({ property, onViewDetails }) {
 
   const hasImages = property.images && property.images.length > 0;
   const brokerContacts = getBrokerContacts();
+  
+  // Check if description is long (>150 chars)
+  const isLongDescription = property.ai_description && property.ai_description.length > 150;
+  const displayDescription = showFullDescription || !isLongDescription 
+    ? property.ai_description 
+    : `${property.ai_description.substring(0, 150)}...`;
 
   return (
     <motion.div
@@ -109,7 +130,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-      onClick={() => onViewDetails(property)}
+      onClick={handleCardClick}
     >
       {/* Content Section */}
       <div className="p-5">
@@ -153,11 +174,34 @@ export default function PropertyCard({ property, onViewDetails }) {
           </span>
         </div>
 
-        {/* AI Description */}
+        {/* AI Description - Full or Truncated with Show More/Less */}
         {property.ai_description && (
-          <p className="text-sm text-slate-600 mb-3 line-clamp-3 leading-relaxed">
-            {property.ai_description}
-          </p>
+          <div className="mb-3">
+            <p className="text-sm text-slate-600 leading-relaxed">
+              {displayDescription}
+            </p>
+            {isLongDescription && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowFullDescription(!showFullDescription);
+                }}
+                className="text-xs text-purple-600 hover:text-purple-700 font-semibold mt-1 flex items-center gap-1"
+              >
+                {showFullDescription ? (
+                  <>
+                    <ChevronUp className="w-3 h-3" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3 h-3" />
+                    Show More
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Price & Key Details */}
@@ -221,10 +265,15 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
         )}
 
-        {/* Footer Metadata */}
-        {property.custom_id && (
-          <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="font-mono text-purple-600">{property.custom_id}</span>
+        {/* Footer Metadata - Posted Date, Custom ID, Views */}
+        <div className="mt-3 pt-3 border-t border-purple-100">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+            {property.created_date && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Posted {format(new Date(property.created_date), "MMM dd, yyyy")}
+              </span>
+            )}
             {property.views_count > 0 && (
               <span className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
@@ -232,7 +281,17 @@ export default function PropertyCard({ property, onViewDetails }) {
               </span>
             )}
           </div>
-        )}
+          {property.custom_id && (
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-purple-600 text-xs">{property.custom_id}</span>
+              {property.slug && (
+                <span className="text-xs text-purple-500 truncate ml-2">
+                  propai.live/property/{property.slug}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
