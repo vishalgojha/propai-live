@@ -6,6 +6,7 @@ import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import PropertyMatchmaker from "../components/property/PropertyMatchmaker";
+import RequirementCard from "../components/property/RequirementCard"; // NEW: Import RequirementCard
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Sparkles, ChevronDown, Zap } from "lucide-react";
@@ -23,6 +24,7 @@ export default function SmartFeed() {
     minPrice: "",
     maxPrice: "",
     expat_mode: false,
+    viewMode: "properties", // NEW: "properties", "requirements", or "both"
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24); // Pagination state
@@ -42,6 +44,7 @@ export default function SmartFeed() {
     if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
     if (urlParams.get('expat_mode')) newFilters.expat_mode = urlParams.get('expat_mode') === 'true';
+    if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode'); // NEW
     
     setFilters(newFilters);
   }, []);
@@ -54,6 +57,13 @@ export default function SmartFeed() {
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
+    initialData: [],
+  });
+
+  // NEW: Fetch requirements
+  const { data: requirements, isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
   });
 
@@ -144,12 +154,88 @@ export default function SmartFeed() {
     return results;
   }, [properties, filters]);
 
-  // Paginated properties to display
-  const displayedProperties = filteredProperties.slice(0, itemsToShow);
-  const hasMore = itemsToShow < filteredProperties.length;
+  // NEW: Filtered requirements
+  const filteredRequirements = useMemo(() => {
+    let results = requirements.filter(requirement => {
+      if (requirement.status !== "Active") return false;
+
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch = 
+          requirement.preferred_locations?.some(loc => loc.toLowerCase().includes(searchLower)) ||
+          requirement.bhk_preference?.some(bhk => bhk.toLowerCase().includes(searchLower)) ||
+          requirement.client_name?.toLowerCase().includes(searchLower) ||
+          requirement.notes?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      if (filters.bhk_multi && filters.bhk_multi.length > 0) {
+        const hasMatchingBhk = requirement.bhk_preference?.some(bhk => 
+          filters.bhk_multi.includes(bhk)
+        );
+        if (!hasMatchingBhk) return false;
+      }
+
+      if (filters.location_multi && filters.location_multi.length > 0) {
+        const hasMatchingLocation = requirement.preferred_locations?.some(loc =>
+          filters.location_multi.includes(loc)
+        );
+        if (!hasMatchingLocation) return false;
+      }
+
+      if (filters.listingType && filters.listingType !== "all") {
+        if (requirement.listing_type !== filters.listingType) return false;
+      }
+
+      if (filters.furnishing && filters.furnishing !== "all") {
+        if (requirement.furnishing_preference !== filters.furnishing && requirement.furnishing_preference !== "Any") return false;
+      }
+
+      return true;
+    });
+
+    // Sort by urgency and date
+    results.sort((a, b) => {
+      const urgencyOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+      const urgencyA = urgencyOrder[a.urgency] || 0;
+      const urgencyB = urgencyOrder[b.urgency] || 0;
+      
+      if (urgencyB !== urgencyA) {
+        return urgencyB - urgencyA;
+      }
+      
+      const dateA = new Date(a.created_date);
+      const dateB = new Date(b.created_date);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return results;
+  }, [requirements, filters]);
+
+  // Combine and paginate based on viewMode
+  const getDisplayItems = () => {
+    if (filters.viewMode === "requirements") {
+      return { items: filteredRequirements, type: "requirements", totalCount: filteredRequirements.length };
+    } else if (filters.viewMode === "both") {
+      // Interleave properties and requirements
+      const combined = [];
+      const maxLength = Math.max(filteredProperties.length, filteredRequirements.length);
+      for (let i = 0; i < maxLength; i++) {
+        if (i < filteredProperties.length) combined.push({ ...filteredProperties[i], itemType: 'property' });
+        if (i < filteredRequirements.length) combined.push({ ...filteredRequirements[i], itemType: 'requirement' });
+      }
+      return { items: combined, type: "both", totalCount: filteredProperties.length + filteredRequirements.length };
+    } else {
+      return { items: filteredProperties, type: "properties", totalCount: filteredProperties.length };
+    }
+  };
+
+  const { items: allItems, type: displayType, totalCount: totalFilteredItems } = getDisplayItems();
+  const displayedItems = allItems.slice(0, itemsToShow);
+  const hasMore = itemsToShow < allItems.length;
 
   const loadMore = () => {
-    setItemsToShow(prev => Math.min(prev + ITEMS_PER_PAGE, filteredProperties.length));
+    setItemsToShow(prev => Math.min(prev + ITEMS_PER_PAGE, allItems.length));
   };
 
   const clearFilters = () => {
@@ -163,6 +249,7 @@ export default function SmartFeed() {
       minPrice: "",
       maxPrice: "",
       expat_mode: false,
+      viewMode: "properties", // NEW: reset viewMode
     });
   };
 
@@ -179,8 +266,8 @@ export default function SmartFeed() {
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "Properties",
-        "item": "https://chariotrealty.com/properties"
+        "name": "SmartFeed", // Changed from Properties
+        "item": "https://chariotrealty.com/smartfeed" // Changed from properties
       }
     ]
   };
@@ -188,10 +275,10 @@ export default function SmartFeed() {
   return (
     <div className="min-h-screen">
       <SEO
-        title="Browse Properties | AI-Curated Mumbai Listings | Chariot Realty"
-        description="Browse verified properties in Bandra, Juhu, Andheri & more. AI-curated listings with transparent pricing — no bait-and-switch, ever."
+        title="SmartFeed | AI-Curated Mumbai Properties & Requirements | Chariot Realty" // Changed title
+        description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever." // Changed description
         schema={breadcrumbSchema}
-        canonical="https://chariotrealty.com/properties"
+        canonical="https://chariotrealty.com/smartfeed" // Changed canonical
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
@@ -203,8 +290,8 @@ export default function SmartFeed() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Browse Properties</h1>
-                <p className="text-sm text-slate-600 font-light">AI-curated listings • Transparent pricing</p>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1> {/* Changed H1 */}
+                <p className="text-sm text-slate-600 font-light">Properties & Requirements • AI-matched</p> {/* Changed P */}
               </div>
             </div>
             
@@ -241,20 +328,50 @@ export default function SmartFeed() {
           </div>
         </div>
 
+        {/* View Mode Toggle */}
+        <div className="mb-6 flex justify-center">
+          <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
+            <Button
+              onClick={() => setFilters({ ...filters, viewMode: "properties" })}
+              variant={filters.viewMode === "properties" ? "default" : "ghost"}
+              size="sm"
+              className={`rounded-xl ${filters.viewMode === "properties" ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white" : "text-slate-600"}`}
+            >
+              🏠 Properties ({filteredProperties.length})
+            </Button>
+            <Button
+              onClick={() => setFilters({ ...filters, viewMode: "requirements" })}
+              variant={filters.viewMode === "requirements" ? "default" : "ghost"}
+              size="sm"
+              className={`rounded-xl ${filters.viewMode === "requirements" ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white" : "text-slate-600"}`}
+            >
+              🔍 Requirements ({filteredRequirements.length})
+            </Button>
+            <Button
+              onClick={() => setFilters({ ...filters, viewMode: "both" })}
+              variant={filters.viewMode === "both" ? "default" : "ghost"}
+              size="sm"
+              className={`rounded-xl ${filters.viewMode === "both" ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white" : "text-slate-600"}`}
+            >
+              ✨ Both
+            </Button>
+          </div>
+        </div>
+
         {/* Filters */}
         <PropertyFilters
           filters={filters}
           onFilterChange={setFilters}
           onClearFilters={clearFilters}
-          allProperties={properties}
+          allProperties={properties} // This will need to be reconsidered if PropertyFilters is to filter requirements too
         />
 
         {/* Results Count */}
         <div className="mb-6">
           <p className="text-sm text-[#3B3B3B]">
-            Showing <span className="font-bold text-[#111111]">{displayedProperties.length}</span> of{' '}
-            <span className="font-bold text-[#111111]">{filteredProperties.length}</span>{' '}
-            {filteredProperties.length === 1 ? 'property' : 'properties'}
+            Showing <span className="font-bold text-[#111111]">{displayedItems.length}</span> of{' '}
+            <span className="font-bold text-[#111111]">{totalFilteredItems}</span>{' '}
+            {displayType === "properties" ? "properties" : displayType === "requirements" ? "requirements" : "items"}
           </p>
         </div>
 
@@ -263,13 +380,13 @@ export default function SmartFeed() {
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Failed to load properties. Please try again later.
+              Failed to load data. Please try again later.
             </AlertDescription>
           </Alert>
         )}
 
         {/* Loading State */}
-        {isLoading && (
+        {(isLoading || requirementsLoading) && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-[22px] p-6 shadow-sm border-2 border-[#F7F7F7]">
@@ -287,17 +404,41 @@ export default function SmartFeed() {
           </div>
         )}
 
-        {/* Properties Grid */}
-        {!isLoading && displayedProperties.length > 0 && (
+        {/* Display Items */}
+        {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {displayedProperties.map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onViewDetails={setSelectedProperty}
-                />
-              ))}
+              {displayedItems.map((item) => {
+                if (displayType === "both") {
+                  return item.itemType === 'property' ? (
+                    <PropertyCard
+                      key={`prop-${item.id}`}
+                      property={item}
+                      onViewDetails={setSelectedProperty}
+                    />
+                  ) : (
+                    <RequirementCard
+                      key={`req-${item.id}`}
+                      requirement={item}
+                    />
+                  );
+                } else if (displayType === "requirements") {
+                  return (
+                    <RequirementCard
+                      key={item.id}
+                      requirement={item}
+                    />
+                  );
+                } else { // properties
+                  return (
+                    <PropertyCard
+                      key={item.id}
+                      property={item}
+                      onViewDetails={setSelectedProperty}
+                    />
+                  );
+                }
+              })}
             </div>
 
             {/* Load More Button */}
@@ -309,20 +450,20 @@ export default function SmartFeed() {
                   className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
                 >
                   <ChevronDown className="w-5 h-5 mr-2" />
-                  Load More Properties
+                  Load More {displayType === "properties" ? "Properties" : displayType === "requirements" ? "Requirements" : "Items"}
                   <span className="ml-2 text-xs opacity-80">
-                    ({filteredProperties.length - itemsToShow} remaining)
+                    ({allItems.length - itemsToShow} remaining)
                   </span>
                 </Button>
               </div>
             )}
 
             {/* End of results message */}
-            {!hasMore && filteredProperties.length > ITEMS_PER_PAGE && (
+            {!hasMore && allItems.length > ITEMS_PER_PAGE && (
               <div className="mt-12 text-center">
                 <div className="inline-block bg-white rounded-2xl px-6 py-3 border-2 border-[#F7F7F7]">
                   <p className="text-sm text-[#3B3B3B] font-medium">
-                    🎯 You've viewed all {filteredProperties.length} properties
+                    🎯 You've viewed all {allItems.length} {displayType === "properties" ? "properties" : displayType === "requirements" ? "requirements" : "items"}
                   </p>
                   <p className="text-xs text-[#3B3B3B]/60 mt-1">
                     Try adjusting your filters to see more options
@@ -334,12 +475,14 @@ export default function SmartFeed() {
         )}
 
         {/* Empty State */}
-        {!isLoading && filteredProperties.length === 0 && (
+        {!isLoading && !requirementsLoading && allItems.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-[#F7F7F7] rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-[#3B3B3B]/10">
               <AlertCircle className="w-10 h-10 text-[#3B3B3B]" />
             </div>
-            <h3 className="text-2xl font-bold text-[#111111] mb-3">No properties found</h3>
+            <h3 className="text-2xl font-bold text-[#111111] mb-3">
+              {displayType === "properties" ? "No properties found" : displayType === "requirements" ? "No requirements found" : "No items found"}
+            </h3>
             <p className="text-[#3B3B3B] mb-6 font-light">
               Try adjusting your filters or search criteria
             </p>
