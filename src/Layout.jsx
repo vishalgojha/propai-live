@@ -91,7 +91,8 @@ export default function Layout({ children, currentPageName }) {
   // Only show admin link if user is admin
   if (user?.role === 'admin') {
     navItems.push(
-      { name: "Admin", icon: Settings, path: createPageUrl("Admin") }
+      { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
+      { name: "Analytics", icon: Zap, path: createPageUrl("SmartFeedAnalytics") }
     );
   }
 

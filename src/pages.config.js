@@ -12,6 +12,7 @@ import BrokerPerformance from './pages/BrokerPerformance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
+import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "PrivacyPolicy": PrivacyPolicy,
     "TermsOfService": TermsOfService,
     "Disclaimer": Disclaimer,
+    "SmartFeedAnalytics": SmartFeedAnalytics,
 }
 
 export const pagesConfig = {
