@@ -32,13 +32,16 @@ export default function HomePage() {
 
   // WhatsApp AI Assistant URL
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
+  
+  // Admin WhatsApp URL
+  const adminWhatsAppUrl = "https://wa.me/912269622278?text=Hi%2C%20I%27d%20like%20to%20list%20a%20property";
 
   return (
     <div className="min-h-screen">
       <SEO
         title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence Platform"
         description="Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring. Find verified properties with transparent pricing."
-        canonical="https://propai.live"
+        canonical="https://propai.live/"
         schema={homeSchema}
       />
 
@@ -89,12 +92,12 @@ export default function HomePage() {
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
-                onClick={() => navigate(createPageUrl("Buildings"))}
+                onClick={() => window.open(adminWhatsAppUrl, '_blank')}
                 size="lg"
-                className="bg-white hover:bg-sky-50 border-2 border-sky-200 text-sky-700 font-semibold h-14 px-8 rounded-2xl text-lg"
+                className="bg-white hover:bg-sky-50 border-2 border-sky-200 text-sky-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
               >
-                <Building2 className="w-5 h-5 mr-2" />
-                Building Intelligence
+                <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Post to Admin +91 226 962 2278
               </Button>
               <Button
                 onClick={() => window.open(whatsappAIUrl, '_blank')}
@@ -124,8 +127,6 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-
-      {/* REMOVED: Building Intelligence CTA - Now admin-only in dashboard */}
 
       {/* Why PropAI - The Unfair Advantages */}
       <section className="py-20 bg-white/50">
