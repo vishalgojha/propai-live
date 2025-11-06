@@ -62,6 +62,7 @@ export default function Admin() {
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   const [testingPropAI, setTestingPropAI] = useState(false);
   const [backfillingIds, setBackfillingIds] = useState(false);
+  const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -385,7 +386,7 @@ export default function Admin() {
         return;
       }
 
-      const shouldMark = confirm(`Found ${summary.total_duplicates} duplicates. Mark them now?`);
+      const shouldMark = confirm(`Found ${summary.total_duplicates} issues. Mark them now?`);
       if (!shouldMark) {
         setDetectingDuplicates(false);
         return;
@@ -485,6 +486,81 @@ export default function Admin() {
       });
     } finally {
       setDetectingDuplicates(false);
+    }
+  };
+
+  const detectBuildingDuplicates = async () => {
+    if (!confirm('🔍 Detect Building Duplicates?\n\nThis will:\n• Scan all buildings for duplicates\n• Match by name similarity + location\n• Merge duplicates (oldest kept as original)\n• Reassign all properties to original building\n\nRun analysis first?')) {
+      return;
+    }
+
+    setDetectingBuildingDuplicates(true);
+    toast.loading('🔍 Analyzing buildings for duplicates...', { id: 'building-dedup-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('detectBuildingDuplicates', { mode: 'dry_run' });
+      toast.dismiss('building-dedup-analysis');
+
+      const summary = dryRunResponse.data.summary;
+      if (summary.total_duplicates === 0) {
+        toast.success('✅ No Building Duplicates Found!', {
+          description: `Scanned ${summary.total_buildings_scanned} buildings - all unique`,
+          duration: 4000
+        });
+        setDetectingBuildingDuplicates(false);
+        return;
+      }
+
+      const shouldMerge = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found ${summary.duplicate_groups_found} duplicate groups:\n` +
+        `• ${summary.total_duplicates} duplicate buildings\n` +
+        `• ${summary.total_buildings_scanned - summary.total_duplicates} unique buildings\n\n` +
+        `Merge duplicates now?\n` +
+        `(Oldest building in each group will be kept as original, all properties will be reassigned)`
+      );
+
+      if (!shouldMerge) {
+        setDetectingBuildingDuplicates(false);
+        return;
+      }
+
+      toast.loading('🔧 Merging duplicate buildings...', { id: 'building-dedup-merge' });
+      const mergeResponse = await base44.functions.invoke('detectBuildingDuplicates', { mode: 'live' });
+      toast.dismiss('building-dedup-merge');
+
+      const results = mergeResponse.data.summary;
+
+      toast.success('✅ Building Deduplication Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Buildings cleaned up successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Scanned: {results.total_buildings_scanned} buildings</div>
+              <div>• Found: {results.duplicate_groups_found} duplicate groups</div>
+              <div>• Merged: {results.duplicates_merged} duplicates</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('building-dedup-analysis');
+      toast.dismiss('building-dedup-merge');
+      toast.error('❌ Building Deduplication Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setDetectingBuildingDuplicates(false);
     }
   };
 
@@ -926,6 +1002,15 @@ export default function Admin() {
               >
                 <Users className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
                 {detectingDuplicates ? 'Scanning...' : 'Dedup Brokers'}
+              </Button>
+              <Button
+                onClick={detectBuildingDuplicates}
+                disabled={detectingBuildingDuplicates}
+                size="sm"
+                className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+              >
+                <Building2 className={`w-4 h-4 mr-2 ${detectingBuildingDuplicates ? 'animate-spin' : ''}`} />
+                {detectingBuildingDuplicates ? 'Scanning...' : 'Dedup Buildings'}
               </Button>
               <Button
                 onClick={generatePropertyDescriptions}
