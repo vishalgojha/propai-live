@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ import {
 import {
   Shield, Users, TrendingUp, TrendingDown, ArrowLeft, Search,
   Star, Phone, MessageCircle, DollarSign, Home, BarChart3,
-  Calendar, Award, AlertCircle, CheckCircle2, Package
+  Calendar, Award, AlertCircle, CheckCircle2, Package, Zap, Eye
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -67,6 +68,13 @@ export default function BrokerPerformance() {
     enabled: isAuthorized,
   });
 
+  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements-for-metrics'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    initialData: [],
+    enabled: isAuthorized,
+  });
+
   // Calculate broker metrics
   const brokerMetrics = useMemo(() => {
     return brokers.map(broker => {
@@ -74,6 +82,18 @@ export default function BrokerPerformance() {
       const activeProperties = brokerProperties.filter(p => p.status === 'Active');
       const salesProperties = brokerProperties.filter(p => p.listing_type === 'Sale');
       const rentalProperties = brokerProperties.filter(p => p.listing_type === 'Rent');
+      
+      // NEW: Calculate AI matches generated for broker's requirements
+      const brokerRequirements = requirements.filter(r => r.broker_id === broker.id);
+      const totalAIMatches = brokerRequirements.reduce((sum, req) => {
+        return sum + (req.ai_matched_properties?.length || 0);
+      }, 0);
+
+      // NEW: Get top 3 most viewed properties
+      const top3Properties = [...brokerProperties]
+        .sort((a, b) => (b.views_count || 0) - (a.views_count || 0))
+        .slice(0, 3)
+        .filter(p => p.views_count > 0); // Only include if they have views
       
       // Calculate average deal value (in lakhs)
       const totalValue = brokerProperties.reduce((sum, prop) => {
@@ -117,10 +137,14 @@ export default function BrokerPerformance() {
         monthlyActivity,
         listingSplit,
         lastActivityDays: broker.last_activity ? 
-          Math.floor((new Date() - new Date(broker.last_activity)) / (1000 * 60 * 60 * 24)) : null
+          Math.floor((new Date() - new Date(broker.last_activity)) / (1000 * 60 * 60 * 24)) : null,
+        // NEW metrics
+        totalAIMatches,
+        requirementsCount: brokerRequirements.length,
+        top3Properties
       };
     });
-  }, [brokers, properties]);
+  }, [brokers, properties, requirements]);
 
   // Filter and sort brokers
   const filteredAndSortedBrokers = useMemo(() => {
@@ -410,7 +434,7 @@ export default function BrokerPerformance() {
         </div>
 
         {/* Broker Cards Grid */}
-        {brokersLoading || propertiesLoading ? (
+        {brokersLoading || propertiesLoading || requirementsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map(i => (
               <Skeleton key={i} className="h-64 rounded-2xl" />
@@ -478,6 +502,88 @@ export default function BrokerPerformance() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* NEW: Performance Overview Section */}
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-4 border border-purple-200">
+                  <h4 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+                    <Award className="w-4 h-4" />
+                    Performance Overview
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    {/* 1. BrokerTrust™ Score */}
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Shield className="w-3 h-3 text-purple-600" />
+                        <p className="text-xs text-slate-600 font-semibold">BrokerTrust™</p>
+                      </div>
+                      <p className={`text-2xl font-bold ${
+                        (broker.trust_score || 0) >= 75 ? 'text-green-600' :
+                        (broker.trust_score || 0) >= 50 ? 'text-amber-600' :
+                        'text-red-600'
+                      }`}>
+                        {broker.trust_score || 0}/100
+                      </p>
+                    </div>
+
+                    {/* 2. Active Listings */}
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Home className="w-3 h-3 text-green-600" />
+                        <p className="text-xs text-slate-600 font-semibold">Active Listings</p>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600">
+                        {broker.activeListings}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. AI Matches Generated */}
+                  <div className="bg-white rounded-lg p-3 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-cyan-600" />
+                        <div>
+                          <p className="text-xs text-slate-600 font-semibold">AI Matches Generated</p>
+                          <p className="text-xs text-slate-500">{broker.requirementsCount} requirement{broker.requirementsCount !== 1 ? 's' : ''} posted</p>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-cyan-600">
+                        {broker.totalAIMatches}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 4. Top 3 Most Viewed Properties */}
+                  {broker.top3Properties.length > 0 ? (
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-3 h-3 text-indigo-600" />
+                        <p className="text-xs text-slate-600 font-semibold">Top Viewed Properties</p>
+                      </div>
+                      <div className="space-y-2">
+                        {broker.top3Properties.map((prop, idx) => (
+                          <div key={prop.id} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className="text-indigo-600 font-bold">#{idx + 1}</span>
+                              <span className="truncate text-slate-700">
+                                {prop.ai_title || `${prop.bhk} in ${prop.location}`}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-slate-500">
+                              <Eye className="w-3 h-3" />
+                              <span className="font-semibold">{prop.views_count}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <p className="text-xs text-slate-500">No property views yet</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Key Metrics */}
