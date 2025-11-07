@@ -34,7 +34,7 @@ export default function HomePage() {
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
   
   // Admin WhatsApp URL
-  const adminWhatsAppUrl = "https://wa.me/912269622278?text=Hi%2C%20I%27d%20like%20to%20list%20a%20property";
+  const adminWhatsAppUrl = "https://wa.me/919819471310?text=Hi%2C%20I%27d%20like%20to%20list%20a%20property";
 
   return (
     <div className="min-h-screen">
