@@ -701,7 +701,7 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
 
   // UPDATED: Seeding Intro Modal - removed OTO completion check
   const SeedingIntroModal = () => {
-    const activeProperties = properties.filter(p => p.status === 'Active');
+    const activeProperties = properties.filter(p => p.broker_id === broker.id);
     const activeLocations = Array.from(new Set(activeProperties.map(p => p.location).filter(Boolean)));
     const activeReqs = requirements.filter(r => r.status === 'Active');
 
@@ -971,20 +971,20 @@ Team PropAI
                     )}
 
                     {/* Contact Actions - FULL WIDTH ON MOBILE */}
-                    <div className="flex flex-col sm:flex-row gap-2 mb-3 md:mb-4">
+                    <div className="flex flex-col gap-2 mb-3 md:mb-4">
                       <Button
                         onClick={() => window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}`, '_blank')}
-                        size="sm"
-                        className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white text-xs h-9"
+                        size="lg"
+                        className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white text-sm h-11 font-semibold"
                       >
-                        <MessageCircle className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                        <MessageCircle className="w-4 h-4 mr-2" />
                         WhatsApp
                       </Button>
                       <Button
                         onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
-                        size="sm"
+                        size="lg"
                         variant="outline"
-                        className="flex-1 text-xs h-9"
+                        className="w-full text-sm h-11 font-semibold"
                       >
                         View Profile
                       </Button>
@@ -992,25 +992,14 @@ Team PropAI
 
                     {/* Onboarding Actions */}
                     <div className="border-t border-slate-200 pt-3 md:pt-4 mb-3 md:mb-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          onClick={() => sendIndividualOTO(broker)}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white text-xs h-8 px-2"
-                        >
-                          <MessageCircle className="w-3 h-3 mr-1" />
-                          Send Intro
-                        </Button>
-                        <Button
-                          onClick={() => copySeedingIntro(broker)}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8 px-2 text-green-700 border-green-300 hover:bg-green-50"
-                        >
-                          <Copy className="w-3 h-3 mr-1" />
-                          Copy Intro
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={() => sendIndividualOTO(broker)}
+                        size="lg"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-sm h-11 font-semibold"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Send Onboarding Intro
+                      </Button>
                     </div>
 
                     {/* SMART WhatsApp Quick Messages */}
