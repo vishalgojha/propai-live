@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,17 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Search, MessageCircle, Phone, Mail, MapPin, Eye, Clock, Home as HomeIcon, IndianRupee, Shield, ArrowLeft
+  Search, MessageCircle, Phone, Mail, MapPin, Eye, Clock, Home as HomeIcon, IndianRupee, Shield, ArrowLeft, Bell, Zap, Send, X
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function AdminRequirements() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [notifying, setNotifying] = useState(null);
+  const [notifications, setNotifications] = useState(null);
 
-  // Check if user is admin
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -42,7 +43,7 @@ export default function AdminRequirements() {
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
-    enabled: isAuthorized, // Only run the query if authorized
+    enabled: isAuthorized,
   });
 
   const handleFindMatches = (req) => {
@@ -51,6 +52,39 @@ export default function AdminRequirements() {
     if (req.listing_type) searchParams.set('listingType', req.listing_type);
     if (req.preferred_locations?.[0]) searchParams.set('search', req.preferred_locations[0]);
     navigate(createPageUrl("SmartFeed") + "?" + searchParams.toString());
+  };
+
+  const handleNotifyBrokers = async (requirement) => {
+    setNotifying(requirement.id);
+    const loadingToast = toast.loading('🤖 Finding matching brokers...', {
+      description: 'AI is analyzing properties and generating notifications'
+    });
+
+    try {
+      const response = await base44.functions.invoke('notifyBrokersOfMatch', {
+        requirementId: requirement.id,
+        autoSend: false
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (response.data.success) {
+        setNotifications(response.data);
+        toast.success(`✅ Found ${response.data.notifications.length} brokers with matching properties!`, {
+          description: `Average match score: ${response.data.summary.avg_match_score}%`,
+          duration: 5000
+        });
+      } else {
+        throw new Error('Failed to generate notifications');
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('❌ Notification generation failed', {
+        description: error.message
+      });
+    } finally {
+      setNotifying(null);
+    }
   };
 
   if (isLoading) {
@@ -65,8 +99,6 @@ export default function AdminRequirements() {
   }
 
   if (!isAuthorized) {
-    // If not authorized after loading, return null or an unauthorized message
-    // Navigation already happened in useEffect if not authorized
     return null; 
   }
 
@@ -74,7 +106,6 @@ export default function AdminRequirements() {
     <div className="min-h-screen bg-[#F7F7F7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         
-        {/* Back Button + Header */}
         <div className="mb-8">
           <Button
             onClick={() => navigate(createPageUrl("Admin"))}
@@ -135,7 +166,6 @@ export default function AdminRequirements() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-[#F7F7F7] hover:border-[#FFD300]/30"
               >
-                {/* Header Section with Status Badge */}
                 <div className="bg-gradient-to-r from-stone-50 to-stone-100 px-6 py-5 border-b border-stone-200/50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -171,7 +201,6 @@ export default function AdminRequirements() {
                   </div>
                 </div>
 
-                {/* Core Requirements Grid */}
                 <div className="p-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-[#F7F7F7] rounded-2xl p-4">
@@ -201,7 +230,6 @@ export default function AdminRequirements() {
                     </div>
                   </div>
 
-                  {/* Locations */}
                   {req.preferred_locations && req.preferred_locations.length > 0 && (
                     <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-200">
                       <p className="text-xs text-blue-700 font-semibold mb-3 flex items-center gap-1">
@@ -218,7 +246,6 @@ export default function AdminRequirements() {
                     </div>
                   )}
 
-                  {/* Preferences */}
                   <div className="mb-6">
                     <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Preferences</p>
                     <div className="flex flex-wrap gap-2">
@@ -246,7 +273,6 @@ export default function AdminRequirements() {
                     </div>
                   </div>
 
-                  {/* Amenities */}
                   {req.amenities_required && req.amenities_required.length > 0 && (
                     <div className="mb-6">
                       <p className="text-xs text-[#3B3B3B]/60 mb-3 font-semibold uppercase tracking-wide">Required Amenities</p>
@@ -260,7 +286,6 @@ export default function AdminRequirements() {
                     </div>
                   )}
 
-                  {/* Notes */}
                   {req.notes && (
                     <div className="mb-6 p-4 bg-stone-50 rounded-2xl border border-stone-200">
                       <p className="text-xs text-stone-600 font-semibold mb-2">Internal Notes</p>
@@ -268,7 +293,6 @@ export default function AdminRequirements() {
                     </div>
                   )}
 
-                  {/* Source Text */}
                   {req.source_text && (
                     <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
                       <p className="text-xs text-blue-600 font-semibold mb-2">Original Message</p>
@@ -276,24 +300,40 @@ export default function AdminRequirements() {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={() => handleNotifyBrokers(req)}
+                      disabled={notifying === req.id || req.status !== 'Active'}
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                    >
+                      {notifying === req.id ? (
+                        <>
+                          <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                          Finding...
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-4 h-4 mr-2" />
+                          Notify Brokers
+                        </>
+                      )}
+                    </Button>
                     {req.client_phone && (
                       <Button
                         onClick={() => {
                           const message = `Hi ${req.client_name}, this is Chariot Realty. We have some properties matching your requirement for ${req.bhk_preference?.join("/")} in ${req.preferred_locations?.join("/")}. Can we share details?`;
                           window.open(`https://wa.me/${req.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                         }}
-                        className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl"
+                        className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold"
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp Client
+                        WhatsApp
                       </Button>
                     )}
                     <Button
                       onClick={() => handleFindMatches(req)}
                       variant="outline"
-                      className="border-2 border-[#FFD300] text-black hover:bg-[#FFD300] font-semibold rounded-2xl"
+                      className="border-2 border-[#FFD300] text-black hover:bg-[#FFD300] font-semibold"
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Find Matches
@@ -305,6 +345,100 @@ export default function AdminRequirements() {
           </div>
         )}
       </div>
+
+      {notifications && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-6 z-10">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    🎯 Broker Match Notifications
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    {notifications.notifications.length} brokers with {notifications.summary.total_matches} matching properties
+                  </p>
+                  <div className="flex items-center gap-4 mt-3">
+                    <Badge className="bg-green-500/20 text-green-700 border-green-500">
+                      Avg Match: {notifications.summary.avg_match_score}%
+                    </Badge>
+                    <Badge className="bg-blue-500/20 text-blue-700 border-blue-500">
+                      Requirement: {notifications.requirement.custom_id}
+                    </Badge>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setNotifications(null)}
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-slate-100"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {notifications.notifications.map((notification, idx) => (
+                <motion.div
+                  key={notification.broker.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="bg-gradient-to-br from-slate-50 to-white rounded-2xl border-2 border-slate-200 p-5"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-900">{notification.broker.name}</h3>
+                      <p className="text-sm text-slate-600">{notification.broker.phone}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
+                          {notification.matchCount} {notification.matchCount === 1 ? 'Match' : 'Matches'}
+                        </Badge>
+                        <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
+                          Top Score: {notification.topMatch.score}%
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => window.open(notification.whatsappUrl, '_blank')}
+                      className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Send WhatsApp
+                    </Button>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-4 border border-slate-200">
+                    <p className="text-xs text-slate-500 mb-2 font-semibold">Message Preview:</p>
+                    <pre className="text-xs text-slate-700 whitespace-pre-wrap font-sans">
+                      {notification.message}
+                    </pre>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">
+                  💡 Click "Send WhatsApp" to open pre-filled messages for each broker
+                </p>
+                <Button
+                  onClick={() => setNotifications(null)}
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
