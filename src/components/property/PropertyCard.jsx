@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import {
 const createPageUrl = (pageName) => {
   switch (pageName) {
     case "PropertyDetails":
-      return "/p/";
+      return "/propertydetails"; // Changed from "/p/"
     default:
       return "/";
   }
@@ -71,9 +72,9 @@ export default function PropertyCard({ property, onViewDetails }) {
 
   const handleCardClick = () => {
     if (property.slug) {
-      navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
+      navigate(`${createPageUrl("PropertyDetails")}?slug=${property.slug}`);
     } else if (property.id) {
-      navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+      navigate(`${createPageUrl("PropertyDetails")}?id=${property.id}`);
     } else {
       onViewDetails(property);
     }
