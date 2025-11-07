@@ -61,6 +61,12 @@ export default function Admin() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [imagesToUpload, setImagesToUpload] = useState([]);
 
+  // AI Parser states (NEW)
+  const [aiParserModalOpen, setAiParserModalOpen] = useState(false);
+  const [parserInput, setParserInput] = useState("");
+  const [parsingInProgress, setParsingInProgress] = useState(false);
+  const [parserResult, setParserResult] = useState(null);
+
   // Processing states
   const [dealsLoading, setDealsLoading] = useState(false);
   const [generatingSlugs, setGeneratingSlugs] = useState(false); // Used for multiple background tasks
@@ -795,6 +801,66 @@ export default function Admin() {
     }
   };
 
+  // NEW: AI Parser handler
+  const handleAIParse = async () => {
+    if (!parserInput.trim()) {
+      toast.error('Please enter a broker message to parse');
+      return;
+    }
+
+    setParsingInProgress(true);
+    setParserResult(null);
+
+    try {
+      toast.loading('🤖 AI Master parsing message...', { id: 'ai-parse' });
+
+      const response = await base44.agents.invoke('chariot_master', {
+        message: parserInput
+      });
+
+      toast.dismiss('ai-parse');
+
+      // Check if it was a duplicate
+      if (response.includes('duplicate') || response.includes('Already have this')) {
+        toast.warning('⚠️ Duplicate Detected', {
+          description: 'This property already exists in the system',
+          duration: 5000,
+          className: 'bg-orange-600 text-white border-0'
+        });
+      } else if (response.includes('✅') || response.includes('Listed')) {
+        toast.success('✅ Property Parsed & Listed!', {
+          description: 'Property is now live on SmartFeed',
+          duration: 5000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+        });
+      } else if (response.includes('Missing') || response.includes('Can\'t')) {
+        toast.error('❌ Parse Failed', {
+          description: response,
+          duration: 6000,
+          className: 'bg-red-600 text-white border-0'
+        });
+      }
+
+      setParserResult(response);
+      
+      // Refresh properties list
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+
+    } catch (error) {
+      toast.dismiss('ai-parse');
+      toast.error('❌ AI Parse Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+      setParserResult(`Error: ${error.message}`);
+    } finally {
+      setParsingInProgress(false);
+    }
+  };
+
+
   // Broker handlers
   const handleWhatsApp = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id);
@@ -1003,6 +1069,113 @@ export default function Admin() {
     </Dialog>
   );
 
+  // NEW: AI Parser Modal
+  const AIParserModal = () => (
+    <Dialog open={aiParserModalOpen} onOpenChange={setAiParserModalOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+            AI Master - Quick Parse
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-2 block">
+              Paste Broker Message:
+            </label>
+            <textarea
+              value={parserInput}
+              onChange={(e) => setParserInput(e.target.value)}
+              placeholder="Example: 2 BHK Bandra West, 2.5L rent, fully furnished, 2 parking, Ramesh 9820056789"
+              className="w-full h-32 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
+              disabled={parsingInProgress}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleAIParse}
+              disabled={parsingInProgress || !parserInput.trim()}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex-1"
+            >
+              {parsingInProgress ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Parsing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Parse with AI Master
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => {
+                setAiParserModalOpen(false);
+                setParserInput('');
+                setParserResult(null);
+              }}
+              variant="outline"
+            >
+              Close
+            </Button>
+          </div>
+
+          {/* Sample Messages */}
+          <div className="bg-slate-50 rounded-lg p-4">
+            <p className="text-xs font-semibold text-slate-600 mb-2">Quick Examples (click to use):</p>
+            <div className="space-y-1">
+              <button
+                onClick={() => setParserInput('2 BHK Bandra West, ₹2.5L rent, fully furnished, 2 parking, Ramesh 9820056789')}
+                className="text-xs text-left text-slate-600 hover:text-purple-600 hover:bg-purple-50 px-2 py-1 rounded w-full transition-colors"
+              >
+                • 2 BHK Bandra West, ₹2.5L rent, fully furnished, 2 parking, Ramesh 9820056789
+              </button>
+              <button
+                onClick={() => setParserInput('3 BHK Oberoi Sky Heights Khar West, 4.5Cr sale, 1800 sqft, Priya 9820012345')}
+                className="text-xs text-left text-slate-600 hover:text-purple-600 hover:bg-purple-50 px-2 py-1 rounded w-full transition-colors"
+              >
+                • 3 BHK Oberoi Sky Heights Khar West, 4.5Cr sale, 1800 sqft, Priya 9820012345
+              </button>
+              <button
+                onClick={() => setParserInput('Office space BKC 5000sqft lease 8L/month bare shell Amit Properties 9820098200')}
+                className="text-xs text-left text-slate-600 hover:text-purple-600 hover:bg-purple-50 px-2 py-1 rounded w-full transition-colors"
+              >
+                • Office space BKC 5000sqft lease 8L/month bare shell Amit Properties 9820098200
+              </button>
+            </div>
+          </div>
+
+          {/* Result */}
+          {parserResult && (
+            <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold text-xs text-slate-400">AI Master Response:</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    navigator.clipboard.writeText(parserResult);
+                    toast.success('Response copied!');
+                  }}
+                  className="h-6 text-slate-400 hover:text-white"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+              <pre className="whitespace-pre-wrap text-xs leading-relaxed">
+                {parserResult}
+              </pre>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -1038,6 +1211,16 @@ export default function Admin() {
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* NEW: AI Master Parser Button */}
+              <Button
+                onClick={() => setAiParserModalOpen(true)}
+                size="sm"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Parser
+              </Button>
+
               {/* Critical: Fix Custom IDs */}
               <Button
                 onClick={backfillCustomIds}
@@ -1841,6 +2024,7 @@ export default function Admin() {
 
       <ImageUploadModal />
       <BuildingQueryModal />
+      <AIParserModal />
     </div>
   );
 }
