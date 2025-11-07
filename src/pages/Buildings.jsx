@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +32,10 @@ export default function Buildings() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
+  // State for load more functionality
+  const [buildingsToShow, setBuildingsToShow] = useState(9); // Initial number of buildings to show
+  const BUILDINGS_PER_LOAD = 9; // Number of buildings to load each time "Load More" is clicked
+
   // Enrichment modal state
   const [enrichModalOpen, setEnrichModalOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
@@ -97,20 +101,39 @@ export default function Buildings() {
   });
 
   // Get unique locations
-  const locations = [...new Set(buildings.map(b => b.location).filter(Boolean))];
+  const locations = useMemo(() => {
+    return [...new Set(buildings.map(b => b.location).filter(Boolean))];
+  }, [buildings]);
 
-  // Filter buildings
-  const filteredBuildings = buildings.filter(building => {
-    const matchesSearch = !searchQuery ||
-      building.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      building.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      building.pocket?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      building.developer_name?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filter buildings based on search and location
+  const filteredBuildings = useMemo(() => {
+    return buildings.filter(building => {
+      const matchesSearch = !searchQuery ||
+        building.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        building.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        building.pocket?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        building.developer_name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesLocation = locationFilter === "all" || building.location === locationFilter;
+      const matchesLocation = locationFilter === "all" || building.location === locationFilter;
 
-    return matchesSearch && matchesLocation;
-  });
+      return matchesSearch && matchesLocation;
+    });
+  }, [buildings, searchQuery, locationFilter]);
+
+  // Effect to reset buildingsToShow when filters change
+  useEffect(() => {
+    setBuildingsToShow(BUILDINGS_PER_LOAD);
+  }, [searchQuery, locationFilter]);
+
+  // Slice filteredBuildings to get the ones to display
+  const displayedBuildings = useMemo(() => {
+    return filteredBuildings.slice(0, buildingsToShow);
+  }, [filteredBuildings, buildingsToShow]);
+
+  // Handle "Load More" click
+  const handleLoadMore = () => {
+    setBuildingsToShow(prev => prev + BUILDINGS_PER_LOAD);
+  };
 
   const handleBuildingClick = (building) => {
     navigate(createPageUrl("BuildingProfile") + `?id=${building.id}`);
@@ -186,7 +209,7 @@ export default function Buildings() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Toaster position="top-center" richColors closeButton />
 
       <SEO
@@ -259,7 +282,7 @@ export default function Buildings() {
         {/* Loading State */}
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(BUILDINGS_PER_LOAD)].map((_, i) => (
               <Skeleton key={i} className="h-80 rounded-3xl" />
             ))}
           </div>
@@ -274,151 +297,186 @@ export default function Buildings() {
           </div>
         )}
 
-        {/* Buildings Grid */}
-        {!isLoading && filteredBuildings.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBuildings.map((building) => (
-              <motion.div
-                key={building.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => handleBuildingClick(building)}
-                className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-purple-200/50 hover:border-purple-400 cursor-pointer group relative"
-              >
-                {/* Admin Enrich Button */}
-                {isAdmin && (
-                  <Button
-                    onClick={(e) => handleEnrichClick(e, building)}
-                    size="sm"
-                    className="absolute top-4 right-4 z-10 bg-amber-500 hover:bg-amber-600 text-white shadow-md rounded-lg p-2 h-auto"
-                  >
-                    <Edit className="w-3 h-3 mr-1" />
-                    Enrich
-                  </Button>
-                )}
-
-                {/* Content */}
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                        {building.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-2">
-                        <MapPin className="w-3.5 h-3.5 text-purple-500" />
-                        <span>{building.location}</span>
-                        {building.pocket && (
-                          <>
-                            <span className="text-slate-400">•</span>
-                            <span className="text-xs">{building.pocket}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {building.verified && (
-                        <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
-                          Verified
-                        </Badge>
-                      )}
-                      {!building.verified && (
-                        <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
-                          Auto
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Building Type & Developer */}
-                  {/* Changed conditional rendering to wrap both badges under building.building_type presence */}
-                  {(building.building_type || building.management_quality) && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {building.building_type && (
-                        <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 bg-purple-50">
-                          {building.building_type}
-                        </Badge>
-                      )}
-                      {building.management_quality && building.management_quality !== "Unknown" && (
-                        <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
-                          <Star className="w-3 h-3 mr-1" />
-                          {building.management_quality}
-                        </Badge>
-                      )}
-                    </div>
+        {/* Buildings Grid with LAZY LOADED IMAGES */}
+        {!isLoading && displayedBuildings.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedBuildings.map((building) => (
+                <motion.div
+                  key={building.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "100px" }}
+                  onClick={() => handleBuildingClick(building)}
+                  className="bg-white rounded-3xl overflow-hidden border-2 border-slate-200 hover:border-sky-300 hover:shadow-xl transition-all cursor-pointer group relative"
+                >
+                  {/* Admin Enrich Button */}
+                  {isAdmin && (
+                    <Button
+                      onClick={(e) => handleEnrichClick(e, building)}
+                      size="sm"
+                      className="absolute top-4 right-4 z-10 bg-amber-500 hover:bg-amber-600 text-white shadow-md rounded-lg p-2 h-auto"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Enrich
+                    </Button>
                   )}
 
-
-                  {/* Tags */}
-                  {building.tags && building.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {building.tags.slice(0, 3).map((tag, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {building.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{building.tags.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Stats Grid - FIX: Show actual counts OR 0 */}
-                  <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-purple-50/60 rounded-2xl">
-                    <div className="text-center">
-                      <p className="text-xs text-slate-600 mb-1">Active Listings</p>
-                      <p className="text-lg font-bold text-purple-800">
-                        {building.active_listings !== undefined && building.active_listings !== null 
-                          ? building.active_listings 
-                          : 0}
-                      </p>
-                    </div>
-                    {building.year_built ? (
-                      <div className="text-center">
-                        <p className="text-xs text-slate-600 mb-1">Built</p>
-                        <p className="text-lg font-bold text-purple-800">{building.year_built}</p>
-                      </div>
-                    ) : (building.total_listings !== undefined && building.total_listings !== null) && (
-                      <div className="text-center">
-                        <p className="text-xs text-slate-600 mb-1">Total Listings</p>
-                        <p className="text-lg font-bold text-indigo-800">{building.total_listings || 0}</p>
+                  {/* Building Image with LAZY LOADING */}
+                  <div className="relative h-48 bg-slate-100 overflow-hidden">
+                    {building.images && building.images.length > 0 ? (
+                      <img
+                        src={building.images[0]}
+                        alt={building.name || "Building exterior"}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80'; // Fallback image
+                          e.target.alt = "Building image not available, showing default.";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-cyan-100">
+                        <Building2 className="w-16 h-16 text-sky-300" />
                       </div>
                     )}
                   </div>
 
-                  {/* Price Range */}
-                  {(building.avg_rent_2bhk || building.avg_sale_2bhk) && (
-                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200/50">
-                      <p className="text-xs text-slate-600 mb-2 font-semibold">Average Pricing:</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {building.avg_rent_2bhk && (
-                          <div>
-                            <p className="text-slate-500">2 BHK Rent</p>
-                            <p className="font-bold text-purple-800">₹{building.avg_rent_2bhk}L</p>
-                          </div>
+                  {/* Content */}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
+                          {building.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-2">
+                          <MapPin className="w-3.5 h-3.5 text-purple-500" />
+                          <span>{building.location}</span>
+                          {building.pocket && (
+                            <>
+                              <span className="text-slate-400">•</span>
+                              <span className="text-xs">{building.pocket}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {building.verified && (
+                          <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
+                            Verified
+                          </Badge>
                         )}
-                        {building.avg_sale_2bhk && (
-                          <div>
-                            <p className="text-slate-500">2 BHK Sale</p>
-                            <p className="font-bold text-purple-800">₹{building.avg_sale_2bhk} Cr</p>
-                          </div>
+                        {!building.verified && (
+                          <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
+                            Auto
+                          </Badge>
                         )}
                       </div>
                     </div>
-                  )}
 
-                  {/* Action Button */}
-                  <Button
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-md"
-                  >
-                    View Details
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                    {/* Building Type & Developer */}
+                    {(building.building_type || building.management_quality) && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {building.building_type && (
+                          <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 bg-purple-50">
+                            {building.building_type}
+                          </Badge>
+                        )}
+                        {building.management_quality && building.management_quality !== "Unknown" && (
+                          <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
+                            <Star className="w-3 h-3 mr-1" />
+                            {building.management_quality}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+
+                    {/* Tags */}
+                    {building.tags && building.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {building.tags.slice(0, 3).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {building.tags.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{building.tags.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Stats Grid - FIX: Show actual counts OR 0 */}
+                    <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-purple-50/60 rounded-2xl">
+                      <div className="text-center">
+                        <p className="text-xs text-slate-600 mb-1">Active Listings</p>
+                        <p className="text-lg font-bold text-purple-800">
+                          {building.active_listings !== undefined && building.active_listings !== null 
+                            ? building.active_listings 
+                            : 0}
+                        </p>
+                      </div>
+                      {building.year_built ? (
+                        <div className="text-center">
+                          <p className="text-xs text-slate-600 mb-1">Built</p>
+                          <p className="text-lg font-bold text-purple-800">{building.year_built}</p>
+                        </div>
+                      ) : (building.total_listings !== undefined && building.total_listings !== null) && (
+                        <div className="text-center">
+                          <p className="text-xs text-slate-600 mb-1">Total Listings</p>
+                          <p className="text-lg font-bold text-indigo-800">{building.total_listings || 0}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Price Range */}
+                    {(building.avg_rent_2bhk || building.avg_sale_2bhk) && (
+                      <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200/50">
+                        <p className="text-xs text-slate-600 mb-2 font-semibold">Average Pricing:</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {building.avg_rent_2bhk && (
+                            <div>
+                              <p className="text-slate-500">2 BHK Rent</p>
+                              <p className="font-bold text-purple-800">₹{building.avg_rent_2bhk}L</p>
+                            </div>
+                          )}
+                          {building.avg_sale_2bhk && (
+                            <div>
+                              <p className="text-slate-500">2 BHK Sale</p>
+                              <p className="font-bold text-purple-800">₹{building.avg_sale_2bhk} Cr</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    <Button
+                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-md"
+                    >
+                      View Details
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {displayedBuildings.length < filteredBuildings.length && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={handleLoadMore}
+                  className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-6 rounded-full shadow-lg"
+                  disabled={isLoading}
+                >
+                  Load More Buildings ({filteredBuildings.length - displayedBuildings.length} left)
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
