@@ -558,7 +558,7 @@ export default function PropertyDetails() {
           {/* Footer - Branding */}
           <div className="px-6 md:px-8 py-4 md:py-5 bg-purple-50 border-t border-purple-100">
             <div className="text-center text-xs md:text-sm text-slate-500">
-              Listed by <span className="font-semibold text-purple-700">Chariot Realty</span>
+              Listed by <a href="https://propai.live" target="_blank" rel="noopener" className="font-semibold text-purple-700 hover:text-purple-800 transition-colors">PropAI Live</a>
               {property.created_date && (
                 <span className="ml-2">• {format(new Date(property.created_date), "MMM dd, yyyy")}</span>
               )}
