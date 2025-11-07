@@ -69,14 +69,16 @@ export default function PropertyDetails() {
   };
 
   const getAgentPhone = () => {
-    if (property?.assigned_agent === "Kapil") {
-      return "919773757759";
-    }
-    return "919819471310";
+    // Use broker contact if available, otherwise fallback to Vishal
+    return property?.broker_contact || "919819471310";
   };
 
   const getAgentName = () => {
-    return property?.assigned_agent || "Vishal";
+    // Extract name from broker info or use Vishal as fallback
+    if (property?.broker_contact && property?.broker_contact !== "919819471310") {
+      return "Broker";
+    }
+    return "Vishal";
   };
 
   const getPropertyUrl = () => {
@@ -126,7 +128,7 @@ export default function PropertyDetails() {
   };
 
   const handleWhatsApp = () => {
-    const message = `Hi ${getAgentName()}, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+    const message = `Hi${getAgentName() !== "Broker" ? ` ${getAgentName()}` : ''}, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
     
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -499,50 +501,72 @@ export default function PropertyDetails() {
 
             {/* CTA Section - Responsive */}
             <div className="space-y-3 md:space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              {property.broker_contact && property.broker_contact !== "919819471310" ? (
                 <Button
-                  onClick={() => {
-                    const message = `Hi Vishal, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
-                    window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
-                  }}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                  onClick={handleWhatsApp}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
                   size="lg"
                 >
                   <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  WhatsApp Vishal
+                  WhatsApp Broker
                 </Button>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => {
+                      const message = `Hi Vishal, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                      window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                    size="lg"
+                  >
+                    <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    Vishal
+                  </Button>
 
-                <Button
-                  onClick={() => {
-                    const message = `Hi Kapil, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
-                    window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
-                  }}
-                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
-                  size="lg"
-                >
-                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  WhatsApp Kapil
-                </Button>
-              </div>
+                  <Button
+                    onClick={() => {
+                      const message = `Hi Kapil, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                      window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
+                    }}
+                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                    size="lg"
+                  >
+                    <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    Kapil
+                  </Button>
+                </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-3">
+              {property.broker_contact && property.broker_contact !== "919819471310" ? (
                 <Button
-                  onClick={() => window.open(`tel:+919819471310`, '_self')}
+                  onClick={() => window.open(`tel:${property.broker_contact}`, '_self')}
                   variant="outline"
-                  className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
+                  className="w-full border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                 >
                   <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                  Call Vishal
+                  Call Broker
                 </Button>
-                <Button
-                  onClick={() => window.open(`tel:+919773757759`, '_self')}
-                  variant="outline"
-                  className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
-                >
-                  <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                  Call Kapil
-                </Button>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => window.open(`tel:+919819471310`, '_self')}
+                    variant="outline"
+                    className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
+                  >
+                    <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                    Vishal
+                  </Button>
+                  <Button
+                    onClick={() => window.open(`tel:+919773757759`, '_self')}
+                    variant="outline"
+                    className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
+                  >
+                    <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                    Kapil
+                  </Button>
+                </div>
+              )}
 
               <Button
                 onClick={handleShare}
