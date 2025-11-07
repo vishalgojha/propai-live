@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -513,7 +514,7 @@ export default function SmartFeed() {
         {/* Display Items */}
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedItems.map((item) => {
                 if (displayType === "both") {
                   return item.itemType === 'property' ? (
