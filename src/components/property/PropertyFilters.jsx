@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,12 +109,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     (filters.propertyCategory && filters.propertyCategory !== "all");
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-sky-200/50 p-6 mb-8">
+    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-purple-200 p-6 mb-8">
 
       {/* AI-Powered Search */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-5 h-5 text-sky-500" />
+          <Sparkles className="w-5 h-5 text-purple-600" />
           <h3 className="font-bold text-slate-900 text-lg">AI-Powered Search</h3>
         </div>
 
@@ -125,12 +126,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               value={nlpInput}
               onChange={(e) => setNlpInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleNlpSearch()}
-              className="pl-11 border-sky-200 focus-visible:ring-sky-500 h-12 rounded-xl"
+              className="pl-11 border-purple-200 focus-visible:ring-purple-500 h-12 rounded-xl"
             />
           </div>
           <Button
             onClick={handleNlpSearch}
-            className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white h-12 px-6 rounded-xl font-semibold shadow-md"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-12 px-6 rounded-xl font-semibold shadow-md"
           >
             Search
           </Button>
@@ -155,8 +156,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white border-0 shadow-md"
-                    : "border-sky-200 hover:bg-sky-50 text-slate-700"
+                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 {type}
@@ -183,8 +184,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white border-0 shadow-md"
-                    : "border-sky-200 hover:bg-sky-50 text-slate-700"
+                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 {bhk}
@@ -208,8 +209,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white border-0 shadow-md"
-                    : "border-sky-200 hover:bg-sky-50 text-slate-700"
+                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
+                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >
                 {location}
@@ -249,22 +250,22 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
 
       {/* Clear Filters */}
       {hasActiveFilters && (
-        <div className="flex items-center justify-between pt-4 border-t border-sky-100">
+        <div className="flex items-center justify-between pt-4 border-t border-purple-100">
           <div className="flex flex-wrap gap-2">
             {filters.listingType && filters.listingType !== "all" && (
-              <Badge variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {filters.listingType}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
               </Badge>
             )}
             {filters.bhk_multi?.map((bhk) => (
-              <Badge key={bhk} variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
+              <Badge key={bhk} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {bhk}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleBhk(bhk)} />
               </Badge>
             ))}
             {filters.location_multi?.map((location) => (
-              <Badge key={location} variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
+              <Badge key={location} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {location}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleLocation(location)} />
               </Badge>
@@ -298,7 +299,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-slate-600 hover:text-slate-900 hover:bg-sky-50"
+            className="text-slate-600 hover:text-slate-900 hover:bg-purple-50"
           >
             <X className="w-4 h-4 mr-1" />
             Clear all

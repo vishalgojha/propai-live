@@ -453,7 +453,7 @@ export default function SmartFeed() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
         title="SmartFeed | AI-Curated Mumbai Properties & Requirements | PropAI Live"
         description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever."
@@ -504,12 +504,12 @@ export default function SmartFeed() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1>
                   <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="font-semibold">Live</span>
@@ -522,7 +522,7 @@ export default function SmartFeed() {
             {/* AI Matchmaker Button */}
             <Button
               onClick={() => setMatchmakerOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg hidden md:flex"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold shadow-lg hidden md:flex"
               size="lg"
             >
               <Zap className="w-5 h-5 mr-2" />
@@ -534,7 +534,7 @@ export default function SmartFeed() {
           <div className="md:hidden mb-4">
             <Button
               onClick={() => setMatchmakerOpen(true)}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold h-14 rounded-2xl shadow-md"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 rounded-2xl shadow-md"
             >
               <Zap className="w-5 h-5 mr-2" />
               AI Property Matchmaker
@@ -549,7 +549,7 @@ export default function SmartFeed() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-6 border-2 border-purple-200">
+            <div className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-3xl p-6 border-2 border-purple-300">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -606,7 +606,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "properties" })}
               variant={filters.viewMode === "properties" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl ${filters.viewMode === "properties" ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white" : "text-slate-600"}`}
+              className={`rounded-xl ${filters.viewMode === "properties" ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "text-slate-600"}`}
             >
               🏠 Properties ({filteredProperties.length})
             </Button>
@@ -614,7 +614,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "requirements" })}
               variant={filters.viewMode === "requirements" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl ${filters.viewMode === "requirements" ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white" : "text-slate-600"}`}
+              className={`rounded-xl ${filters.viewMode === "requirements" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : "text-slate-600"}`}
             >
               🔍 Requirements ({filteredRequirements.length})
             </Button>
@@ -622,7 +622,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "both" })}
               variant={filters.viewMode === "both" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl ${filters.viewMode === "both" ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white" : "text-slate-600"}`}
+              className={`rounded-xl ${filters.viewMode === "both" ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white" : "text-slate-600"}`}
             >
               ✨ Both
             </Button>
@@ -726,7 +726,7 @@ export default function SmartFeed() {
                 <Button
                   onClick={loadMore}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
                 >
                   <ChevronDown className="w-5 h-5 mr-2" />
                   Load More {displayType === "properties" ? "Properties" : displayType === "requirements" ? "Requirements" : "Items"}
