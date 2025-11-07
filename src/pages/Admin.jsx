@@ -76,6 +76,7 @@ export default function Admin() {
   const [backfillingIds, setBackfillingIds] = useState(false);
   const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
   const [normalizingLocations, setNormalizingLocations] = useState(false); // NEW
+  const [normalizingBhk, setNormalizingBhk] = useState(false); // NEW
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -860,6 +861,81 @@ export default function Admin() {
     }
   };
 
+  // NEW: Normalize BHK Values handler
+  const normalizeBhkValues = async () => {
+    if (!confirm('🔧 Normalize BHK Values?\n\nThis will:\n• Fix "1bhk" → "1 BHK"\n• Fix "2BHK" → "2 BHK"\n• Fix "3.5bhk" → "3.5 BHK"\n• Standardize all BHK formats\n\nRun analysis first?')) {
+      return;
+    }
+
+    setNormalizingBhk(true);
+    toast.loading('🔍 Analyzing BHK inconsistencies...', { id: 'bhk-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('normalizeBhkValues', { dryRun: true });
+      toast.dismiss('bhk-analysis');
+
+      const stats = dryRunResponse.data.stats;
+
+      if (stats.normalized === 0) {
+        toast.success('✅ All BHK Values Already Normalized!', {
+          description: `${stats.total} properties scanned - all consistent`,
+          duration: 4000
+        });
+        setNormalizingBhk(false);
+        return;
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found BHK inconsistencies:\n` +
+        `• ${stats.normalized} properties need normalization\n` +
+        `• ${stats.unchanged} already correct\n\n` +
+        `Fix now?`
+      );
+
+      if (!shouldFix) {
+        setNormalizingBhk(false);
+        return;
+      }
+
+      toast.loading('🔧 Normalizing all BHK values...', { id: 'bhk-fix' });
+      const fixResponse = await base44.functions.invoke('normalizeBhkValues', { dryRun: false });
+      toast.dismiss('bhk-fix');
+
+      const results = fixResponse.data.stats;
+
+      toast.success('✅ BHK Normalization Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">BHK values standardized successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Normalized: {results.normalized} properties</div>
+              <div>• Unchanged: {results.unchanged} properties</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('bhk-analysis');
+      toast.dismiss('bhk-fix');
+      toast.error('❌ BHK Normalization Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setNormalizingBhk(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1235,7 +1311,7 @@ export default function Admin() {
               {/* Data Quality Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                  <Button size="sm" variant="outline" className="border-sky-300 text-sky-700 hover:bg-sky-50">
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Data Quality
                     <ChevronDown className="w-3 h-3 ml-1" />
@@ -1255,6 +1331,13 @@ export default function Admin() {
                   >
                     <MapPin className={`w-4 h-4 mr-2 ${normalizingLocations ? 'animate-spin' : ''}`} />
                     Normalize Locations
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={normalizeBhkValues}
+                    disabled={normalizingBhk}
+                  >
+                    <Home className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
+                    Normalize BHK Values
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={generatePropertySlugs}
