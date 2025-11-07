@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -43,7 +43,15 @@ export default function AdminBrokers() {
   const [buildingAllProfiles, setBuildingAllProfiles] = useState(false);
   const [seedingIntroModalOpen, setSeedingIntroModalOpen] = useState(false);
   const [sendingToAll, setSendingToAll] = useState(false);
+  const [otoCompleted, setOtoCompleted] = useState(false);
 
+  // NEW: Check if OTO was already completed on component mount
+  useEffect(() => {
+    const completed = localStorage.getItem('propai_oto_completed');
+    if (completed === 'true') {
+      setOtoCompleted(true);
+    }
+  }, []);
 
   // Queries
   const { data: brokers = [], isLoading: brokersLoading } = useQuery({
@@ -131,15 +139,16 @@ export default function AdminBrokers() {
     }
   };
 
-  // NEW: Send seeding intro to all brokers automatically
-  const sendSeedingIntroToAll = async () => {
+  // NEW: One-Time Onboarding - send intro message to all brokers
+  const sendOneTimeOnboarding = async () => {
     const brokerCount = filteredBrokers.length;
-    if (!confirm(`📢 Send Seeding Intro to ${brokerCount} brokers?\n\nThis will open WhatsApp Web for each broker with pre-filled message.\n\nIMPORTANT:\n• Keep WhatsApp Web open\n• Send each message manually\n• 3 second delay between each`)) {
+    
+    if (!confirm(`📢 One-Time Onboarding\n\nThis will introduce PropAI to ${brokerCount} brokers via WhatsApp.\n\n⚠️ This can only be done ONCE.\n\nIMPORTANT:\n• Keep WhatsApp Web open\n• Send each message manually\n• 3 second delay between each\n\nProceed?`)) {
       return;
     }
 
     setSendingToAll(true);
-    toast.loading(`Opening WhatsApp for ${brokerCount} brokers...`, { id: 'seeding-bulk' });
+    toast.loading(`Opening WhatsApp for ${brokerCount} brokers...`, { id: 'oto-bulk' });
 
     for (let i = 0; i < filteredBrokers.length; i++) {
       const broker = filteredBrokers[i];
@@ -157,11 +166,15 @@ export default function AdminBrokers() {
       }
     }
 
-    toast.dismiss('seeding-bulk');
-    toast.success(`✅ Opened WhatsApp for ${brokerCount} brokers!`, {
+    toast.dismiss('oto-bulk');
+    toast.success(`✅ Onboarding messages opened!`, {
       description: 'Send messages manually from each tab',
       duration: 5000
     });
+    
+    // Mark OTO as completed
+    localStorage.setItem('propai_oto_completed', 'true');
+    setOtoCompleted(true);
     setSendingToAll(false);
   };
 
@@ -719,34 +732,61 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
                 <Megaphone className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold">Seeding Phase — Broker Intro Message</h3>
-                <p className="text-sm text-slate-500 font-normal">Automated bulk send or copy individual messages</p>
+                <h3 className="text-2xl font-bold">One-Time Onboarding</h3>
+                <p className="text-sm text-slate-500 font-normal">Introduce PropAI to all brokers at once</p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* NEW: Send to All Button */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-200">
-              <h4 className="font-bold text-slate-900 mb-3">🚀 Automated Bulk Send</h4>
-              <p className="text-sm text-slate-600 mb-4">
-                Opens WhatsApp Web for all <strong>{filteredBrokers.length} brokers</strong> automatically with personalized messages. 
-                Each tab opens with 3 second delay — just hit send on each.
-              </p>
+            {/* OTO Button Section */}
+            <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 ${otoCompleted ? 'border-slate-300 opacity-60' : 'border-green-200'}`}>
+              <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                {otoCompleted ? '✅ Onboarding Complete' : '🚀 One-Time Onboarding'}
+              </h4>
+              
+              {otoCompleted ? (
+                <div className="bg-slate-100 rounded-lg p-4 mb-3">
+                  <p className="text-sm text-slate-700 mb-2">
+                    ✅ You've already completed the one-time onboarding campaign.
+                  </p>
+                  <p className="text-xs text-slate-600">
+                    All brokers have been introduced to PropAI. For individual follow-ups, use the "Copy Seeding Intro" button on broker cards.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Opens WhatsApp Web for all <strong>{filteredBrokers.length} brokers</strong> with introduction message.
+                    Each tab opens with 3 second delay — just hit send on each.
+                  </p>
+                  <div className="bg-amber-50 rounded-lg p-3 mb-4 border border-amber-200">
+                    <p className="text-xs text-amber-800">
+                      <strong>⚠️ Important:</strong> This can only be done ONCE. After completion, the button will be permanently disabled.
+                    </p>
+                  </div>
+                </>
+              )}
+              
               <Button
-                onClick={sendSeedingIntroToAll}
-                disabled={sendingToAll}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-md"
+                onClick={sendOneTimeOnboarding}
+                disabled={sendingToAll || otoCompleted}
+                className={`w-full ${otoCompleted ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'} text-white font-bold shadow-md`}
               >
                 {sendingToAll ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Opening WhatsApp...
                   </>
+                ) : otoCompleted ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Onboarding Completed
+                  </>
                 ) : (
                   <>
                     <MessageCircle className="w-4 h-4 mr-2" />
-                    Send to All {filteredBrokers.length} Brokers
+                    Send OTO to All {filteredBrokers.length} Brokers
                   </>
                 )}
               </Button>
@@ -781,7 +821,7 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
 
               <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
                 <p className="text-sm text-amber-800">
-                  <strong>💡 Pro Tip:</strong> Use "Send to All" for fastest results, or click "Copy Intro" on individual broker cards for personalized messages with their specific stats.
+                  <strong>💡 Pro Tip:</strong> Use OTO button for initial outreach to all brokers, or click "Copy Intro" on individual broker cards for personalized follow-ups.
                 </p>
               </div>
             </div>
@@ -811,10 +851,11 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
             <div className="flex gap-2">
               <Button
                 onClick={() => setSeedingIntroModalOpen(true)}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-md"
+                disabled={otoCompleted}
+                className={`${otoCompleted ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'} text-white font-semibold shadow-md`}
               >
                 <Megaphone className="w-4 h-4 mr-2" />
-                Seeding Intro
+                {otoCompleted ? 'OTO Complete' : 'One-Time Onboarding'}
               </Button>
               <Button
                 onClick={buildAllBrokerProfiles}
