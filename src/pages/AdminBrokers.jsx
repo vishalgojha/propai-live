@@ -832,27 +832,30 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-3 md:p-6">
       <Toaster position="top-center" richColors closeButton />
       
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        {/* Header - MOBILE OPTIMIZED */}
+        <div className="bg-white rounded-2xl p-4 md:p-6 border border-slate-200 mb-4 md:mb-6">
+          <div className="flex flex-col gap-3 mb-4">
+            {/* Title Section */}
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900">Broker Management</h1>
-                <p className="text-sm text-slate-500">{filteredBrokers.length} brokers</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl md:text-2xl font-bold text-slate-900 truncate">Broker Management</h1>
+                <p className="text-xs md:text-sm text-slate-500">{filteredBrokers.length} brokers</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            
+            {/* Action Buttons - STACKED ON MOBILE */}
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => setSeedingIntroModalOpen(true)}
                 disabled={otoCompleted}
-                className={`${otoCompleted ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'} text-white font-semibold shadow-md`}
+                className={`${otoCompleted ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'} text-white font-semibold shadow-md text-sm h-10 flex-1`}
               >
                 <Megaphone className="w-4 h-4 mr-2" />
                 {otoCompleted ? 'OTO Complete' : 'One-Time Onboarding'}
@@ -860,7 +863,7 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
               <Button
                 onClick={buildAllBrokerProfiles}
                 disabled={buildingAllProfiles}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold shadow-md"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold shadow-md text-sm h-10 flex-1"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${buildingAllProfiles ? 'animate-spin' : ''}`} />
                 {buildingAllProfiles ? 'Building...' : 'Build All Profiles'}
@@ -868,19 +871,19 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
+          {/* Filters - MOBILE OPTIMIZED */}
+          <div className="flex flex-col gap-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search brokers by name, phone, ID, agency..."
+                placeholder="Search brokers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10 text-sm"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="h-10 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -894,27 +897,25 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
           </div>
         </div>
 
-        {/* Broker Cards Grid */}
+        {/* Broker Cards Grid - MOBILE OPTIMIZED */}
         {brokersLoading || propertiesLoading || requirementsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-96 rounded-3xl" />
+              <Skeleton key={i} className="h-80 rounded-3xl" />
             ))}
           </div>
         ) : filteredBrokers.length === 0 ? (
-          <div className="bg-white rounded-3xl p-16 text-center border-2 border-slate-200">
-            <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No brokers found</h3>
-            <p className="text-slate-500">Try adjusting your search or filters</p>
+          <div className="bg-white rounded-3xl p-12 md:p-16 text-center border-2 border-slate-200">
+            <Users className="w-12 h-12 md:w-16 md:h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-2">No brokers found</h3>
+            <p className="text-sm md:text-base text-slate-500">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredBrokers.map((broker) => {
               const brokerProperties = properties.filter(p => p.broker_id === broker.id);
               const hasProfile = broker.ai_profile_summary;
               const hasTeam = broker.team_members && broker.team_members.length > 0;
-              
-              // Get smart CTAs for this broker
               const smartCTAs = getSmartCTAs(broker);
               
               return (
@@ -922,116 +923,118 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
                   key={broker.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all border-2 border-slate-200 overflow-hidden"
+                  className="bg-white rounded-2xl md:rounded-3xl shadow-sm hover:shadow-xl transition-all border-2 border-slate-200 overflow-hidden"
                 >
-                  <div className="p-5">
+                  <div className="p-4 md:p-5">
                     {/* Broker Icon */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0 mb-4">
-                      <Users className="w-8 h-8 text-purple-600" />
+                    <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0 mb-3 md:mb-4">
+                      <Users className="w-7 h-7 md:w-8 md:h-8 text-purple-600" />
                     </div>
 
-                    {/* Broker Info */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-bold text-slate-900">{broker.name}</h3>
-                          {broker.verified && (
-                            <Badge className="bg-green-500/20 text-green-700 border-green-500">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Verified
-                            </Badge>
-                          )}
-                          {hasTeam && (
-                            <Badge className="bg-blue-500/20 text-blue-700 border-blue-500">
-                              <Users className="w-3 h-3 mr-1" />
-                              Team of {broker.team_members.length + 1}
-                            </Badge>
-                          )}
+                    {/* Broker Info - MOBILE OPTIMIZED */}
+                    <div className="flex items-start justify-between mb-2 gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col gap-1 mb-1">
+                          <h3 className="text-base md:text-lg font-bold text-slate-900 truncate">{broker.name}</h3>
+                          <div className="flex flex-wrap items-center gap-1">
+                            {broker.verified && (
+                              <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
+                                <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />
+                                Verified
+                              </Badge>
+                            )}
+                            {hasTeam && (
+                              <Badge className="bg-blue-500/20 text-blue-700 border-blue-500 text-xs">
+                                <Users className="w-2.5 h-2.5 mr-0.5" />
+                                Team of {broker.team_members.length + 1}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         {broker.custom_id && (
-                          <p className="text-xs text-slate-500 font-mono mb-2">{broker.custom_id}</p>
+                          <p className="text-xs text-slate-500 font-mono mb-1 truncate">{broker.custom_id}</p>
                         )}
                       </div>
                       {broker.trust_score && (
-                        <Badge className="bg-[#FFD300] text-black text-lg px-3 py-1">
-                          <Star className="w-4 h-4 mr-1" fill="currentColor" />
+                        <Badge className="bg-[#FFD300] text-black text-base md:text-lg px-2 md:px-3 py-1 flex-shrink-0">
+                          <Star className="w-3 h-3 md:w-4 md:h-4 mr-0.5 md:mr-1" fill="currentColor" />
                           {broker.trust_score}
                         </Badge>
                       )}
                     </div>
 
-                    {/* Contact & Agency */}
-                    <div className="flex flex-col gap-2 text-sm text-slate-600 mb-3">
-                      <span className="flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {broker.phone}
+                    {/* Contact & Agency - COMPACT ON MOBILE */}
+                    <div className="flex flex-col gap-1.5 text-xs md:text-sm text-slate-600 mb-3">
+                      <span className="flex items-center gap-1 truncate">
+                        <Phone className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{broker.phone}</span>
                       </span>
                       {broker.agency_name && (
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          {broker.agency_name}
+                        <span className="flex items-center gap-1 truncate">
+                          <Building2 className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{broker.agency_name}</span>
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        <Package className="w-3 h-3" />
+                        <Package className="w-3 h-3 flex-shrink-0" />
                         {brokerProperties.length} listings
                       </span>
                     </div>
 
-                    {/* Specializations Preview */}
+                    {/* Specializations Preview - COMPACT */}
                     {broker.specializations && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {broker.specializations.primary_locations?.slice(0, 3).map((loc, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {loc}
+                      <div className="flex flex-wrap gap-1 md:gap-2 mb-3">
+                        {broker.specializations.primary_locations?.slice(0, 2).map((loc, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0">
+                            <MapPin className="w-2.5 h-2.5 mr-0.5" />
+                            <span className="truncate max-w-[80px]">{loc}</span>
                           </Badge>
                         ))}
                         {broker.specializations.listing_type_focus && (
-                          <Badge variant="outline" className="text-xs">
-                            <Target className="w-3 h-3 mr-1" />
+                          <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            <Target className="w-2.5 h-2.5 mr-0.5" />
                             {broker.specializations.listing_type_focus}
                           </Badge>
                         )}
                       </div>
                     )}
 
-                    {/* Contact Actions */}
-                    <div className="flex gap-2 mb-4">
+                    {/* Contact Actions - FULL WIDTH ON MOBILE */}
+                    <div className="flex flex-col sm:flex-row gap-2 mb-3 md:mb-4">
                       <Button
                         onClick={() => window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}`, '_blank')}
                         size="sm"
-                        className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                        className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white text-xs h-9"
                       >
-                        <MessageCircle className="w-4 h-4 mr-2" />
+                        <MessageCircle className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                         WhatsApp
                       </Button>
                       <Button
                         onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
                         size="sm"
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 text-xs h-9"
                       >
                         View Profile
                       </Button>
                     </div>
 
                     {/* Seeding Intro CTA */}
-                    <div className="border-t border-slate-200 pt-4 mb-4">
+                    <div className="border-t border-slate-200 pt-3 md:pt-4 mb-3 md:mb-4">
                       <Button
                         onClick={() => copySeedingIntro(broker)}
                         size="sm"
                         variant="outline"
-                        className="w-full text-xs gap-2 text-green-700 border-green-300 hover:bg-green-50"
+                        className="w-full text-xs gap-2 text-green-700 border-green-300 hover:bg-green-50 h-8"
                       >
                         <Copy className="w-3 h-3" />
                         Copy Seeding Intro
                       </Button>
                     </div>
 
-                    {/* SMART WhatsApp Quick Messages - Only show if CTAs exist */}
+                    {/* SMART WhatsApp Quick Messages */}
                     {smartCTAs.length > 0 && (
-                      <div className="border-t border-slate-200 pt-4">
+                      <div className="border-t border-slate-200 pt-3 md:pt-4">
                         <p className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">Quick Messages</p>
                         <div className="grid grid-cols-2 gap-2">
                           {smartCTAs.map((cta) => (
@@ -1040,7 +1043,7 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
                               onClick={() => handleWhatsAppMessage(cta.message, broker.phone)}
                               size="sm"
                               variant="outline"
-                              className="text-xs h-8"
+                              className="text-xs h-8 px-2"
                               title={cta.reason}
                             >
                               {cta.label}
