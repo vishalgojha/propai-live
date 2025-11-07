@@ -134,12 +134,12 @@ export default function AdminBrokers() {
     setProfileModalOpen(true);
   };
 
-  // WhatsApp broker (used in modal)
+  // WhatsApp broker (used in modal) - FIXED BRANDING
   const handleWhatsApp = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id && p.status === 'Active');
     const brokerRequirements = requirements.filter(r => r.broker_id === broker.id && r.status === 'Active');
     
-    let message = `Hi ${broker.name}, this is Chariot Realty.\n\n`;
+    let message = `Hi ${broker.name}, this is PropAI Live.\n\n`;
     
     if (brokerProps.length > 0 && brokerRequirements.length > 0) {
       // Broker has both listings and client requirements
@@ -199,7 +199,7 @@ export default function AdminBrokers() {
     }
     
     message += `Looking forward to working together.\n\n`;
-    message += `Team Chariot`;
+    message += `Team PropAI\n📱 www.propai.live`;
     
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
