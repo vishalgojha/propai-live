@@ -1346,18 +1346,39 @@ export default function Admin() {
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* NEW: CRITICAL FIX - Property Visibility */}
-              <Button
-                onClick={fixPropertyVisibility}
-                disabled={fixingVisibility}
-                size="sm"
-                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold animate-pulse"
-              >
-                <AlertCircleIcon className={`w-4 h-4 mr-2 ${fixingVisibility ? 'animate-spin' : ''}`} />
-                {fixingVisibility ? 'Fixing...' : 'Fix Visibility'}
-              </Button>
+              {/* CRITICAL FIX - Property Visibility - BIGGER AND MORE PROMINENT */}
+              <div className="w-full mb-4">
+                <div className="bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl p-6 shadow-2xl border-4 border-red-300">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <AlertCircleIcon className="w-8 h-8 text-white animate-pulse" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-white mb-2">🚨 Properties Not Showing?</h3>
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        If SmartFeed shows very few properties, it's because old properties don't have <code className="bg-white/20 px-2 py-1 rounded">visibility</code> field set. 
+                        Click below to fix ALL properties instantly.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Button
+                          onClick={fixPropertyVisibility}
+                          disabled={fixingVisibility}
+                          size="lg"
+                          className="bg-white text-red-600 hover:bg-red-50 font-bold h-14 px-8 shadow-lg text-lg"
+                        >
+                          <AlertCircleIcon className={`w-6 h-6 mr-3 ${fixingVisibility ? 'animate-spin' : 'animate-pulse'}`} />
+                          {fixingVisibility ? 'Fixing All Properties...' : '✅ Fix Property Visibility NOW'}
+                        </Button>
+                        <div className="text-xs text-white/80 flex items-center">
+                          <span>This sets visibility="public" on all properties. Takes 5-10 seconds.</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-              {/* NEW: AI Master Parser Button */}
+              {/* AI Master Parser Button */}
               <Button
                 onClick={() => setAiParserModalOpen(true)}
                 size="sm"
