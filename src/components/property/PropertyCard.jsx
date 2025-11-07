@@ -17,6 +17,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Helper function to create page URLs.
+// This is a placeholder implementation. In a real application,
+// this would likely be imported from a centralized routing utility.
+const createPageUrl = (pageName) => {
+  switch (pageName) {
+    case "PropertyDetails":
+      return "/p/";
+    // Add other page names as needed
+    default:
+      return "/";
+  }
+};
+
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
   const [broker, setBroker] = useState(null);
@@ -89,9 +102,9 @@ export default function PropertyCard({ property, onViewDetails }) {
 
   const handleCardClick = () => {
     if (property.slug) {
-      navigate(`/p/${property.slug}`);
+      navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
     } else if (property.id) {
-      navigate(`/p/${property.id}`);
+      navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
     } else {
       onViewDetails(property);
     }
@@ -99,9 +112,9 @@ export default function PropertyCard({ property, onViewDetails }) {
 
   const getShareUrl = () => {
     if (property.slug) {
-      return `${window.location.origin}/p/${property.slug}`;
+      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
     }
-    return `${window.location.origin}/p/${property.id}`;
+    return `${window.location.origin}${createPageUrl("PropertyDetails")}?id=${property.id}`;
   };
 
   const getShareText = () => {
