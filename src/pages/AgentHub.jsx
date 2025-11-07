@@ -32,7 +32,7 @@ import {
 import {
   Users, MessageCircle, Star, Package, Eye, Send, ThumbsUp,
   AlertCircle, TrendingUp, Clock, CheckCircle2, EyeOff, Share2,
-  Sparkles, Filter, Search, Plus
+  Sparkles, Filter, Search, Plus, HelpCircle, Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -57,6 +57,7 @@ export default function AgentHub() {
   const [recommendModalOpen, setRecommendModalOpen] = useState(false);
   const [shareOffMarketModalOpen, setShareOffMarketModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   // Form states
   const [messageForm, setMessageForm] = useState({
@@ -314,6 +315,263 @@ export default function AgentHub() {
     navigate(createPageUrl("PropertyDetails") + `?id=${propertyId}`);
   };
 
+  // Help/Guide Modal
+  const HelpGuideModal = () => (
+    <Dialog open={helpModalOpen} onOpenChange={setHelpModalOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-blue-600" />
+            Agent Hub Guide
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Overview */}
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">🎯 What is Agent Hub?</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Agent Hub is your internal collaboration platform for the PropAI team. Share off-market listings, 
+              recommend properties to colleagues, discuss leads, and stay coordinated—all in one place.
+            </p>
+          </div>
+
+          {/* Access */}
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">🔐 Who Can Access?</h3>
+            <ul className="text-sm text-slate-700 space-y-1 list-disc list-inside">
+              <li><strong>Admins</strong>: Full access to all conversations and features</li>
+              <li><strong>Agents</strong>: Access to own messages, broadcasts, and shared items</li>
+              <li>Regular users cannot see Agent Hub</li>
+            </ul>
+          </div>
+
+          {/* Key Features */}
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">✨ Key Features</h3>
+            
+            <div className="space-y-4">
+              {/* Feature 1 */}
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <EyeOff className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <h4 className="font-bold text-slate-900">Share Off-Market Listings</h4>
+                </div>
+                <p className="text-sm text-slate-600 mb-2">
+                  Have an exclusive property coming soon? Share it with the team before it goes public.
+                </p>
+                <div className="bg-white rounded-lg p-3 border border-slate-200">
+                  <p className="text-xs font-semibold text-purple-600 mb-1">How to use:</p>
+                  <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
+                    <li>Click "Share Off-Market" button</li>
+                    <li>Select property with visibility: off_market, agents_only, or coming_soon</li>
+                    <li>Choose recipient (specific agent or all agents)</li>
+                    <li>Add context notes about the property</li>
+                    <li>Send - team gets notified instantly</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Star className="w-4 h-4 text-green-600" />
+                  </div>
+                  <h4 className="font-bold text-slate-900">Recommend Property Matches</h4>
+                </div>
+                <p className="text-sm text-slate-600 mb-2">
+                  Found a perfect property for a colleague's client requirement? Recommend it!
+                </p>
+                <div className="bg-white rounded-lg p-3 border border-slate-200">
+                  <p className="text-xs font-semibold text-green-600 mb-1">How to use:</p>
+                  <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
+                    <li>Click "Recommend" button</li>
+                    <li>Select the property you want to recommend</li>
+                    <li>Choose the matching requirement</li>
+                    <li>Explain why it's a good match</li>
+                    <li>Set priority level</li>
+                    <li>Send - recipient can view details with one click</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <h4 className="font-bold text-slate-900">Internal Messaging</h4>
+                </div>
+                <p className="text-sm text-slate-600 mb-2">
+                  Quick messages to specific agents or broadcast updates to the whole team.
+                </p>
+                <div className="bg-white rounded-lg p-3 border border-slate-200">
+                  <p className="text-xs font-semibold text-blue-600 mb-1">How to use:</p>
+                  <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
+                    <li>Click "New Message" button</li>
+                    <li>Choose recipient (or leave blank for all agents)</li>
+                    <li>Set priority: Low, Medium, High, or Urgent</li>
+                    <li>Add subject and message</li>
+                    <li>Optional: Link to specific property or requirement</li>
+                    <li>Send - appears in recipient's inbox</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Guide */}
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">📱 Navigation Tabs</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <p className="font-semibold text-sm text-blue-900 mb-1">📥 Inbox</p>
+                <p className="text-xs text-blue-700">
+                  Messages sent to you + broadcasts to all agents. Unread count shown in badge.
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                <p className="font-semibold text-sm text-green-900 mb-1">📤 Sent</p>
+                <p className="text-xs text-green-700">
+                  Your outgoing messages. Track what you've shared with the team.
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                <p className="font-semibold text-sm text-purple-900 mb-1">👁️ Off-Market</p>
+                <p className="text-xs text-purple-700">
+                  All exclusive/upcoming properties shared internally. Count shown in badge.
+                </p>
+              </div>
+              <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                <p className="font-semibold text-sm text-amber-900 mb-1">⭐ Recommendations</p>
+                <p className="text-xs text-amber-700">
+                  Property-requirement matches suggested by colleagues.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">🔍 Filters & Search</h3>
+            <div className="bg-slate-50 rounded-xl p-4">
+              <div className="space-y-2 text-sm text-slate-600">
+                <p>• <strong>Search bar</strong>: Find messages by keywords, property names, broker names</p>
+                <p>• <strong>Status filter</strong>: Unread, Read, Actioned - track what needs attention</p>
+                <p>• <strong>Type filter</strong>: Messages, Recommendations, Off-Market - focus on specific types</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Message Details */}
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">📋 Understanding Message Cards</h3>
+            <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl p-4 border-2 border-slate-200">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <Badge className="bg-blue-500 text-white text-xs">New</Badge>
+                  <span className="text-slate-600">= Unread message</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Badge className="bg-red-500 text-white text-xs">Urgent</Badge>
+                  <span className="text-slate-600">= High priority - needs immediate attention</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Star className="w-5 h-5 text-green-600" />
+                  </div>
+                  <span className="text-slate-600">= Property recommendation icon</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <EyeOff className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <span className="text-slate-600">= Off-market share icon</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-600">= Actioned - task completed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Best Practices */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-3">💡 Best Practices</h3>
+            <ul className="space-y-2 text-sm text-slate-700 list-disc list-inside">
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                <span><strong>Mark urgent items as "Urgent"</strong> - helps team prioritize</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                <span><strong>Share off-market properties early</strong> - gives team time to prep clients</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                <span><strong>Include context</strong> - explain why a match is good</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                <span><strong>Use specific agents</strong> when relevant, broadcast when all should know</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                <span><strong>Check daily</strong> - stay updated on team activity</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Example Workflow */}
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">🎬 Example Workflow</h3>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+              <p className="text-sm font-bold text-blue-900 mb-3">Scenario: Exclusive Bandra 3 BHK Coming Next Week</p>
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg p-3 border-l-4 border-purple-500">
+                  <p className="text-xs font-semibold text-purple-600 mb-1">Step 1: Share Off-Market</p>
+                  <p className="text-xs text-slate-600">
+                    "Hey team, got a 3 BHK in Pali Hill coming next week. ₹4.5Cr, sea view, fully furnished. Owner wants serious buyers only."
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-3 border-l-4 border-green-500">
+                  <p className="text-xs font-semibold text-green-600 mb-1">Step 2: Colleague Recommends Match</p>
+                  <p className="text-xs text-slate-600">
+                    "This matches my client's requirement! Budget ₹4-5Cr, Bandra West, urgent need. Can we schedule viewing?"
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-3 border-l-4 border-blue-500">
+                  <p className="text-xs font-semibold text-blue-600 mb-1">Step 3: Coordinate via Messages</p>
+                  <p className="text-xs text-slate-600">
+                    "Great! Let me check with owner. Property goes live on Sunday, but your client gets first viewing. I'll send photos."
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-3 border-l-4 border-emerald-500">
+                  <p className="text-xs font-semibold text-emerald-600 mb-1">Result: Fast Closure</p>
+                  <p className="text-xs text-slate-600">
+                    Client closes deal before property hits SmartFeed. Team coordination = faster results!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Need Help */}
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
+            <p className="text-sm text-amber-800">
+              <strong>Need Help?</strong> Contact admin or check the <a href="#" className="text-amber-600 underline">PropAI internal docs</a>
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -343,6 +601,16 @@ export default function AgentHub() {
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Agent Hub</h1>
                 <p className="text-xs md:text-sm text-slate-600">Internal collaboration & off-market listings</p>
               </div>
+              {/* Help Button */}
+              <Button
+                onClick={() => setHelpModalOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="ml-2 hover:bg-blue-50"
+                title="How to use Agent Hub"
+              >
+                <HelpCircle className="w-5 h-5 text-blue-600" />
+              </Button>
             </div>
 
             {/* Action Buttons - Stack on mobile */}
@@ -798,6 +1066,9 @@ export default function AgentHub() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Add Help Modal */}
+      <HelpGuideModal />
     </div>
   );
 }
