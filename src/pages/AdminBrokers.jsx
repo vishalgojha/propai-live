@@ -56,6 +56,12 @@ export default function AdminBrokers() {
     initialData: [],
   });
 
+  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
+    queryKey: ['admin-requirements'],
+    queryFn: () => base44.entities.Requirement.list(),
+    initialData: [],
+  });
+
   // Build single broker profile
   const buildBrokerProfile = async (brokerId) => {
     setBuildingProfile(true);
@@ -130,26 +136,70 @@ export default function AdminBrokers() {
 
   // WhatsApp broker (used in modal)
   const handleWhatsApp = (broker) => {
-    const brokerProps = properties.filter(p => p.broker_id === broker.id);
+    const brokerProps = properties.filter(p => p.broker_id === broker.id && p.status === 'Active');
+    const brokerRequirements = requirements.filter(r => r.broker_id === broker.id && r.status === 'Active');
     
     let message = `Hi ${broker.name}, this is Chariot Realty.\n\n`;
     
-    if (brokerProps.length > 0) {
-      message += `Regarding your ${brokerProps.length} listing${brokerProps.length > 1 ? 's' : ''}:\n\n`;
-      brokerProps.slice(0, 3).forEach((prop, idx) => {
-        message += `${idx + 1}. ${prop.bhk || 'Property'} in ${prop.location || 'Mumbai'}\n`;
-        message += `   ${prop.building_name ? `${prop.building_name}, ` : ''}`;
-        message += `₹${prop.price}${prop.price_unit === 'crores' ? ' Cr' : 'L'}\n`;
-        if (prop.custom_id) message += `   ID: ${prop.custom_id}\n`;
-        message += '\n';
+    if (brokerProps.length > 0 && brokerRequirements.length > 0) {
+      // Broker has both listings and client requirements
+      message += `📊 Quick Update:\n`;
+      message += `• Your Listings: ${brokerProps.length} active properties\n`;
+      message += `• Client Requirements: ${brokerRequirements.length} active searches\n\n`;
+      message += `Let's discuss availability and potential matches.\n\n`;
+    } else if (brokerProps.length > 0) {
+      // Only listings
+      message += `📋 Regarding your ${brokerProps.length} active listing${brokerProps.length > 1 ? 's' : ''}:\n\n`;
+      
+      // Show top 3 properties
+      const topProps = brokerProps.slice(0, 3);
+      topProps.forEach((prop, idx) => {
+        message += `${idx + 1}. ${prop.bhk} - ${prop.location}\n`;
+        message += `   ₹${prop.price}${prop.price_unit === 'crores' ? 'Cr' : 'L'}\n`;
       });
+      
       if (brokerProps.length > 3) {
-        message += `...and ${brokerProps.length - 3} more listing${brokerProps.length - 3 > 1 ? 's' : ''}\n\n`;
+        message += `...and ${brokerProps.length - 3} more\n`;
       }
-      message += `Can we discuss these listings?`;
+      
+      message += `\nCan you confirm:\n`;
+      message += `• Current availability status\n`;
+      message += `• Any pending photos/details\n\n`;
+    } else if (brokerRequirements.length > 0) {
+      // Only requirements
+      message += `🔍 Regarding ${brokerRequirements.length} client requirement${brokerRequirements.length > 1 ? 's' : ''} you shared:\n\n`;
+      
+      // Show top 2 requirements
+      const topReqs = brokerRequirements.slice(0, 2);
+      topReqs.forEach((req, idx) => {
+        const budgetMin = req.budget_min || 0;
+        const budgetMax = req.budget_max || 0;
+        const budgetUnit = req.budget_unit === 'crores' ? 'Cr' : 'L';
+        const budgetDisplay = budgetMin && budgetMax 
+          ? `₹${budgetMin}-${budgetMax}${budgetUnit}`
+          : budgetMin 
+            ? `₹${budgetMin}${budgetUnit}+`
+            : budgetMax
+              ? `Up to ₹${budgetMax}${budgetUnit}`
+              : 'Budget flexible';
+        
+        message += `${idx + 1}. ${req.bhk_preference?.join('/') || 'Property'} in ${req.preferred_locations?.join('/') || 'Mumbai'}\n`;
+        message += `   ${budgetDisplay}\n`;
+      });
+      
+      if (brokerRequirements.length > 2) {
+        message += `...and ${brokerRequirements.length - 2} more\n`;
+      }
+      
+      message += `\nHave we found suitable matches for your clients?\n\n`;
     } else {
-      message += `Can we discuss potential property listings in ${broker.areas_covered?.join(', ') || 'your areas'}?`;
+      // No active listings or requirements
+      message += `Hope you're doing well!\n\n`;
+      message += `Do you have any new listings or client requirements to share?\n\n`;
     }
+    
+    message += `Looking forward to working together.\n\n`;
+    message += `Team Chariot`;
     
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -543,7 +593,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
         </div>
 
         {/* Broker Cards Grid */}
-        {brokersLoading || propertiesLoading ? (
+        {brokersLoading || propertiesLoading || requirementsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
               <Skeleton key={i} className="h-96 rounded-3xl" />
