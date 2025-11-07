@@ -337,7 +337,7 @@ export default function BlogPost() {
               Browse Properties
             </Button>
             <Button
-              onClick={() => window.open('https://wa.me/919819471310', '_blank')}
+              onClick={() => window.open('https://wa.me/919819471310?text=Hi! I found PropAI Live through your blog. I\'m looking for properties in Mumbai. Can you help?', '_blank')}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
