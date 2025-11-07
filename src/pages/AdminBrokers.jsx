@@ -701,9 +701,10 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
 
   // UPDATED: Seeding Intro Modal - removed OTO completion check
   const SeedingIntroModal = () => {
-    const activeProperties = properties.filter(p => p.broker_id === broker.id);
-    const activeLocations = Array.from(new Set(activeProperties.map(p => p.location).filter(Boolean)));
-    const activeReqs = requirements.filter(r => r.status === 'Active');
+    // REMOVED: These lines were incorrectly referencing undefined 'broker' variable
+    // const activeProperties = properties.filter(p => p.broker_id === broker.id);
+    // const activeLocations = Array.from(new Set(activeProperties.map(p => p.location).filter(Boolean)));
+    // const activeReqs = requirements.filter(r => r.status === 'Active');
 
     const globalIntroMessage = `Hi Parijat Menghrajani, this is PropAI.
 
