@@ -68,7 +68,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     
     const propertyLink = getPropertyUrl();
     
-    const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
+    const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property from PropAI Live:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
@@ -162,8 +162,9 @@ export default function PropertyCard({ property, onViewDetails }) {
   };
 
   // Use cached broker contact from property instead of loading full broker entity
-  const primaryContact = property.broker_contact || property.assigned_agent_phone || '919819471310';
-  const hasContact = !!property.broker_contact;
+  const primaryContact = property.broker_contact || '919819471310';
+  const hasContact = !!property.broker_contact && property.broker_contact !== '919819471310';
+  const contactLabel = hasContact ? 'Broker' : 'PropAI';
 
   const hasImages = property.images && property.images.length > 0;
 
@@ -221,7 +222,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
 
           {property.ai_description && (
-            <p className="text-xs text-slate-600 leading-relaxed mb-2">
+            <p className="text-xs text-slate-600 leading-relaxed mb-2 line-clamp-2">
               {property.ai_description}
             </p>
           )}
@@ -254,28 +255,14 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* Contact Buttons - Always show using cached contact */}
-          {hasContact ? (
-            <div className="space-y-1">
-              <Button
-                onClick={(e) => handleWhatsAppContact(e, primaryContact)}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs"
-              >
-                <MessageCircle className="w-3 h-3" />
-                <span>WhatsApp Broker</span>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <Button
-                onClick={(e) => handleWhatsAppContact(e, '919819471310', 'Vishal')}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs"
-              >
-                <MessageCircle className="w-3 h-3" />
-                <span>Contact Vishal</span>
-              </Button>
-            </div>
-          )}
+          {/* Contact Button */}
+          <Button
+            onClick={(e) => handleWhatsAppContact(e, primaryContact, hasContact ? '' : 'PropAI Team')}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs"
+          >
+            <MessageCircle className="w-3 h-3" />
+            <span>WhatsApp {contactLabel}</span>
+          </Button>
 
           <div className="mt-2 pt-2 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
             {property.created_date && (
