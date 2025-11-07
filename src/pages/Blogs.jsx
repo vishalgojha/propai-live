@@ -75,7 +75,7 @@ export default function Blogs() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
         title="PropAI Insights | Mumbai Real Estate Guides & Market Data"
         description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."
@@ -88,11 +88,11 @@ export default function Blogs() {
         {/* Hero Section */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
               <BookOpen className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">PropAI Insights</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">PropAI Insights</h1>
               <p className="text-sm text-slate-600 font-light">Mumbai real estate knowledge, simplified</p>
             </div>
           </div>
@@ -114,11 +114,11 @@ export default function Blogs() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl border border-purple-200/50 cursor-pointer hover:shadow-2xl transition-all"
+            className="mb-12 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl border border-purple-200 cursor-pointer hover:shadow-2xl transition-all"
             onClick={() => navigate(createPageUrl("BlogPost") + `?slug=${featuredBlog.slug}`)}
           >
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="h-64 md:h-auto bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+              <div className="h-64 md:h-auto bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
                 {featuredBlog.featured_image ? (
                   <img
                     src={featuredBlog.featured_image}
@@ -130,10 +130,10 @@ export default function Blogs() {
                 )}
               </div>
               <div className="p-8 flex flex-col justify-center">
-                <Badge className="mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 w-fit font-bold shadow-md">
+                <Badge className="mb-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 w-fit font-bold shadow-md">
                   ⭐ Featured
                 </Badge>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 leading-tight">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-3 leading-tight">
                   {featuredBlog.title}
                 </h2>
                 <p className="text-slate-700 mb-4 leading-relaxed">
@@ -146,7 +146,7 @@ export default function Blogs() {
                   </span>
                   <span>{format(new Date(featuredBlog.created_date), "MMM dd, yyyy")}</span>
                 </div>
-                <Button className="w-fit bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-2xl shadow-md">
+                <Button className="w-fit bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-md">
                   Read Article
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -167,7 +167,7 @@ export default function Blogs() {
                 variant={isSelected ? "default" : "outline"}
                 className={`flex items-center justify-start gap-2 rounded-2xl font-semibold h-12 w-full transition-all ${
                   isSelected
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
+                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
                     : "border-purple-200 hover:bg-purple-50 text-slate-700"
                 }`}
               >

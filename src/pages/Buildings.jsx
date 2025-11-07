@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -112,7 +113,7 @@ export default function Buildings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
       <SEO
@@ -127,11 +128,11 @@ export default function Buildings() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Mumbai Buildings</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">Mumbai Buildings</h1>
               <p className="text-sm text-slate-600 font-light">Street-level property intelligence</p>
             </div>
           </div>
@@ -139,26 +140,26 @@ export default function Buildings() {
 
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Total Buildings</p>
-            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">{buildings.length}</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{buildings.length}</p>
           </div>
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Verified</p>
             <p className="text-2xl font-bold text-green-600">{buildings.filter(b => b.verified).length}</p>
           </div>
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Total Listings</p>
             <p className="text-2xl font-bold text-purple-600">{buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
           </div>
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200/50">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Active Listings</p>
-            <p className="text-2xl font-bold text-indigo-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
+            <p className="text-2xl font-bold text-blue-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200/50">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -211,7 +212,7 @@ export default function Buildings() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "100px" }}
                   onClick={() => handleBuildingClick(building)}
-                  className="bg-white rounded-3xl overflow-hidden border-2 border-slate-200 hover:border-sky-300 hover:shadow-xl transition-all cursor-pointer group"
+                  className="bg-white rounded-3xl overflow-hidden border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all cursor-pointer group"
                 >
                   {/* Content */}
                   <div className="p-6">
@@ -324,7 +325,7 @@ export default function Buildings() {
 
                     {/* Action Button */}
                     <Button
-                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-md"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl shadow-md"
                     >
                       View Details
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -339,7 +340,7 @@ export default function Buildings() {
               <div className="flex justify-center mt-8">
                 <Button
                   onClick={handleLoadMore}
-                  className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-6 rounded-full shadow-lg"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg"
                   disabled={isLoading}
                 >
                   Load More Buildings ({filteredBuildings.length - displayedBuildings.length} left)

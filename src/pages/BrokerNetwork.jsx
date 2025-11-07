@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -180,7 +181,7 @@ export default function BrokerNetwork() {
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -188,11 +189,11 @@ export default function BrokerNetwork() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
               <Network className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Broker Network</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Broker Network</h1>
               <p className="text-sm text-slate-600">Discover connections • View profiles • Network stays in-platform</p>
             </div>
           </div>
@@ -200,7 +201,7 @@ export default function BrokerNetwork() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+          <div className="bg-white rounded-2xl p-5 border border-purple-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
                 <Users className="w-5 h-5 text-purple-600" />
@@ -212,7 +213,7 @@ export default function BrokerNetwork() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+          <div className="bg-white rounded-2xl p-5 border border-purple-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
                 <Zap className="w-5 h-5 text-green-600" />
@@ -226,7 +227,7 @@ export default function BrokerNetwork() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+          <div className="bg-white rounded-2xl p-5 border border-purple-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-blue-600" />
@@ -240,7 +241,7 @@ export default function BrokerNetwork() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+          <div className="bg-white rounded-2xl p-5 border border-purple-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-amber-600" />
@@ -256,14 +257,14 @@ export default function BrokerNetwork() {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-2xl p-4 mb-6 border border-slate-200">
+        <div className="bg-white rounded-2xl p-4 mb-6 border border-purple-200">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Search brokers by name, phone, area..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11"
+              className="pl-11 border-purple-200 focus-visible:ring-purple-500"
             />
           </div>
         </div>
@@ -274,7 +275,7 @@ export default function BrokerNetwork() {
             {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-72 rounded-2xl" />)}
           </div>
         ) : filteredNetwork.length === 0 ? (
-          <div className="bg-white rounded-3xl p-16 text-center border-2 border-slate-200">
+          <div className="bg-white rounded-3xl p-16 text-center border-2 border-purple-200">
             <Network className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-slate-900 mb-2">No brokers found</h3>
             <p className="text-slate-500">Try adjusting your search</p>
@@ -286,7 +287,7 @@ export default function BrokerNetwork() {
                 key={broker.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all border border-slate-200 overflow-hidden"
+                className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all border border-purple-200 overflow-hidden"
               >
                 <div className="p-4">
                   {/* Broker Header */}
@@ -393,10 +394,10 @@ export default function BrokerNetwork() {
                   )}
 
                   {/* Actions - IN-PLATFORM ONLY */}
-                  <div className="flex gap-2 pt-3 border-t border-slate-200">
+                  <div className="flex gap-2 pt-3 border-t border-purple-200">
                     <Button
                       onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white h-9 text-xs font-semibold"
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-9 text-xs font-semibold"
                     >
                       <Eye className="w-3 h-3 mr-1" />
                       View Profile
@@ -409,7 +410,7 @@ export default function BrokerNetwork() {
                         });
                       }}
                       variant="outline"
-                      className="flex-1 h-9 text-xs font-semibold"
+                      className="flex-1 h-9 text-xs font-semibold border-purple-200"
                     >
                       <Mail className="w-3 h-3 mr-1" />
                       Message

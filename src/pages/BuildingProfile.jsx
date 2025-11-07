@@ -296,7 +296,7 @@ export default function BuildingProfile() {
 
   if (!buildingId) {
     return (
-      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-[#111111] mb-4">Building not found</h2>
           <Button onClick={() => navigate(createPageUrl("Buildings"))}>
@@ -309,7 +309,7 @@ export default function BuildingProfile() {
 
   if (buildingLoading || !building || isLoadingUser) {
     return (
-      <div className="min-h-screen bg-[#F7F7F7]">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-96 w-full mb-8 rounded-3xl" />
           <Skeleton className="h-12 w-3/4 mb-4" />
@@ -320,7 +320,7 @@ export default function BuildingProfile() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {building && (
         <SEO
           title={`${building.name}, ${building.location} | Pricing, Amenities & Listings | PropAI`}

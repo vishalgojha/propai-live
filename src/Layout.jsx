@@ -36,7 +36,7 @@ export default function Layout({ children, currentPageName }) {
 
     // Default meta tags
     setMetaTag('viewport', 'width=device-width, initial-scale=1.0');
-    setMetaTag('theme-color', '#0EA5E9'); // Sky blue theme
+    setMetaTag('theme-color', '#8B5CF6'); // Purple-500 theme
     setMetaTag('author', 'PropAI Live');
     setMetaTag('robots', 'index, follow');
     
@@ -137,19 +137,17 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC]" style={{
-      backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%230EA5E9' fill-opacity='0.02' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E")`
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-sky-100 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
                 <Zap className="w-6 h-6 text-white fill-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-sky-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">PropAI Live</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">PropAI Live</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -162,8 +160,8 @@ export default function Layout({ children, currentPageName }) {
                     to={item.path}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold ${
                       isActive
-                        ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white shadow-md"
-                        : "text-slate-700 hover:bg-sky-50"
+                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
+                        : "text-slate-700 hover:bg-purple-50"
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -178,7 +176,7 @@ export default function Layout({ children, currentPageName }) {
                   {user ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="ml-2 gap-2 rounded-2xl hover:bg-sky-50">
+                        <Button variant="ghost" className="ml-2 gap-2 rounded-2xl hover:bg-purple-50">
                           <User className="w-4 h-4" />
                           <span className="text-sm font-semibold">{user.full_name || user.email}</span>
                         </Button>
@@ -188,7 +186,7 @@ export default function Layout({ children, currentPageName }) {
                           <p className="text-sm font-semibold">{user.full_name || 'User'}</p>
                           <p className="text-xs text-gray-500">{user.email}</p>
                           {user.role === 'admin' && (
-                            <p className="text-xs text-sky-600 font-bold mt-1">Admin</p>
+                            <p className="text-xs text-purple-600 font-bold mt-1">Admin</p>
                           )}
                         </div>
                         <DropdownMenuSeparator />
@@ -206,7 +204,7 @@ export default function Layout({ children, currentPageName }) {
                   ) : (
                     <Button
                       onClick={handleLogin}
-                      className="ml-2 bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-semibold rounded-2xl shadow-md"
+                      className="ml-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-md"
                     >
                       <User className="w-4 h-4 mr-2" />
                       Login
@@ -234,7 +232,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-sky-100 bg-white/95 backdrop-blur-xl">
+          <div className="md:hidden border-t border-purple-100 bg-white/95 backdrop-blur-xl">
             <nav className="px-4 py-4 space-y-2">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -245,8 +243,8 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-semibold ${
                       isActive
-                        ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white shadow-md"
-                        : "text-slate-700 hover:bg-sky-50"
+                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
+                        : "text-slate-700 hover:bg-purple-50"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -257,14 +255,14 @@ export default function Layout({ children, currentPageName }) {
 
               {/* Mobile User Menu */}
               {!isLoadingUser && (
-                <div className="pt-4 border-t border-sky-100">
+                <div className="pt-4 border-t border-purple-100">
                   {user ? (
                     <>
                       <div className="px-4 py-2 mb-2">
                         <p className="text-sm font-semibold">{user.full_name || 'User'}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
                         {user.role === 'admin' && (
-                          <p className="text-xs text-sky-600 font-bold mt-1">Admin</p>
+                          <p className="text-xs text-purple-600 font-bold mt-1">Admin</p>
                         )}
                       </div>
                       <Button
@@ -296,7 +294,7 @@ export default function Layout({ children, currentPageName }) {
                         handleLogin();
                         setMobileMenuOpen(false);
                       }}
-                      className="w-full bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-semibold rounded-2xl"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl"
                     >
                       <User className="w-4 h-4 mr-2" />
                       Login
@@ -315,17 +313,17 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {/* Light Modern Footer */}
-      <footer className="bg-white border-t border-sky-100 py-16">
+      <footer className="bg-white border-t border-purple-100 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
             
             {/* Brand Section */}
             <div className="md:col-span-4">
               <div className="mb-6 flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                   <Zap className="w-7 h-7 text-white fill-white" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">PropAI Live</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">PropAI Live</span>
               </div>
               <p className="text-slate-700 text-base font-light leading-relaxed mb-4">
                 AI-powered property intelligence platform for Mumbai real estate.
@@ -342,45 +340,45 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Residential"} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Residential
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Commercial"} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Commercial
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?listingType=Rent"} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Rent
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?listingType=Sale"} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Buy
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Blogs")} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Blog & Guides
                   </Link>
                 </li>
@@ -394,36 +392,36 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("Home") + "#how-it-works"} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     How It Works
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Buildings")} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Building Directory
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed")} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     SmartFeed Explained
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Blogs") + "?category=Expat%20Series"} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     <span>Expat Corner</span>
                     <span className="ml-1 text-xs">🌍</span>
                   </Link>
@@ -438,27 +436,27 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("PrivacyPolicy")} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("TermsOfService")} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Terms of Service
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to={createPageUrl("Disclaimer")} 
-                    className="hover:text-sky-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group"
                   >
-                    <span className="w-1 h-1 bg-sky-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Disclaimer
                   </Link>
                 </li>
@@ -470,18 +468,18 @@ export default function Layout({ children, currentPageName }) {
               <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Contact</h4>
               <ul className="space-y-3 text-sm text-slate-600 font-light mb-6">
                 <li className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-sky-500 mt-0.5 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                   <span>Mumbai, Maharashtra<br />India</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                  <a href="tel:+919819471310" className="hover:text-sky-600 transition-colors">
+                  <Phone className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <a href="tel:+919819471310" className="hover:text-purple-600 transition-colors">
                     +91 98194 71310
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                  <a href="mailto:hello@propai.live" className="hover:text-sky-600 transition-colors">
+                  <Mail className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <a href="mailto:hello@propai.live" className="hover:text-purple-600 transition-colors">
                     hello@propai.live
                   </a>
                 </li>
@@ -493,24 +491,24 @@ export default function Layout({ children, currentPageName }) {
                   href="https://instagram.com/propai.live" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-sky-50 hover:bg-sky-100 rounded-xl flex items-center justify-center transition-all group"
+                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group"
                 >
-                  <Instagram className="w-5 h-5 text-sky-600 group-hover:text-sky-700 transition-colors" />
+                  <Instagram className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors" />
                 </a>
                 <a 
                   href="https://linkedin.com/company/propai-live" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-sky-50 hover:bg-sky-100 rounded-xl flex items-center justify-center transition-all group"
+                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group"
                 >
-                  <Linkedin className="w-5 h-5 text-sky-600 group-hover:text-sky-700 transition-colors" />
+                  <Linkedin className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors" />
                 </a>
               </div>
             </div>
           </div>
 
           {/* Bottom Strip */}
-          <div className="border-t border-sky-100 pt-8">
+          <div className="border-t border-purple-100 pt-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-600">
               <div>
                 <p>© 2025 PropAI Live. All rights reserved</p>

@@ -296,7 +296,7 @@ export default function PropertyDetails() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {property && (
         <SEO
           title={`${property.ai_title || `${property.bhk} in ${property.location}`} | Chariot Realty`}

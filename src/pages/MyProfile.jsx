@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ export default function MyProfile() {
         // If user has email, try to find matching broker
         if (user.email) {
           const brokers = await base44.entities.Broker.list();
-          const matchingBroker = brokers.find(b => 
+          const matchingBroker = brokers.find(b =>
             b.email?.toLowerCase() === user.email.toLowerCase() ||
             b.phone === user.email // Some users might have phone as email
           );
@@ -105,17 +106,17 @@ export default function MyProfile() {
     }, 0);
 
     // Get interactions for broker's properties
-    const myInteractions = interactions.filter(i => 
+    const myInteractions = interactions.filter(i =>
       myProps.some(p => p.id === i.property_id)
     );
     const views = myInteractions.filter(i => i.interaction_type === 'view').length;
-    const inquiries = myInteractions.filter(i => 
+    const inquiries = myInteractions.filter(i =>
       ['inquiry', 'whatsapp', 'call'].includes(i.interaction_type)
     ).length;
 
     // Top 3 most viewed properties
     const propertyViewCounts = myProps.map(prop => {
-      const propViews = myInteractions.filter(i => 
+      const propViews = myInteractions.filter(i =>
         i.property_id === prop.id && i.interaction_type === 'view'
       ).length;
       return { ...prop, viewCount: propViews };
@@ -156,7 +157,7 @@ export default function MyProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <User className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
           <p className="text-slate-600 font-medium">Loading profile...</p>
@@ -170,14 +171,14 @@ export default function MyProfile() {
   // ADMIN VIEW
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
         <Toaster position="top-center" richColors closeButton />
-        
+
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <Shield className="w-8 h-8 text-white" />
               </div>
               <div>
@@ -303,9 +304,9 @@ export default function MyProfile() {
   // BROKER VIEW (or admin who also has broker profile)
   if (brokerProfile && brokerMetrics) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
         <Toaster position="top-center" richColors closeButton />
-        
+
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-6">
@@ -319,7 +320,7 @@ export default function MyProfile() {
                   <p className="text-slate-600">{brokerProfile.custom_id}</p>
                 </div>
               </div>
-              
+
               {brokerProfile.trust_score && (
                 <div className="flex items-center gap-2">
                   <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-lg px-4 py-2">
@@ -513,12 +514,12 @@ export default function MyProfile() {
 
   // REGULAR USER (not admin, no broker profile found)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
       <Toaster position="top-center" richColors closeButton />
-      
+
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <User className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentUser.full_name || 'User Profile'}</h1>
@@ -548,15 +549,15 @@ export default function MyProfile() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-sky-50 to-cyan-50 border-2 border-sky-200 text-center">
-          <Users className="w-12 h-12 text-sky-600 mx-auto mb-4" />
+        <Card className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 text-center">
+          <Users className="w-12 h-12 text-purple-600 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-slate-900 mb-2">Explore Mumbai Real Estate</h3>
           <p className="text-sm text-slate-600 mb-4">
             Browse AI-powered property listings and get personalized recommendations
           </p>
           <Button
             onClick={() => navigate(createPageUrl("SmartFeed"))}
-            className="bg-gradient-to-r from-sky-600 to-cyan-600 text-white"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
           >
             Browse Properties
           </Button>

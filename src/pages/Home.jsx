@@ -121,7 +121,7 @@ Looking forward to listing with PropAI Live!`;
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
         title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence Platform"
         description="Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring. Find verified properties with transparent pricing."
@@ -130,10 +130,10 @@ Looking forward to listing with PropAI Live!`;
       />
 
       {/* Hero Section - Light & Clean */}
-      <section className="relative bg-gradient-to-br from-sky-50 via-cyan-50 to-sky-50 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50 overflow-hidden">
         {/* Subtle decorative elements */}
-        <div className="absolute top-20 right-20 w-64 h-64 bg-sky-200/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-cyan-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -143,7 +143,7 @@ Looking forward to listing with PropAI Live!`;
             className="text-center max-w-4xl mx-auto"
           >
             {/* Badge */}
-            <Badge className="mb-6 bg-white border-2 border-sky-200 text-sky-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
+            <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
               <Sparkles className="w-4 h-4" />
               Powered by Building-Level Intelligence
             </Badge>
@@ -152,7 +152,7 @@ Looking forward to listing with PropAI Live!`;
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
               Mumbai Real Estate,
               <br />
-              <span className="bg-gradient-to-r from-sky-600 via-cyan-600 to-sky-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Decoded by AI
               </span>
             </h1>
@@ -169,7 +169,7 @@ Looking forward to listing with PropAI Live!`;
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
               >
                 <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Explore SmartFeed
@@ -178,7 +178,7 @@ Looking forward to listing with PropAI Live!`;
               <Button
                 onClick={() => window.open(adminWhatsAppUrl, '_blank')}
                 size="lg"
-                className="bg-white hover:bg-sky-50 border-2 border-sky-200 text-sky-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
+                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
               >
                 <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Post to Admin
@@ -221,7 +221,7 @@ Looking forward to listing with PropAI Live!`;
           </div>
           <Button
             onClick={() => navigate(createPageUrl("SmartFeed"))}
-            className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-bold rounded-2xl"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl"
           >
             View All
             <ArrowRight className="w-4 h-4 ml-2" />
@@ -275,7 +275,7 @@ Looking forward to listing with PropAI Live!`;
       <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-white border-2 border-sky-200 text-sky-700 px-4 py-2">
+            <Badge className="mb-4 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2">
               What Makes Us Different
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
@@ -325,7 +325,7 @@ Looking forward to listing with PropAI Live!`;
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 border-2 border-blue-200 hover:shadow-xl transition-all group"
+              className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 border-2 border-purple-200 hover:shadow-xl transition-all group"
             >
               <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="w-7 h-7 text-white" />
@@ -386,20 +386,20 @@ Looking forward to listing with PropAI Live!`;
 
           {/* Additional Features Row */}
           <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-sky-200 hover:shadow-md transition-all">
-              <Globe className="w-10 h-10 text-sky-600 mb-4" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 hover:shadow-md transition-all">
+              <Globe className="w-10 h-10 text-blue-600 mb-4" />
               <h4 className="font-bold text-slate-900 mb-2">Expat Mode™</h4>
               <p className="text-sm text-slate-700">One-toggle curation: Fully furnished + expat-friendly buildings + good amenities. Built for the global crowd.</p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-sky-200 hover:shadow-md transition-all">
-              <Eye className="w-10 h-10 text-sky-600 mb-4" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 hover:shadow-md transition-all">
+              <Eye className="w-10 h-10 text-blue-600 mb-4" />
               <h4 className="font-bold text-slate-900 mb-2">Semantic Search</h4>
               <p className="text-sm text-slate-700">"Modern flat near Pali Hill with balcony" understands context—not just keyword matching. Google-level property discovery.</p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-sky-200 hover:shadow-md transition-all">
-              <Zap className="w-10 h-10 text-sky-600 mb-4" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 hover:shadow-md transition-all">
+              <Zap className="w-10 h-10 text-blue-600 mb-4" />
               <h4 className="font-bold text-slate-900 mb-2">Mumbai Street Smarts</h4>
               <p className="text-sm text-slate-700">AI trained on broker lingo, location vibes, and cultural nuances. Pali Hill ≠ Hill Road—we get it.</p>
             </div>
@@ -421,45 +421,45 @@ Looking forward to listing with PropAI Live!`;
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left: Visual */}
-            <div className="bg-gradient-to-br from-sky-600 to-cyan-600 rounded-3xl p-8 text-white shadow-xl">
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl p-8 text-white shadow-xl">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-sky-600">1</span>
+                    <span className="font-bold text-blue-600">1</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">WhatsApp → Structured Data</h4>
-                    <p className="text-sm text-sky-100">Broker forwards: "2bhk sf mod kit 2cp Pali Hill 80L". AI parses, links to building, extracts intelligence.</p>
+                    <p className="text-sm text-blue-100">Broker forwards: "2bhk sf mod kit 2cp Pali Hill 80L". AI parses, links to building, extracts intelligence.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-sky-600">2</span>
+                    <span className="font-bold text-blue-600">2</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">Building Becomes Knowledge Node</h4>
-                    <p className="text-sm text-sky-100">"Raheja Classique" accumulates context: pricing, broker trust, tenant profiles, amenities—self-learning.</p>
+                    <p className="text-sm text-blue-100">"Raheja Classique" accumulates context: pricing, broker trust, tenant profiles, amenities—self-learning.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-sky-600">3</span>
+                    <span className="font-bold text-blue-600">3</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">SmartFeed Ranks by Trust</h4>
-                    <p className="text-sm text-sky-100">High-trust brokers rise. Duplicates hidden. You see the clean, curated feed—decades ahead of MagicBricks.</p>
+                    <p className="text-sm text-blue-100">High-trust brokers rise. Duplicates hidden. You see the clean, curated feed—decades ahead of MagicBricks.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-sky-600">4</span>
+                    <span className="font-bold text-blue-600">4</span>
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">Intelligence Compounds</h4>
-                    <p className="text-sm text-sky-100">Every parse enriches the system. Building Memory™ grows. Deals Radar gets smarter. Your advantage scales.</p>
+                    <p className="text-sm text-blue-100">Every parse enriches the system. Building Memory™ grows. Deals Radar gets smarter. Your advantage scales.</p>
                   </div>
                 </div>
               </div>
@@ -467,9 +467,9 @@ Looking forward to listing with PropAI Live!`;
 
             {/* Right: Benefits for Clients Only */}
             <div className="space-y-6">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-sky-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-200">
                 <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-sky-600" />
+                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
                   What You Get
                 </h4>
                 <ul className="space-y-2 text-slate-700">
@@ -482,10 +482,10 @@ Looking forward to listing with PropAI Live!`;
                 </ul>
               </div>
 
-              <div className="bg-gradient-to-r from-sky-100 to-cyan-100 rounded-2xl p-6 border border-sky-200">
+              <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 border border-purple-200">
                 <h4 className="font-bold text-slate-900 mb-2">The Moat</h4>
                 <p className="text-sm text-slate-700">
-                  MagicBricks has listings. You have <span className="font-bold text-sky-700">living intelligence</span>. That's not a feature gap—it's a decade gap.
+                  MagicBricks has listings. You have <span className="font-bold text-blue-700">living intelligence</span>. That's not a feature gap—it's a decade gap.
                 </p>
               </div>
             </div>
@@ -494,7 +494,7 @@ Looking forward to listing with PropAI Live!`;
       </section>
 
       {/* Trust Indicators - Images with lazy loading */}
-      <section className="bg-gradient-to-r from-sky-600 to-cyan-600 py-16">
+      <section className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
             {stats.map((stat, idx) => (
@@ -506,7 +506,7 @@ Looking forward to listing with PropAI Live!`;
                 transition={{ delay: idx * 0.1 }}
               >
                 <div className="text-4xl md:text-5xl font-bold mb-2">{stat.number}</div>
-                <div className="text-sky-100 text-sm">{stat.label}</div>
+                <div className="text-blue-100 text-sm">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -527,7 +527,7 @@ Looking forward to listing with PropAI Live!`;
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <Search className="w-5 h-5 mr-2" />
               Browse Properties
@@ -535,7 +535,7 @@ Looking forward to listing with PropAI Live!`;
             <Button
               onClick={() => navigate(createPageUrl("Blogs"))}
               size="lg"
-              className="bg-white hover:bg-sky-50 border-2 border-sky-200 text-sky-700 font-semibold h-14 px-8 rounded-2xl"
+              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl"
             >
               <BookOpen className="w-5 h-5 mr-2" />
               Read Insights
@@ -545,7 +545,7 @@ Looking forward to listing with PropAI Live!`;
       </section>
 
       {/* CTA Section - Light */}
-      <section className="py-16 bg-gradient-to-br from-sky-50 via-cyan-50 to-sky-50">
+      <section className="py-16 bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
             Ready to See the Difference?
@@ -557,7 +557,7 @@ Looking forward to listing with PropAI Live!`;
             <Button
               onClick={() => window.open(whatsappAIUrl, '_blank')}
               size="lg"
-              className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <Bot className="w-5 h-5 mr-2" />
               Chat with AI Assistant
