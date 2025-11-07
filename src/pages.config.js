@@ -16,6 +16,7 @@ import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import BrokerNetwork from './pages/BrokerNetwork';
 import BrokerAnalytics from './pages/BrokerAnalytics';
 import AdminDashboard from './pages/AdminDashboard';
+import MyProfile from './pages/MyProfile';
 import Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "BrokerNetwork": BrokerNetwork,
     "BrokerAnalytics": BrokerAnalytics,
     "AdminDashboard": AdminDashboard,
+    "MyProfile": MyProfile,
 }
 
 export const pagesConfig = {

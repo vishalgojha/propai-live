@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, Routes, Route } from "react-router-dom";
+import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3 } from "lucide-react";
@@ -15,6 +15,7 @@ import {
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate(); // Initialize useNavigate
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -195,6 +196,11 @@ export default function Layout({ children, currentPageName }) {
                           )}
                         </div>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate(createPageUrl("MyProfile"))} className="cursor-pointer">
+                          <User className="w-4 h-4 mr-2" />
+                          My Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                           <LogOut className="w-4 h-4 mr-2" />
                           Logout
@@ -265,6 +271,17 @@ export default function Layout({ children, currentPageName }) {
                           <p className="text-xs text-sky-600 font-bold mt-1">Admin</p>
                         )}
                       </div>
+                      <Button
+                        onClick={() => {
+                          navigate(createPageUrl("MyProfile"));
+                          setMobileMenuOpen(false);
+                        }}
+                        variant="outline"
+                        className="w-full justify-start gap-2 mb-2"
+                      >
+                        <User className="w-4 h-4" />
+                        My Profile
+                      </Button>
                       <Button
                         onClick={() => {
                           handleLogout();
