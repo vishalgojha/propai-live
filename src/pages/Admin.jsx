@@ -939,14 +939,18 @@ export default function Admin() {
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
-    const brokerProps = properties.filter(p => p.broker_id === broker.id);
-    let message = `Hi ${broker.name}, this is Chariot Realty.\n\n`;
+    const activeListings = broker.active_listings_count || 0;
+    let message = `Hi ${broker.name}, this is PropAI.\n\n`;
     
-    if (brokerProps.length > 0) {
-      message += `Regarding your ${brokerProps.length} listing${brokerProps.length > 1 ? 's' : ''}`;
+    if (activeListings > 0) {
+      message += `Regarding your ${activeListings} active listing${activeListings > 1 ? 's' : ''} on PropAI SmartFeed.\n\n`;
+      message += `We're seeing good traction on your properties. Let's discuss any updates or new listings.\n\n`;
     } else {
-      message += `Can we discuss potential property listings?`;
+      message += `Hope you're doing well!\n\nWe'd love to feature your properties on PropAI SmartFeed. Mumbai's smartest property platform.\n\n`;
+      message += `Send us listings anytime - we'll handle the rest.\n\n`;
     }
+    
+    message += `Team PropAI\n📱 www.propai.live`;
     
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -1825,6 +1829,12 @@ export default function Admin() {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-200">
+                    <p className="text-xs text-amber-800">
+                      <strong>💡 Tip:</strong> If listing counts are incorrect, click "Data Quality" → "Fix Data Issues" or use "Build All Profiles" to recalculate.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1835,11 +1845,14 @@ export default function Admin() {
                     </div>
                   ) : (
                     filteredBrokers.map((broker) => {
-                      const brokerProps = properties.filter(p => p.broker_id === broker.id);
+                      // Use cached counts from broker entity (more reliable)
+                      const activeListings = broker.active_listings_count || 0;
+                      const totalListings = broker.total_listings_count || 0;
+                      
                       return (
                         <div
                           key={broker.id}
-                          className="bg-white rounded-2xl p-5 border border-slate-200"
+                          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-sky-300 hover:shadow-md transition-all"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div>
@@ -1855,19 +1868,44 @@ export default function Admin() {
                                   {broker.phone}
                                 </span>
                                 <span>•</span>
-                                <span>{brokerProps.length} listings</span>
+                                <span className="flex items-center gap-1">
+                                  <Package className="w-3 h-3" />
+                                  <strong>{activeListings}</strong> active
+                                </span>
+                                {totalListings > activeListings && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-xs text-slate-500">{totalListings} total</span>
+                                  </>
+                                )}
                               </div>
+                              {broker.trust_score && (
+                                <Badge className="bg-[#FFD300]/20 text-black border-[#FFD300] mt-2">
+                                  <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                                  Trust: {broker.trust_score}/100
+                                </Badge>
+                              )}
                             </div>
                           </div>
 
-                          <Button
-                            onClick={() => handleWhatsApp(broker)}
-                            className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
-                            size="sm"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            WhatsApp
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleWhatsApp(broker)}
+                              className="bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                              size="sm"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              WhatsApp
+                            </Button>
+                            <Button
+                              onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Profile
+                            </Button>
+                          </div>
                         </div>
                       );
                     })
