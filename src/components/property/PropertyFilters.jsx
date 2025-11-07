@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function PropertyFilters({ filters, onFilterChange, onClearFilters, allProperties = [] }) {
   const [nlpInput, setNlpInput] = useState("");
-  // const [expatMode, setExpatMode] = useState(false); // Removed expatMode state
 
   const uniqueBhks = [...new Set(allProperties.map(p => p.bhk).filter(Boolean))].sort();
   const uniqueLocations = [...new Set(allProperties.map(p => p.location).filter(Boolean))].sort();
@@ -29,35 +27,13 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     onFilterChange({ ...filters, location_multi: newLocations });
   };
 
-  // NEW: Toggle function for listing type
   const toggleListingType = (type) => {
     if (filters.listingType === type) {
-      // If clicking the same button, deselect it (go back to "all")
       onFilterChange({ ...filters, listingType: "all" });
     } else {
-      // Otherwise, select the new type
       onFilterChange({ ...filters, listingType: type });
     }
   };
-
-  // Removed toggleExpatMode function
-  /*
-  const toggleExpatMode = () => {
-    const newExpatMode = !expatMode;
-    setExpatMode(newExpatMode);
-
-    if (newExpatMode) {
-      onFilterChange({
-        ...filters,
-        furnishing: 'Fully Furnished',
-        expat_mode: true
-      });
-    } else {
-      const { expat_mode, ...restFilters } = filters;
-      onFilterChange(restFilters);
-    }
-  };
-  */
 
   const handleNlpSearch = () => {
     if (!nlpInput.trim()) return;
@@ -112,14 +88,13 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     onFilterChange(newFilters);
   };
 
-  // Determine price unit based on listing type
   const getPriceUnit = () => {
     if (filters.listingType === 'Rent') {
       return 'Lakhs';
     } else if (filters.listingType === 'Sale' || filters.listingType === 'Pre Leased') {
       return 'Cr';
     }
-    return 'Lakhs'; // default
+    return 'Lakhs';
   };
 
   const hasActiveFilters =
@@ -131,42 +106,14 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     (filters.listingType && filters.listingType !== "all") ||
     filters.search ||
     (filters.propertyCategory && filters.propertyCategory !== "all");
-    // Removed filters.expat_mode;
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-purple-200/50 p-6 mb-8">
-
-      {/* Removed Expat Mode Toggle UI */}
-      {/*
-      <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">🌍</span>
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm">Expat Mode</h3>
-              <p className="text-xs text-slate-600">Fully furnished • Great amenities • Expat-friendly buildings</p>
-            </div>
-          </div>
-          <button
-            onClick={toggleExpatMode}
-            className={`relative w-14 h-8 rounded-full transition-all ${
-              expatMode ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-gray-300'
-            }`}
-          >
-            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow-md ${
-              expatMode ? 'translate-x-7' : 'translate-x-1'
-            }`} />
-          </button>
-        </div>
-      </div>
-      */}
+    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-sky-200/50 p-6 mb-8">
 
       {/* AI-Powered Search */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-5 h-5 text-purple-500" />
+          <Sparkles className="w-5 h-5 text-sky-500" />
           <h3 className="font-bold text-slate-900 text-lg">AI-Powered Search</h3>
         </div>
 
@@ -178,12 +125,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               value={nlpInput}
               onChange={(e) => setNlpInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleNlpSearch()}
-              className="pl-11 border-purple-200 focus-visible:ring-purple-500 h-12 rounded-xl"
+              className="pl-11 border-sky-200 focus-visible:ring-sky-500 h-12 rounded-xl"
             />
           </div>
           <Button
             onClick={handleNlpSearch}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white h-12 px-6 rounded-xl font-semibold shadow-md"
+            className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white h-12 px-6 rounded-xl font-semibold shadow-md"
           >
             Search
           </Button>
@@ -208,8 +155,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
-                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                    ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white border-0 shadow-md"
+                    : "border-sky-200 hover:bg-sky-50 text-slate-700"
                 }`}
               >
                 {type}
@@ -236,8 +183,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
-                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                    ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white border-0 shadow-md"
+                    : "border-sky-200 hover:bg-sky-50 text-slate-700"
                 }`}
               >
                 {bhk}
@@ -261,8 +208,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 size="sm"
                 className={`rounded-xl font-semibold ${
                   isSelected
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"
-                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                    ? "bg-gradient-to-r from-sky-600 to-cyan-600 text-white border-0 shadow-md"
+                    : "border-sky-200 hover:bg-sky-50 text-slate-700"
                 }`}
               >
                 {location}
@@ -283,7 +230,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder={getPriceUnit() === 'Cr' ? "e.g., 1.5" : "e.g., 50"}
             value={filters.minPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
-            className="border-purple-200 focus-visible:ring-purple-500 h-11 rounded-xl"
+            className="border-sky-200 focus-visible:ring-sky-500 h-11 rounded-xl"
           />
         </div>
         <div>
@@ -295,47 +242,38 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder={getPriceUnit() === 'Cr' ? "e.g., 5" : "e.g., 200"}
             value={filters.maxPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
-            className="border-purple-200 focus-visible:ring-purple-500 h-11 rounded-xl"
+            className="border-sky-200 focus-visible:ring-sky-500 h-11 rounded-xl"
           />
         </div>
       </div>
 
       {/* Clear Filters */}
       {hasActiveFilters && (
-        <div className="flex items-center justify-between pt-4 border-t border-purple-100">
+        <div className="flex items-center justify-between pt-4 border-t border-sky-100">
           <div className="flex flex-wrap gap-2">
             {filters.listingType && filters.listingType !== "all" && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
+              <Badge variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
                 {filters.listingType}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
               </Badge>
             )}
             {filters.bhk_multi?.map((bhk) => (
-              <Badge key={bhk} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
+              <Badge key={bhk} variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
                 {bhk}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleBhk(bhk)} />
               </Badge>
             ))}
             {filters.location_multi?.map((location) => (
-              <Badge key={location} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
+              <Badge key={location} variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
                 {location}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleLocation(location)} />
               </Badge>
             ))}
             {(filters.minPrice || filters.maxPrice) && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
+              <Badge variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
                 ₹{filters.minPrice || "0"}{getPriceUnit()} - ₹{filters.maxPrice || "∞"}{getPriceUnit()}
               </Badge>
             )}
-            {/* Removed Expat Mode badge */}
-            {/*
-            {filters.expat_mode && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-400 font-semibold">
-                Expat Mode
-                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleExpatMode()} />
-              </Badge>
-            )}
-            */}
             {filters.furnishing && (
               <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-400 font-semibold">
                 {filters.furnishing}
@@ -360,7 +298,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-slate-600 hover:text-slate-900 hover:bg-purple-50"
+            className="text-slate-600 hover:text-slate-900 hover:bg-sky-50"
           >
             <X className="w-4 h-4 mr-1" />
             Clear all
