@@ -1,0 +1,412 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * Property AI Marketing Assistant
+ * 
+ * Generates AI-powered marketing content for properties:
+ * - Multiple title options (luxury, practical, SEO-focused)
+ * - Descriptions in various tones (professional, casual, luxury)
+ * - Relevant tags and keywords
+ * - Property tour video scripts (30s, 60s, 90s)
+ * - Social media captions
+ */
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { property_id, content_types = ['all'], style = 'professional' } = await req.json();
+
+    if (!property_id) {
+      return Response.json({ error: 'property_id is required' }, { status: 400 });
+    }
+
+    console.log(`🤖 AI Assistant generating content for property: ${property_id}`);
+
+    // Fetch property details
+    const property = await base44.asServiceRole.entities.Property.list();
+    const propertyData = property.find(p => p.id === property_id);
+
+    if (!propertyData) {
+      return Response.json({ error: 'Property not found' }, { status: 404 });
+    }
+
+    // Build property context
+    const propertyContext = buildPropertyContext(propertyData);
+
+    const results = {};
+
+    // Generate titles if requested
+    if (content_types.includes('all') || content_types.includes('titles')) {
+      console.log('📝 Generating titles...');
+      results.titles = await generateTitles(base44, propertyContext, style);
+    }
+
+    // Generate descriptions if requested
+    if (content_types.includes('all') || content_types.includes('descriptions')) {
+      console.log('📄 Generating descriptions...');
+      results.descriptions = await generateDescriptions(base44, propertyContext, style);
+    }
+
+    // Generate tags if requested
+    if (content_types.includes('all') || content_types.includes('tags')) {
+      console.log('🏷️ Generating tags...');
+      results.tags = await generateTags(base44, propertyContext);
+    }
+
+    // Generate video scripts if requested
+    if (content_types.includes('all') || content_types.includes('video_scripts')) {
+      console.log('🎬 Generating video scripts...');
+      results.video_scripts = await generateVideoScripts(base44, propertyContext, style);
+    }
+
+    // Generate social media captions if requested
+    if (content_types.includes('all') || content_types.includes('social_media')) {
+      console.log('📱 Generating social media captions...');
+      results.social_media = await generateSocialMediaCaptions(base44, propertyContext, style);
+    }
+
+    console.log('✅ AI Assistant completed successfully');
+
+    return Response.json({
+      success: true,
+      property: {
+        id: propertyData.id,
+        custom_id: propertyData.custom_id,
+        bhk: propertyData.bhk,
+        location: propertyData.location
+      },
+      content: results,
+      generated_at: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Property AI Assistant error:', error);
+    return Response.json({ 
+      error: error.message 
+    }, { status: 500 });
+  }
+});
+
+function buildPropertyContext(property) {
+  const parts = [];
+  
+  // Basic info
+  parts.push(`Property Type: ${property.property_category || 'Residential'}`);
+  parts.push(`Configuration: ${property.bhk}`);
+  if (property.jodi_flag) parts.push(`Type: JODI (Combined flat)`);
+  
+  // Location
+  parts.push(`Location: ${property.location}`);
+  if (property.pocket) parts.push(`Area: ${property.pocket}`);
+  if (property.building_name) parts.push(`Building: ${property.building_name}`);
+  
+  // Price
+  const priceStr = property.price_unit === 'crores' ? `₹${property.price} Cr` : `₹${property.price} Lakhs`;
+  parts.push(`Price: ${priceStr}`);
+  parts.push(`Listing Type: ${property.listing_type}`);
+  
+  // Area
+  if (property.carpet_area) parts.push(`Carpet Area: ${property.carpet_area} sq.ft`);
+  if (property.built_up_area) parts.push(`Built-up Area: ${property.built_up_area} sq.ft`);
+  
+  // Details
+  if (property.furnishing) parts.push(`Furnishing: ${property.furnishing}`);
+  if (property.parking) parts.push(`Parking: ${property.parking}`);
+  if (property.floor) parts.push(`Floor: ${property.floor}${property.total_floors ? ` of ${property.total_floors}` : ''}`);
+  if (property.possession) parts.push(`Possession: ${property.possession}`);
+  if (property.view) parts.push(`View: ${property.view}`);
+  if (property.veg_nonveg && property.veg_nonveg !== 'N/A') parts.push(`Food: ${property.veg_nonveg}`);
+  
+  // Amenities
+  if (property.amenities && property.amenities.length > 0) {
+    parts.push(`Amenities: ${property.amenities.join(', ')}`);
+  }
+  
+  // Special features
+  if (property.expat_friendly) parts.push('Expat-friendly property');
+  
+  return parts.join('\n');
+}
+
+async function generateTitles(base44, propertyContext, style) {
+  const prompt = `Generate 5 different property listing titles for this property. Each should be unique and appeal to different buyer preferences:
+
+Property Details:
+${propertyContext}
+
+Generate titles in these styles:
+1. Luxury/Premium (emphasize exclusivity and high-end features)
+2. Practical/Value (focus on space, price, location practicality)
+3. SEO-Optimized (include key search terms naturally)
+4. Emotional/Lifestyle (paint a picture of the lifestyle)
+5. Concise/Direct (straightforward, no fluff)
+
+Each title should be 12-18 words, naturally flowing, highlighting 2-3 key features.
+
+Return ONLY a JSON array of 5 title objects like this:
+[
+  {"style": "luxury", "title": "..."},
+  {"style": "practical", "title": "..."},
+  {"style": "seo", "title": "..."},
+  {"style": "lifestyle", "title": "..."},
+  {"style": "concise", "title": "..."}
+]`;
+
+  const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        titles: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              style: { type: "string" },
+              title: { type: "string" }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return response.titles || [];
+}
+
+async function generateDescriptions(base44, propertyContext, style) {
+  const prompt = `Generate 3 different property descriptions for this property:
+
+Property Details:
+${propertyContext}
+
+Generate descriptions in these styles:
+1. Professional (40-60 words): Clear, factual, highlights key features for serious buyers
+2. Luxury (60-80 words): Sophisticated tone, emphasizes premium aspects, lifestyle benefits
+3. Casual/Friendly (50-70 words): Warm, conversational, makes it relatable and inviting
+
+Each description should:
+- Flow naturally as ONE paragraph (no bullet points)
+- Mention location, configuration, key features
+- Include a subtle call-to-action feeling
+- Be engaging and easy to read
+
+Return ONLY a JSON object:
+{
+  "professional": "...",
+  "luxury": "...",
+  "casual": "..."
+}`;
+
+  const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        professional: { type: "string" },
+        luxury: { type: "string" },
+        casual: { type: "string" }
+      }
+    }
+  });
+
+  return response;
+}
+
+async function generateTags(base44, propertyContext) {
+  const prompt = `Analyze this property and generate relevant tags/keywords for better search and categorization:
+
+Property Details:
+${propertyContext}
+
+Generate tags in these categories:
+1. Location-based tags (neighborhood, landmarks, area vibes)
+2. Feature tags (amenities, unique selling points)
+3. Buyer persona tags (who would love this property)
+4. SEO keywords (what people search for)
+
+Return 15-20 tags total across these categories.
+
+Return ONLY a JSON object:
+{
+  "location_tags": ["tag1", "tag2", ...],
+  "feature_tags": ["tag1", "tag2", ...],
+  "buyer_persona_tags": ["tag1", "tag2", ...],
+  "seo_keywords": ["keyword1", "keyword2", ...]
+}`;
+
+  const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        location_tags: { type: "array", items: { type: "string" } },
+        feature_tags: { type: "array", items: { type: "string" } },
+        buyer_persona_tags: { type: "array", items: { type: "string" } },
+        seo_keywords: { type: "array", items: { type: "string" } }
+      }
+    }
+  });
+
+  return response;
+}
+
+async function generateVideoScripts(base44, propertyContext, style) {
+  const prompt = `Create property tour video scripts for this property in 3 different durations:
+
+Property Details:
+${propertyContext}
+
+Generate scripts for:
+1. 30-second quick tour (Instagram Reels, TikTok)
+2. 60-second full tour (YouTube Shorts, Instagram)
+3. 90-second detailed walkthrough (YouTube, Facebook)
+
+Each script should:
+- Start with a hook (first 3 seconds grab attention)
+- Flow logically through the property
+- Highlight key features naturally
+- End with clear call-to-action
+- Include [VISUAL CUE] markers for videographer
+- Be conversational and energetic
+
+Return ONLY a JSON object:
+{
+  "30_second": {
+    "title": "...",
+    "hook": "...",
+    "script": "...",
+    "cta": "..."
+  },
+  "60_second": {
+    "title": "...",
+    "hook": "...",
+    "script": "...",
+    "cta": "..."
+  },
+  "90_second": {
+    "title": "...",
+    "hook": "...",
+    "script": "...",
+    "cta": "..."
+  }
+}`;
+
+  const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        "30_second": {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            hook: { type: "string" },
+            script: { type: "string" },
+            cta: { type: "string" }
+          }
+        },
+        "60_second": {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            hook: { type: "string" },
+            script: { type: "string" },
+            cta: { type: "string" }
+          }
+        },
+        "90_second": {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            hook: { type: "string" },
+            script: { type: "string" },
+            cta: { type: "string" }
+          }
+        }
+      }
+    }
+  });
+
+  return response;
+}
+
+async function generateSocialMediaCaptions(base44, propertyContext, style) {
+  const prompt = `Create social media captions for this property listing:
+
+Property Details:
+${propertyContext}
+
+Generate captions for:
+1. Instagram (engaging, emoji-rich, hashtag optimized)
+2. Facebook (detailed, community-focused, conversational)
+3. LinkedIn (professional, investment-focused)
+4. Twitter/X (concise, attention-grabbing, trending)
+
+Each caption should be platform-appropriate and include relevant hashtags.
+
+Return ONLY a JSON object:
+{
+  "instagram": {
+    "caption": "...",
+    "hashtags": ["tag1", "tag2", ...]
+  },
+  "facebook": {
+    "caption": "...",
+    "hashtags": ["tag1", "tag2", ...]
+  },
+  "linkedin": {
+    "caption": "...",
+    "hashtags": ["tag1", "tag2", ...]
+  },
+  "twitter": {
+    "caption": "...",
+    "hashtags": ["tag1", "tag2", ...]
+  }
+}`;
+
+  const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        instagram: {
+          type: "object",
+          properties: {
+            caption: { type: "string" },
+            hashtags: { type: "array", items: { type: "string" } }
+          }
+        },
+        facebook: {
+          type: "object",
+          properties: {
+            caption: { type: "string" },
+            hashtags: { type: "array", items: { type: "string" } }
+          }
+        },
+        linkedin: {
+          type: "object",
+          properties: {
+            caption: { type: "string" },
+            hashtags: { type: "array", items: { type: "string" } }
+          }
+        },
+        twitter: {
+          type: "object",
+          properties: {
+            caption: { type: "string" },
+            hashtags: { type: "array", items: { type: "string" } }
+          }
+        }
+      }
+    }
+  });
+
+  return response;
+}
