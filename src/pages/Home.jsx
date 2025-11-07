@@ -33,8 +33,27 @@ export default function HomePage() {
   // WhatsApp AI Assistant URL
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
   
-  // Admin WhatsApp URL
-  const adminWhatsAppUrl = "https://wa.me/919819471310?text=Hi%2C%20I%27d%20like%20to%20list%20a%20property";
+  // Admin WhatsApp URL with detailed property submission format
+  const adminWhatsAppMessage = `Hi Chariot Team! 👋
+
+I'd like to list a property. Here are the details:
+
+📍 *Location:* [Building Name, Area]
+🏠 *Property Type:* [2 BHK / 3 BHK / Office / etc.]
+💰 *Price:* [Amount in Lakhs/Cr]
+📐 *Carpet Area:* [sq.ft]
+🪑 *Furnishing:* [Fully / Semi / Unfurnished]
+🚗 *Parking:* [Available / Not Available]
+🔑 *Possession:* [Immediate / Date]
+
+📸 *Photos:* [Will share separately]
+
+💬 Additional Details:
+[Floor, amenities, special features, etc.]
+
+Looking forward to your response!`;
+
+  const adminWhatsAppUrl = `https://wa.me/919819471310?text=${encodeURIComponent(adminWhatsAppMessage)}`;
 
   return (
     <div className="min-h-screen">
