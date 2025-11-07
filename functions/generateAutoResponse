@@ -1,13 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * AI Auto-Response Generator
+ * AUTO-RESPONSE GENERATOR
  * 
- * Generates contextual responses for common inquiries:
- * - Property availability checks
- * - Viewing requests
- * - Price negotiations
- * - General inquiries
+ * Generates contextual, professional responses to property inquiries
+ * Detects inquiry type and provides appropriate response with property details
  */
 
 Deno.serve(async (req) => {
@@ -15,231 +12,106 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user || user.role !== 'admin') {
+      return Response.json({ 
+        success: false,
+        error: 'Unauthorized - Admin access required' 
+      }, { status: 401 });
     }
 
-    const { inquiryText, propertyId, clientName, inquiryType } = await req.json();
+    const { 
+      inquiryText, 
+      propertyId = null,
+      inquirerType = 'client' // 'client' or 'broker'
+    } = await req.json();
     
-    if (!inquiryText && !inquiryType) {
-      return Response.json({ error: 'inquiryText or inquiryType is required' }, { status: 400 });
+    if (!inquiryText || inquiryText.trim().length < 5) {
+      return Response.json({ 
+        success: false,
+        error: 'inquiryText is required and must be at least 5 characters' 
+      }, { status: 400 });
     }
 
+    // Get property details if property ID provided
     let property = null;
     if (propertyId) {
       const properties = await base44.asServiceRole.entities.Property.list();
       property = properties.find(p => p.id === propertyId);
     }
 
-    // Detect inquiry type if not provided
-    let detectedType = inquiryType;
-    if (!detectedType && inquiryText) {
-      const textLower = inquiryText.toLowerCase();
-      
-      if (textLower.includes('available') || textLower.includes('still there')) {
-        detectedType = 'availability';
-      } else if (textLower.includes('viewing') || textLower.includes('visit') || textLower.includes('see the property')) {
-        detectedType = 'viewing_request';
-      } else if (textLower.includes('price') || textLower.includes('negotiate') || textLower.includes('discount')) {
-        detectedType = 'price_negotiation';
-      } else if (textLower.includes('details') || textLower.includes('more info') || textLower.includes('tell me about')) {
-        detectedType = 'details_request';
-      } else {
-        detectedType = 'general';
+    // Analyze inquiry to determine type and generate response
+    const analysisPrompt = `Analyze this property inquiry and generate a professional response.
+
+Inquiry:
+"""
+${inquiryText}
+"""
+
+${property ? `
+Property Details:
+- Type: ${property.bhk}
+- Location: ${property.location}
+- Price: ₹${property.price}${property.price_unit === 'crores' ? ' Crores' : ' Lakhs'}
+- Furnishing: ${property.furnishing || 'Not specified'}
+- Status: ${property.status}
+- Building: ${property.building_name || 'Not specified'}
+` : 'No specific property mentioned'}
+
+Inquirer Type: ${inquirerType === 'broker' ? 'Real estate broker' : 'Direct client'}
+
+Return this EXACT JSON structure:
+{
+  "inquiry_type": "string (Availability Check|Viewing Request|Price Negotiation|Details Request|General Inquiry)",
+  "urgency": "string (High|Medium|Low)",
+  "response": "string (2-3 paragraph professional response, include property details if available)",
+  "suggested_actions": ["array of 2-3 next steps for admin"],
+  "tone": "string (Professional|Friendly|Formal)"
+}
+
+Response guidelines:
+- Be warm but professional
+- Include specific property details when available
+- For brokers: acknowledge their professionalism, confirm details
+- For clients: be helpful, answer questions, offer viewing
+- Always end with clear next steps
+- Use natural, conversational tone`;
+
+    const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: analysisPrompt,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          inquiry_type: { type: "string" },
+          urgency: { type: "string" },
+          response: { type: "string" },
+          suggested_actions: { type: "array", items: { type: "string" } },
+          tone: { type: "string" }
+        }
       }
-    }
-
-    // Generate response based on type
-    let response = "";
-    let suggestedActions = [];
-
-    switch (detectedType) {
-      case 'availability':
-        if (property) {
-          response = `Hi${clientName ? ` ${clientName}` : ''}! 👋
-
-Good news - ${property.ai_title || `this ${property.bhk}`} is still available! ✅
-
-📍 Location: ${property.building_name ? `${property.building_name}, ` : ''}${property.location}
-💰 Price: ₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}
-${property.furnishing ? `🪑 ${property.furnishing}` : ''}
-${property.carpet_area ? `📐 ${property.carpet_area} sq.ft` : ''}
-
-Would you like to schedule a viewing? 🏠
-
-📞 Contact:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        } else {
-          response = `Hi${clientName ? ` ${clientName}` : ''}! 👋
-
-Thanks for your interest! Yes, the property is currently available. 
-
-Let me share complete details with you. When would be a good time for a viewing?
-
-📞 Contact us:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759
-
-We're here to help! ✨`;
-        }
-        suggestedActions = ['Schedule Viewing', 'Share Photos', 'Send Property Details'];
-        break;
-
-      case 'viewing_request':
-        if (property) {
-          response = `Perfect! I'd love to show you ${property.ai_title || `this ${property.bhk}`}! 🏠
-
-📍 Property: ${property.building_name ? `${property.building_name}, ` : ''}${property.location}
-💰 Price: ₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}
-
-🗓️ Available viewing slots:
-• Weekdays: 11 AM - 6 PM
-• Weekends: 10 AM - 7 PM
-
-When works best for you? Let me coordinate with the broker and confirm!
-
-📞 Call/WhatsApp:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        } else {
-          response = `Great! I'd love to arrange a viewing for you! 🏠
-
-🗓️ Available slots:
-• Weekdays: 11 AM - 6 PM  
-• Weekends: 10 AM - 7 PM
-
-Which property were you interested in? And what time works best?
-
-I'll coordinate everything and confirm within 1 hour! ⚡
-
-📞 Contact:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        }
-        suggestedActions = ['Confirm Viewing Time', 'Share Location', 'Send Calendar Invite'];
-        break;
-
-      case 'price_negotiation':
-        if (property) {
-          response = `Thanks for your interest in ${property.ai_title || `this ${property.bhk}`}! 💼
-
-Listed Price: ₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}
-
-I understand price is important. Let me check with the owner about flexibility. 
-
-Meanwhile, here's what makes this property special:
-${property.ai_description || `Great ${property.bhk} in ${property.location} with excellent amenities`}
-
-Can you share your target budget? That will help me have the right conversation! 💬
-
-📞 Let's discuss:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        } else {
-          response = `I appreciate your interest! Let's discuss pricing 💼
-
-Every property has some negotiation room - it depends on:
-• How long it's been listed
-• Owner's urgency
-• Your move-in timeline
-• Payment terms
-
-Share your target budget and the property you're interested in, and I'll have an honest conversation with the owner.
-
-We believe in transparent deals - no games! 🤝
-
-📞 Call me:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        }
-        suggestedActions = ['Check with Owner', 'Discuss Terms', 'Share Comparable Prices'];
-        break;
-
-      case 'details_request':
-        if (property) {
-          response = `Here are the complete details! 📋
-
-🏠 ${property.ai_title || `${property.bhk} for ${property.listing_type}`}
-
-📍 Location: ${property.building_name ? `${property.building_name}, ` : ''}${property.location}${property.pocket ? ` (${property.pocket})` : ''}
-
-💰 Price: ₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}
-${property.carpet_area ? `📐 Carpet Area: ${property.carpet_area} sq.ft` : ''}
-${property.floor ? `🏢 Floor: ${property.floor}` : ''}
-${property.furnishing ? `🪑 Furnishing: ${property.furnishing}` : ''}
-${property.parking ? `🚗 Parking: ${property.parking}` : ''}
-
-${property.ai_description || property.description || ''}
-
-${property.amenities && property.amenities.length > 0 ? `✨ Amenities:\n${property.amenities.slice(0, 5).map(a => `• ${a}`).join('\n')}` : ''}
-
-${property.images && property.images.length > 0 ? `📸 Photos available` : ''}
-
-Want to schedule a viewing? 🏠
-
-📞 Contact:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        } else {
-          response = `I'd be happy to share complete details! 📋
-
-Which property were you interested in? You can:
-• Share the property ID
-• Describe the location/type
-• Browse our SmartFeed: propai.live/smartfeed
-
-I'll send you:
-✅ Photos
-✅ Floor plans
-✅ Exact location
-✅ Complete amenities
-✅ Building details
-
-📞 Call/WhatsApp:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        }
-        suggestedActions = ['Send Photos', 'Share Floor Plan', 'Send Location'];
-        break;
-
-      default: // general
-        response = `Hi${clientName ? ` ${clientName}` : ''}! Thanks for reaching out! 👋
-
-I'm here to help you find the perfect property in Mumbai. 
-
-🏠 What are you looking for?
-• Rental or purchase?
-• BHK preference?
-• Budget range?
-• Preferred locations?
-
-Or browse our AI-curated feed:
-🌐 propai.live/smartfeed
-
-Let's find your dream home! ✨
-
-📞 Contact:
-• Vishal: +91 98194 71310
-• Kapil: +91 97737 57759`;
-        suggestedActions = ['Understand Requirement', 'Share SmartFeed', 'Schedule Call'];
-        break;
-    }
+    });
 
     return Response.json({
       success: true,
-      inquiry_type: detectedType,
-      response,
-      suggested_actions: suggestedActions,
-      property: property ? {
-        id: property.id,
-        custom_id: property.custom_id,
-        title: property.ai_title
-      } : null
+      inquiry: {
+        text: inquiryText,
+        type: response.inquiry_type,
+        urgency: response.urgency,
+        property_id: propertyId,
+        inquirer_type: inquirerType
+      },
+      auto_response: {
+        message: response.response,
+        tone: response.tone,
+        suggested_actions: response.suggested_actions
+      },
+      whatsapp_ready: true
     });
 
   } catch (error) {
-    console.error('Error generating auto-response:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Auto-response generation error:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message
+    }, { status: 500 });
   }
 });
