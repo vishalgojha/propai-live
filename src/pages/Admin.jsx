@@ -30,7 +30,7 @@ import {
 import {
   AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
   Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
-  Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap
+  Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap, AlertCircleIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -77,6 +77,7 @@ export default function Admin() {
   const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
   const [normalizingLocations, setNormalizingLocations] = useState(false); // NEW
   const [normalizingBhk, setNormalizingBhk] = useState(false); // NEW
+  const [fixingVisibility, setFixingVisibility] = useState(false); // NEW
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -936,6 +937,60 @@ export default function Admin() {
     }
   };
 
+  // NEW: Fix Property Visibility handler
+  const fixPropertyVisibility = async () => {
+    if (!confirm('🔧 Fix Property Visibility?\n\nThis will set visibility="public" on all properties that don\'t have it.\n\nThis fixes the issue where properties exist but aren\'t visible on SmartFeed.')) {
+      return;
+    }
+
+    setFixingVisibility(true);
+    toast.loading('🔍 Checking property visibility...', { id: 'visibility-check' });
+
+    try {
+      const response = await base44.functions.invoke('fixPropertyVisibility', {});
+      toast.dismiss('visibility-check');
+
+      const stats = response.data.stats;
+
+      if (stats.fixed === 0) {
+        toast.success('✅ All Properties Visible!', {
+          description: `${stats.total_properties} properties already have visibility set`,
+          duration: 4000
+        });
+      } else {
+        toast.success('✅ Property Visibility Fixed!', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">Properties are now visible</div>
+              <div className="text-xs opacity-90 space-y-1">
+                <div>• Total: {stats.total_properties} properties</div>
+                <div>• Fixed: {stats.fixed} properties</div>
+                <div>• Already visible: {stats.already_set}</div>
+                {stats.errors > 0 && (
+                  <div className="text-red-300">⚠ Errors: {stats.errors}</div>
+                )}
+              </div>
+            </div>
+          ),
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+          duration: 8000
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('visibility-check');
+      toast.error('❌ Visibility Fix Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setFixingVisibility(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1291,6 +1346,17 @@ export default function Admin() {
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* NEW: CRITICAL FIX - Property Visibility */}
+              <Button
+                onClick={fixPropertyVisibility}
+                disabled={fixingVisibility}
+                size="sm"
+                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold animate-pulse"
+              >
+                <AlertCircleIcon className={`w-4 h-4 mr-2 ${fixingVisibility ? 'animate-spin' : ''}`} />
+                {fixingVisibility ? 'Fixing...' : 'Fix Visibility'}
+              </Button>
+
               {/* NEW: AI Master Parser Button */}
               <Button
                 onClick={() => setAiParserModalOpen(true)}
