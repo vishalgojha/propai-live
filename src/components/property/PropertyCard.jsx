@@ -251,7 +251,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
 
           {property.ai_description && (
-            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 mb-2">
+            <p className="text-xs text-slate-600 leading-relaxed mb-2">
               {property.ai_description}
             </p>
           )}
