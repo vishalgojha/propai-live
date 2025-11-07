@@ -35,6 +35,7 @@ export default function SmartFeed() {
   // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
+  previousCountsRef.current = { properties: 0, requirements: 0 };
   const previousCountsRef = useRef({ properties: 0, requirements: 0 });
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
@@ -514,7 +515,7 @@ export default function SmartFeed() {
         {/* Display Items */}
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {displayedItems.map((item) => {
                 if (displayType === "both") {
                   return item.itemType === 'property' ? (
