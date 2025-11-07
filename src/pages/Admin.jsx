@@ -75,9 +75,9 @@ export default function Admin() {
   const [testingPropAI, setTestingPropAI] = useState(false);
   const [backfillingIds, setBackfillingIds] = useState(false);
   const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
-  const [normalizingLocations, setNormalizingLocations] = useState(false); // NEW
-  const [normalizingBhk, setNormalizingBhk] = useState(false); // NEW
-  // REMOVED: const [fixingVisibility, setFixingVisibility] = useState(false); // NEW
+  const [normalizingLocations, setNormalizingLocations] = useState(false);
+  const [normalizingBhk, setNormalizingBhk] = useState(false);
+  const [cleaningBuildings, setCleaningBuildings] = useState(false);
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -937,59 +937,81 @@ export default function Admin() {
     }
   };
 
-  // REMOVED: Fix Property Visibility handler
-  // const fixPropertyVisibility = async () => {
-  //   if (!confirm('🔧 Fix Property Visibility?\n\nThis will set visibility="public" on all properties that don\'t have it.\n\nThis fixes the issue where properties exist but aren\'t visible on SmartFeed.')) {
-  //     return;
-  //   }
+  const cleanBuildingData = async () => {
+    if (!confirm('🧹 Clean Building Data?\n\nThis will:\n• Remove all MagicBricks references\n• Fix incorrect listing counts\n• Identify missing summaries\n\nRun analysis first?')) {
+      return;
+    }
 
-  //   setFixingVisibility(true);
-  //   toast.loading('🔍 Checking property visibility...', { id: 'visibility-check' });
+    setCleaningBuildings(true);
+    toast.loading('🔍 Analyzing building data...', { id: 'building-cleanup-analysis' });
 
-  //   try {
-  //     const response = await base44.functions.invoke('fixPropertyVisibility', {});
-  //     toast.dismiss('visibility-check');
+    try {
+      const dryRunResponse = await base44.functions.invoke('cleanBuildingData', { mode: 'dry_run' });
+      toast.dismiss('building-cleanup-analysis');
 
-  //     const stats = response.data.stats;
+      const summary = dryRunResponse.data.summary;
+      const totalIssues = summary.magicbricks_references + summary.incorrect_counts + summary.missing_summaries;
 
-  //     if (stats.fixed === 0) {
-  //       toast.success('✅ All Properties Visible!', {
-  //         description: `${stats.total_properties} properties already have visibility set`,
-  //         duration: 4000
-  //       });
-  //     } else {
-  //       toast.success('✅ Property Visibility Fixed!', {
-  //         description: (
-  //           <div className="space-y-2">
-  //             <div className="font-semibold">Properties are now visible</div>
-  //             <div className="text-xs opacity-90 space-y-1">
-  //               <div>• Total: {stats.total_properties} properties</div>
-  //               <div>• Fixed: {stats.fixed} properties</div>
-  //               <div>• Already visible: {stats.already_set}</div>
-  //               {stats.errors > 0 && (
-  //                 <div className="text-red-300">⚠ Errors: {stats.errors}</div>
-  //               )}
-  //             </div>
-  //           </div>
-  //         ),
-  //         className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
-  //         duration: 8000
-  //       });
-  //     }
+      if (totalIssues === 0) {
+        toast.success('✅ All Building Data is Clean!', {
+          description: `${summary.total_buildings} buildings scanned - no issues found`,
+          duration: 4000
+        });
+        setCleaningBuildings(false);
+        return;
+      }
 
-  //     queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found building data issues:\n` +
+        `• ${summary.magicbricks_references} buildings with MagicBricks references\n` +
+        `• ${summary.incorrect_counts} buildings with wrong listing counts\n` +
+        `• ${summary.missing_summaries} buildings missing summaries\n\n` +
+        `Clean now?`
+      );
 
-  //   } catch (error) {
-  //     toast.dismiss('visibility-check');
-  //     toast.error('❌ Visibility Fix Failed', {
-  //       description: error.message || 'Something went wrong',
-  //       className: 'bg-red-600 text-white border-0',
-  //       duration: 5000
-  //     });
-  //   } finally {
-  //     setFixingVisibility(false);
-  //   }
-  // };
+      if (!shouldFix) {
+        setCleaningBuildings(false);
+        return;
+      }
+
+      toast.loading('🧹 Cleaning building data...', { id: 'building-cleanup-fix' });
+      const fixResponse = await base44.functions.invoke('cleanBuildingData', { mode: 'live' });
+      toast.dismiss('building-cleanup-fix');
+
+      const results = fixResponse.data.summary;
+
+      toast.success('✅ Building Data Cleaned!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Buildings cleaned successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• MagicBricks removed: {results.magicbricks_cleaned} buildings</div>
+              <div>• Listing counts fixed: {results.counts_fixed} buildings</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('building-cleanup-analysis');
+      toast.dismiss('building-cleanup-fix');
+      toast.error('❌ Building Cleanup Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setCleaningBuildings(false);
+    }
+  };
 
 
   // Broker handlers
@@ -1346,38 +1368,6 @@ export default function Admin() {
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* REMOVED: CRITICAL FIX - Property Visibility - BIGGER AND MORE PROMINENT */}
-              {/* <div className="w-full mb-4">
-                <div className="bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl p-6 shadow-2xl border-4 border-red-300">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-                      <AlertCircleIcon className="w-8 h-8 text-white animate-pulse" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-white mb-2">🚨 Properties Not Showing?</h3>
-                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
-                        If SmartFeed shows very few properties, it's because old properties don't have <code className="bg-white/20 px-2 py-1 rounded">visibility</code> field set. 
-                        Click below to fix ALL properties instantly.
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <Button
-                          onClick={fixPropertyVisibility}
-                          disabled={fixingVisibility}
-                          size="lg"
-                          className="bg-white text-red-600 hover:bg-red-50 font-bold h-14 px-8 shadow-lg text-lg"
-                        >
-                          <AlertCircleIcon className={`w-6 h-6 mr-3 ${fixingVisibility ? 'animate-spin' : 'animate-pulse'}`} />
-                          {fixingVisibility ? 'Fixing All Properties...' : '✅ Fix Property Visibility NOW'}
-                        </Button>
-                        <div className="text-xs text-white/80 flex items-center">
-                          <span>This sets visibility="public" on all properties. Takes 5-10 seconds.</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
-
               {/* AI Master Parser Button */}
               <Button
                 onClick={() => setAiParserModalOpen(true)}
@@ -1511,6 +1501,13 @@ export default function Admin() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={cleanBuildingData}
+                    disabled={cleaningBuildings}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${cleaningBuildings ? 'animate-spin' : ''}`} />
+                    Clean Building Data
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={backfillBuildings}
                     disabled={generatingSlugs}
