@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -9,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Users, Building2, MapPin, Star, TrendingUp, MessageCircle,
-  Search, Network, Target, Zap, Phone, Home
+  Users, Building2, MapPin, Star, TrendingUp, Eye,
+  Search, Network, Target, Zap, Home, Mail
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -21,9 +20,8 @@ export default function BrokerNetwork() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBroker, setSelectedBroker] = useState(null);
 
-  // Auth check - REMOVED admin restriction, now accessible to all users
+  // Auth check - accessible to all logged-in users
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -61,10 +59,8 @@ export default function BrokerNetwork() {
     if (!brokers.length || !properties.length) return [];
 
     const network = brokers.map(broker => {
-      // Get all properties from this broker
       const brokerProps = properties.filter(p => p.broker_id === broker.id);
 
-      // Extract broker's profile
       const brokerAreas = new Set(broker.specializations?.primary_locations || broker.areas_covered || []);
       const brokerBuildings = new Set(brokerProps.map(p => p.building_name).filter(Boolean));
       const brokerBHKs = new Set(brokerProps.map(p => p.bhk).filter(Boolean));
@@ -75,7 +71,6 @@ export default function BrokerNetwork() {
         ? brokerPrices.reduce((a, b) => a + b, 0) / brokerPrices.length
         : 0;
 
-      // Find connections to other brokers
       const connections = brokers
         .filter(otherBroker => otherBroker.id !== broker.id)
         .map(otherBroker => {
@@ -90,25 +85,21 @@ export default function BrokerNetwork() {
             ? otherPrices.reduce((a, b) => a + b, 0) / otherPrices.length
             : 0;
 
-          // Calculate connection score
           let score = 0;
           const reasons = [];
 
-          // 1. Shared areas (40 points max)
           const sharedAreas = [...brokerAreas].filter(area => otherAreas.has(area));
           if (sharedAreas.length > 0) {
             score += Math.min(40, sharedAreas.length * 15);
             reasons.push(`${sharedAreas.length} shared area${sharedAreas.length > 1 ? 's' : ''}`);
           }
 
-          // 2. Shared buildings (30 points max)
           const sharedBuildings = [...brokerBuildings].filter(building => otherBuildings.has(building));
           if (sharedBuildings.length > 0) {
             score += Math.min(30, sharedBuildings.length * 10);
             reasons.push(`${sharedBuildings.length} shared building${sharedBuildings.length > 1 ? 's' : ''}`);
           }
 
-          // 3. Team relationship (50 points)
           const isTeamMember = broker.team_members?.some(tm => tm.broker_id === otherBroker.id);
           const isInOtherTeam = otherBroker.team_members?.some(tm => tm.broker_id === broker.id);
           if (isTeamMember || isInOtherTeam) {
@@ -116,26 +107,23 @@ export default function BrokerNetwork() {
             reasons.push('Known team member');
           }
 
-          // 4. Complementary specializations (20 points)
           const sharedBHKs = [...brokerBHKs].filter(bhk => otherBHKs.has(bhk));
           if (sharedBHKs.length > 0) {
             score += 10;
             reasons.push('Shared BHK types');
           }
 
-          // 5. Price range alignment (15 points) - complementary pricing
           if (avgPrice && otherAvgPrice) {
             const priceDiff = Math.abs(avgPrice - otherAvgPrice) / Math.max(avgPrice, otherAvgPrice);
-            if (priceDiff < 0.3) { // Within 30% - similar market
+            if (priceDiff < 0.3) {
               score += 15;
               reasons.push('Similar price range');
-            } else if (priceDiff > 0.5 && priceDiff < 1.5) { // Different tiers - complementary
+            } else if (priceDiff > 0.5 && priceDiff < 1.5) {
               score += 10;
               reasons.push('Complementary price segments');
             }
           }
 
-          // 6. Similar listing type focus (10 points)
           if (broker.specializations?.listing_type_focus === otherBroker.specializations?.listing_type_focus && broker.specializations?.listing_type_focus) {
             score += 10;
             reasons.push('Similar listing focus');
@@ -150,9 +138,9 @@ export default function BrokerNetwork() {
             isTeamMember: isTeamMember || isInOtherTeam
           };
         })
-        .filter(conn => conn.score > 0) // Only show meaningful connections
+        .filter(conn => conn.score > 0)
         .sort((a, b) => b.score - a.score)
-        .slice(0, 10); // Top 10 connections
+        .slice(0, 10);
 
       return {
         ...broker,
@@ -165,7 +153,6 @@ export default function BrokerNetwork() {
     return network.sort((a, b) => b.strongConnections - a.strongConnections);
   }, [brokers, properties]);
 
-  // Filter network
   const filteredNetwork = useMemo(() => {
     if (!searchQuery) return brokerNetwork;
     
@@ -178,11 +165,6 @@ export default function BrokerNetwork() {
       broker.specializations?.primary_locations?.some(area => area.toLowerCase().includes(query))
     );
   }, [brokerNetwork, searchQuery]);
-
-  const handleWhatsApp = (broker) => {
-    const message = `Hi ${broker.name}, this is PropAI Live.\n\nI noticed we work in similar areas/buildings. Would you be interested in collaborating on property exchanges?\n\nLooking forward to connecting!`;
-    window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-  };
 
   if (isLoading) {
     return (
@@ -211,7 +193,7 @@ export default function BrokerNetwork() {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Broker Network</h1>
-              <p className="text-sm text-slate-600">AI-powered connection suggestions based on listings data</p>
+              <p className="text-sm text-slate-600">Discover connections • View profiles • Network stays in-platform</p>
             </div>
           </div>
         </div>
@@ -286,7 +268,7 @@ export default function BrokerNetwork() {
           </div>
         </div>
 
-        {/* Network Grid - COMPACT VERSION */}
+        {/* Network Grid */}
         {brokersLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-72 rounded-2xl" />)}
@@ -307,7 +289,7 @@ export default function BrokerNetwork() {
                 className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all border border-slate-200 overflow-hidden"
               >
                 <div className="p-4">
-                  {/* Broker Header - COMPACT */}
+                  {/* Broker Header */}
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Users className="w-6 h-6 text-purple-600" />
@@ -331,7 +313,15 @@ export default function BrokerNetwork() {
                     </div>
                   </div>
 
-                  {/* Specializations - COMPACT */}
+                  {/* Contact Info - In-Platform Display */}
+                  {broker.email && (
+                    <div className="flex items-center gap-2 text-xs text-slate-600 mb-3 p-2 bg-slate-50 rounded-lg">
+                      <Mail className="w-3 h-3 text-slate-400" />
+                      <span className="truncate">{broker.email}</span>
+                    </div>
+                  )}
+
+                  {/* Specializations */}
                   {broker.specializations?.primary_locations && broker.specializations.primary_locations.length > 0 && (
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1">
@@ -350,7 +340,7 @@ export default function BrokerNetwork() {
                     </div>
                   )}
 
-                  {/* Network Stats - COMPACT */}
+                  {/* Network Stats */}
                   <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-3 mb-3">
                     <div className="grid grid-cols-2 gap-2 text-center">
                       <div>
@@ -364,7 +354,7 @@ export default function BrokerNetwork() {
                     </div>
                   </div>
 
-                  {/* Top Connections - COMPACT (Show only 2) */}
+                  {/* Top Connections (Show only 2) */}
                   {broker.connections.length > 0 && (
                     <div className="space-y-2 mb-3">
                       <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
@@ -402,21 +392,27 @@ export default function BrokerNetwork() {
                     </div>
                   )}
 
-                  {/* Actions - COMPACT */}
+                  {/* Actions - IN-PLATFORM ONLY */}
                   <div className="flex gap-2 pt-3 border-t border-slate-200">
                     <Button
-                      onClick={() => handleWhatsApp(broker)}
-                      className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white h-8 text-xs"
+                      onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white h-9 text-xs font-semibold"
                     >
-                      <MessageCircle className="w-3 h-3 mr-1" />
-                      Connect
+                      <Eye className="w-3 h-3 mr-1" />
+                      View Profile
                     </Button>
                     <Button
-                      onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                      onClick={() => {
+                        toast.info('In-platform messaging coming soon!', {
+                          description: 'For now, view their profile to see contact details',
+                          duration: 3000
+                        });
+                      }}
                       variant="outline"
-                      className="flex-1 h-8 text-xs"
+                      className="flex-1 h-9 text-xs font-semibold"
                     >
-                      Profile
+                      <Mail className="w-3 h-3 mr-1" />
+                      Message
                     </Button>
                   </div>
                 </div>
