@@ -16,8 +16,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SEO from "../components/SEO";
-import { toast } from "sonner"; // NEW IMPORT
-import { format } from "date-fns"; // NEW IMPORT
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function BuildingProfile() {
   const navigate = useNavigate();
@@ -27,8 +27,8 @@ export default function BuildingProfile() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
-  const [isRecalculating, setIsRecalculating] = useState(false); // NEW STATE
-  const [isEnriching, setIsEnriching] = useState(false);       // NEW STATE
+  const [isRecalculating, setIsRecalculating] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
 
   // Load user for admin check
   useEffect(() => {
@@ -258,19 +258,19 @@ export default function BuildingProfile() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://chariotrealty.com"
+            "item": "https://propai.live"
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Buildings",
-            "item": "https://chariotrealty.com/buildings"
+            "item": "https://propai.live/buildings"
           },
           {
             "@type": "ListItem",
             "position": 3,
             "name": building.name,
-            "item": `https://chariotrealty.com/building/${building.slug || building.id}`
+            "item": `https://propai.live/building/${building.slug || building.id}`
           }
         ]
       }
@@ -306,11 +306,11 @@ export default function BuildingProfile() {
     <div className="min-h-screen">
       {building && (
         <SEO
-          title={`${building.name}, ${building.location} | Pricing, Amenities & Listings | Chariot`}
-          description={`${building.name} in ${building.location} — View active listings, average pricing, building amenities & verified reviews. Street-level property intelligence by Chariot Realty.`}
+          title={`${building.name}, ${building.location} | Pricing, Amenities & Listings | PropAI`}
+          description={`${building.name} in ${building.location} — View active listings, average pricing, building amenities & verified reviews. Street-level property intelligence by PropAI Live.`}
           ogImage={building.images?.[0]}
           schema={buildingSchema}
-          canonical={`https://chariotrealty.com/building/${building.slug || building.id}`}
+          canonical={`https://propai.live/building/${building.slug || building.id}`}
         />
       )}
 
@@ -396,7 +396,7 @@ export default function BuildingProfile() {
                   {building.building_type}
                 </Badge>
               )}
-              {building.last_intelligence_update && ( // NEW BADGE
+              {building.last_intelligence_update && (
                 <Badge className="bg-white/10 backdrop-blur-sm text-white/90 border-white/20 text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
                   Updated {format(new Date(building.last_intelligence_update), "MMM dd, yyyy")}
@@ -444,7 +444,7 @@ export default function BuildingProfile() {
             </div>
 
             {/* Building Summary - AI Generated or Web Enriched */}
-            {building.building_summary && ( // NEW SECTION
+            {building.building_summary && (
               <div className="mb-8 p-5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="w-5 h-5 text-indigo-600" />
@@ -468,7 +468,7 @@ export default function BuildingProfile() {
                     <h3 className="text-lg font-bold text-slate-900">Building Memory™</h3>
                     <Badge className="bg-purple-600 text-white text-xs">Street Intelligence</Badge>
                   </div>
-                  {building.market_activity && ( // NEW BADGE based on building.market_activity
+                  {building.market_activity && (
                     <Badge className={`text-xs ${
                       building.market_activity === 'High Activity' ? 'bg-green-500/20 text-green-700 border-green-500' :
                       building.market_activity === 'Moderate' ? 'bg-yellow-500/20 text-yellow-700 border-yellow-500' :
