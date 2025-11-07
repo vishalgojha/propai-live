@@ -3,13 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin, Home, Calendar, User, MessageCircle,
-  Clock, Copy
+  Clock, Copy, Sparkles, CheckCircle2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-export default function RequirementCard({ requirement }) {
+export default function RequirementCard({ requirement, allProperties = [] }) {
   const formatBudget = () => {
     if (!requirement.budget_min && !requirement.budget_max) {
       return { from: "Any", to: "Flexible" };
@@ -28,30 +28,61 @@ export default function RequirementCard({ requirement }) {
     return { from: "Any", to: "Flexible" };
   };
 
+  // Get matched properties
+  const matchedProperties = React.useMemo(() => {
+    if (!requirement.ai_matched_properties || !allProperties.length) return [];
+    
+    return requirement.ai_matched_properties
+      .map(match => {
+        const property = allProperties.find(p => p.id === match.property_id);
+        return property ? { ...property, match_score: match.match_score, match_reasons: match.match_reasons } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.match_score - a.match_score);
+  }, [requirement, allProperties]);
+
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     
     const phone = requirement.client_phone || requirement.broker_contact;
     
     if (!phone) {
-      alert('⚠️ Contact information not available for this requirement.');
+      toast.error('⚠️ Contact information not available');
       return;
     }
     
     const cleanPhone = phone.replace(/\D/g, '');
+    const clientName = requirement.client_name || 'there';
     
-    const requirementUrl = requirement.slug 
-      ? `${window.location.origin}/smartfeed?req=${requirement.slug}`
-      : `${window.location.origin}/smartfeed`;
+    // Build message with matched properties
+    let message = `Hi ${clientName}! 👋\n\n`;
+    message += `I found ${matchedProperties.length} ${matchedProperties.length === 1 ? 'property' : 'properties'} matching your requirement:\n\n`;
+    message += `🔍 *Your Requirement:*\n`;
+    message += `• ${requirement.bhk_preference?.join(', ') || 'Property'}\n`;
+    message += `• ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n`;
+    message += `• Budget: ${budget.from} → ${budget.to}\n\n`;
     
-    const message = `Hi! I have a property that matches your requirement:\n\n` +
-      `🔍 *Looking for:* ${requirement.bhk_preference?.join(', ') || 'Property'}\n` +
-      `📍 *Location:* ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n` +
-      `💰 *Budget:* ${formatBudget().from} → ${formatBudget().to}\n` +
-      `${requirement.custom_id ? `🔖 *Ref:* ${requirement.custom_id}\n` : ''}` +
-      `\n📱 *PropAI Live:* ${requirementUrl}\n\n` +
-      `I'd like to share property details that match this.\n\n` +
-      `Thank you!`;
+    message += `✨ *Perfect Matches:*\n\n`;
+    
+    matchedProperties.slice(0, 5).forEach((prop, idx) => {
+      const price = prop.price_unit === 'crores' ? `₹${prop.price} Cr` : `₹${prop.price}L`;
+      message += `${idx + 1}. ${prop.bhk} - ${prop.building_name || prop.location}\n`;
+      message += `   💰 ${price} | 📍 ${prop.location}\n`;
+      if (prop.carpet_area) message += `   📐 ${prop.carpet_area} sq.ft`;
+      if (prop.furnishing) message += ` | 🪑 ${prop.furnishing}`;
+      message += `\n`;
+      if (prop.match_score) message += `   🎯 ${prop.match_score}% AI Match\n`;
+      message += `\n`;
+    });
+    
+    if (matchedProperties.length > 5) {
+      message += `...and ${matchedProperties.length - 5} more!\n\n`;
+    }
+    
+    message += `📱 View all matches on PropAI Live:\n`;
+    message += `www.propai.live\n\n`;
+    message += `Can we schedule viewings? 🏠\n\n`;
+    message += `Team PropAI`;
     
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -69,7 +100,7 @@ export default function RequirementCard({ requirement }) {
     e.stopPropagation();
     if (requirement.custom_id) {
       navigator.clipboard.writeText(requirement.custom_id);
-      toast.success('ID copied to clipboard!');
+      toast.success('ID copied!');
     }
   };
 
@@ -91,7 +122,7 @@ export default function RequirementCard({ requirement }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-3xl overflow-hidden border-2 border-slate-200 hover:border-cyan-400 hover:shadow-xl transition-all duration-300"
+      className="bg-white rounded-3xl overflow-hidden border-2 border-cyan-200 hover:border-cyan-400 hover:shadow-xl transition-all duration-300"
     >
       {/* Header Section */}
       <div className="p-5 pb-4">
@@ -147,6 +178,21 @@ export default function RequirementCard({ requirement }) {
           </span>
         </div>
 
+        {/* AI Matches Badge */}
+        {matchedProperties.length > 0 && (
+          <div className="mb-5 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              <div>
+                <p className="text-sm font-bold text-purple-900">
+                  {matchedProperties.length} AI {matchedProperties.length === 1 ? 'Match' : 'Matches'} Found
+                </p>
+                <p className="text-xs text-purple-700">Ready to share via WhatsApp</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Budget Range Section */}
         <div className="mb-5">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -193,37 +239,13 @@ export default function RequirementCard({ requirement }) {
           </div>
         )}
 
-        {/* Additional Details */}
-        {(requirement.furnishing_preference || requirement.parking_required || requirement.possession_timeline) && (
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            {requirement.furnishing_preference && requirement.furnishing_preference !== "Any" && (
-              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-200">
-                <span className="text-lg mb-1">🪑</span>
-                <p className="text-xs font-bold text-slate-900 truncate">{requirement.furnishing_preference}</p>
-              </div>
-            )}
-            {requirement.parking_required && (
-              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-200">
-                <span className="text-lg mb-1">🚗</span>
-                <p className="text-xs font-bold text-slate-900">Required</p>
-              </div>
-            )}
-            {requirement.possession_timeline && (
-              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-200">
-                <Clock className="w-4 h-4 text-slate-600 mx-auto mb-1" />
-                <p className="text-xs font-bold text-slate-900 truncate">{requirement.possession_timeline}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* WhatsApp Contact Button */}
+        {/* WhatsApp Contact Button - Shows matches directly */}
         <Button
           onClick={handleWhatsApp}
           className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl h-14 flex items-center justify-center gap-3 shadow-lg text-base"
         >
           <MessageCircle className="w-5 h-5" />
-          <span>Contact via WhatsApp</span>
+          <span>Share {matchedProperties.length} {matchedProperties.length === 1 ? 'Match' : 'Matches'} via WhatsApp</span>
         </Button>
       </div>
     </motion.div>

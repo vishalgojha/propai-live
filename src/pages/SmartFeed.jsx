@@ -173,7 +173,7 @@ export default function SmartFeed() {
     if (!isLoading && !requirementsLoading) {
       const currentCounts = {
         properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
-        requirements: requirements.filter(r => r.status === "Active").length
+        requirements: requirements.filter(r => r.status === "Active" && r.ai_matched_properties && r.ai_matched_properties.length > 0).length
       };
 
       if (previousCountsRef.current.properties > 0 || previousCountsRef.current.requirements > 0) {
@@ -330,6 +330,11 @@ export default function SmartFeed() {
   const filteredRequirements = useMemo(() => {
     let results = requirements.filter(requirement => {
       if (requirement.status !== "Active") return false;
+
+      // CRITICAL: Only show requirements with AI matches
+      if (!requirement.ai_matched_properties || requirement.ai_matched_properties.length === 0) {
+        return false;
+      }
 
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -689,6 +694,7 @@ export default function SmartFeed() {
                     <RequirementCard
                       key={`req-${item.id}`}
                       requirement={item}
+                      allProperties={properties}
                     />
                   );
                 } else if (displayType === "requirements") {
@@ -696,6 +702,7 @@ export default function SmartFeed() {
                     <RequirementCard
                       key={item.id}
                       requirement={item}
+                      allProperties={properties}
                     />
                   );
                 } else {
