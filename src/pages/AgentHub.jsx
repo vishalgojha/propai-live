@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -333,151 +334,162 @@ export default function AgentHub() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Agent Hub</h1>
-                <p className="text-slate-600">Internal collaboration & off-market listings</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Agent Hub</h1>
+                <p className="text-xs md:text-sm text-slate-600">Internal collaboration & off-market listings</p>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            {/* Action Buttons - Stack on mobile */}
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               <Button
                 onClick={() => setShareOffMarketModalOpen(true)}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full md:w-auto"
               >
                 <EyeOff className="w-4 h-4 mr-2" />
-                Share Off-Market
+                <span className="text-sm">Share Off-Market</span>
               </Button>
               <Button
                 onClick={() => setRecommendModalOpen(true)}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white w-full md:w-auto"
               >
                 <Star className="w-4 h-4 mr-2" />
-                Recommend
+                <span className="text-sm">Recommend</span>
               </Button>
               <Button
                 onClick={() => setNewMessageModalOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white w-full md:w-auto"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                New Message
+                <span className="text-sm">New Message</span>
               </Button>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
+          {/* Stats - 2 columns on mobile, 4 on desktop */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <Card className="p-3 md:p-4 bg-white border-2 border-slate-200">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.urgent || 0}</p>
-                  <p className="text-xs text-slate-600">Urgent</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-900">{stats.urgent || 0}</p>
+                  <p className="text-[10px] md:text-xs text-slate-600">Urgent</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-blue-600" />
+            <Card className="p-3 md:p-4 bg-white border-2 border-slate-200">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.unread || 0}</p>
-                  <p className="text-xs text-slate-600">Unread</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-900">{stats.unread || 0}</p>
+                  <p className="text-[10px] md:text-xs text-slate-600">Unread</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <EyeOff className="w-5 h-5 text-purple-600" />
+            <Card className="p-3 md:p-4 bg-white border-2 border-slate-200">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <EyeOff className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.offMarket || 0}</p>
-                  <p className="text-xs text-slate-600">Off-Market</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-900">{stats.offMarket || 0}</p>
+                  <p className="text-[10px] md:text-xs text-slate-600">Off-Market</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <Star className="w-5 h-5 text-green-600" />
+            <Card className="p-3 md:p-4 bg-white border-2 border-slate-200">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Star className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.recommendations || 0}</p>
-                  <p className="text-xs text-slate-600">Recommendations</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-900">{stats.recommendations || 0}</p>
+                  <p className="text-[10px] md:text-xs text-slate-600">Recommendations</p>
                 </div>
               </div>
             </Card>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-2xl p-4 border-2 border-slate-200 mb-6">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
+        {/* Filters - Stack on mobile */}
+        <div className="bg-white rounded-2xl p-3 md:p-4 border-2 border-slate-200 mb-6">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search messages, properties, requirements..."
+                placeholder="Search messages, properties..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Unread">Unread</SelectItem>
-                <SelectItem value="Read">Read</SelectItem>
-                <SelectItem value="Actioned">Actioned</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="message">Messages</SelectItem>
-                <SelectItem value="property_recommendation">Recommendations</SelectItem>
-                <SelectItem value="off_market_share">Off-Market</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Unread">Unread</SelectItem>
+                  <SelectItem value="Read">Read</SelectItem>
+                  <SelectItem value="Actioned">Actioned</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="message">Messages</SelectItem>
+                  <SelectItem value="property_recommendation">Recommendations</SelectItem>
+                  <SelectItem value="off_market_share">Off-Market</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Horizontal scroll on mobile */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-white border-2 border-slate-200">
-            <TabsTrigger value="inbox" className="gap-2">
-              <MessageCircle className="w-4 h-4" />
-              Inbox {stats.unread > 0 && `(${stats.unread})`}
-            </TabsTrigger>
-            <TabsTrigger value="sent" className="gap-2">
-              <Send className="w-4 h-4" />
-              Sent
-            </TabsTrigger>
-            <TabsTrigger value="off-market" className="gap-2">
-              <EyeOff className="w-4 h-4" />
-              Off-Market ({offMarketProperties.length})
-            </TabsTrigger>
-            <TabsTrigger value="recommendations" className="gap-2">
-              <Star className="w-4 h-4" />
-              Recommendations
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="bg-white border-2 border-slate-200 inline-flex w-max md:w-auto">
+              <TabsTrigger value="inbox" className="gap-1 md:gap-2 text-xs md:text-sm whitespace-nowrap">
+                <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">Inbox</span>
+                <span className="sm:hidden">📥</span>
+                {stats.unread > 0 && <span className="text-xs">({stats.unread})</span>}
+              </TabsTrigger>
+              <TabsTrigger value="sent" className="gap-1 md:gap-2 text-xs md:text-sm whitespace-nowrap">
+                <Send className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">Sent</span>
+                <span className="sm:hidden">📤</span>
+              </TabsTrigger>
+              <TabsTrigger value="off-market" className="gap-1 md:gap-2 text-xs md:text-sm whitespace-nowrap">
+                <EyeOff className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">Off-Market</span>
+                <span className="sm:hidden">👁️</span>
+                <span className="text-xs">({offMarketProperties.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="recommendations" className="gap-1 md:gap-2 text-xs md:text-sm whitespace-nowrap">
+                <Star className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">Recommendations</span>
+                <span className="sm:hidden">⭐</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Content */}
           <TabsContent value={activeTab} className="space-y-3">
