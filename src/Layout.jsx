@@ -39,6 +39,16 @@ export default function Layout({ children, currentPageName }) {
     setMetaTag('author', 'PropAI Live');
     setMetaTag('robots', 'index, follow');
     
+    // Google Search Console verification (add your actual verification code)
+    setMetaTag('google-site-verification', 'YOUR_GOOGLE_VERIFICATION_CODE_HERE');
+    
+    // Additional SEO tags
+    setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
+    setMetaTag('geo.region', 'IN-MH');
+    setMetaTag('geo.placename', 'Mumbai');
+    setMetaTag('geo.position', '19.0760;72.8777'); // Mumbai coordinates
+    setMetaTag('ICBM', '19.0760, 72.8777');
+    
     // Open Graph defaults
     const setOGTag = (property, content) => {
       let tag = document.querySelector(`meta[property="${property}"]`);
@@ -54,6 +64,28 @@ export default function Layout({ children, currentPageName }) {
 
     setOGTag('og:site_name', 'PropAI Live');
     setOGTag('og:locale', 'en_IN');
+    
+    // Add RSS Feed auto-discovery
+    let rssLink = document.querySelector('link[type="application/rss+xml"]');
+    if (!rssLink) {
+      rssLink = document.createElement('link');
+      rssLink.setAttribute('rel', 'alternate');
+      rssLink.setAttribute('type', 'application/rss+xml');
+      rssLink.setAttribute('title', 'PropAI Live Insights RSS Feed');
+      rssLink.setAttribute('href', `${window.location.origin}/api/rssFeed`);
+      document.head.appendChild(rssLink);
+    }
+    
+    // Add sitemap reference
+    let sitemapLink = document.querySelector('link[rel="sitemap"]');
+    if (!sitemapLink) {
+      sitemapLink = document.createElement('link');
+      sitemapLink.setAttribute('rel', 'sitemap');
+      sitemapLink.setAttribute('type', 'application/xml');
+      sitemapLink.setAttribute('title', 'Sitemap');
+      sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
+      document.head.appendChild(sitemapLink);
+    }
   }, []);
 
   useEffect(() => {
