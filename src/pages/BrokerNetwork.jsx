@@ -23,12 +23,12 @@ export default function BrokerNetwork() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBroker, setSelectedBroker] = useState(null);
 
-  // Auth check
+  // Auth check - REMOVED admin restriction, now accessible to all users
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const user = await base44.auth.me();
-        if (!user || user.role !== 'admin') {
+        if (!user) {
           navigate(createPageUrl("Home"));
           return;
         }
