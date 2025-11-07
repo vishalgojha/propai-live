@@ -134,7 +134,7 @@ export default function AdminBrokers() {
     setProfileModalOpen(true);
   };
 
-  // WhatsApp broker (used in modal) - FIXED BRANDING
+  // WhatsApp broker (used in modal)
   const handleWhatsApp = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id && p.status === 'Active');
     const brokerRequirements = requirements.filter(r => r.broker_id === broker.id && r.status === 'Active');
@@ -226,7 +226,7 @@ export default function AdminBrokers() {
     return matchesSearch && matchesStatus;
   });
 
-  // NEW: WhatsApp Message Generators
+  // NEW: Smart WhatsApp Message Generators
   const generateWelcomeMessage = (broker, property) => {
     if (!property) return "";
     return `👋 Hi ${broker.name}! Your property is now LIVE on PropAI SmartFeed!
@@ -241,9 +241,6 @@ We're Mumbai's AI-powered property platform. Your listings get matched with veri
   };
 
   const generateMatchAlertMessage = (broker, requirement) => {
-    // This function assumes 'requirement' object structure. For now, it's a placeholder.
-    // In a real app, 'requirement' would be passed from an actual requirement object.
-    // For the UI button, we're making a generic message as we don't have requirement data here.
     const genericRequirementMessage = `🎯 New client requirements available on PropAI!\n\nCheck SmartFeed for matches in your areas:\n${broker.areas_covered?.join(', ') || 'Mumbai'}\n\n📱 propai.live`;
     
     if (!requirement) return genericRequirementMessage;
@@ -296,6 +293,75 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
       return;
     }
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
+  };
+
+  // NEW: Smart CTA logic - determine which CTAs to show based on broker activity
+  const getSmartCTAs = (broker) => {
+    const brokerProperties = properties.filter(p => p.broker_id === broker.id);
+    const activeProperties = brokerProperties.filter(p => p.status === 'Active');
+    const mostRecentProperty = brokerProperties.length > 0 ? brokerProperties[0] : null;
+    
+    const daysSinceLastActivity = broker.last_activity 
+      ? Math.floor((Date.now() - new Date(broker.last_activity).getTime()) / (1000 * 60 * 60 * 24))
+      : Infinity; // Use Infinity for never active
+
+    const daysSinceJoined = broker.created_date
+      ? Math.floor((Date.now() - new Date(broker.created_date).getTime()) / (1000 * 60 * 60 * 24))
+      : Infinity;
+
+    const ctas = [];
+
+    // 1. WELCOME: Only if NEW broker (1-3 total listings) AND last activity within 7 days
+    if (brokerProperties.length >= 1 && brokerProperties.length <= 3 && daysSinceLastActivity <= 7 && mostRecentProperty) {
+      ctas.push({
+        id: 'welcome',
+        label: '👋 Welcome',
+        message: generateWelcomeMessage(broker, mostRecentProperty),
+        reason: 'New broker with recent listing'
+      });
+    }
+
+    // 2. STATS: Only if broker has activity in last 30 days
+    if (daysSinceLastActivity <= 30 && brokerProperties.length > 0) {
+      ctas.push({
+        id: 'stats',
+        label: '📊 Stats',
+        message: generatePerformanceMessage(broker),
+        reason: 'Active in last 30 days'
+      });
+    }
+
+    // 3. RECOGNITION: Only if trust_score >= 70 AND has active listings
+    if ((broker.trust_score || 0) >= 70 && activeProperties.length > 0) {
+      ctas.push({
+        id: 'recognition',
+        label: '⭐ Recognition',
+        message: generateQualityRecognitionMessage(broker),
+        reason: 'High trust score with active listings'
+      });
+    }
+
+    // 4. MATCH ALERT: Only if broker has active listings AND there are requirements in system
+    if (activeProperties.length > 0 && requirements.length > 0) { // requirements.length checks global system requirements
+      ctas.push({
+        id: 'match',
+        label: '🎯 Match Alert',
+        message: generateMatchAlertMessage(broker, null), // Passing null for requirement as we don't have a specific one here
+        reason: 'Has active listings + requirements exist'
+      });
+    }
+
+    // Fallback: If no other CTAs qualify, show generic stats (if broker has any listings)
+    if (ctas.length === 0 && brokerProperties.length > 0) {
+      ctas.push({
+        id: 'stats',
+        label: '📊 Stats',
+        message: generatePerformanceMessage(broker),
+        reason: 'Fallback message: no specific CTA qualified'
+      });
+    }
+
+    return ctas;
   };
 
   // Broker Profile Modal
@@ -609,9 +675,11 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBrokers.map((broker) => {
               const brokerProperties = properties.filter(p => p.broker_id === broker.id);
-              const mostRecentProperty = brokerProperties.length > 0 ? brokerProperties[0] : null; // Get the first property as "most recent"
               const hasProfile = broker.ai_profile_summary;
               const hasTeam = broker.team_members && broker.team_members.length > 0;
+              
+              // Get smart CTAs for this broker
+              const smartCTAs = getSmartCTAs(broker);
               
               return (
                 <motion.div
@@ -712,46 +780,26 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
                       </Button>
                     </div>
 
-                    {/* NEW: WhatsApp Quick Messages */}
-                    <div className="border-t border-slate-200 pt-4">
-                      <p className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">Quick Messages</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          onClick={() => handleWhatsAppMessage(generateWelcomeMessage(broker, mostRecentProperty), broker.phone)}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8"
-                          disabled={!mostRecentProperty}
-                        >
-                          📲 Welcome
-                        </Button>
-                        <Button
-                          onClick={() => handleWhatsAppMessage(generatePerformanceMessage(broker), broker.phone)}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8"
-                        >
-                          📊 Stats
-                        </Button>
-                        <Button
-                          onClick={() => handleWhatsAppMessage(generateQualityRecognitionMessage(broker), broker.phone)}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8"
-                          disabled={broker.trust_score < 60}
-                        >
-                          ⭐ Recognition
-                        </Button>
-                        <Button
-                          onClick={() => handleWhatsAppMessage(generateMatchAlertMessage(broker, null), broker.phone)} // Passing null for requirement as we don't have it here
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8"
-                        >
-                          🎯 Match Alert
-                        </Button>
+                    {/* SMART WhatsApp Quick Messages - Only show if CTAs exist */}
+                    {smartCTAs.length > 0 && (
+                      <div className="border-t border-slate-200 pt-4">
+                        <p className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">Quick Messages</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {smartCTAs.map((cta) => (
+                            <Button
+                              key={cta.id}
+                              onClick={() => handleWhatsAppMessage(cta.message, broker.phone)}
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-8"
+                              title={cta.reason}
+                            >
+                              {cta.label}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               );
