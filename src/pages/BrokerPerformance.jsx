@@ -610,7 +610,7 @@ export default function BrokerPerformance() {
                 <div className="bg-slate-50 rounded-xl p-3 mb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-slate-600" />
+                      <Home className="w-4 h-4 text-slate-600" />
                       <span className="text-sm font-semibold text-slate-700">Avg Deal Value</span>
                     </div>
                     <span className="text-lg font-bold text-slate-900">₹{broker.avgDealValue}L</span>
