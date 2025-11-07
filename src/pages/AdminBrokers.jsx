@@ -24,7 +24,7 @@ import {
 import {
   Users, Search, Phone, MessageCircle, Star, MapPin, Building2,
   TrendingUp, RefreshCw, Eye, Sparkles, Target, Award, Clock,
-  BarChart3, CheckCircle2, AlertCircle, Home, Package
+  BarChart3, CheckCircle2, AlertCircle, Home, Package, Copy, Megaphone
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -41,6 +41,7 @@ export default function AdminBrokers() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [buildingProfile, setBuildingProfile] = useState(false);
   const [buildingAllProfiles, setBuildingAllProfiles] = useState(false);
+  const [seedingIntroModalOpen, setSeedingIntroModalOpen] = useState(false);
 
   // Queries
   const { data: brokers = [], isLoading: brokersLoading } = useQuery({
@@ -364,6 +365,47 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     return ctas;
   };
 
+  // NEW: Generate seeding intro message
+  const generateSeedingIntro = (broker) => {
+    const brokerProps = properties.filter(p => p.broker_id === broker.id);
+    const brokerLocations = Array.from(new Set(brokerProps.map(p => p.location).filter(Boolean)));
+    // For a personalized intro, we filter for broker's own active requirements or for potential matches to their listings.
+    // However, the outline provided implies using all active requirements for the count, consistent with the global modal.
+    const activeReqs = requirements.filter(r => r.status === 'Active'); // Using global active requirements count as per outline structure
+    
+    return `Hey 👋 this is PropAI Live — Mumbai's AI Assistant for Real Estate.
+
+We've already organized your listings from our internal database to get you started faster 🚀
+
+Here's what PropAI parsed from your records:
+🏠 ${brokerProps.length} properties structured
+📍 ${brokerLocations.length} locations mapped
+🤝 ${activeReqs.length} active requirements matched
+
+Now you can send updates or new data directly on WhatsApp:
+📲 Official Number: wa.me/919102269622278
+
+How to use:
+1️⃣ Send property listings — PropAI will auto-structure and publish them to your SmartFeed.
+2️⃣ Share client requirements — instantly get matching options.
+3️⃣ Stay ahead — early users get top visibility on SmartFeed 🔥
+
+💡 Example:
+> "2BHK Bandra ₹1.8L ff cp, ${broker.name} ${broker.phone}" → PropAI cleans, matches, and posts live in seconds ⚡
+
+If you'd prefer not to receive updates, simply reply STOP anytime to opt out.
+No spam. No groups. Only verified real-estate intelligence ✅`;
+  };
+
+  const copySeedingIntro = (broker) => {
+    const message = generateSeedingIntro(broker);
+    navigator.clipboard.writeText(message);
+    toast.success('📋 Intro message copied!', {
+      description: 'Paste into WhatsApp to send to broker',
+      duration: 3000
+    });
+  };
+
   // Broker Profile Modal
   const BrokerProfileModal = () => {
     if (!selectedBroker) return null;
@@ -605,6 +647,100 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     );
   };
 
+  // Seeding Intro Modal
+  const SeedingIntroModal = () => {
+    const activeProperties = properties.filter(p => p.status === 'Active');
+    const activeLocations = Array.from(new Set(activeProperties.map(p => p.location).filter(Boolean)));
+    const activeReqs = requirements.filter(r => r.status === 'Active');
+
+    const globalIntroMessage = `Hey 👋 this is PropAI Live — Mumbai's AI Assistant for Real Estate.
+
+We've already organized your listings from our internal database to get you started faster 🚀
+
+Here's what PropAI has in the system:
+🏠 ${activeProperties.length} properties structured
+📍 ${activeLocations.length} locations mapped
+🤝 ${activeReqs.length} active requirements matched
+
+Now you can send updates or new data directly on WhatsApp:
+📲 Official Number: wa.me/919102269622278
+
+How to use:
+1️⃣ Send property listings — PropAI will auto-structure and publish them to SmartFeed.
+2️⃣ Share client requirements — instantly get matching options.
+3️⃣ Stay ahead — early users get top visibility on SmartFeed 🔥
+
+💡 Example:
+> "2BHK Bandra ₹1.8L ff cp, Your Name 9820012345" → PropAI cleans, matches, and posts live in seconds ⚡
+
+If you'd prefer not to receive updates, simply reply STOP anytime to opt out.
+No spam. No groups. Only verified real-estate intelligence ✅`;
+
+    return (
+      <Dialog open={seedingIntroModalOpen} onOpenChange={setSeedingIntroModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center">
+                <Megaphone className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold">Seeding Phase — Broker Intro Message</h3>
+                <p className="text-sm text-slate-500 font-normal">Copy & paste to WhatsApp for mass broker onboarding</p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-bold text-slate-900">📢 Global Intro Message</h4>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(globalIntroMessage);
+                    toast.success('Copied to clipboard!', {
+                        description: 'Global message copied, ready to paste.',
+                        duration: 3000
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copy
+                </Button>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-sm font-mono text-slate-700 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                {globalIntroMessage}
+              </div>
+            </div>
+
+            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+              <p className="text-sm text-amber-800">
+                <strong>💡 Pro Tip:</strong> Use the global message above for general broadcast, or click "Copy Intro" on individual broker cards below for personalized messages with their specific stats.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-slate-900 mb-3">📋 Broker-Specific Messages</h4>
+              <p className="text-sm text-slate-600 mb-4">
+                Click "Copy Intro" on any broker card to get a personalized message with their specific property count and locations.
+              </p>
+              <Button
+                onClick={() => setSeedingIntroModalOpen(false)}
+                variant="outline"
+                className="w-full"
+              >
+                Close & View Brokers
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <Toaster position="top-center" richColors closeButton />
@@ -622,14 +758,23 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
                 <p className="text-sm text-slate-500">{filteredBrokers.length} brokers</p>
               </div>
             </div>
-            <Button
-              onClick={buildAllBrokerProfiles}
-              disabled={buildingAllProfiles}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${buildingAllProfiles ? 'animate-spin' : ''}`} />
-              {buildingAllProfiles ? 'Building Profiles...' : 'Build All Profiles'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setSeedingIntroModalOpen(true)}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              >
+                <Megaphone className="w-4 h-4 mr-2" />
+                Seeding Intro
+              </Button>
+              <Button
+                onClick={buildAllBrokerProfiles}
+                disabled={buildingAllProfiles}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${buildingAllProfiles ? 'animate-spin' : ''}`} />
+                {buildingAllProfiles ? 'Building...' : 'Build All Profiles'}
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -780,6 +925,19 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
                       </Button>
                     </div>
 
+                    {/* Seeding Intro CTA */}
+                    <div className="border-t border-slate-200 pt-4 mb-4">
+                      <Button
+                        onClick={() => copySeedingIntro(broker)}
+                        size="sm"
+                        variant="outline"
+                        className="w-full text-xs gap-2 text-green-700 border-green-300 hover:bg-green-50"
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copy Seeding Intro
+                      </Button>
+                    </div>
+
                     {/* SMART WhatsApp Quick Messages - Only show if CTAs exist */}
                     {smartCTAs.length > 0 && (
                       <div className="border-t border-slate-200 pt-4">
@@ -809,6 +967,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
       </div>
 
       <BrokerProfileModal />
+      <SeedingIntroModal />
     </div>
   );
 }
