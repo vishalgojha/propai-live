@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -62,9 +63,9 @@ Deno.serve(async (req) => {
         console.log(`Generating description for: ${property.custom_id || property.id}`);
 
         // Build context for AI
-        const prompt = `Write a plain factual 3-4 line property description (50-70 words) for this Mumbai listing:
+        const prompt = `Write a comprehensive property description for this Mumbai listing.
 
-**Property:**
+**Property Details:**
 - ${property.bhk} in ${property.location}
 ${property.building_name ? `- Building: ${property.building_name}` : ''}
 ${property.pocket ? `- Area: ${property.pocket}` : ''}
@@ -78,31 +79,62 @@ ${property.view ? `- View: ${property.view}` : ''}
 ${property.amenities && property.amenities.length > 0 ? `- Amenities: ${property.amenities.slice(0, 5).join(', ')}` : ''}
 ${property.possession ? `- Possession: ${property.possession}` : ''}
 
+**REQUIREMENTS:**
+- Write EXACTLY 4-5 complete sentences
+- MINIMUM 60 words, TARGET 70-80 words
+- Full paragraph format (NO bullet points, NO line breaks)
+- Plain factual tone - NO marketing fluff
+
+**Structure to Follow:**
+Sentence 1: Location, size, and configuration
+Sentence 2: Furnishing details, floor level, views
+Sentence 3: Parking and possession status
+Sentence 4: Building amenities
+Sentence 5 (optional): Additional features or highlights
+
 **Style Guidelines:**
-- 3-4 lines, 50-70 words total
-- Plain, factual tone - NO marketing fluff
 - State what exists, don't "sell" it
-- NO words like: premium, luxury, stunning, exquisite, world-class, magnificent, prime
-- Focus on: location, size, furnishing, floor, parking, key amenities
-- Simple direct language
+- NO fancy words: premium, luxury, stunning, exquisite, world-class, magnificent, prime
+- Simple direct language only
+- Write FULL sentences - NO truncation or "..."
 
-**Good Example:**
-"Fully furnished 2 BHK in Oberoi Sky Heights, Bandra West. 1000 sq ft carpet area on 18th floor with city views. Includes 2 covered parking spots. Building has gym, swimming pool, and 24/7 security."
+**GOOD EXAMPLE (78 words, 4 sentences):**
+"Fully furnished 2 BHK apartment in Oberoi Sky Heights, Bandra West with 1000 square feet carpet area. The unit is located on the 18th floor and features modern interiors with city-facing views. Two covered parking spots are included with immediate possession available. Building amenities include a well-equipped gymnasium, swimming pool, landscaped gardens, and round-the-clock security."
 
-**Bad Example (too fancy):**
-"Experience luxury living in this stunning 2 BHK at the prestigious Oberoi Sky Heights. Premium finishes and world-class amenities await you in the heart of Bandra."
+**BAD EXAMPLE (too short):**
+"Nice 2 BHK in Bandra. Fully furnished. Good building."
 
-Write ONLY the description (no label, no quotes, just the text):`;
+**CRITICAL:** 
+- Your response MUST be 60-80 words
+- Write ONE continuous paragraph
+- NO abbreviations in the description
+- Complete all sentences properly
+
+Write ONLY the description (no quotes, no label, just the paragraph text):`;
 
         const aiDescription = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: prompt,
           add_context_from_internet: false
         });
 
-        // Clean up response (remove quotes, extra whitespace)
+        // Clean up response and validate length
         const cleanedDescription = aiDescription
           .replace(/^["']|["']$/g, '')
           .trim();
+
+        // Validate minimum word count
+        const wordCount = cleanedDescription.split(/\s+/).length;
+        if (wordCount < 50) {
+          console.warn(`⚠️ Description too short (${wordCount} words) for ${property.custom_id || property.id}, regenerating...`);
+          // Skip this property - it will be picked up in next run if conditions are met
+          errorCount++;
+          errors.push({
+            property_id: property.id,
+            custom_id: property.custom_id,
+            error: `Generated description too short: ${wordCount} words`
+          });
+          continue;
+        }
 
         // Update property
         await base44.asServiceRole.entities.Property.update(property.id, {
@@ -110,7 +142,7 @@ Write ONLY the description (no label, no quotes, just the text):`;
         });
 
         successCount++;
-        console.log(`✅ Generated description for ${property.custom_id || property.id}`);
+        console.log(`✅ Generated ${wordCount}-word description for ${property.custom_id || property.id}`);
 
       } catch (error) {
         console.error(`❌ Error for property ${property.custom_id || property.id}:`, error.message);
