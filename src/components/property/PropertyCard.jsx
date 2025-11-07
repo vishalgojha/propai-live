@@ -126,7 +126,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     if (property.carpet_area) details.push(`📐 ${property.carpet_area} sq.ft`);
     if (property.furnishing) details.push(`🪑 ${property.furnishing}`);
     
-    details.push('\n📱 View on Chariot Realty');
+    details.push('\n📱 View on PropAI Live');
     details.push('✨ Verified listings | Transparent pricing');
     
     return details.join('\n');
