@@ -418,6 +418,12 @@ export default function Layout({ children, currentPageName }) {
                   <span>Mumbai, Maharashtra<br />India</span>
                 </li>
                 <li className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                  <a href="tel:+919819471310" className="hover:text-sky-600 transition-colors">
+                    +91 98194 71310
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-sky-500 flex-shrink-0" />
                   <a href="mailto:hello@propai.live" className="hover:text-sky-600 transition-colors">
                     hello@propai.live
