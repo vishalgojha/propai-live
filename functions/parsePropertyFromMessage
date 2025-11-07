@@ -84,7 +84,7 @@ Return this EXACT JSON structure with ALL fields:
   "broker_phone": "string (phone with country code, e.g., '919820094416')",
   "broker_agency": "string or null",
   "ai_title": "string (10-15 word descriptive title)",
-  "ai_description": "string (3-4 lines, 50-70 words, plain factual description - NO fancy marketing language)"
+  "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words minimum - MUST be full paragraph)"
 }
 
 **CRITICAL for ai_title:**
@@ -100,13 +100,34 @@ Return this EXACT JSON structure with ALL fields:
 - Make it search-friendly and matchable
 - NO special characters or punctuation except commas
 
-**CRITICAL for ai_description:**
-- Write 3-4 lines (50-70 words total)
+**CRITICAL for ai_description - READ CAREFULLY:**
+- MUST write EXACTLY 4-5 complete sentences
+- MINIMUM 60 words, TARGET 70-80 words
+- Full paragraph format - NO bullet points, NO line breaks
 - Plain, factual tone - state what exists, don't sell it
-- Focus on: location details, size, furnishing, parking, floor, key amenities
-- NO fancy words like "premium", "luxury", "world-class", "stunning", "exquisite"
-- Simple language: "Fully furnished 2 BHK in Oberoi Sky Heights, Bandra West. 1000 sq ft carpet area, 18th floor with city views. 2 covered parking spots included. Gym, pool, and 24/7 security available."
-- Even if original message is short, create a complete 3-4 line description from available data
+- Structure: 
+  * Sentence 1: Location + size + configuration
+  * Sentence 2: Furnishing + floor + view (if available)
+  * Sentence 3: Parking + possession details
+  * Sentence 4: Key amenities
+  * Sentence 5: Additional selling points (if available)
+- NO fancy marketing words like: premium, luxury, stunning, exquisite, world-class, magnificent
+- Use simple direct language
+- NEVER truncate or use "..." - write COMPLETE sentences
+
+**GOOD EXAMPLE (80 words, 4 sentences):**
+"Fully furnished 2 BHK apartment in Oberoi Sky Heights, Bandra West with 1000 sq ft carpet area. Located on the 18th floor offering clear city views with modern interiors and quality fittings. Two covered parking spots included with immediate possession available. Building amenities include gymnasium, swimming pool, landscaped gardens, children's play area, and 24/7 security with CCTV surveillance."
+
+**BAD EXAMPLE (too short, incomplete):**
+"2 BHK in Oberoi Sky Heights. Fully furnished with parking. Good amenities available."
+
+**CRITICAL RULES:**
+- NEVER write less than 60 words
+- ALWAYS write 4-5 complete sentences
+- NO abbreviations (write "square feet" not "sq ft" in description)
+- NO bullet points or dashes
+- Write ONE continuous paragraph
+- Even if original message is short, CREATE A FULL DESCRIPTION from the available data
 
 **CRITICAL for broker extraction:**
 - ALWAYS extract broker name and phone from message content
@@ -549,3 +570,4 @@ function levenshteinDistance(str1, str2) {
 
   return matrix[str2.length][str1.length];
 }
+
