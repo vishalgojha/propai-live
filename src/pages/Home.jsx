@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Sparkles, TrendingUp, Shield, Building2,
   CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
-  Zap, BookOpen, Globe, Bot, Home, MapPin
+  Zap, BookOpen, Globe, Bot, Home as HomeIcon, MapPin
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -255,7 +255,7 @@ Looking forward to listing with PropAI Live!`;
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Home className="w-12 h-12 text-slate-300" />
+                      <HomeIcon className="w-12 h-12 text-slate-300" />
                     </div>
                   )}
                   <Badge className="absolute top-3 left-3 bg-sky-600 text-white border-0">
