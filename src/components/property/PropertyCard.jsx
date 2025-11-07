@@ -7,7 +7,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, X, Facebook, Twitter, Link as LinkIcon
+  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, X, Facebook, Twitter, Link as LinkIcon, Linkedin
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -90,9 +90,9 @@ export default function PropertyCard({ property, onViewDetails }) {
 
   const handleCardClick = () => {
     if (property.slug) {
-      navigate(createPageUrl("PropertyDetails") + `?slug=${property.slug}`);
+      navigate(`/p/${property.slug}`);
     } else if (property.id) {
-      navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`);
+      navigate(`/p/${property.id}`);
     } else {
       onViewDetails(property);
     }
@@ -100,9 +100,9 @@ export default function PropertyCard({ property, onViewDetails }) {
 
   const getShareUrl = () => {
     if (property.slug) {
-      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
+      return `${window.location.origin}/p/${property.slug}`;
     }
-    return `${window.location.origin}${createPageUrl("PropertyDetails")}?id=${property.id}`;
+    return `${window.location.origin}/p/${property.id}`;
   };
 
   const getShareText = () => {
@@ -114,7 +114,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     if (property.carpet_area) details.push(`📐 ${property.carpet_area} sq.ft`);
     if (property.furnishing) details.push(`🪑 ${property.furnishing}`);
     
-    details.push('\n📱 View on PropAI Live');
+    details.push('\n📱 View on Chariot Realty');
     details.push('✨ Verified listings | Transparent pricing');
     
     return details.join('\n');
@@ -157,6 +157,12 @@ export default function PropertyCard({ property, onViewDetails }) {
     const text = encodeURIComponent(getShareText());
     const url = encodeURIComponent(getShareUrl());
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
+  };
+
+  const shareToLinkedIn = (e) => {
+    e.stopPropagation();
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=600,height=400');
   };
 
   const shareToWhatsApp = (e) => {
@@ -287,11 +293,11 @@ export default function PropertyCard({ property, onViewDetails }) {
           <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
             <div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                ₹{property.price}
+                {formatPrice()}
               </span>
-              <span className="text-lg text-slate-600 ml-1">
-                {property.price_unit === 'crores' ? 'Cr' : 'L'}
-              </span>
+              {/* Removed redundant Cr/L/K suffix here as formatPrice already includes it. 
+                  If more complex parsing is needed, the `formatPrice` function needs to be adjusted 
+                  to return raw number and unit separately. */}
               {property.carpet_area && (
                 <span className="text-xs text-slate-500 ml-2">
                   • {property.carpet_area} sq.ft
@@ -393,6 +399,13 @@ export default function PropertyCard({ property, onViewDetails }) {
             >
               <Facebook className="w-5 h-5 mr-3" />
               Share on Facebook
+            </Button>
+            <Button
+              onClick={shareToLinkedIn}
+              className="w-full bg-[#0A66C2] hover:bg-[#094D92] text-white justify-start"
+            >
+              <Linkedin className="w-5 h-5 mr-3" />
+              Share on LinkedIn
             </Button>
             <Button
               onClick={shareToTwitter}
