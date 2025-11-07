@@ -32,6 +32,28 @@ export default function PropertyCard({ property, onViewDetails }) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Track property contact when WhatsApp is clicked
+  const trackPropertyContact = (property) => {
+    try {
+      const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
+      contactHistory.push({
+        id: property.id,
+        bhk: property.bhk,
+        location: property.location,
+        price: property.price,
+        price_unit: property.price_unit,
+        listing_type: property.listing_type,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Keep only last 50 contacts
+      const recentContacts = contactHistory.slice(-50);
+      localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
+    } catch (error) {
+      console.error('Failed to track contact:', error);
+    }
+  };
+
   const formatPrice = () => {
     if (property.price_unit === "crores") {
       if (property.price < 1) {
@@ -61,6 +83,9 @@ export default function PropertyCard({ property, onViewDetails }) {
   const handleWhatsAppContact = (e, phone, contactName = '') => {
     e.stopPropagation();
     
+    // Track contact
+    trackPropertyContact(property);
+    
     if (!phone) {
       alert(`⚠️ Broker contact not available.\n\nPlease update broker contact info in Admin → Brokers.`);
       return;
@@ -68,13 +93,14 @@ export default function PropertyCard({ property, onViewDetails }) {
     
     const propertyLink = getPropertyUrl();
     
-    const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property from PropAI Live:\n\n` +
+    const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
       `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
-      `\n📱 View Full Details: ${propertyLink}\n\n` +
-      `Please share more details and availability.\n\n` +
+      `\nFound via www.propai.live\n\n` +
+      `📱 View Full Details: ${propertyLink}\n\n` +
+      `Please share more details.\n\n` +
       `Thank you!`;
     
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
