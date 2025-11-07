@@ -359,7 +359,6 @@ export default function Admin() {
       toast.success('✅ Data Cleanup Complete!', {
         duration: 8000
       });
-
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     } catch (error) {
       toast.dismiss('cleanup-dry-run');
@@ -830,24 +829,6 @@ export default function Admin() {
       active: requirements.filter(r => r.status === "Active").length,
     }
   };
-
-  const menuItems = [
-    {
-      icon: Zap,
-      title: "PropAI Console",
-      description: "Parser + Chat interface for power users",
-      color: "from-purple-600 to-indigo-600",
-      path: createPageUrl("PropAIConsole"),
-      badge: "NEW"
-    },
-    {
-      icon: Home,
-      title: "Property Management",
-      description: "Add, edit, and manage property listings",
-      color: "from-purple-600 to-indigo-600",
-      path: createPageUrl("SmartFeed")
-    },
-  ];
 
   // Filtered data
   const filteredProperties = properties.filter(property => {

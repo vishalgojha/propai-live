@@ -13,7 +13,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
-import PropAIConsole from './pages/PropAIConsole';
 import Layout from './Layout.jsx';
 
 
@@ -33,7 +32,6 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "Disclaimer": Disclaimer,
     "SmartFeedAnalytics": SmartFeedAnalytics,
-    "PropAIConsole": PropAIConsole,
 }
 
 export const pagesConfig = {
