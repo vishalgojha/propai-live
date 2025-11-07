@@ -61,7 +61,7 @@ export default function Admin() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [imagesToUpload, setImagesToUpload] = useState([]);
 
-  // AI Parser states (NEW)
+  // AI Parser states
   const [aiParserModalOpen, setAiParserModalOpen] = useState(false);
   const [parserInput, setParserInput] = useState("");
   const [parsingInProgress, setParsingInProgress] = useState(false);
@@ -77,7 +77,7 @@ export default function Admin() {
   const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
   const [normalizingLocations, setNormalizingLocations] = useState(false); // NEW
   const [normalizingBhk, setNormalizingBhk] = useState(false); // NEW
-  const [fixingVisibility, setFixingVisibility] = useState(false); // NEW
+  // REMOVED: const [fixingVisibility, setFixingVisibility] = useState(false); // NEW
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -937,59 +937,59 @@ export default function Admin() {
     }
   };
 
-  // NEW: Fix Property Visibility handler
-  const fixPropertyVisibility = async () => {
-    if (!confirm('🔧 Fix Property Visibility?\n\nThis will set visibility="public" on all properties that don\'t have it.\n\nThis fixes the issue where properties exist but aren\'t visible on SmartFeed.')) {
-      return;
-    }
+  // REMOVED: Fix Property Visibility handler
+  // const fixPropertyVisibility = async () => {
+  //   if (!confirm('🔧 Fix Property Visibility?\n\nThis will set visibility="public" on all properties that don\'t have it.\n\nThis fixes the issue where properties exist but aren\'t visible on SmartFeed.')) {
+  //     return;
+  //   }
 
-    setFixingVisibility(true);
-    toast.loading('🔍 Checking property visibility...', { id: 'visibility-check' });
+  //   setFixingVisibility(true);
+  //   toast.loading('🔍 Checking property visibility...', { id: 'visibility-check' });
 
-    try {
-      const response = await base44.functions.invoke('fixPropertyVisibility', {});
-      toast.dismiss('visibility-check');
+  //   try {
+  //     const response = await base44.functions.invoke('fixPropertyVisibility', {});
+  //     toast.dismiss('visibility-check');
 
-      const stats = response.data.stats;
+  //     const stats = response.data.stats;
 
-      if (stats.fixed === 0) {
-        toast.success('✅ All Properties Visible!', {
-          description: `${stats.total_properties} properties already have visibility set`,
-          duration: 4000
-        });
-      } else {
-        toast.success('✅ Property Visibility Fixed!', {
-          description: (
-            <div className="space-y-2">
-              <div className="font-semibold">Properties are now visible</div>
-              <div className="text-xs opacity-90 space-y-1">
-                <div>• Total: {stats.total_properties} properties</div>
-                <div>• Fixed: {stats.fixed} properties</div>
-                <div>• Already visible: {stats.already_set}</div>
-                {stats.errors > 0 && (
-                  <div className="text-red-300">⚠ Errors: {stats.errors}</div>
-                )}
-              </div>
-            </div>
-          ),
-          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
-          duration: 8000
-        });
-      }
+  //     if (stats.fixed === 0) {
+  //       toast.success('✅ All Properties Visible!', {
+  //         description: `${stats.total_properties} properties already have visibility set`,
+  //         duration: 4000
+  //       });
+  //     } else {
+  //       toast.success('✅ Property Visibility Fixed!', {
+  //         description: (
+  //           <div className="space-y-2">
+  //             <div className="font-semibold">Properties are now visible</div>
+  //             <div className="text-xs opacity-90 space-y-1">
+  //               <div>• Total: {stats.total_properties} properties</div>
+  //               <div>• Fixed: {stats.fixed} properties</div>
+  //               <div>• Already visible: {stats.already_set}</div>
+  //               {stats.errors > 0 && (
+  //                 <div className="text-red-300">⚠ Errors: {stats.errors}</div>
+  //               )}
+  //             </div>
+  //           </div>
+  //         ),
+  //         className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+  //         duration: 8000
+  //       });
+  //     }
 
-      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+  //     queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
 
-    } catch (error) {
-      toast.dismiss('visibility-check');
-      toast.error('❌ Visibility Fix Failed', {
-        description: error.message || 'Something went wrong',
-        className: 'bg-red-600 text-white border-0',
-        duration: 5000
-      });
-    } finally {
-      setFixingVisibility(false);
-    }
-  };
+  //   } catch (error) {
+  //     toast.dismiss('visibility-check');
+  //     toast.error('❌ Visibility Fix Failed', {
+  //       description: error.message || 'Something went wrong',
+  //       className: 'bg-red-600 text-white border-0',
+  //       duration: 5000
+  //     });
+  //   } finally {
+  //     setFixingVisibility(false);
+  //   }
+  // };
 
 
   // Broker handlers
@@ -1346,8 +1346,8 @@ export default function Admin() {
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* CRITICAL FIX - Property Visibility - BIGGER AND MORE PROMINENT */}
-              <div className="w-full mb-4">
+              {/* REMOVED: CRITICAL FIX - Property Visibility - BIGGER AND MORE PROMINENT */}
+              {/* <div className="w-full mb-4">
                 <div className="bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl p-6 shadow-2xl border-4 border-red-300">
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -1376,7 +1376,7 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* AI Master Parser Button */}
               <Button

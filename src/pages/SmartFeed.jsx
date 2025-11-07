@@ -35,33 +35,17 @@ export default function SmartFeed() {
   const [itemsToShow, setItemsToShow] = useState(24);
   const [matchmakerOpen, setMatchmakerOpen] = useState(false);
   const [userPreferences, setUserPreferences] = useState(null);
-  const [showVisibilityWarning, setShowVisibilityWarning] = useState(false); // New state for visibility warning
-  const [currentUser, setCurrentUser] = useState(null); // New state for current user
 
   // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
-  const previousCountsRef = useRef({ properties: 0, requirements: 0 }); // FIXED
+  const previousCountsRef = useRef({ properties: 0, requirements: 0 });
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
   const ITEMS_PER_PAGE = 24;
   const REFRESH_INTERVAL = 15000; // 15 seconds
 
-  const navigate = useNavigate(); // Initialize useNavigate hook
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Failed to fetch current user:", error);
-        setCurrentUser(null);
-      }
-    };
-    checkUser();
-  }, []); // Empty dependency array means this runs once on mount
+  const navigate = useNavigate();
 
   // Load user preferences from localStorage
   useEffect(() => {
@@ -174,22 +158,6 @@ export default function SmartFeed() {
     refetchInterval: REFRESH_INTERVAL,
     refetchOnWindowFocus: true,
   });
-
-  // Check if admin and properties count is low - show warning
-  useEffect(() => {
-    if (currentUser && currentUser.role === 'admin' && !isLoading) {
-      const activeProps = properties.filter(p => p.status === "Active" && !p.is_duplicate);
-      
-      // If less than 5 active properties visible, show warning
-      if (activeProps.length < 5) {
-        setShowVisibilityWarning(true);
-      } else {
-        setShowVisibilityWarning(false); // Hide if count is sufficient
-      }
-    } else {
-      setShowVisibilityWarning(false); // Hide if not admin or properties loading
-    }
-  }, [currentUser, properties, isLoading]);
 
   // Fetch requirements with auto-refresh
   const { data: requirements, isLoading: requirementsLoading } = useQuery({
@@ -480,7 +448,7 @@ export default function SmartFeed() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <SEO
         title="SmartFeed | AI-Curated Mumbai Properties & Requirements | PropAI Live"
         description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever."
@@ -489,48 +457,6 @@ export default function SmartFeed() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        {/* ADMIN WARNING: Properties Not Visible */}
-        <AnimatePresence>
-          {showVisibilityWarning && currentUser?.role === 'admin' && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: 'auto' }}
-              exit={{ opacity: 0, y: -20, height: 0 }}
-              className="mb-6"
-            >
-              <div className="bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-2xl p-6 shadow-2xl border-2 border-white">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <AlertCircle className="w-6 h-6 animate-pulse" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-xl mb-2">⚠️ Properties Not Visible!</h3>
-                    <p className="text-white/90 mb-4 text-sm leading-relaxed">
-                      Only showing <strong>{properties.filter(p => p.status === "Active" && !p.is_duplicate).length} properties</strong>. 
-                      Old properties don't have <code className="bg-white/20 px-2 py-0.5 rounded">visibility</code> field set, so they're blocked by security rules.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        onClick={() => navigate('/admin')} // Using navigate to route to /admin page
-                        className="bg-white text-red-600 hover:bg-red-50 font-bold shadow-lg"
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Go to Admin → Click "Fix Visibility"
-                      </Button>
-                      <Button
-                        onClick={() => setShowVisibilityWarning(false)}
-                        variant="outline"
-                        className="border-2 border-white text-white hover:bg-white/10"
-                      >
-                        Dismiss
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* New Items Banner */}
         <AnimatePresence>
