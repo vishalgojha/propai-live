@@ -1,11 +1,9 @@
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
-import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
-import PropertyMatchmaker from "../components/property/PropertyMatchmaker";
 import RequirementCard from "../components/property/RequirementCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -14,6 +12,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+
+// LAZY LOAD HEAVY MODALS
+const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
+const PropertyMatchmaker = lazy(() => import("../components/property/PropertyMatchmaker"));
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -764,17 +766,22 @@ export default function SmartFeed() {
           </div>
         )}
 
-        <PropertyDetailsModal
-          property={selectedProperty}
-          isOpen={!!selectedProperty}
-          onClose={() => setSelectedProperty(null)}
-        />
+        {/* LAZY LOADED MODALS WITH SUSPENSE */}
+        <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
+          <PropertyDetailsModal
+            property={selectedProperty}
+            isOpen={!!selectedProperty}
+            onClose={() => setSelectedProperty(null)}
+          />
+        </Suspense>
 
-        <PropertyMatchmaker
-          isOpen={matchmakerOpen}
-          onClose={() => setMatchmakerOpen(false)}
-          allProperties={properties}
-        />
+        <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
+          <PropertyMatchmaker
+            isOpen={matchmakerOpen}
+            onClose={() => setMatchmakerOpen(false)}
+            allProperties={properties}
+          />
+        </Suspense>
       </div>
     </div>
   );
