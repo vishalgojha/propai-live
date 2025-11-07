@@ -1,21 +1,24 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Sparkles, TrendingUp, Shield, Building2,
   CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
-  Zap, BookOpen, Globe, Bot
+  Zap, BookOpen, Globe, Bot, Home, MapPin
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 
-export default function HomePage() {
+export default function Home() {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [featuredProperties, setFeaturedProperties] = useState([]);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true);
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -55,8 +58,70 @@ Looking forward to listing with PropAI Live!`;
 
   const adminWhatsAppUrl = `https://wa.me/9102269622278?text=${encodeURIComponent(adminWhatsAppMessage)}`;
 
+  // Mock data fetching for featured properties
+  useEffect(() => {
+    const fetchFeaturedProperties = async () => {
+      setIsLoadingProperties(true);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const mockProperties = [
+        {
+          id: "1",
+          ai_title: "Luxurious 3 BHK Apartment in Bandra West",
+          bhk: "3 BHK",
+          location: "Bandra West, Mumbai",
+          price: "6.50",
+          price_unit: "crores",
+          listing_type: "Sale",
+          images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
+        },
+        {
+          id: "2",
+          ai_title: "Spacious 2 BHK Flat with Sea View in Worli",
+          bhk: "2 BHK",
+          location: "Worli, Mumbai",
+          price: "3.20",
+          price_unit: "crores",
+          listing_type: "Rent",
+          images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
+        },
+        {
+          id: "3",
+          ai_title: "Modern Office Space in BKC",
+          bhk: "Office",
+          location: "Bandra Kurla Complex, Mumbai",
+          price: "1.80",
+          price_unit: "crores",
+          listing_type: "Sale",
+          images: ["https://images.unsplash.com/photo-1549887534-1541e932662f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
+        },
+        {
+          id: "4", // Example of property without image
+          ai_title: "1 BHK for rent in Andheri East",
+          bhk: "1 BHK",
+          location: "Andheri East, Mumbai",
+          price: "50000",
+          price_unit: "L",
+          listing_type: "Rent",
+          images: [],
+        }
+      ];
+      setFeaturedProperties(mockProperties);
+      setIsLoadingProperties(false);
+    };
+
+    fetchFeaturedProperties();
+  }, []);
+
+  const stats = [
+    { number: "250+", label: "Buildings Mapped" },
+    { number: "10,000+", label: "Properties Tracked" },
+    { number: "500+", label: "Trusted Brokers" },
+    { number: "24/7", label: "AI Monitoring" },
+  ];
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <SEO
         title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence Platform"
         description="Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring. Find verified properties with transparent pricing."
@@ -145,6 +210,77 @@ Looking forward to listing with PropAI Live!`;
             </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* Featured Properties Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-2">Featured Properties</h2>
+            <p className="text-slate-600">Handpicked listings • Verified availability</p>
+          </div>
+          <Button
+            onClick={() => navigate(createPageUrl("SmartFeed"))}
+            className="bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white font-bold rounded-2xl"
+          >
+            View All
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+
+        {isLoadingProperties ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-96 rounded-3xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featuredProperties.slice(0, 3).map((property) => (
+              <motion.div
+                key={property.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-white rounded-3xl overflow-hidden border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all cursor-pointer"
+                onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`)}
+              >
+                <div className="relative h-56 bg-slate-100">
+                  {property.images?.[0] ? (
+                    <img
+                      src={property.images[0]}
+                      alt={property.ai_title || "Property image"}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Home className="w-12 h-12 text-slate-300" />
+                    </div>
+                  )}
+                  <Badge className="absolute top-3 left-3 bg-sky-600 text-white border-0">
+                    {property.listing_type}
+                  </Badge>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
+                    {property.ai_title || `${property.bhk} in ${property.location}`}
+                  </h3>
+                  <div className="flex items-center gap-2 text-slate-600 mb-4">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">{property.location}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-sky-600">
+                      ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
+                    </span>
+                    <Badge variant="outline">{property.bhk}</Badge>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Why PropAI - The Unfair Advantages */}
@@ -365,6 +501,26 @@ Looking forward to listing with PropAI Live!`;
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Indicators - Images with lazy loading */}
+      <section className="bg-gradient-to-r from-sky-600 to-cyan-600 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
+            {stats.map((stat, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+              >
+                <div className="text-4xl md:text-5xl font-bold mb-2">{stat.number}</div>
+                <div className="text-sky-100 text-sm">{stat.label}</div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
