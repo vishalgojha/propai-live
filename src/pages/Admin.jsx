@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
+  AlertTriangle, BarChart3, Bell, BookOpen, Building2, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
   Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
   Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap
 } from "lucide-react";
@@ -63,13 +63,18 @@ export default function Admin() {
   const [testingPropAI, setTestingPropAI] = useState(false);
   const [backfillingIds, setBackfillingIds] = useState(false);
   const [detectingBuildingDuplicates, setDetectingBuildingDuplicates] = useState(false);
-  const [normalizingLocations, setNormalizingLocations] = useState(false); // NEW
+  const [normalizingLocations, setNormalizingLocations] = useState(false);
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
   const [buildingQuery, setBuildingQuery] = useState("");
   const [buildingQueryResult, setBuildingQueryResult] = useState(null);
   const [queryingBuilding, setQueryingBuilding] = useState(false);
+
+  // NEW: AI Auto-Response States
+  const [autoResponseTest, setAutoResponseTest] = useState({ text: '', type: 'general' });
+  const [generatedResponse, setGeneratedResponse] = useState(null);
+  const [generatingResponse, setGeneratingResponse] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -788,6 +793,41 @@ export default function Admin() {
     }
   };
 
+  // NEW: Test Auto-Response Generator
+  const handleTestAutoResponse = async () => {
+    if (!autoResponseTest.text.trim()) {
+      toast.error('Please enter an inquiry message');
+      return;
+    }
+
+    setGeneratingResponse(true);
+    const loadingToast = toast.loading('🤖 Generating AI response...');
+
+    try {
+      const response = await base44.functions.invoke('generateAutoResponse', {
+        inquiryText: autoResponseTest.text,
+        inquiryType: autoResponseTest.type === 'auto' ? null : autoResponseTest.type
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (response.data.success) {
+        setGeneratedResponse(response.data);
+        toast.success('✅ Response generated!', {
+          description: `Detected as: ${response.data.inquiry_type}`,
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('Failed to generate response', {
+        description: error.message
+      });
+    } finally {
+      setGeneratingResponse(false);
+    }
+  };
+
   // Broker handlers
   const handleWhatsApp = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id);
@@ -1200,6 +1240,153 @@ export default function Admin() {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32">
+        {/* NEW: AI Automation Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-3xl shadow-lg p-8 mb-8 text-white"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">🤖 AI Agent Automation</h2>
+              <p className="text-purple-100">Test automated workflows and agent responses</p>
+            </div>
+            <Zap className="w-12 h-12 text-purple-200" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Auto-Response Tester */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <h3 className="font-bold text-lg mb-4">📱 Auto-Response Generator</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-purple-100 mb-2 block">Inquiry Type</label>
+                  <select
+                    value={autoResponseTest.type}
+                    onChange={(e) => setAutoResponseTest({ ...autoResponseTest, type: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl bg-white/20 border border-white/30 text-white"
+                  >
+                    <option value="auto">Auto-Detect</option>
+                    <option value="availability">Availability Check</option>
+                    <option value="viewing_request">Viewing Request</option>
+                    <option value="price_negotiation">Price Negotiation</option>
+                    <option value="details_request">Details Request</option>
+                    <option value="general">General Inquiry</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-purple-100 mb-2 block">Sample Inquiry</label>
+                  <textarea
+                    value={autoResponseTest.text}
+                    onChange={(e) => setAutoResponseTest({ ...autoResponseTest, text: e.target.value })}
+                    placeholder="e.g., Is this property still available?"
+                    className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-purple-200 h-24"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleTestAutoResponse}
+                  disabled={generatingResponse}
+                  className="w-full bg-white text-purple-600 hover:bg-purple-50"
+                >
+                  {generatingResponse ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Generate Response
+                    </>
+                  )}
+                </Button>
+
+                {generatedResponse && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="bg-white/20 rounded-xl p-4 border border-white/30"
+                  >
+                    <p className="text-xs text-purple-100 mb-2 font-semibold">
+                      Detected: {generatedResponse.inquiry_type}
+                    </p>
+                    <div className="bg-white text-slate-900 rounded-lg p-4 text-sm whitespace-pre-wrap mb-3">
+                      {generatedResponse.response}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {generatedResponse.suggested_actions.map((action, idx) => (
+                        <Badge key={idx} className="bg-purple-500/30 text-white border-white/30 text-xs">
+                          {action}
+                        </Badge>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <h3 className="font-bold text-lg mb-4">⚡ Quick Actions</h3>
+              
+              <div className="space-y-3">
+                <Button
+                  onClick={() => navigate(createPageUrl("AdminRequirements"))}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 justify-start"
+                >
+                  <Bell className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <p className="font-semibold">Notify Brokers</p>
+                    <p className="text-xs text-purple-100">Send match alerts for requirements</p>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    const url = base44.agents.getWhatsAppConnectURL('chariot_master');
+                    window.open(url, '_blank');
+                  }}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 justify-start"
+                >
+                  <MessageCircle className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <p className="font-semibold">Connect WhatsApp Agent</p>
+                    <p className="text-xs text-purple-100">Setup automated parsing & responses</p>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => navigate(createPageUrl("AdminBrokers"))}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 justify-start"
+                >
+                  <Users className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <p className="font-semibold">Broker WhatsApp Messages</p>
+                    <p className="text-xs text-purple-100">Contextual follow-ups & alerts</p>
+                  </div>
+                </Button>
+
+                <div className="mt-6 pt-6 border-t border-white/20">
+                  <p className="text-xs text-purple-100 mb-3">📊 Automation Stats</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-2xl font-bold">{requirements.filter(r => r.ai_matched_properties?.length > 0).length}</p>
+                      <p className="text-xs text-purple-100">AI-Matched Reqs</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-2xl font-bold">{brokers.filter(b => b.trust_score >= 70).length}</p>
+                      <p className="text-xs text-purple-100">Trusted Brokers</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         <AnimatePresence mode="wait">
           {/* Overview Tab */}
           {activeTab === "overview" && (

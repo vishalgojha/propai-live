@@ -1,0 +1,214 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * AI-Powered Broker Match Notifications
+ * 
+ * When a new requirement is created:
+ * 1. Find brokers with matching active listings
+ * 2. Score matches (75%+ threshold)
+ * 3. Generate personalized WhatsApp notification
+ * 4. Return notification preview for admin approval
+ */
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { requirementId, autoSend = false } = await req.json();
+    
+    if (!requirementId) {
+      return Response.json({ error: 'requirementId is required' }, { status: 400 });
+    }
+
+    // Get requirement details
+    const requirements = await base44.asServiceRole.entities.Requirement.list();
+    const requirement = requirements.find(r => r.id === requirementId);
+    
+    if (!requirement) {
+      return Response.json({ error: 'Requirement not found' }, { status: 404 });
+    }
+
+    // Get all active properties
+    const allProperties = await base44.asServiceRole.entities.Property.filter({
+      status: "Active",
+      is_duplicate: false
+    });
+
+    // Match properties to requirement (AI scoring)
+    const matches = [];
+
+    for (const property of allProperties) {
+      let score = 0;
+      const reasons = [];
+
+      // BHK Match (30 points)
+      if (requirement.bhk_preference && requirement.bhk_preference.includes(property.bhk)) {
+        score += 30;
+        reasons.push("Perfect BHK match");
+      } else {
+        continue; // Skip if BHK doesn't match
+      }
+
+      // Location Match (25 points)
+      if (requirement.preferred_locations && requirement.preferred_locations.length > 0) {
+        const locationMatch = requirement.preferred_locations.some(loc =>
+          property.location?.toLowerCase().includes(loc.toLowerCase()) ||
+          property.pocket?.toLowerCase().includes(loc.toLowerCase())
+        );
+        if (locationMatch) {
+          score += 25;
+          reasons.push("Location match");
+        } else {
+          continue; // Skip if location doesn't match
+        }
+      }
+
+      // Budget Match (25 points)
+      const priceInLakhs = property.price_unit === 'crores' ? property.price * 100 : property.price;
+      
+      if (requirement.budget_max) {
+        if (priceInLakhs <= requirement.budget_max) {
+          score += 25;
+          reasons.push("Within budget");
+        } else if (priceInLakhs <= requirement.budget_max * 1.1) {
+          score += 15;
+          reasons.push("Slightly over budget");
+        } else {
+          continue; // Skip if way over budget
+        }
+      } else {
+        score += 25; // No budget specified
+      }
+
+      // Furnishing Match (10 points)
+      if (requirement.furnishing_preference) {
+        if (requirement.furnishing_preference === "Any" || property.furnishing === requirement.furnishing_preference) {
+          score += 10;
+          reasons.push("Furnishing match");
+        }
+      } else {
+        score += 10;
+      }
+
+      // Listing Type Match (10 points)
+      if (property.listing_type === requirement.listing_type) {
+        score += 10;
+      } else {
+        continue; // Must match listing type
+      }
+
+      // Only include matches with 75%+ score
+      if (score >= 75) {
+        matches.push({
+          property,
+          score,
+          reasons
+        });
+      }
+    }
+
+    // Sort by score
+    matches.sort((a, b) => b.score - a.score);
+
+    // Group by broker
+    const brokerMatches = new Map();
+    
+    for (const match of matches) {
+      const brokerId = match.property.broker_id;
+      if (!brokerId) continue;
+
+      if (!brokerMatches.has(brokerId)) {
+        brokerMatches.set(brokerId, []);
+      }
+      brokerMatches.get(brokerId).push(match);
+    }
+
+    // Get broker details
+    const allBrokers = await base44.asServiceRole.entities.Broker.list();
+    
+    // Generate notifications for each broker
+    const notifications = [];
+
+    for (const [brokerId, brokerProps] of brokerMatches.entries()) {
+      const broker = allBrokers.find(b => b.id === brokerId);
+      if (!broker || !broker.phone) continue;
+
+      // Take top 3 matches for this broker
+      const topMatches = brokerProps.slice(0, 3);
+
+      // Generate personalized WhatsApp message
+      const message = `🎯 New Client Requirement - Perfect Match!
+
+Hi ${broker.name}! We have a client looking for properties that match your listings:
+
+📋 Client Needs:
+• ${requirement.bhk_preference?.join(' / ') || 'Property'}
+• 📍 ${requirement.preferred_locations?.join(', ') || 'Flexible location'}
+• 💰 Budget: ₹${requirement.budget_min || ''}${requirement.budget_max ? `-${requirement.budget_max}L` : '+'}
+${requirement.furnishing_preference ? `• 🪑 ${requirement.furnishing_preference}` : ''}
+${requirement.urgency === 'High' ? '• 🔥 URGENT requirement!' : ''}
+
+✨ Your Matching Properties (${topMatches.length}):
+
+${topMatches.map((m, idx) => `${idx + 1}. ${m.property.ai_title || `${m.property.bhk} in ${m.property.location}`}
+   💰 ₹${m.property.price}${m.property.price_unit === 'crores' ? 'Cr' : 'L'} | 📍 ${m.property.building_name || m.property.location}
+   ✅ ${m.score}% Match | ${m.property.custom_id || ''}`).join('\n\n')}
+
+📱 Contact us to discuss:
+• Vishal: +91 98194 71310
+• Kapil: +91 97737 57759
+
+Let's close this deal together! 🤝`;
+
+      notifications.push({
+        broker: {
+          id: broker.id,
+          name: broker.name,
+          phone: broker.phone,
+          custom_id: broker.custom_id
+        },
+        matchCount: topMatches.length,
+        topMatch: {
+          propertyId: topMatches[0].property.id,
+          customId: topMatches[0].property.custom_id,
+          score: topMatches[0].score
+        },
+        message,
+        whatsappUrl: `https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
+      });
+    }
+
+    // Sort by match count (brokers with most matches first)
+    notifications.sort((a, b) => b.matchCount - a.matchCount);
+
+    return Response.json({
+      success: true,
+      requirement: {
+        id: requirement.id,
+        custom_id: requirement.custom_id,
+        client_name: requirement.client_name,
+        bhk: requirement.bhk_preference?.join(', '),
+        locations: requirement.preferred_locations?.join(', '),
+        budget: `₹${requirement.budget_min || ''}-${requirement.budget_max || ''}L`
+      },
+      summary: {
+        total_matches: matches.length,
+        brokers_to_notify: notifications.length,
+        avg_match_score: matches.length > 0 ? Math.round(matches.reduce((sum, m) => sum + m.score, 0) / matches.length) : 0
+      },
+      notifications: notifications,
+      instruction: autoSend 
+        ? "Messages sent automatically" 
+        : "Review notifications and click WhatsApp links to send"
+    });
+
+  } catch (error) {
+    console.error('Error generating broker notifications:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
