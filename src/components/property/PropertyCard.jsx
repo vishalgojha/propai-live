@@ -51,6 +51,13 @@ export default function PropertyCard({ property, onViewDetails }) {
     return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
+  const getPropertyUrl = () => {
+    if (property.slug) {
+      return `${window.location.origin}/propertydetails?slug=${property.slug}`;
+    }
+    return `${window.location.origin}/propertydetails?id=${property.id}`;
+  };
+
   const handleWhatsAppContact = (e, phone, contactName = '') => {
     e.stopPropagation();
     
@@ -59,12 +66,15 @@ export default function PropertyCard({ property, onViewDetails }) {
       return;
     }
     
+    const propertyLink = getPropertyUrl();
+    
     const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
       `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
-      `\nPlease share more details and availability.\n\n` +
+      `\n📱 View Full Details: ${propertyLink}\n\n` +
+      `Please share more details and availability.\n\n` +
       `Thank you!`;
     
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
