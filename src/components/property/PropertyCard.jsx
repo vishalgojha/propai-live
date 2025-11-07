@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ImageIcon // Added ImageIcon
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -21,7 +20,7 @@ import {
 const createPageUrl = (pageName) => {
   switch (pageName) {
     case "PropertyDetails":
-      return "/propertydetails"; // Changed from "/p/"
+      return "/propertydetails";
     default:
       return "/";
   }
@@ -46,7 +45,6 @@ export default function PropertyCard({ property, onViewDetails }) {
         timestamp: new Date().toISOString()
       });
       
-      // Keep only last 50 contacts
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
     } catch (error) {
@@ -83,7 +81,6 @@ export default function PropertyCard({ property, onViewDetails }) {
   const handleWhatsAppContact = (e, phone, contactName = '') => {
     e.stopPropagation();
     
-    // Track contact
     trackPropertyContact(property);
     
     if (!phone) {
@@ -187,7 +184,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  // Use cached broker contact from property instead of loading full broker entity
   const primaryContact = property.broker_contact || '919819471310';
   const hasContact = !!property.broker_contact && property.broker_contact !== '919819471310';
   const contactLabel = hasContact ? 'Broker' : 'PropAI';
@@ -202,104 +198,77 @@ export default function PropertyCard({ property, onViewDetails }) {
         className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
-        {/* Image Section with LAZY LOADING */}
-        <div className="relative h-56 overflow-hidden bg-slate-100">
-          {property.images && property.images.length > 0 ? (
-            <>
-              <img
-                src={property.images[0]}
-                alt={property.ai_title || `${property.bhk} in ${property.location}`}
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80';
-                }}
-              />
-              {property.images.length > 1 && (
-                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1">
-                  <ImageIcon className="w-3 h-3" />
-                  {property.images.length}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-100">
-              <div className="text-center">
-                <Home className="w-12 h-12 text-purple-300 mx-auto mb-2" />
-                <p className="text-xs text-purple-400 font-medium">No Photos</p>
-              </div>
-            </div>
-          )}
+        {/* NO IMAGE SECTION - Removed completely */}
 
-          {/* Badges and Share Button (now positioned absolutely over the image) */}
-          <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10">
-            <div className="flex flex-wrap gap-1">
+        {/* Main Content Section */}
+        <div className="p-4">
+          {/* Badges and Share Button at top */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex flex-wrap gap-1.5">
               {property.listing_type && (
-                <Badge className="bg-white/80 backdrop-blur-sm border border-purple-200 text-purple-700 font-semibold text-xs px-1.5 py-0.5">
+                <Badge className="bg-purple-100 border border-purple-300 text-purple-700 font-semibold text-xs">
                   {property.listing_type}
                 </Badge>
               )}
               {property.broker_trust_score >= 85 && (
-                <Badge className="bg-green-500/30 backdrop-blur-sm text-green-700 border-green-500 font-semibold text-xs px-1.5 py-0.5">
-                  <Shield className="w-2.5 h-2.5 mr-0.5" />
-                  ✓
+                <Badge className="bg-green-100 text-green-700 border-green-300 font-semibold text-xs">
+                  <Shield className="w-3 h-3 mr-1" />
+                  BROKERTRUST
                 </Badge>
               )}
             </div>
             
             <button
               onClick={handleShare}
-              className="flex items-center text-xs text-slate-600 hover:text-purple-600 bg-white/80 backdrop-blur-sm hover:bg-purple-50 p-1 rounded transition-colors shadow-sm"
+              className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
             >
-              <Share2 className="w-2.5 h-2.5" />
+              <Share2 className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
 
-        {/* Main Content Section */}
-        <div className="p-3">
-          <h3 className="text-sm font-bold text-slate-900 mb-1.5 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
+          <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-purple-700 transition-colors">
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          <div className="flex items-center gap-1 text-xs text-slate-600 mb-1.5">
-            <MapPin className="w-3 h-3 text-purple-500 flex-shrink-0" />
-            <span className="truncate text-xs">
+          <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-3">
+            <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
+            <span className="truncate">
               {property.building_name ? `${property.building_name}, ` : ''}
               {property.location}
             </span>
           </div>
 
+          {/* FULL AI DESCRIPTION - NO TRUNCATION */}
           {property.ai_description && (
-            <p className="text-xs text-slate-600 leading-relaxed mb-2 line-clamp-2">
+            <p className="text-sm text-slate-600 leading-relaxed mb-4">
               {property.ai_description}
             </p>
           )}
 
-          <div className="flex items-baseline justify-between mb-2 pb-2 border-b border-purple-100">
+          <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
             <div>
-              <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 {formatPrice()}
               </span>
             </div>
             {property.carpet_area && (
-              <span className="text-xs text-slate-500">
+              <span className="text-sm text-slate-500">
                 {property.carpet_area} sq.ft
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-1 mb-2">
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-1 text-center border border-purple-100">
-              <Home className="w-3 h-3 text-purple-600 mx-auto mb-0.5" />
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
+              <Home className="w-4 h-4 text-purple-600 mx-auto mb-1" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.bhk}</p>
             </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-1 text-center border border-purple-100">
-              <Maximize2 className="w-3 h-3 text-purple-600 mx-auto mb-0.5" />
+            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
+              <Maximize2 className="w-4 h-4 text-purple-600 mx-auto mb-1" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.carpet_area || 'N/A'}</p>
             </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-1 text-center border border-purple-100">
-              <Armchair className="w-3 h-3 text-purple-600 mx-auto mb-0.5" />
+            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
+              <Armchair className="w-4 h-4 text-purple-600 mx-auto mb-1" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.furnishing || 'N/A'}</p>
             </div>
           </div>
@@ -307,23 +276,23 @@ export default function PropertyCard({ property, onViewDetails }) {
           {/* Contact Button */}
           <Button
             onClick={(e) => handleWhatsAppContact(e, primaryContact, hasContact ? '' : 'PropAI Team')}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs"
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md"
           >
-            <MessageCircle className="w-3 h-3" />
+            <MessageCircle className="w-4 h-4" />
             <span>WhatsApp {contactLabel}</span>
           </Button>
 
-          <div className="mt-2 pt-2 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
             {property.created_date && (
-              <span className="flex items-center gap-0.5 truncate">
-                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
+              <span className="flex items-center gap-1 truncate">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
                 <span className="truncate">{format(new Date(property.created_date), "MMM dd")}</span>
               </span>
             )}
             <div className="flex items-center gap-2">
               {property.views_count > 0 && (
-                <span className="flex items-center gap-0.5">
-                  <Eye className="w-2.5 h-2.5" />
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
                   {property.views_count}
                 </span>
               )}
