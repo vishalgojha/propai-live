@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin
+  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ImageIcon // Added ImageIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -192,49 +192,72 @@ export default function PropertyCard({ property, onViewDetails }) {
   const hasContact = !!property.broker_contact && property.broker_contact !== '919819471310';
   const contactLabel = hasContact ? 'Broker' : 'PropAI';
 
-  const hasImages = property.images && property.images.length > 0;
-
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
-        className="bg-white/80 backdrop-blur-xl rounded-2xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+        transition={{ duration: 0.2 }}
+        className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
-        <div className="p-3">
-          <div className="flex items-start justify-between mb-2">
+        {/* Image Section with LAZY LOADING */}
+        <div className="relative h-56 overflow-hidden bg-slate-100">
+          {property.images && property.images.length > 0 ? (
+            <>
+              <img
+                src={property.images[0]}
+                alt={property.ai_title || `${property.bhk} in ${property.location}`}
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80';
+                }}
+              />
+              {property.images.length > 1 && (
+                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3" />
+                  {property.images.length}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-100">
+              <div className="text-center">
+                <Home className="w-12 h-12 text-purple-300 mx-auto mb-2" />
+                <p className="text-xs text-purple-400 font-medium">No Photos</p>
+              </div>
+            </div>
+          )}
+
+          {/* Badges and Share Button (now positioned absolutely over the image) */}
+          <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10">
             <div className="flex flex-wrap gap-1">
               {property.listing_type && (
-                <Badge className="bg-white border border-purple-200 text-purple-700 font-semibold text-xs px-1.5 py-0.5">
+                <Badge className="bg-white/80 backdrop-blur-sm border border-purple-200 text-purple-700 font-semibold text-xs px-1.5 py-0.5">
                   {property.listing_type}
                 </Badge>
               )}
               {property.broker_trust_score >= 85 && (
-                <Badge className="bg-green-500/20 text-green-700 border-green-500 font-semibold text-xs px-1.5 py-0.5">
+                <Badge className="bg-green-500/30 backdrop-blur-sm text-green-700 border-green-500 font-semibold text-xs px-1.5 py-0.5">
                   <Shield className="w-2.5 h-2.5 mr-0.5" />
                   ✓
                 </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-1">
-              {hasImages && (
-                <div className="flex items-center gap-0.5 text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
-                  <Camera className="w-2.5 h-2.5" />
-                  <span className="font-medium text-xs">{property.images.length}</span>
-                </div>
-              )}
-              <button
-                onClick={handleShare}
-                className="flex items-center text-xs text-slate-600 hover:text-purple-600 bg-slate-50 hover:bg-purple-50 p-1 rounded transition-colors"
-              >
-                <Share2 className="w-2.5 h-2.5" />
-              </button>
-            </div>
+            <button
+              onClick={handleShare}
+              className="flex items-center text-xs text-slate-600 hover:text-purple-600 bg-white/80 backdrop-blur-sm hover:bg-purple-50 p-1 rounded transition-colors shadow-sm"
+            >
+              <Share2 className="w-2.5 h-2.5" />
+            </button>
           </div>
+        </div>
 
+        {/* Main Content Section */}
+        <div className="p-3">
           <h3 className="text-sm font-bold text-slate-900 mb-1.5 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
