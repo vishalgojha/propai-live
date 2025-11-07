@@ -460,16 +460,10 @@ export default function Layout({ children, currentPageName }) {
                 <p>© 2025 PropAI Live. All rights reserved</p>
                 <p className="text-xs mt-1 text-slate-500">Powered by artificial intelligence and real market data.</p>
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-500">⚡ Built on</span>
-                <a 
-                  href="https://base44.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sky-600 hover:text-sky-700 transition-colors font-semibold"
-                >
-                  Base44 AI
-                </a>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-slate-600">Made with</span>
+                <span className="text-red-500 text-lg">❤️</span>
+                <span className="text-slate-600">in Mumbai</span>
               </div>
             </div>
           </div>
