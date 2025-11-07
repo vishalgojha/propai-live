@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,13 +17,10 @@ import {
 } from "@/components/ui/dialog";
 
 // Helper function to create page URLs.
-// This is a placeholder implementation. In a real application,
-// this would likely be imported from a centralized routing utility.
 const createPageUrl = (pageName) => {
   switch (pageName) {
     case "PropertyDetails":
       return "/p/";
-    // Add other page names as needed
     default:
       return "/";
   }
@@ -32,35 +28,8 @@ const createPageUrl = (pageName) => {
 
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
-  const [broker, setBroker] = useState(null);
-  const [brokerLoading, setBrokerLoading] = useState(true);
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const loadBroker = async () => {
-      if (property.broker_id) {
-        try {
-          setBrokerLoading(true);
-          const brokers = await base44.entities.Broker.list();
-          const foundBroker = brokers.find(b => b.id === property.broker_id);
-          setBroker(foundBroker);
-          
-          if (!foundBroker) {
-            console.warn(`Broker with ID ${property.broker_id} not found for property ${property.custom_id}`);
-          }
-        } catch (error) {
-          console.error("Failed to load broker:", error);
-        } finally {
-          setBrokerLoading(false);
-        }
-      } else {
-        setBrokerLoading(false);
-      }
-    };
-    loadBroker();
-  }, [property.broker_id, property.custom_id]);
 
   const formatPrice = () => {
     if (property.price_unit === "crores") {
@@ -81,7 +50,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
-  const handleWhatsAppContact = (e, phone) => {
+  const handleWhatsAppContact = (e, phone, contactName = '') => {
     e.stopPropagation();
     
     if (!phone) {
@@ -89,7 +58,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       return;
     }
     
-    const message = `Hi, I'm interested in this property:\n\n` +
+    const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
@@ -181,34 +150,11 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  const getBrokerContacts = () => {
-    if (!broker) return [];
-    
-    const contacts = [{
-      name: broker.name,
-      phone: broker.phone
-    }];
-    
-    if (broker.team_members && broker.team_members.length > 0) {
-      const teamMember = broker.team_members[0];
-      if (teamMember.phone) {
-        contacts.push({
-          name: teamMember.name,
-          phone: teamMember.phone
-        });
-      }
-    }
-    
-    return contacts.slice(0, 2);
-  };
+  // Use cached broker contact from property instead of loading full broker entity
+  const primaryContact = property.broker_contact || property.assigned_agent_phone || '919819471310';
+  const hasContact = !!property.broker_contact;
 
   const hasImages = property.images && property.images.length > 0;
-  const brokerContacts = getBrokerContacts();
-  
-  const isLongDescription = property.ai_description && property.ai_description.length > 150;
-  const displayDescription = showFullDescription || !isLongDescription 
-    ? property.ai_description 
-    : `${property.ai_description.substring(0, 150)}...`;
 
   return (
     <>
@@ -297,30 +243,26 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {brokerLoading ? (
-            <div className="space-y-1.5">
-              <div className="h-8 bg-slate-100 rounded-xl animate-pulse" />
-            </div>
-          ) : brokerContacts.length > 0 ? (
+          {/* Contact Buttons - Always show using cached contact */}
+          {hasContact ? (
             <div className="space-y-1">
-              {brokerContacts.map((contact, idx) => (
-                <Button
-                  key={idx}
-                  onClick={(e) => handleWhatsAppContact(e, contact.phone)}
-                  className={`w-full ${
-                    idx === 0 
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
-                      : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700'
-                  } text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs`}
-                >
-                  <MessageCircle className="w-3 h-3" />
-                  <span>WhatsApp{brokerContacts.length > 1 ? ` ${idx + 1}` : ''}</span>
-                </Button>
-              ))}
+              <Button
+                onClick={(e) => handleWhatsAppContact(e, primaryContact)}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs"
+              >
+                <MessageCircle className="w-3 h-3" />
+                <span>WhatsApp Broker</span>
+              </Button>
             </div>
           ) : (
-            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-center">
-              <p className="text-xs text-amber-800">Contact unavailable</p>
+            <div className="space-y-1">
+              <Button
+                onClick={(e) => handleWhatsAppContact(e, '919819471310', 'Vishal')}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs"
+              >
+                <MessageCircle className="w-3 h-3" />
+                <span>Contact Vishal</span>
+              </Button>
             </div>
           )}
 
