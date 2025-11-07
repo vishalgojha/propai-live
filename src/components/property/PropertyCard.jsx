@@ -203,117 +203,93 @@ export default function PropertyCard({ property, onViewDetails }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
-        className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+        className="bg-white/80 backdrop-blur-xl rounded-2xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
-        <div className="p-4">
+        <div className="p-3">
           <div className="flex items-start justify-between mb-2">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {property.listing_type && (
-                <Badge className="bg-white border-2 border-purple-200 text-purple-700 font-semibold text-xs">
+                <Badge className="bg-white border border-purple-200 text-purple-700 font-semibold text-xs px-1.5 py-0.5">
                   {property.listing_type}
                 </Badge>
               )}
               {property.broker_trust_score >= 85 && (
-                <Badge className="bg-green-500/20 text-green-700 border-green-500 font-semibold text-xs">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Verified
+                <Badge className="bg-green-500/20 text-green-700 border-green-500 font-semibold text-xs px-1.5 py-0.5">
+                  <Shield className="w-2.5 h-2.5 mr-0.5" />
+                  ✓
                 </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {hasImages && (
-                <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
-                  <Camera className="w-3 h-3" />
-                  <span className="font-medium">{property.images.length}</span>
+                <div className="flex items-center gap-0.5 text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                  <Camera className="w-2.5 h-2.5" />
+                  <span className="font-medium text-xs">{property.images.length}</span>
                 </div>
               )}
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1 text-xs text-slate-600 hover:text-purple-600 bg-slate-50 hover:bg-purple-50 px-2 py-1 rounded-lg transition-colors"
+                className="flex items-center text-xs text-slate-600 hover:text-purple-600 bg-slate-50 hover:bg-purple-50 p-1 rounded transition-colors"
               >
-                <Share2 className="w-3 h-3" />
+                <Share2 className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
 
-          <h3 className="text-base font-bold text-slate-900 mb-2 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
+          <h3 className="text-sm font-bold text-slate-900 mb-1.5 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-            <MapPin className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+          <div className="flex items-center gap-1 text-xs text-slate-600 mb-1.5">
+            <MapPin className="w-3 h-3 text-purple-500 flex-shrink-0" />
             <span className="truncate text-xs">
               {property.building_name ? `${property.building_name}, ` : ''}
               {property.location}
-              {property.pocket ? ` (${property.pocket})` : ''}
             </span>
           </div>
 
           {property.ai_description && (
-            <div className="mb-2">
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                {displayDescription}
-              </p>
-              {isLongDescription && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowFullDescription(!showFullDescription);
-                  }}
-                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold mt-1 flex items-center gap-1"
-                >
-                  {showFullDescription ? (
-                    <>
-                      <ChevronUp className="w-3 h-3" />
-                      Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-3 h-3" />
-                      More
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 mb-2">
+              {property.ai_description}
+            </p>
           )}
 
           <div className="flex items-baseline justify-between mb-2 pb-2 border-b border-purple-100">
             <div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 {formatPrice()}
               </span>
-              {property.carpet_area && (
-                <span className="text-xs text-slate-500 ml-1">
-                  • {property.carpet_area} sq.ft
-                </span>
-              )}
             </div>
+            {property.carpet_area && (
+              <span className="text-xs text-slate-500">
+                {property.carpet_area} sq.ft
+              </span>
+            )}
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-1.5 text-center border border-purple-100">
-              <Home className="w-3.5 h-3.5 text-purple-600 mx-auto mb-0.5" />
-              <p className="text-xs font-bold text-slate-900">{property.bhk}</p>
+          <div className="grid grid-cols-3 gap-1 mb-2">
+            <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-1 text-center border border-purple-100">
+              <Home className="w-3 h-3 text-purple-600 mx-auto mb-0.5" />
+              <p className="text-xs font-bold text-slate-900 truncate">{property.bhk}</p>
             </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-1.5 text-center border border-purple-100">
-              <Maximize2 className="w-3.5 h-3.5 text-purple-600 mx-auto mb-0.5" />
-              <p className="text-xs font-bold text-slate-900">{property.carpet_area || 'N/A'}</p>
+            <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-1 text-center border border-purple-100">
+              <Maximize2 className="w-3 h-3 text-purple-600 mx-auto mb-0.5" />
+              <p className="text-xs font-bold text-slate-900 truncate">{property.carpet_area || 'N/A'}</p>
             </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-1.5 text-center border border-purple-100">
-              <Armchair className="w-3.5 h-3.5 text-purple-600 mx-auto mb-0.5" />
+            <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-1 text-center border border-purple-100">
+              <Armchair className="w-3 h-3 text-purple-600 mx-auto mb-0.5" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.furnishing || 'N/A'}</p>
             </div>
           </div>
 
           {brokerLoading ? (
             <div className="space-y-1.5">
-              <div className="h-10 bg-slate-100 rounded-2xl animate-pulse" />
+              <div className="h-8 bg-slate-100 rounded-xl animate-pulse" />
             </div>
           ) : brokerContacts.length > 0 ? (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {brokerContacts.map((contact, idx) => (
                 <Button
                   key={idx}
@@ -322,39 +298,37 @@ export default function PropertyCard({ property, onViewDetails }) {
                     idx === 0 
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
                       : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700'
-                  } text-white font-bold rounded-2xl h-9 flex items-center justify-center gap-2 shadow-md`}
+                  } text-white font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-md text-xs`}
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span className="text-xs">WhatsApp{brokerContacts.length > 1 ? ` ${idx + 1}` : ''}</span>
+                  <MessageCircle className="w-3 h-3" />
+                  <span>WhatsApp{brokerContacts.length > 1 ? ` ${idx + 1}` : ''}</span>
                 </Button>
               ))}
             </div>
           ) : (
-            <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-center">
-              <p className="text-xs text-amber-800">Broker contact not available</p>
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-center">
+              <p className="text-xs text-amber-800">Contact unavailable</p>
             </div>
           )}
 
-          <div className="mt-2 pt-2 border-t border-purple-100">
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              {property.created_date && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {format(new Date(property.created_date), "MMM dd, yyyy")}
-                </span>
-              )}
+          <div className="mt-2 pt-2 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
+            {property.created_date && (
+              <span className="flex items-center gap-0.5 truncate">
+                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
+                <span className="truncate">{format(new Date(property.created_date), "MMM dd")}</span>
+              </span>
+            )}
+            <div className="flex items-center gap-2">
               {property.views_count > 0 && (
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
+                <span className="flex items-center gap-0.5">
+                  <Eye className="w-2.5 h-2.5" />
                   {property.views_count}
                 </span>
               )}
+              {property.custom_id && (
+                <span className="font-mono text-purple-600 text-xs truncate">{property.custom_id}</span>
+              )}
             </div>
-            {property.custom_id && (
-              <div className="flex items-center justify-between mt-1">
-                <span className="font-mono text-purple-600 text-xs">{property.custom_id}</span>
-              </div>
-            )}
           </div>
         </div>
       </motion.div>
