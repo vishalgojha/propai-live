@@ -12,10 +12,12 @@ import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import {
   Building2, MapPin, Star, TrendingUp, Home,
   ArrowLeft, Check, Phone, MessageCircle, Sparkles,
-  Users, Calendar, Layers, IndianRupee, Shield
+  Users, Calendar, Layers, IndianRupee, Shield, RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SEO from "../components/SEO";
+import { toast } from "sonner"; // NEW IMPORT
+import { format } from "date-fns"; // NEW IMPORT
 
 export default function BuildingProfile() {
   const navigate = useNavigate();
@@ -24,6 +26,9 @@ export default function BuildingProfile() {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  const [isRecalculating, setIsRecalculating] = useState(false); // NEW STATE
+  const [isEnriching, setIsEnriching] = useState(false);       // NEW STATE
 
   // Load user for admin check
   useEffect(() => {
@@ -63,14 +68,14 @@ export default function BuildingProfile() {
     initialData: [],
   });
 
-  // NEW: Get historical data for Building Memory
+  // Get historical data for Building Memory
   const { data: buildingHistory = [] } = useQuery({
     queryKey: ['building-history', buildingId],
     queryFn: async () => {
       if (!building?.name) return [];
       // Get ALL properties from this building (including sold/rented for history)
-      const allProps = await base44.entities.Property.filter({ 
-        building_name: building.name 
+      const allProps = await base44.entities.Property.filter({
+        building_name: building.name
       }, '-created_date');
       return allProps;
     },
@@ -86,7 +91,7 @@ export default function BuildingProfile() {
     const sixMonthsAgo = new Date(now); // Create a new Date object
     sixMonthsAgo.setMonth(now.getMonth() - 6); // Set it 6 months ago
 
-    const recent = buildingHistory.filter(p => 
+    const recent = buildingHistory.filter(p =>
       p.created_date && new Date(p.created_date) >= sixMonthsAgo
     );
 
@@ -118,6 +123,100 @@ export default function BuildingProfile() {
       activityTrend: recent.length >= 10 ? 'High Activity' : recent.length >= 5 ? 'Moderate' : 'Low Activity'
     };
   }, [buildingHistory]);
+
+  // NEW: Recalculate building stats
+  const handleRecalculateStats = async () => {
+    if (!building) return;
+
+    setIsRecalculating(true);
+    const loadingToast = toast.loading('🔄 Recalculating building statistics...', {
+      description: 'Analyzing property data and market trends'
+    });
+
+    try {
+      const response = await base44.functions.invoke('recalculateBuildingStats', {
+        building_id: building.id
+      });
+
+      if (response.data.success) {
+        toast.dismiss(loadingToast);
+        toast.success('✅ Building Stats Updated!', {
+          description: `${response.data.stats.total_listings} listings analyzed`,
+          duration: 5000
+        });
+
+        // Refresh building data
+        window.location.reload();
+      } else {
+        throw new Error(response.data.error || 'Failed to recalculate stats');
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('❌ Recalculation Failed', {
+        description: error.message
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
+  // NEW: Enrich building from web
+  const handleEnrichFromWeb = async () => {
+    if (!building) return;
+
+    setIsEnriching(true);
+    const loadingToast = toast.loading('🌐 Gathering web intelligence...', {
+      description: 'Searching for developer info, amenities, and reviews'
+    });
+
+    try {
+      const response = await base44.functions.invoke('enrichBuildingFromWeb', {
+        building_name: building.name,
+        location: building.location
+      });
+
+      if (response.data.success) {
+        const enrichment = response.data.enrichment;
+
+        // Update building with enriched data
+        await base44.entities.Building.update(building.id, {
+          developer_name: enrichment.developer_name || building.developer_name,
+          developer_reputation: enrichment.developer_reputation || building.developer_reputation,
+          year_built: enrichment.year_built || building.year_built,
+          building_type: enrichment.building_type || building.building_type,
+          total_floors: enrichment.total_floors || building.total_floors,
+          total_units: enrichment.total_units || building.total_units,
+          amenities: enrichment.amenities?.length > 0 ? [...new Set([...(building.amenities || []), ...enrichment.amenities])] : building.amenities,
+          vibe_keywords: enrichment.vibe_keywords?.length > 0 ? [...new Set([...(building.vibe_keywords || []), ...enrichment.vibe_keywords])] : building.vibe_keywords,
+          expat_friendly: enrichment.expat_friendly ?? building.expat_friendly,
+          pet_friendly: enrichment.pet_friendly ?? building.pet_friendly,
+          veg_only: enrichment.veg_only ?? building.veg_only,
+          management_quality: enrichment.management_quality !== 'Unknown' ? enrichment.management_quality : building.management_quality,
+          building_summary: enrichment.building_summary || building.building_summary,
+          verification_source: enrichment.verification_source || building.verification_source,
+          last_intelligence_update: new Date().toISOString()
+        });
+
+        toast.dismiss(loadingToast);
+        toast.success('✅ Web Enrichment Complete!', {
+          description: enrichment.verification_source || 'Building data updated from web sources',
+          duration: 5000
+        });
+
+        // Refresh page to show new data
+        window.location.reload();
+      } else {
+        throw new Error(response.data.error || 'Failed to enrich building');
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('❌ Web Enrichment Failed', {
+        description: error.message
+      });
+    } finally {
+      setIsEnriching(false);
+    }
+  };
 
   const handleWhatsApp = () => {
     const message = `Hi, I'm interested in properties at ${building.name}, ${building.location}. Can you share available options?`;
@@ -227,6 +326,60 @@ export default function BuildingProfile() {
           Back to Buildings
         </Button>
 
+        {/* NEW: Admin Actions Bar */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl p-4 mb-6 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-bold text-sm">🔧 Admin Tools</p>
+                <p className="text-xs text-white/80">Update building intelligence and web data</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRecalculateStats}
+                  disabled={isRecalculating}
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  {isRecalculating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Calculating...
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Recalculate Stats
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleEnrichFromWeb}
+                  disabled={isEnriching}
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  {isEnriching ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Enriching...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Enrich from Web
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Hero Section - NO IMAGE */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden shadow-lg mb-8 border border-purple-200/50">
           {/* Header - Text Only */}
@@ -241,6 +394,12 @@ export default function BuildingProfile() {
               {building.building_type && (
                 <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
                   {building.building_type}
+                </Badge>
+              )}
+              {building.last_intelligence_update && ( // NEW BADGE
+                <Badge className="bg-white/10 backdrop-blur-sm text-white/90 border-white/20 text-xs">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  Updated {format(new Date(building.last_intelligence_update), "MMM dd, yyyy")}
                 </Badge>
               )}
             </div>
@@ -284,13 +443,40 @@ export default function BuildingProfile() {
               )}
             </div>
 
-            {/* NEW: Building Memory - Market Intelligence */}
+            {/* Building Summary - AI Generated or Web Enriched */}
+            {building.building_summary && ( // NEW SECTION
+              <div className="mb-8 p-5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">About This Building</h3>
+                </div>
+                <p className="text-slate-700 leading-relaxed">{building.building_summary}</p>
+                {building.verification_source && (
+                  <p className="text-xs text-indigo-600 mt-3 italic">
+                    📊 Source: {building.verification_source}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* NEW: Building Memory - Enhanced with more details */}
             {buildingIntelligence && buildingIntelligence.totalListings > 0 && (
               <div className="mb-8 p-6 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-3xl border-2 border-purple-200 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-lg font-bold text-slate-900">Building Memory™</h3>
-                  <Badge className="bg-purple-600 text-white text-xs">Street Intelligence</Badge>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold text-slate-900">Building Memory™</h3>
+                    <Badge className="bg-purple-600 text-white text-xs">Street Intelligence</Badge>
+                  </div>
+                  {building.market_activity && ( // NEW BADGE based on building.market_activity
+                    <Badge className={`text-xs ${
+                      building.market_activity === 'High Activity' ? 'bg-green-500/20 text-green-700 border-green-500' :
+                      building.market_activity === 'Moderate' ? 'bg-yellow-500/20 text-yellow-700 border-yellow-500' :
+                      'bg-slate-500/20 text-slate-700 border-slate-500'
+                    }`}>
+                      {building.market_activity}
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -369,6 +555,41 @@ export default function BuildingProfile() {
               </div>
             )}
 
+            {/* Developer Info - Enhanced */}
+            {building.developer_name && (
+              <div className="mb-8 p-4 bg-stone-50 rounded-2xl border border-stone-200">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-stone-500 mb-1 uppercase tracking-wide">Developer</p>
+                    <p className="text-lg font-bold text-[#111111]">{building.developer_name}</p>
+                    {building.developer_reputation && (
+                      <p className="text-sm text-stone-600 mt-2">{building.developer_reputation}</p>
+                    )}
+                  </div>
+                  <Badge className="bg-stone-200 text-stone-800 text-xs">
+                    Verified
+                  </Badge>
+                </div>
+              </div>
+            )}
+
+            {/* Vibe Keywords - NEW SECTION */}
+            {building.vibe_keywords && building.vibe_keywords.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-bold text-[#111111] mb-3 uppercase tracking-wide flex items-center gap-2">
+                  <Users className="w-4 h-4 text-purple-600" />
+                  Building Vibe
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {building.vibe_keywords.map((keyword, idx) => (
+                    <Badge key={idx} className="bg-purple-500/20 text-purple-900 border-purple-500">
+                      {keyword}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Tags & Features */}
             {building.tags && building.tags.length > 0 && (
               <div className="mb-8">
@@ -383,14 +604,6 @@ export default function BuildingProfile() {
                     </Badge>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Developer Info */}
-            {building.developer_name && (
-              <div className="mb-8 p-4 bg-stone-50 rounded-2xl">
-                <p className="text-xs text-stone-500 mb-1 uppercase tracking-wide">Developer</p>
-                <p className="text-lg font-bold text-[#111111]">{building.developer_name}</p>
               </div>
             )}
 
