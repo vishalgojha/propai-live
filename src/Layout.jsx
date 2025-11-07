@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -93,13 +93,17 @@ export default function Layout({ children, currentPageName }) {
     navItems.push(
       { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
     );
+    
+    // Add Analytics for brokers (check if they're a registered broker)
+    // We'll check this in the BrokerAnalytics page itself
+    // For now, we can add it to all logged-in users and let the page handle auth
   }
 
   // Only show admin link if user is admin
   if (user?.role === 'admin') {
     navItems.push(
       { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
-      { name: "Analytics", icon: Zap, path: createPageUrl("SmartFeedAnalytics") }
+      { name: "Dashboard", icon: BarChart3, path: createPageUrl("AdminDashboard") }
     );
   }
 

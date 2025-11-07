@@ -14,6 +14,8 @@ import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import BrokerNetwork from './pages/BrokerNetwork';
+import BrokerAnalytics from './pages/BrokerAnalytics';
+import AdminDashboard from './pages/AdminDashboard';
 import Layout from './Layout.jsx';
 
 
@@ -34,6 +36,8 @@ export const PAGES = {
     "Disclaimer": Disclaimer,
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "BrokerNetwork": BrokerNetwork,
+    "BrokerAnalytics": BrokerAnalytics,
+    "AdminDashboard": AdminDashboard,
 }
 
 export const pagesConfig = {
