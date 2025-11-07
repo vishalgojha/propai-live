@@ -22,6 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
   Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
   Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap
@@ -1030,8 +1036,9 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* Critical: Fix Custom IDs */}
               <Button
                 onClick={backfillCustomIds}
                 disabled={backfillingIds}
@@ -1039,102 +1046,135 @@ export default function Admin() {
                 className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold"
               >
                 <AlertTriangle className={`w-4 h-4 mr-2 ${backfillingIds ? 'animate-spin' : ''}`} />
-                {backfillingIds ? 'Fixing...' : 'Fix Custom IDs'}
+                {backfillingIds ? 'Fixing...' : 'Fix IDs'}
               </Button>
-              <Button
-                onClick={loadDealsRadar}
-                disabled={dealsLoading}
-                size="sm"
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {dealsLoading ? 'Loading...' : 'Deals'}
-              </Button>
-              <Button
-                onClick={detectDuplicates}
-                disabled={detectingDuplicates}
-                size="sm"
-                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white"
-              >
-                <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
-                {detectingDuplicates ? 'Scanning...' : 'Dedup Props'}
-              </Button>
-              <Button
-                onClick={detectBrokerDuplicates}
-                disabled={detectingDuplicates}
-                size="sm"
-                className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white"
-              >
-                <Users className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
-                {detectingDuplicates ? 'Scanning...' : 'Dedup Brokers'}
-              </Button>
-              <Button
-                onClick={detectBuildingDuplicates}
-                disabled={detectingBuildingDuplicates}
-                size="sm"
-                className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
-              >
-                <Building2 className={`w-4 h-4 mr-2 ${detectingBuildingDuplicates ? 'animate-spin' : ''}`} />
-                {detectingBuildingDuplicates ? 'Scanning...' : 'Dedup Buildings'}
-              </Button>
-              <Button
-                onClick={normalizeLocations}
-                disabled={normalizingLocations}
-                size="sm"
-                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
-              >
-                <MapPin className={`w-4 h-4 mr-2 ${normalizingLocations ? 'animate-spin' : ''}`} />
-                {normalizingLocations ? 'Fixing...' : 'Fix Locations'}
-              </Button>
-              <Button
-                onClick={generatePropertyDescriptions}
-                disabled={generatingDescriptions}
-                size="sm"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-              >
-                <Sparkles className={`w-4 h-4 mr-2 ${generatingDescriptions ? 'animate-spin' : ''}`} />
-                {generatingDescriptions ? 'Writing...' : 'Descriptions'}
-              </Button>
+
+              {/* Data Quality Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Data Quality
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={runDataCleanup}
+                    disabled={generatingSlugs}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                    Fix Data Issues
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={normalizeLocations}
+                    disabled={normalizingLocations}
+                  >
+                    <MapPin className={`w-4 h-4 mr-2 ${normalizingLocations ? 'animate-spin' : ''}`} />
+                    Normalize Locations
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={generatePropertySlugs}
+                    disabled={generatingSlugs}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                    Generate SEO Slugs
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Deduplication Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Deduplication
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={detectDuplicates}
+                    disabled={detectingDuplicates}
+                  >
+                    <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
+                    Dedup Properties
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={detectBrokerDuplicates}
+                    disabled={detectingDuplicates}
+                  >
+                    <Users className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
+                    Dedup Brokers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={detectBuildingDuplicates}
+                    disabled={detectingBuildingDuplicates}
+                  >
+                    <Building2 className={`w-4 h-4 mr-2 ${detectingBuildingDuplicates ? 'animate-spin' : ''}`} />
+                    Dedup Buildings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* AI Tools Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Tools
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={generatePropertyDescriptions}
+                    disabled={generatingDescriptions}
+                  >
+                    <Sparkles className={`w-4 h-4 mr-2 ${generatingDescriptions ? 'animate-spin' : ''}`} />
+                    Generate Descriptions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={loadDealsRadar}
+                    disabled={dealsLoading}
+                  >
+                    <Sparkles className={`w-4 h-4 mr-2 ${dealsLoading ? 'animate-spin' : ''}`} />
+                    Deals Radar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Buildings Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="border-cyan-300 text-cyan-700 hover:bg-cyan-50">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Buildings
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={backfillBuildings}
+                    disabled={generatingSlugs}
+                  >
+                    <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                    Generate Buildings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={recalculateBuildingStats}
+                    disabled={generatingSlugs}
+                  >
+                    <TrendingUp className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                    Recalculate Stats
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Broker Trust Score */}
               <Button onClick={recalculateBrokerTrust} size="sm" variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <Star className="w-4 h-4 mr-2" />
                 Trust
-              </Button>
-              <Button
-                onClick={runDataCleanup}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                Fix Data
-              </Button>
-              <Button
-                onClick={generatePropertySlugs}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                SEO Slugs
-              </Button>
-              <Button
-                onClick={backfillBuildings}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-              >
-                <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                Buildings
-              </Button>
-              <Button
-                onClick={recalculateBuildingStats}
-                disabled={generatingSlugs}
-                size="sm"
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                <TrendingUp className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                Building Stats
               </Button>
             </div>
           </div>
