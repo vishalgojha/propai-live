@@ -118,7 +118,7 @@ export default function PropertyMatchmaker({ isOpen, onClose, allProperties }) {
         }));
 
       // Call AI for intelligent matching
-      const prompt = `You are Chariot Realty's AI Property Matchmaker. Analyze the provided properties and match them to the client's preferences.
+      const prompt = `You are PropAI Live's AI Property Matchmaker. Analyze the provided properties and match them to the client's preferences.
 
 CLIENT PREFERENCES:
 - Listing Type: ${preferences.listingType}
