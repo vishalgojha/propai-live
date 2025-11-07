@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, X, Facebook, Twitter, Link as LinkIcon, Linkedin
+  Armchair, Shield, Eye, Home, Camera, Calendar, ChevronDown, ChevronUp, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -69,7 +67,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
-  const handleWhatsAppContact = (e, phone, name) => {
+  const handleWhatsAppContact = (e, phone) => {
     e.stopPropagation();
     
     if (!phone) {
@@ -128,10 +126,10 @@ export default function PropertyCard({ property, onViewDetails }) {
           title: property.ai_title || `${property.bhk} in ${property.location}`,
           text: getShareText(),
           url: getShareUrl()
-        );
+        });
         return;
       } catch (err) {
-        // User cancelled or error - open modal instead
+        // User cancelled or error
       }
     }
     setShareModalOpen(true);
@@ -141,9 +139,7 @@ export default function PropertyCard({ property, onViewDetails }) {
     e.stopPropagation();
     navigator.clipboard.writeText(getShareUrl());
     setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const shareToFacebook = (e) => {
@@ -209,9 +205,7 @@ export default function PropertyCard({ property, onViewDetails }) {
         className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
-        {/* Content Section */}
         <div className="p-5">
-          {/* Header with Badges */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex flex-wrap gap-2">
               {property.listing_type && (
@@ -227,7 +221,6 @@ export default function PropertyCard({ property, onViewDetails }) {
               )}
             </div>
             
-            {/* Camera Icon & Share Button */}
             <div className="flex items-center gap-2">
               {hasImages && (
                 <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
@@ -244,12 +237,10 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* Title */}
           <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          {/* Location & Building */}
           <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
             <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
             <span className="truncate">
@@ -259,7 +250,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </span>
           </div>
 
-          {/* AI Description */}
           {property.ai_description && (
             <div className="mb-3">
               <p className="text-sm text-slate-600 leading-relaxed">
@@ -289,15 +279,11 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           )}
 
-          {/* Price & Key Details */}
           <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
             <div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 {formatPrice()}
               </span>
-              {/* Removed redundant Cr/L/K suffix here as formatPrice already includes it. 
-                  If more complex parsing is needed, the `formatPrice` function needs to be adjusted 
-                  to return raw number and unit separately. */}
               {property.carpet_area && (
                 <span className="text-xs text-slate-500 ml-2">
                   • {property.carpet_area} sq.ft
@@ -306,7 +292,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
               <Home className="w-4 h-4 text-purple-600 mx-auto mb-1" />
@@ -322,7 +307,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* Broker WhatsApp Contact Buttons */}
           {brokerLoading ? (
             <div className="space-y-2">
               <div className="h-11 bg-slate-100 rounded-2xl animate-pulse" />
@@ -332,7 +316,7 @@ export default function PropertyCard({ property, onViewDetails }) {
               {brokerContacts.map((contact, idx) => (
                 <Button
                   key={idx}
-                  onClick={(e) => handleWhatsAppContact(e, contact.phone, contact.name)}
+                  onClick={(e) => handleWhatsAppContact(e, contact.phone)}
                   className={`w-full ${
                     idx === 0 
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
@@ -350,7 +334,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           )}
 
-          {/* Footer Metadata */}
           <div className="mt-3 pt-3 border-t border-purple-100">
             <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
               {property.created_date && (
@@ -375,7 +358,6 @@ export default function PropertyCard({ property, onViewDetails }) {
         </div>
       </motion.div>
 
-      {/* Share Modal */}
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
         <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
