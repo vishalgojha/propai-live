@@ -63,13 +63,13 @@ export default function Blogs() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://chariotrealty.com"
+        "item": "https://propai.live"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Insights",
-        "item": "https://chariotrealty.com/insights"
+        "item": "https://propai.live/insights"
       }
     ]
   };
@@ -77,10 +77,10 @@ export default function Blogs() {
   return (
     <div className="min-h-screen">
       <SEO
-        title="Chariot Insights | Mumbai Real Estate Guides & Market Data"
+        title="PropAI Insights | Mumbai Real Estate Guides & Market Data"
         description="Neighborhood guides, expat survival tips, rental laws & market trends — written for people who want honest Mumbai real estate advice, not sales pitches."
         schema={breadcrumbSchema}
-        canonical="https://chariotrealty.com/insights"
+        canonical="https://propai.live/insights"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
@@ -92,7 +92,7 @@ export default function Blogs() {
               <BookOpen className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Chariot Insights</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">PropAI Insights</h1>
               <p className="text-sm text-slate-600 font-light">Mumbai real estate knowledge, simplified</p>
             </div>
           </div>
