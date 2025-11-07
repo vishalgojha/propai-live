@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -30,6 +31,7 @@ export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   // Track property contact when WhatsApp is clicked
   const trackPropertyContact = (property) => {
@@ -188,6 +190,12 @@ export default function PropertyCard({ property, onViewDetails }) {
   const hasContact = !!property.broker_contact && property.broker_contact !== '919819471310';
   const contactLabel = hasContact ? 'Broker' : 'PropAI';
 
+  // Check if description is long (more than 120 characters)
+  const isDescriptionLong = property.ai_description && property.ai_description.length > 120;
+  const displayedDescription = isDescriptionLong && !descriptionExpanded 
+    ? property.ai_description.substring(0, 120) + '...' 
+    : property.ai_description;
+
   return (
     <>
       <motion.div
@@ -198,8 +206,6 @@ export default function PropertyCard({ property, onViewDetails }) {
         className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
-        {/* NO IMAGE SECTION - Removed completely */}
-
         {/* Main Content Section */}
         <div className="p-4">
           {/* Badges and Share Button at top */}
@@ -238,11 +244,34 @@ export default function PropertyCard({ property, onViewDetails }) {
             </span>
           </div>
 
-          {/* FULL AI DESCRIPTION - NO TRUNCATION */}
+          {/* AI DESCRIPTION WITH SHOW MORE/LESS */}
           {property.ai_description && (
-            <p className="text-sm text-slate-600 leading-relaxed mb-4">
-              {property.ai_description}
-            </p>
+            <div className="mb-4">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {displayedDescription}
+              </p>
+              {isDescriptionLong && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDescriptionExpanded(!descriptionExpanded);
+                  }}
+                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold mt-1 flex items-center gap-1"
+                >
+                  {descriptionExpanded ? (
+                    <>
+                      <ChevronUp className="w-3 h-3" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-3 h-3" />
+                      Show More
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           )}
 
           <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
