@@ -297,7 +297,7 @@ export default function Buildings() {
           </div>
         )}
 
-        {/* Buildings Grid with LAZY LOADED IMAGES */}
+        {/* Buildings Grid with NO IMAGES */}
         {!isLoading && displayedBuildings.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -322,25 +322,7 @@ export default function Buildings() {
                     </Button>
                   )}
 
-                  {/* Building Image with LAZY LOADING */}
-                  <div className="relative h-48 bg-slate-100 overflow-hidden">
-                    {building.images && building.images.length > 0 ? (
-                      <img
-                        src={building.images[0]}
-                        alt={building.name || "Building exterior"}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80'; // Fallback image
-                          e.target.alt = "Building image not available, showing default.";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-cyan-100">
-                        <Building2 className="w-16 h-16 text-sky-300" />
-                      </div>
-                    )}
-                  </div>
+                  {/* NO IMAGE SECTION */}
 
                   {/* Content */}
                   <div className="p-6">
