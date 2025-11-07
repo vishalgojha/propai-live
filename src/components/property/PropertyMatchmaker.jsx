@@ -224,14 +224,15 @@ Be honest, specific, and highlight REAL features. Don't make up details.`;
   };
 
   const handleWhatsApp = (property, matchData) => {
-    const message = `Hi! I found this property through Chariot's AI Matchmaker:\n\n` +
+    const message = `Hi! I found this property through PropAI's AI Matchmaker:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
       `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
       `\n🎯 AI Match Score: ${matchData.match_score}/100\n` +
       `${matchData.best_for ? `✨ Best For: ${matchData.best_for}\n` : ''}` +
-      `\nCan you share more details?\n\nThank you!`;
+      `\n📱 PropAI Live: https://propai.live\n\n` +
+      `Can you share more details?\n\nThank you!`;
     
     window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
   };
