@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import {
   Building2, MapPin, Home, Maximize2, Car, MessageCircle,
   Calendar, Armchair, Check, Utensils, ArrowLeft, Share2,
   Eye, Sparkles, Phone, Instagram, Facebook, Twitter,
-  Link as LinkIcon, Layers, Download, X
+  Link as LinkIcon, Layers, Download, X, Linkedin
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -26,22 +26,18 @@ import {
 export default function PropertyDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const propertySlug = urlParams.get('slug');
-  const propertyId = urlParams.get('id'); // Fallback for old links
+  const { propertySlug } = useParams(); // Use URL param instead of query string
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
 
   const { data: property, isLoading } = useQuery({
-    queryKey: ['property', propertySlug || propertyId],
+    queryKey: ['property', propertySlug],
     queryFn: async () => {
       const properties = await base44.entities.Property.list();
-      if (propertySlug) {
-        return properties.find(p => p.slug === propertySlug);
-      }
-      return properties.find(p => p.id === propertyId);
+      // Look up by slug first, then fallback to ID for old links
+      return properties.find(p => p.slug === propertySlug || p.id === propertySlug);
     },
-    enabled: !!(propertySlug || propertyId),
+    enabled: !!propertySlug,
   });
 
   const incrementViewsMutation = useMutation({
@@ -49,7 +45,7 @@ export default function PropertyDetails() {
       views_count: (property?.views_count || 0) + 1 
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['property', propertySlug || propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['property', propertySlug] });
     },
   });
 
@@ -123,11 +119,10 @@ export default function PropertyDetails() {
   };
 
   const getShareUrl = () => {
-    // Use clean slug-based URL
     if (property?.slug) {
-      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
+      return `${window.location.origin}/p/${property.slug}`;
     }
-    // Fallback to current URL if slug is not available (e.g., old links)
+    // Fallback to current URL if slug is not available (e.g., old links) or property is not loaded
     return window.location.href;
   };
 
@@ -175,6 +170,11 @@ export default function PropertyDetails() {
   const shareToFacebook = () => {
     const url = encodeURIComponent(getShareUrl());
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
+  };
+
+  const shareToLinkedIn = () => {
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=600,height=400');
   };
 
   const shareToTwitter = () => {
@@ -229,7 +229,7 @@ export default function PropertyDetails() {
     }
   } : null;
 
-  if (!propertySlug && !propertyId) {
+  if (!propertySlug) {
     return (
       <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
         <div className="text-center">
@@ -579,6 +579,13 @@ export default function PropertyDetails() {
             >
               <Facebook className="w-5 h-5 mr-3" />
               Share on Facebook
+            </Button>
+            <Button
+              onClick={shareToLinkedIn}
+              className="w-full bg-[#0A66C2] hover:bg-[#094D92] text-white justify-start"
+            >
+              <Linkedin className="w-5 h-5 mr-3" />
+              Share on LinkedIn
             </Button>
             <Button
               onClick={shareToTwitter}
