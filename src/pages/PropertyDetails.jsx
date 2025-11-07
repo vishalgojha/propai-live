@@ -128,7 +128,28 @@ export default function PropertyDetails() {
   };
 
   const handleWhatsApp = () => {
-    const message = `Hi${getAgentName() !== "Broker" ? ` ${getAgentName()}` : ''}, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+    // Track WhatsApp contact
+    try {
+      const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
+      contactHistory.push({
+        id: property.id,
+        bhk: property.bhk,
+        location: property.location,
+        price: property.price,
+        price_unit: property.price_unit,
+        listing_type: property.listing_type,
+        broker_contact: property.broker_contact,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Keep only last 50 contacts
+      const recentContacts = contactHistory.slice(-50);
+      localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
+    } catch (error) {
+      console.error('Failed to track contact:', error);
+    }
+
+    const message = `Hi${getAgentName() !== "Broker" ? ` ${getAgentName()}` : ''}, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
     
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -514,7 +535,23 @@ export default function PropertyDetails() {
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     onClick={() => {
-                      const message = `Hi Vishal, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                      // Track contact
+                      try {
+                        const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
+                        contactHistory.push({
+                          id: property.id,
+                          bhk: property.bhk,
+                          location: property.location,
+                          price: property.price,
+                          price_unit: property.price_unit,
+                          listing_type: property.listing_type,
+                          agent: 'Vishal',
+                          timestamp: new Date().toISOString()
+                        });
+                        localStorage.setItem('propai_contact_history', JSON.stringify(contactHistory.slice(-50)));
+                      } catch (e) {}
+                      
+                      const message = `Hi Vishal, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
                       window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
                     }}
                     className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
@@ -526,7 +563,23 @@ export default function PropertyDetails() {
 
                   <Button
                     onClick={() => {
-                      const message = `Hi Kapil, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                      // Track contact
+                      try {
+                        const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
+                        contactHistory.push({
+                          id: property.id,
+                          bhk: property.bhk,
+                          location: property.location,
+                          price: property.price,
+                          price_unit: property.price_unit,
+                          listing_type: property.listing_type,
+                          agent: 'Kapil',
+                          timestamp: new Date().toISOString()
+                        });
+                        localStorage.setItem('propai_contact_history', JSON.stringify(contactHistory.slice(-50)));
+                      } catch (e) {}
+                      
+                      const message = `Hi Kapil, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
                       window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
                     }}
                     className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
@@ -573,7 +626,7 @@ export default function PropertyDetails() {
                 variant="outline"
                 className="w-full border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
               >
-                <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                <Share2 className="w-3 h-3 md:w-4 h-4 mr-2" />
                 Share Property
               </Button>
             </div>
