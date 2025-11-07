@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -75,8 +76,16 @@ Return this EXACT JSON structure with ALL fields:
   "broker_phone": "string (phone with country code, e.g., '919820094416')",
   "broker_agency": "string or null",
   "ai_title": "string (12-18 word natural title)",
-  "ai_description": "string (40-60 word compelling paragraph)"
+  "ai_description": "string (3-4 lines, 50-70 words, plain factual description - NO fancy marketing language)"
 }
+
+**CRITICAL for ai_description:**
+- Write 3-4 lines (50-70 words total)
+- Plain, factual tone - state what exists, don't sell it
+- Focus on: location details, size, furnishing, parking, floor, key amenities
+- NO fancy words like "premium", "luxury", "world-class", "stunning", "exquisite"
+- Simple language: "Fully furnished 2 BHK in Oberoi Sky Heights, Bandra West. 1000 sq ft carpet area, 18th floor with city views. 2 covered parking spots included. Gym, pool, and 24/7 security available."
+- Even if original message is short, create a complete 3-4 line description from available data
 
 Return ONLY valid JSON, no markdown`;
 
