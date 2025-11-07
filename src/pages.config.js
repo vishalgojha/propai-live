@@ -17,7 +17,6 @@ import BrokerNetwork from './pages/BrokerNetwork';
 import BrokerAnalytics from './pages/BrokerAnalytics';
 import AdminDashboard from './pages/AdminDashboard';
 import MyProfile from './pages/MyProfile';
-import AgentHub from './pages/AgentHub';
 import Layout from './Layout.jsx';
 
 
@@ -41,7 +40,6 @@ export const PAGES = {
     "BrokerAnalytics": BrokerAnalytics,
     "AdminDashboard": AdminDashboard,
     "MyProfile": MyProfile,
-    "AgentHub": AgentHub,
 }
 
 export const pagesConfig = {

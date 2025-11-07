@@ -126,13 +126,6 @@ export default function Layout({ children, currentPageName }) {
     navItems.push(
       { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
     );
-    
-    // Add Agent Hub for agents/admins
-    if (user.role === 'admin' || user.role === 'agent') {
-      navItems.push(
-        { name: "Agent Hub", icon: Users, path: createPageUrl("AgentHub") }
-      );
-    }
   }
 
   // Only show admin link if user is admin
