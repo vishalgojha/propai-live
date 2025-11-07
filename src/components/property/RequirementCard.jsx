@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,12 +28,18 @@ export default function RequirementCard({ requirement }) {
     const brokerContact = requirement.broker_contact;
     const phone = brokerContact ? brokerContact.replace(/\D/g, '') : '919819471310';
     
+    // Generate requirement URL for sharing
+    const requirementUrl = requirement.slug 
+      ? `${window.location.origin}/smartfeed?req=${requirement.slug}`
+      : `${window.location.origin}/smartfeed`;
+    
     const message = `Hi! I have a property that matches this requirement:\n\n` +
-      `🔍 Requirement: ${requirement.bhk_preference?.join(', ') || 'Property'}\n` +
-      `📍 Location: ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n` +
-      `💰 Budget: ${formatBudget()}\n` +
-      `${requirement.custom_id ? `🔖 Ref: ${requirement.custom_id}\n` : ''}` +
-      `\nI'd like to share property details that match this.\n\n` +
+      `🔍 *Requirement:* ${requirement.bhk_preference?.join(', ') || 'Property'}\n` +
+      `📍 *Location:* ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n` +
+      `💰 *Budget:* ${formatBudget()}\n` +
+      `${requirement.custom_id ? `🔖 *Ref:* ${requirement.custom_id}\n` : ''}` +
+      `\n📱 *View Requirement:* ${requirementUrl}\n\n` +
+      `I'd like to share property details that match this.\n\n` +
       `Thank you!`;
     
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
