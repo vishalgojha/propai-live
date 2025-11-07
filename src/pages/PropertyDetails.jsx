@@ -79,6 +79,13 @@ export default function PropertyDetails() {
     return property?.assigned_agent || "Vishal";
   };
 
+  const getPropertyUrl = () => {
+    if (property?.slug) {
+      return `${window.location.origin}/propertydetails?slug=${property.slug}`;
+    }
+    return window.location.href;
+  };
+
   const getFullPropertyDetails = () => {
     if (!property) return '';
     
@@ -112,11 +119,14 @@ export default function PropertyDetails() {
     // Reference ID
     if (property.custom_id) details.push(`🔖 Ref ID: ${property.custom_id}`);
     
+    // Branding link
+    details.push(`\n📱 View on PropAI Live: ${getPropertyUrl()}`);
+    
     return details.join('\n');
   };
 
   const handleWhatsApp = () => {
-    const message = `Hi ${getAgentName()}, I'm interested in this property from Chariot Realty:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+    const message = `Hi ${getAgentName()}, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
     
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -141,7 +151,7 @@ export default function PropertyDetails() {
     if (property.parking) details.push(`🚗 ${property.parking}`);
     if (property.floor) details.push(`🏗️ Floor ${property.floor}`);
     
-    details.push('\n📱 View full details on Chariot Realty');
+    details.push('\n📱 View full details on PropAI Live');
     details.push('✨ Verified listings | Transparent pricing | No spam');
     
     return details.join('\n');
@@ -492,7 +502,7 @@ export default function PropertyDetails() {
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => {
-                    const message = `Hi Vishal, I'm interested in this property from Chariot Realty:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                    const message = `Hi Vishal, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
                     window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
                   }}
                   className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
@@ -504,7 +514,7 @@ export default function PropertyDetails() {
 
                 <Button
                   onClick={() => {
-                    const message = `Hi Kapil, I'm interested in this property from Chariot Realty:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
+                    const message = `Hi Kapil, I'm interested in this property from PropAI Live:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nThank you!`;
                     window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
                   }}
                   className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
