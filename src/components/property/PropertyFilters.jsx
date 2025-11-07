@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function PropertyFilters({ filters, onFilterChange, onClearFilters, allProperties = [] }) {
   const [nlpInput, setNlpInput] = useState("");
-  const [expatMode, setExpatMode] = useState(false);
+  // const [expatMode, setExpatMode] = useState(false); // Removed expatMode state
 
   const uniqueBhks = [...new Set(allProperties.map(p => p.bhk).filter(Boolean))].sort();
   const uniqueLocations = [...new Set(allProperties.map(p => p.location).filter(Boolean))].sort();
@@ -40,6 +40,8 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     }
   };
 
+  // Removed toggleExpatMode function
+  /*
   const toggleExpatMode = () => {
     const newExpatMode = !expatMode;
     setExpatMode(newExpatMode);
@@ -55,6 +57,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       onFilterChange(restFilters);
     }
   };
+  */
 
   const handleNlpSearch = () => {
     if (!nlpInput.trim()) return;
@@ -127,13 +130,14 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     filters.furnishing ||
     (filters.listingType && filters.listingType !== "all") ||
     filters.search ||
-    (filters.propertyCategory && filters.propertyCategory !== "all") ||
-    filters.expat_mode;
+    (filters.propertyCategory && filters.propertyCategory !== "all");
+    // Removed filters.expat_mode;
 
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-purple-200/50 p-6 mb-8">
 
-      {/* Expat Mode Toggle */}
+      {/* Removed Expat Mode Toggle UI */}
+      {/*
       <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -157,6 +161,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           </button>
         </div>
       </div>
+      */}
 
       {/* AI-Powered Search */}
       <div className="mb-6">
@@ -322,12 +327,15 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 ₹{filters.minPrice || "0"}{getPriceUnit()} - ₹{filters.maxPrice || "∞"}{getPriceUnit()}
               </Badge>
             )}
+            {/* Removed Expat Mode badge */}
+            {/*
             {filters.expat_mode && (
               <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-400 font-semibold">
                 Expat Mode
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleExpatMode()} />
               </Badge>
             )}
+            */}
             {filters.furnishing && (
               <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-400 font-semibold">
                 {filters.furnishing}
