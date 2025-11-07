@@ -11,22 +11,29 @@ import { format } from "date-fns";
 
 export default function RequirementCard({ requirement }) {
   const formatBudget = () => {
+    if (!requirement.budget_min && !requirement.budget_max) {
+      return "Budget not specified";
+    }
+
     const unit = requirement.budget_unit === "crores" ? "Cr" : "L";
+    
     if (requirement.budget_min && requirement.budget_max) {
-      return `₹${requirement.budget_min} - ₹${requirement.budget_max}${unit}`;
+      return `₹${requirement.budget_min}-${requirement.budget_max}${unit}`;
     } else if (requirement.budget_max) {
       return `Up to ₹${requirement.budget_max}${unit}`;
     } else if (requirement.budget_min) {
       return `From ₹${requirement.budget_min}${unit}`;
     }
-    return "Budget not specified";
+    
+    return "Budget flexible";
   };
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     
-    const brokerContact = requirement.broker_contact;
-    const phone = brokerContact ? brokerContact.replace(/\D/g, '') : '919819471310';
+    // Use broker_contact if available, otherwise fall back to client_phone, then default to Vishal
+    const phone = requirement.broker_contact || requirement.client_phone || '919819471310';
+    const cleanPhone = phone.replace(/\D/g, '');
     
     // Generate requirement URL for sharing
     const requirementUrl = requirement.slug 
@@ -42,7 +49,7 @@ export default function RequirementCard({ requirement }) {
       `I'd like to share property details that match this.\n\n` +
       `Thank you!`;
     
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const getUrgencyColor = () => {
