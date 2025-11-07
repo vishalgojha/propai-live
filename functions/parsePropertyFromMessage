@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -70,7 +71,7 @@ Return this EXACT JSON structure with ALL fields:
   "carpet_area": number or null,
   "built_up_area": number or null,
   "floor": "string or null",
-  "furnishing": "Unfurnished|Semi-Furnished|Fully Furnished|Bare Shell|Warm Shell or null",
+  "furnishing": "Unfurnished|Semi-Furnished|Fully Furnished|Bare Shell|Warm Shell|Not Applicable or null",
   "parking": "string or null",
   "possession": "string or null",
   "location": "string (e.g., 'Bandra West', 'BKC')",
@@ -82,9 +83,22 @@ Return this EXACT JSON structure with ALL fields:
   "broker_name": "string (broker's name from message)",
   "broker_phone": "string (phone with country code, e.g., '919820094416')",
   "broker_agency": "string or null",
-  "ai_title": "string (12-18 word natural title)",
+  "ai_title": "string (10-15 word descriptive title)",
   "ai_description": "string (3-4 lines, 50-70 words, plain factual description - NO fancy marketing language)"
 }
+
+**CRITICAL for ai_title:**
+- Create 10-15 word descriptive title that's natural and informative
+- Format: "{Furnishing} {BHK} in {Building Name/Pocket}, {Location}"
+- Examples:
+  * "Fully Furnished 2 BHK in Oberoi Sky Heights, Bandra West"
+  * "Spacious 3 BHK Apartment in Juhu with Sea View"
+  * "Premium Office Space in BKC with Parking"
+- ALWAYS include building name if available
+- Use proper capitalization and grammar
+- NO abbreviations (write "2 BHK" not "2bhk")
+- Make it search-friendly and matchable
+- NO special characters or punctuation except commas
 
 **CRITICAL for ai_description:**
 - Write 3-4 lines (50-70 words total)
@@ -176,7 +190,7 @@ Return ONLY valid JSON, no markdown`;
       const similarPrice = priceDiff <= 0.10;
       
       // Same floor (if both have floor info)
-      const sameFloor = !extractedData.floor || !existing.floor || existing.floor === extractedData.floor;
+      const sameFloor = (!extractedData.floor || !existing.floor) || existing.floor === extractedData.floor;
       
       // Similar area (if both have area info) - ±5%
       let similarArea = true;
