@@ -1,0 +1,431 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Users, Building2, MapPin, Star, TrendingUp, MessageCircle,
+  Search, Network, Target, Zap, Phone, Home
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+
+export default function BrokerNetwork() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBroker, setSelectedBroker] = useState(null);
+
+  // Auth check
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (error) {
+        navigate(createPageUrl("Home"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const { data: brokers = [], isLoading: brokersLoading } = useQuery({
+    queryKey: ['brokers'],
+    queryFn: () => base44.entities.Broker.list('-total_listings_count'),
+    initialData: [],
+    enabled: isAuthorized,
+  });
+
+  const { data: properties = [] } = useQuery({
+    queryKey: ['properties'],
+    queryFn: () => base44.entities.Property.list(),
+    initialData: [],
+    enabled: isAuthorized,
+  });
+
+  // Calculate network connections for all brokers
+  const brokerNetwork = useMemo(() => {
+    if (!brokers.length || !properties.length) return [];
+
+    const network = brokers.map(broker => {
+      // Get all properties from this broker
+      const brokerProps = properties.filter(p => p.broker_id === broker.id);
+
+      // Extract broker's profile
+      const brokerAreas = new Set(broker.specializations?.primary_locations || broker.areas_covered || []);
+      const brokerBuildings = new Set(brokerProps.map(p => p.building_name).filter(Boolean));
+      const brokerBHKs = new Set(brokerProps.map(p => p.bhk).filter(Boolean));
+      const brokerPrices = brokerProps
+        .map(p => p.price_unit === 'crores' ? p.price * 100 : p.price)
+        .filter(Boolean);
+      const avgPrice = brokerPrices.length > 0
+        ? brokerPrices.reduce((a, b) => a + b, 0) / brokerPrices.length
+        : 0;
+
+      // Find connections to other brokers
+      const connections = brokers
+        .filter(otherBroker => otherBroker.id !== broker.id)
+        .map(otherBroker => {
+          const otherProps = properties.filter(p => p.broker_id === otherBroker.id);
+          const otherAreas = new Set(otherBroker.specializations?.primary_locations || otherBroker.areas_covered || []);
+          const otherBuildings = new Set(otherProps.map(p => p.building_name).filter(Boolean));
+          const otherBHKs = new Set(otherProps.map(p => p.bhk).filter(Boolean));
+          const otherPrices = otherProps
+            .map(p => p.price_unit === 'crores' ? p.price * 100 : p.price)
+            .filter(Boolean);
+          const otherAvgPrice = otherPrices.length > 0
+            ? otherPrices.reduce((a, b) => a + b, 0) / otherPrices.length
+            : 0;
+
+          // Calculate connection score
+          let score = 0;
+          const reasons = [];
+
+          // 1. Shared areas (40 points max)
+          const sharedAreas = [...brokerAreas].filter(area => otherAreas.has(area));
+          if (sharedAreas.length > 0) {
+            score += Math.min(40, sharedAreas.length * 15);
+            reasons.push(`${sharedAreas.length} shared area${sharedAreas.length > 1 ? 's' : ''}: ${sharedAreas.slice(0, 2).join(', ')}`);
+          }
+
+          // 2. Shared buildings (30 points max)
+          const sharedBuildings = [...brokerBuildings].filter(building => otherBuildings.has(building));
+          if (sharedBuildings.length > 0) {
+            score += Math.min(30, sharedBuildings.length * 10);
+            reasons.push(`${sharedBuildings.length} shared building${sharedBuildings.length > 1 ? 's' : ''}`);
+          }
+
+          // 3. Team relationship (50 points)
+          const isTeamMember = broker.team_members?.some(tm => tm.broker_id === otherBroker.id);
+          const isInOtherTeam = otherBroker.team_members?.some(tm => tm.broker_id === broker.id);
+          if (isTeamMember || isInOtherTeam) {
+            score += 50;
+            reasons.push('Known team member');
+          }
+
+          // 4. Complementary specializations (20 points)
+          const sharedBHKs = [...brokerBHKs].filter(bhk => otherBHKs.has(bhk));
+          if (sharedBHKs.length > 0) {
+            score += 10;
+          }
+
+          // 5. Price range alignment (15 points) - complementary pricing
+          if (avgPrice && otherAvgPrice) {
+            const priceDiff = Math.abs(avgPrice - otherAvgPrice) / Math.max(avgPrice, otherAvgPrice);
+            if (priceDiff < 0.3) { // Within 30% - similar market
+              score += 15;
+              reasons.push('Similar price range');
+            } else if (priceDiff > 0.5 && priceDiff < 1.5) { // Different tiers - complementary
+              score += 10;
+              reasons.push('Complementary price segments');
+            }
+          }
+
+          // 6. Similar listing type focus (10 points)
+          if (broker.specializations?.listing_type_focus === otherBroker.specializations?.listing_type_focus) {
+            score += 10;
+          }
+
+          return {
+            broker: otherBroker,
+            score: Math.round(score),
+            reasons,
+            sharedAreas,
+            sharedBuildings,
+            isTeamMember: isTeamMember || isInOtherTeam
+          };
+        })
+        .filter(conn => conn.score > 0) // Only show meaningful connections
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10); // Top 10 connections
+
+      return {
+        ...broker,
+        connections,
+        connectionCount: connections.length,
+        strongConnections: connections.filter(c => c.score >= 50).length
+      };
+    });
+
+    return network.sort((a, b) => b.strongConnections - a.strongConnections);
+  }, [brokers, properties]);
+
+  // Filter network
+  const filteredNetwork = useMemo(() => {
+    if (!searchQuery) return brokerNetwork;
+    
+    const query = searchQuery.toLowerCase();
+    return brokerNetwork.filter(broker => 
+      broker.name?.toLowerCase().includes(query) ||
+      broker.phone?.includes(query) ||
+      broker.custom_id?.toLowerCase().includes(query) ||
+      broker.areas_covered?.some(area => area.toLowerCase().includes(query))
+    );
+  }, [brokerNetwork, searchQuery]);
+
+  const handleWhatsApp = (broker) => {
+    const message = `Hi ${broker.name}, this is PropAI Live.\n\nI noticed we work in similar areas/buildings. Would you be interested in collaborating on property exchanges?\n\nLooking forward to connecting!`;
+    window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <Network className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-600 font-medium">Loading network...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) return null;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Toaster position="top-center" richColors closeButton />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
+              <Network className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Broker Network</h1>
+              <p className="text-sm text-slate-600">AI-powered connection suggestions based on listings data</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Users className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{brokerNetwork.length}</p>
+                <p className="text-xs text-slate-500">Active Brokers</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Zap className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {brokerNetwork.reduce((sum, b) => sum + b.strongConnections, 0)}
+                </p>
+                <p className="text-xs text-slate-500">Strong Connections</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {new Set(properties.map(p => p.building_name).filter(Boolean)).size}
+                </p>
+                <p className="text-xs text-slate-500">Shared Buildings</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {new Set(brokers.flatMap(b => b.areas_covered || [])).size}
+                </p>
+                <p className="text-xs text-slate-500">Coverage Areas</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="bg-white rounded-2xl p-4 mb-6 border border-slate-200">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search brokers by name, phone, area..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-11"
+            />
+          </div>
+        </div>
+
+        {/* Network Grid */}
+        {brokersLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-96 rounded-3xl" />)}
+          </div>
+        ) : filteredNetwork.length === 0 ? (
+          <div className="bg-white rounded-3xl p-16 text-center border-2 border-slate-200">
+            <Network className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No brokers found</h3>
+            <p className="text-slate-500">Try adjusting your search</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredNetwork.map((broker) => (
+              <motion.div
+                key={broker.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all border-2 border-slate-200 overflow-hidden"
+              >
+                <div className="p-6">
+                  {/* Broker Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <Users className="w-8 h-8 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-1">{broker.name}</h3>
+                        {broker.custom_id && (
+                          <p className="text-xs text-slate-500 font-mono mb-2">{broker.custom_id}</p>
+                        )}
+                        <div className="flex items-center gap-2">
+                          {broker.trust_score && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                              <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                              {broker.trust_score}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            <Home className="w-3 h-3 mr-1" />
+                            {broker.total_listings_count || 0} listings
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Specializations */}
+                  {broker.specializations?.primary_locations && broker.specializations.primary_locations.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-slate-500 mb-2 font-semibold">Specializes in:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {broker.specializations.primary_locations.map((loc, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {loc}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Network Stats */}
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-4 mb-4">
+                    <div className="grid grid-cols-2 gap-3 text-center">
+                      <div>
+                        <p className="text-2xl font-bold text-purple-700">{broker.connectionCount}</p>
+                        <p className="text-xs text-slate-600">Total Connections</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-green-700">{broker.strongConnections}</p>
+                        <p className="text-xs text-slate-600">Strong Matches</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Connections */}
+                  {broker.connections.length > 0 && (
+                    <div className="space-y-3 mb-4">
+                      <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                        Suggested Connections:
+                      </p>
+                      {broker.connections.slice(0, 3).map((conn, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-slate-50 rounded-xl p-3 border border-slate-200"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-slate-900 text-sm">{conn.broker.name}</p>
+                              {conn.isTeamMember && (
+                                <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                                  Team
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3 text-green-600" />
+                              <span className="text-sm font-bold text-green-700">{conn.score}%</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {conn.reasons.map((reason, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {reason}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {broker.connections.length > 3 && (
+                        <p className="text-xs text-slate-500 text-center">
+                          +{broker.connections.length - 3} more connections
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-4 border-t border-slate-200">
+                    <Button
+                      onClick={() => handleWhatsApp(broker)}
+                      className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white"
+                      size="sm"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Connect
+                    </Button>
+                    <Button
+                      onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                      variant="outline"
+                      className="flex-1"
+                      size="sm"
+                    >
+                      View Profile
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
