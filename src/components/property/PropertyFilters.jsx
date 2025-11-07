@@ -1,16 +1,42 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, X, Sparkles } from "lucide-react";
+import { Search, X, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function PropertyFilters({ filters, onFilterChange, onClearFilters, allProperties = [] }) {
   const [nlpInput, setNlpInput] = useState("");
+  
+  // Autocomplete states
+  const [bhkInputValue, setBhkInputValue] = useState("");
+  const [locationInputValue, setLocationInputValue] = useState("");
+  const [showBhkDropdown, setShowBhkDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  
+  const bhkInputRef = useRef(null);
+  const locationInputRef = useRef(null);
+  const bhkDropdownRef = useRef(null);
+  const locationDropdownRef = useRef(null);
 
   const uniqueBhks = [...new Set(allProperties.map(p => p.bhk).filter(Boolean))].sort();
   const uniqueLocations = [...new Set(allProperties.map(p => p.location).filter(Boolean))].sort();
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (bhkDropdownRef.current && !bhkDropdownRef.current.contains(event.target) &&
+          !bhkInputRef.current?.contains(event.target)) {
+        setShowBhkDropdown(false);
+      }
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target) &&
+          !locationInputRef.current?.contains(event.target)) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleBhk = (bhk) => {
     const currentBhks = filters.bhk_multi || [];
@@ -18,6 +44,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       ? currentBhks.filter(b => b !== bhk)
       : [...currentBhks, bhk];
     onFilterChange({ ...filters, bhk_multi: newBhks });
+    setBhkInputValue("");
   };
 
   const toggleLocation = (location) => {
@@ -26,6 +53,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
       ? currentLocations.filter(l => l !== location)
       : [...currentLocations, location];
     onFilterChange({ ...filters, location_multi: newLocations });
+    setLocationInputValue("");
   };
 
   const toggleListingType = (type) => {
@@ -98,6 +126,15 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     return 'Lakhs';
   };
 
+  // Filtered options for autocomplete
+  const filteredBhks = uniqueBhks.filter(bhk =>
+    bhk.toLowerCase().includes(bhkInputValue.toLowerCase())
+  );
+
+  const filteredLocations = uniqueLocations.filter(loc =>
+    loc.toLowerCase().includes(locationInputValue.toLowerCase())
+  );
+
   const hasActiveFilters =
     (filters.bhk_multi && filters.bhk_multi.length > 0) ||
     (filters.location_multi && filters.location_multi.length > 0) ||
@@ -142,7 +179,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </p>
       </div>
 
-      {/* Listing Type Selector with Toggle */}
+      {/* Listing Type Selector */}
       <div className="mb-6">
         <label className="text-sm font-semibold text-slate-900 mb-3 block">Rent / Sale / Pre Leased</label>
         <div className="flex flex-wrap gap-2">
@@ -165,85 +202,146 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             );
           })}
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          💡 Click again to deselect
-        </p>
       </div>
 
-      {/* Multi-Select BHK */}
+      {/* Autocomplete BHK */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-slate-900 mb-3 block">Select BHK (Multi-select)</label>
-        <div className="flex flex-wrap gap-2">
-          {uniqueBhks.map((bhk) => {
-            const isSelected = filters.bhk_multi?.includes(bhk);
-            return (
-              <Button
-                key={bhk}
-                onClick={() => toggleBhk(bhk)}
-                variant={isSelected ? "default" : "outline"}
-                size="sm"
-                className={`rounded-xl font-semibold ${
-                  isSelected
-                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
-                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
-                }`}
-              >
+        <label className="text-sm font-semibold text-slate-900 mb-3 block">BHK Configuration</label>
+        
+        {/* Selected BHK Badges */}
+        {filters.bhk_multi && filters.bhk_multi.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {filters.bhk_multi.map((bhk) => (
+              <Badge key={bhk} className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {bhk}
-              </Button>
-            );
-          })}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleBhk(bhk)} />
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* BHK Search Input */}
+        <div className="relative" ref={bhkInputRef}>
+          <Input
+            placeholder="Type to search BHK (e.g., 2 BHK, 3 BHK)..."
+            value={bhkInputValue}
+            onChange={(e) => setBhkInputValue(e.target.value)}
+            onFocus={() => setShowBhkDropdown(true)}
+            className="border-purple-200 focus-visible:ring-purple-500 rounded-xl"
+          />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          
+          {/* Dropdown */}
+          {showBhkDropdown && (
+            <div
+              ref={bhkDropdownRef}
+              className="absolute top-full mt-2 w-full bg-white border border-purple-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-50"
+            >
+              {filteredBhks.length > 0 ? (
+                filteredBhks.map((bhk) => {
+                  const isSelected = filters.bhk_multi?.includes(bhk);
+                  return (
+                    <button
+                      key={bhk}
+                      onClick={() => toggleBhk(bhk)}
+                      className={`w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors flex items-center justify-between ${
+                        isSelected ? 'bg-purple-50 font-semibold' : ''
+                      }`}
+                    >
+                      <span className={isSelected ? 'text-purple-700' : 'text-slate-700'}>{bhk}</span>
+                      {isSelected && <X className="w-4 h-4 text-purple-600" />}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-4 py-3 text-sm text-slate-500">No matching BHK found</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Multi-Select Location */}
+      {/* Autocomplete Location */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-slate-900 mb-3 block">Select Locations (Multi-select)</label>
-        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
-          {uniqueLocations.map((location) => {
-            const isSelected = filters.location_multi?.includes(location);
-            return (
-              <Button
-                key={location}
-                onClick={() => toggleLocation(location)}
-                variant={isSelected ? "default" : "outline"}
-                size="sm"
-                className={`rounded-xl font-semibold ${
-                  isSelected
-                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
-                    : "border-purple-200 hover:bg-purple-50 text-slate-700"
-                }`}
-              >
+        <label className="text-sm font-semibold text-slate-900 mb-3 block">Locations</label>
+        
+        {/* Selected Location Badges */}
+        {filters.location_multi && filters.location_multi.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {filters.location_multi.map((location) => (
+              <Badge key={location} className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {location}
-              </Button>
-            );
-          })}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleLocation(location)} />
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Location Search Input */}
+        <div className="relative" ref={locationInputRef}>
+          <Input
+            placeholder="Type to search location (e.g., Bandra West, Juhu)..."
+            value={locationInputValue}
+            onChange={(e) => setLocationInputValue(e.target.value)}
+            onFocus={() => setShowLocationDropdown(true)}
+            className="border-purple-200 focus-visible:ring-purple-500 rounded-xl"
+          />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          
+          {/* Dropdown */}
+          {showLocationDropdown && (
+            <div
+              ref={locationDropdownRef}
+              className="absolute top-full mt-2 w-full bg-white border border-purple-200 rounded-xl shadow-lg max-h-64 overflow-y-auto z-50"
+            >
+              {filteredLocations.length > 0 ? (
+                filteredLocations.map((location) => {
+                  const isSelected = filters.location_multi?.includes(location);
+                  return (
+                    <button
+                      key={location}
+                      onClick={() => toggleLocation(location)}
+                      className={`w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors flex items-center justify-between ${
+                        isSelected ? 'bg-purple-50 font-semibold' : ''
+                      }`}
+                    >
+                      <span className={isSelected ? 'text-purple-700' : 'text-slate-700'}>{location}</span>
+                      {isSelected && <X className="w-4 h-4 text-purple-600" />}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-4 py-3 text-sm text-slate-500">No matching location found</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Budget Range - Dynamic Unit */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+      {/* Budget Range - Compact */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <div>
           <label className="text-sm font-semibold text-slate-900 mb-2 block">
-            Min Price ({getPriceUnit()})
+            Min ({getPriceUnit()})
           </label>
           <Input
             type="number"
-            placeholder={getPriceUnit() === 'Cr' ? "e.g., 1.5" : "e.g., 50"}
+            placeholder={getPriceUnit() === 'Cr' ? "1.5" : "50"}
             value={filters.minPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
-            className="border-sky-200 focus-visible:ring-sky-500 h-11 rounded-xl"
+            className="border-purple-200 focus-visible:ring-purple-500 h-11 rounded-xl"
           />
         </div>
         <div>
           <label className="text-sm font-semibold text-slate-900 mb-2 block">
-            Max Price ({getPriceUnit()})
+            Max ({getPriceUnit()})
           </label>
           <Input
             type="number"
-            placeholder={getPriceUnit() === 'Cr' ? "e.g., 5" : "e.g., 200"}
+            placeholder={getPriceUnit() === 'Cr' ? "5" : "200"}
             value={filters.maxPrice || ""}
             onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
-            className="border-sky-200 focus-visible:ring-sky-500 h-11 rounded-xl"
+            className="border-purple-200 focus-visible:ring-purple-500 h-11 rounded-xl"
           />
         </div>
       </div>
@@ -271,24 +369,24 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               </Badge>
             ))}
             {(filters.minPrice || filters.maxPrice) && (
-              <Badge variant="secondary" className="bg-sky-100 text-sky-800 border-sky-300 font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 ₹{filters.minPrice || "0"}{getPriceUnit()} - ₹{filters.maxPrice || "∞"}{getPriceUnit()}
               </Badge>
             )}
             {filters.furnishing && (
-              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-400 font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {filters.furnishing}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: undefined })} />
               </Badge>
             )}
             {filters.search && (
-              <Badge variant="secondary" className="bg-slate-100 text-slate-800 border-slate-400 font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 Search: "{filters.search}"
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, search: undefined })} />
               </Badge>
             )}
             {filters.propertyCategory && filters.propertyCategory !== "all" && (
-              <Badge variant="secondary" className="bg-slate-100 text-slate-800 border-slate-400 font-semibold">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 Category: {filters.propertyCategory}
                 <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
               </Badge>
