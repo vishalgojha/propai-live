@@ -128,7 +128,7 @@ export default function PropertyCard({ property, onViewDetails }) {
           title: property.ai_title || `${property.bhk} in ${property.location}`,
           text: getShareText(),
           url: getShareUrl()
-        });
+        );
         return;
       } catch (err) {
         // User cancelled or error - open modal instead
