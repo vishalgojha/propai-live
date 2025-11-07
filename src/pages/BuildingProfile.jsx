@@ -219,8 +219,25 @@ export default function BuildingProfile() {
   };
 
   const handleWhatsApp = () => {
-    const message = `Hi, I'm interested in properties at ${building.name}, ${building.location}. Can you share available options?`;
-    window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
+    // Get broker contact from most recent active property
+    let brokerContact = '919819471310'; // Fallback to Vishal
+    let brokerName = 'Vishal';
+    
+    if (properties && properties.length > 0) {
+      // Find first property with broker contact
+      const propertyWithBroker = properties.find(p => 
+        p.broker_contact && 
+        p.broker_contact !== '919819471310'
+      );
+      
+      if (propertyWithBroker) {
+        brokerContact = propertyWithBroker.broker_contact;
+        brokerName = 'Broker';
+      }
+    }
+    
+    const message = `Hi${brokerName !== 'Broker' ? ` ${brokerName}` : ''}, I'm interested in properties at ${building.name}, ${building.location}. Can you share available options?\n\nFound via www.propai.live`;
+    window.open(`https://wa.me/${brokerContact}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const buildingSchema = building ? {
