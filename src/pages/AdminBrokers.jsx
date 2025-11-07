@@ -42,6 +42,8 @@ export default function AdminBrokers() {
   const [buildingProfile, setBuildingProfile] = useState(false);
   const [buildingAllProfiles, setBuildingAllProfiles] = useState(false);
   const [seedingIntroModalOpen, setSeedingIntroModalOpen] = useState(false);
+  const [sendingToAll, setSendingToAll] = useState(false);
+
 
   // Queries
   const { data: brokers = [], isLoading: brokersLoading } = useQuery({
@@ -127,6 +129,40 @@ export default function AdminBrokers() {
     } finally {
       setBuildingAllProfiles(false);
     }
+  };
+
+  // NEW: Send seeding intro to all brokers automatically
+  const sendSeedingIntroToAll = async () => {
+    const brokerCount = filteredBrokers.length;
+    if (!confirm(`📢 Send Seeding Intro to ${brokerCount} brokers?\n\nThis will open WhatsApp Web for each broker with pre-filled message.\n\nIMPORTANT:\n• Keep WhatsApp Web open\n• Send each message manually\n• 3 second delay between each`)) {
+      return;
+    }
+
+    setSendingToAll(true);
+    toast.loading(`Opening WhatsApp for ${brokerCount} brokers...`, { id: 'seeding-bulk' });
+
+    for (let i = 0; i < filteredBrokers.length; i++) {
+      const broker = filteredBrokers[i];
+      const message = generateSeedingIntro(broker);
+      const cleanPhone = broker.phone?.replace(/\D/g, '');
+      
+      if (cleanPhone) {
+        // Open WhatsApp Web link
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+        
+        // Wait 3 seconds before next one
+        if (i < filteredBrokers.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+    }
+
+    toast.dismiss('seeding-bulk');
+    toast.success(`✅ Opened WhatsApp for ${brokerCount} brokers!`, {
+      description: 'Send messages manually from each tab',
+      duration: 5000
+    });
+    setSendingToAll(false);
   };
 
   // View broker details
@@ -365,13 +401,11 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     return ctas;
   };
 
-  // NEW: Generate seeding intro message
+  // UPDATED: Generate seeding intro message
   const generateSeedingIntro = (broker) => {
     const brokerProps = properties.filter(p => p.broker_id === broker.id);
     const brokerLocations = Array.from(new Set(brokerProps.map(p => p.location).filter(Boolean)));
-    // For a personalized intro, we filter for broker's own active requirements or for potential matches to their listings.
-    // However, the outline provided implies using all active requirements for the count, consistent with the global modal.
-    const activeReqs = requirements.filter(r => r.status === 'Active'); // Using global active requirements count as per outline structure
+    const activeReqs = requirements.filter(r => r.status === 'Active');
     
     return `Hey 👋 this is PropAI Live — Mumbai's AI Assistant for Real Estate.
 
@@ -383,7 +417,7 @@ Here's what PropAI parsed from your records:
 🤝 ${activeReqs.length} active requirements matched
 
 Now you can send updates or new data directly on WhatsApp:
-📲 Official Number: wa.me/919102269622278
+📲 Official Number: wa.me/9102269622278
 
 How to use:
 1️⃣ Send property listings — PropAI will auto-structure and publish them to your SmartFeed.
@@ -391,7 +425,7 @@ How to use:
 3️⃣ Stay ahead — early users get top visibility on SmartFeed 🔥
 
 💡 Example:
-> "2BHK Bandra ₹1.8L ff cp, ${broker.name} ${broker.phone}" → PropAI cleans, matches, and posts live in seconds ⚡
+> "2BHK Bandra ₹1.8L ff cp, Kapil 9773757759" → PropAI cleans, matches, and posts live in seconds ⚡
 
 If you'd prefer not to receive updates, simply reply STOP anytime to opt out.
 No spam. No groups. Only verified real-estate intelligence ✅`;
@@ -647,7 +681,7 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
     );
   };
 
-  // Seeding Intro Modal
+  // UPDATED: Seeding Intro Modal
   const SeedingIntroModal = () => {
     const activeProperties = properties.filter(p => p.status === 'Active');
     const activeLocations = Array.from(new Set(activeProperties.map(p => p.location).filter(Boolean)));
@@ -663,7 +697,7 @@ Here's what PropAI has in the system:
 🤝 ${activeReqs.length} active requirements matched
 
 Now you can send updates or new data directly on WhatsApp:
-📲 Official Number: wa.me/919102269622278
+📲 Official Number: wa.me/9102269622278
 
 How to use:
 1️⃣ Send property listings — PropAI will auto-structure and publish them to SmartFeed.
@@ -671,7 +705,7 @@ How to use:
 3️⃣ Stay ahead — early users get top visibility on SmartFeed 🔥
 
 💡 Example:
-> "2BHK Bandra ₹1.8L ff cp, Your Name 9820012345" → PropAI cleans, matches, and posts live in seconds ⚡
+> "2BHK Bandra ₹1.8L ff cp, Kapil 9773757759" → PropAI cleans, matches, and posts live in seconds ⚡
 
 If you'd prefer not to receive updates, simply reply STOP anytime to opt out.
 No spam. No groups. Only verified real-estate intelligence ✅`;
@@ -686,54 +720,70 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
               </div>
               <div>
                 <h3 className="text-2xl font-bold">Seeding Phase — Broker Intro Message</h3>
-                <p className="text-sm text-slate-500 font-normal">Copy & paste to WhatsApp for mass broker onboarding</p>
+                <p className="text-sm text-slate-500 font-normal">Automated bulk send or copy individual messages</p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* NEW: Send to All Button */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-200">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-bold text-slate-900">📢 Global Intro Message</h4>
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(globalIntroMessage);
-                    toast.success('Copied to clipboard!', {
-                        description: 'Global message copied, ready to paste.',
-                        duration: 3000
-                    });
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Copy className="w-4 h-4" />
-                  Copy
-                </Button>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-sm font-mono text-slate-700 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                {globalIntroMessage}
-              </div>
-            </div>
-
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-              <p className="text-sm text-amber-800">
-                <strong>💡 Pro Tip:</strong> Use the global message above for general broadcast, or click "Copy Intro" on individual broker cards below for personalized messages with their specific stats.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-slate-900 mb-3">📋 Broker-Specific Messages</h4>
+              <h4 className="font-bold text-slate-900 mb-3">🚀 Automated Bulk Send</h4>
               <p className="text-sm text-slate-600 mb-4">
-                Click "Copy Intro" on any broker card to get a personalized message with their specific property count and locations.
+                Opens WhatsApp Web for all <strong>{filteredBrokers.length} brokers</strong> automatically with personalized messages. 
+                Each tab opens with 3 second delay — just hit send on each.
               </p>
               <Button
-                onClick={() => setSeedingIntroModalOpen(false)}
-                variant="outline"
-                className="w-full"
+                onClick={sendSeedingIntroToAll}
+                disabled={sendingToAll}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-md"
               >
-                Close & View Brokers
+                {sendingToAll ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Opening WhatsApp...
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Send to All {filteredBrokers.length} Brokers
+                  </>
+                )}
               </Button>
+            </div>
+
+            <div className="border-t border-slate-200 pt-6">
+              <h4 className="font-bold text-slate-900 mb-3">📋 Manual Copy Options</h4>
+              
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-200 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="font-bold text-slate-900">📢 Global Intro Message</h5>
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(globalIntroMessage);
+                      toast.success('Copied to clipboard!', {
+                          description: 'Global message copied, ready to paste.',
+                          duration: 3000
+                      });
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </Button>
+                </div>
+                <div className="bg-white rounded-lg p-4 text-sm font-mono text-slate-700 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  {globalIntroMessage}
+                </div>
+              </div>
+
+              <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                <p className="text-sm text-amber-800">
+                  <strong>💡 Pro Tip:</strong> Use "Send to All" for fastest results, or click "Copy Intro" on individual broker cards for personalized messages with their specific stats.
+                </p>
+              </div>
             </div>
           </div>
         </DialogContent>
