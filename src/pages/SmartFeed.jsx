@@ -9,7 +9,7 @@ import PropertyMatchmaker from "../components/property/PropertyMatchmaker";
 import RequirementCard from "../components/property/RequirementCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Sparkles, ChevronDown, Zap, RefreshCw, Bell } from "lucide-react";
+import { AlertCircle, Sparkles, ChevronDown, Zap, RefreshCw, Bell, TrendingUp, Eye, Heart } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,14 +25,14 @@ export default function SmartFeed() {
     furnishing: "all",
     minPrice: "",
     maxPrice: "",
-    expat_mode: false,
     viewMode: "properties",
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24);
   const [matchmakerOpen, setMatchmakerOpen] = useState(false);
+  const [userPreferences, setUserPreferences] = useState(null);
 
-  // Real-time update state - FIX: Declare useRef BEFORE using it
+  // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
   const previousCountsRef = useRef({ properties: 0, requirements: 0 });
@@ -40,6 +40,88 @@ export default function SmartFeed() {
 
   const ITEMS_PER_PAGE = 24;
   const REFRESH_INTERVAL = 15000; // 15 seconds
+
+  // Load user preferences from localStorage
+  useEffect(() => {
+    const loadPreferences = () => {
+      try {
+        const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
+        const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
+        
+        if (viewHistory.length > 0 || contactHistory.length > 0) {
+          // Analyze patterns
+          const allProperties = [...viewHistory, ...contactHistory];
+          const bhkCounts = {};
+          const locationCounts = {};
+          const listingTypeCounts = {};
+          const priceRanges = [];
+          
+          allProperties.forEach(prop => {
+            if (prop.bhk) bhkCounts[prop.bhk] = (bhkCounts[prop.bhk] || 0) + 1;
+            if (prop.location) locationCounts[prop.location] = (locationCounts[prop.location] || 0) + 1;
+            if (prop.listing_type) listingTypeCounts[prop.listing_type] = (listingTypeCounts[prop.listing_type] || 0) + 1;
+            if (prop.price) {
+              const priceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
+              priceRanges.push(priceInLakhs);
+            }
+          });
+          
+          // Extract top preferences
+          const topBhks = Object.entries(bhkCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 2)
+            .map(e => e[0]);
+          
+          const topLocations = Object.entries(locationCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(e => e[0]);
+          
+          const topListingType = Object.entries(listingTypeCounts)
+            .sort((a, b) => b[1] - a[1])[0]?.[0];
+          
+          const avgPrice = priceRanges.length > 0 
+            ? Math.round(priceRanges.reduce((a, b) => a + b, 0) / priceRanges.length)
+            : null;
+          
+          setUserPreferences({
+            bhks: topBhks,
+            locations: topLocations,
+            listingType: topListingType,
+            avgPrice: avgPrice,
+            totalViews: viewHistory.length,
+            totalContacts: contactHistory.length
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load user preferences:', error);
+      }
+    };
+    
+    loadPreferences();
+  }, []);
+
+  // Track property view
+  const trackPropertyView = (property) => {
+    try {
+      const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
+      viewHistory.push({
+        id: property.id,
+        bhk: property.bhk,
+        location: property.location,
+        price: property.price,
+        price_unit: property.price_unit,
+        listing_type: property.listing_type,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Keep only last 50 views
+      const recentViews = viewHistory.slice(-50);
+      localStorage.setItem('propai_view_history', JSON.stringify(recentViews));
+    } catch (error) {
+      console.error('Failed to track view:', error);
+    }
+  };
 
   // Read filters from URL parameters on mount
   useEffect(() => {
@@ -52,7 +134,6 @@ export default function SmartFeed() {
     if (urlParams.get('furnishing')) newFilters.furnishing = urlParams.get('furnishing');
     if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
-    if (urlParams.get('expat_mode')) newFilters.expat_mode = urlParams.get('expat_mode') === 'true';
     if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode');
     
     setFilters(newFilters);
@@ -68,8 +149,8 @@ export default function SmartFeed() {
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
-    refetchInterval: REFRESH_INTERVAL, // Auto-refresh every 15 seconds
-    refetchOnWindowFocus: true, // Refresh when user returns to tab
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch requirements with auto-refresh
@@ -89,7 +170,6 @@ export default function SmartFeed() {
         requirements: requirements.filter(r => r.status === "Active").length
       };
 
-      // Only check if we have previous counts (not first load)
       if (previousCountsRef.current.properties > 0 || previousCountsRef.current.requirements > 0) {
         const newProperties = currentCounts.properties - previousCountsRef.current.properties;
         const newRequirements = currentCounts.requirements - previousCountsRef.current.requirements;
@@ -99,7 +179,6 @@ export default function SmartFeed() {
           setShowNewItemsBanner(true);
           setLastUpdateTime(new Date());
 
-          // Show toast notification
           let message = "";
           if (newProperties > 0 && newRequirements > 0) {
             message = `${newProperties} new ${newProperties === 1 ? 'property' : 'properties'} and ${newRequirements} new ${newRequirements === 1 ? 'requirement' : 'requirements'}`;
@@ -123,10 +202,42 @@ export default function SmartFeed() {
         }
       }
 
-      // Update previous counts
       previousCountsRef.current = currentCounts;
     }
   }, [properties, requirements, isLoading, requirementsLoading]);
+
+  // Get personalized recommendations
+  const personalizedProperties = useMemo(() => {
+    if (!userPreferences || !properties.length) return [];
+    
+    return properties
+      .filter(p => p.status === "Active" && !p.is_duplicate)
+      .map(property => {
+        let score = 0;
+        
+        // BHK match (30 points)
+        if (userPreferences.bhks.includes(property.bhk)) score += 30;
+        
+        // Location match (30 points)
+        if (userPreferences.locations.includes(property.location)) score += 30;
+        
+        // Listing type match (20 points)
+        if (property.listing_type === userPreferences.listingType) score += 20;
+        
+        // Price proximity (20 points)
+        if (userPreferences.avgPrice) {
+          const propertyPriceInLakhs = property.price_unit === 'crores' ? property.price * 100 : property.price;
+          const priceDiff = Math.abs(propertyPriceInLakhs - userPreferences.avgPrice) / userPreferences.avgPrice;
+          if (priceDiff < 0.2) score += 20; // Within 20%
+          else if (priceDiff < 0.4) score += 10; // Within 40%
+        }
+        
+        return { ...property, matchScore: score };
+      })
+      .filter(p => p.matchScore >= 30) // At least one major match
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 6); // Top 6 personalized
+  }, [properties, userPreferences]);
 
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
@@ -173,11 +284,6 @@ export default function SmartFeed() {
       // Furnishing
       if (filters.furnishing && filters.furnishing !== "all") {
         if (property.furnishing !== filters.furnishing) return false;
-      }
-
-      // Expat Mode filter
-      if (filters.expat_mode) {
-        if (!property.expat_friendly) return false;
       }
 
       // Budget filtering with dynamic unit handling
@@ -306,7 +412,6 @@ export default function SmartFeed() {
       furnishing: "all",
       minPrice: "",
       maxPrice: "",
-      expat_mode: false,
       viewMode: "properties",
     });
   };
@@ -435,6 +540,63 @@ export default function SmartFeed() {
           </div>
         </div>
 
+        {/* Personalized For You Section */}
+        {userPreferences && personalizedProperties.length > 0 && filters.viewMode === "properties" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-6 border-2 border-purple-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <h2 className="text-xl font-bold text-slate-900">For You</h2>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Based on your {userPreferences.totalViews} views and {userPreferences.totalContacts} inquiries
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem('propai_view_history');
+                    localStorage.removeItem('propai_contact_history');
+                    setUserPreferences(null);
+                    toast.success('Preferences cleared');
+                  }}
+                  className="text-xs"
+                >
+                  Clear History
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {personalizedProperties.slice(0, 3).map((property) => (
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    onViewDetails={(prop) => {
+                      trackPropertyView(prop);
+                      setSelectedProperty(prop);
+                    }}
+                  />
+                ))}
+              </div>
+              
+              {personalizedProperties.length > 3 && (
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-slate-600">
+                    {personalizedProperties.length - 3} more personalized recommendations below
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {/* View Mode Toggle */}
         <div className="mb-6 flex justify-center">
           <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
@@ -521,7 +683,10 @@ export default function SmartFeed() {
                     <PropertyCard
                       key={`prop-${item.id}`}
                       property={item}
-                      onViewDetails={setSelectedProperty}
+                      onViewDetails={(prop) => {
+                        trackPropertyView(prop);
+                        setSelectedProperty(prop);
+                      }}
                     />
                   ) : (
                     <RequirementCard
@@ -541,7 +706,10 @@ export default function SmartFeed() {
                     <PropertyCard
                       key={item.id}
                       property={item}
-                      onViewDetails={setSelectedProperty}
+                      onViewDetails={(prop) => {
+                        trackPropertyView(prop);
+                        setSelectedProperty(prop);
+                      }}
                     />
                   );
                 }
