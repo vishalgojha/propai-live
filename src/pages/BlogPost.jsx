@@ -86,7 +86,7 @@ export default function BlogPost() {
   };
 
   const handleWhatsApp = () => {
-    const message = `Check out this article from Chariot Realty:\n\n${blog.title}\n\n${window.location.href}`;
+    const message = `Check out this article from PropAI Live:\n\n${blog.title}\n\n${window.location.href}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -97,26 +97,26 @@ export default function BlogPost() {
         "@type": "Article",
         "headline": blog.title,
         "description": blog.excerpt,
-        "image": blog.featured_image || "https://chariotrealty.com/og-default.jpg",
+        "image": blog.featured_image || "https://propai.live/og-default.jpg",
         "datePublished": blog.created_date,
         "dateModified": blog.updated_date || blog.created_date,
         "author": {
           "@type": blog.author === "Chariot AI" ? "Organization" : "Person",
-          "name": blog.author || "Chariot Realty"
+          "name": blog.author || "PropAI Live"
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Chariot Realty",
+          "name": "PropAI Live",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://chariotrealty.com/logo.png"
+            "url": "https://propai.live/logo.png"
           }
         },
         "articleSection": blog.category,
         "keywords": blog.tags?.join(", "),
         "mainEntityOfPage": {
           "@type": "WebPage",
-          "@id": `https://chariotrealty.com/insights/${blog.slug}`
+          "@id": `https://propai.live/insights/${blog.slug}`
         }
       },
       {
@@ -126,19 +126,19 @@ export default function BlogPost() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://chariotrealty.com"
+            "item": "https://propai.live"
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Insights",
-            "item": "https://chariotrealty.com/insights"
+            "item": "https://propai.live/insights"
           },
           {
             "@type": "ListItem",
             "position": 3,
             "name": blog.title,
-            "item": `https://chariotrealty.com/insights/${blog.slug}`
+            "item": `https://propai.live/insights/${blog.slug}`
           }
         ]
       }
@@ -176,11 +176,11 @@ export default function BlogPost() {
     <div className="min-h-screen">
       {blog && (
         <SEO
-          title={`${blog.title} | Chariot Insights`}
+          title={`${blog.title} | PropAI Insights`}
           description={blog.excerpt || blog.title}
           ogImage={blog.featured_image}
           schema={articleSchema}
-          canonical={`https://chariotrealty.com/insights/${blog.slug}`}
+          canonical={`https://propai.live/insights/${blog.slug}`}
         />
       )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -327,7 +327,7 @@ export default function BlogPost() {
             Looking for Properties in Mumbai?
           </h3>
           <p className="text-white/90 mb-6 font-medium">
-            Connect with Chariot Realty for personalized property recommendations
+            Connect with PropAI Live for personalized property recommendations
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
