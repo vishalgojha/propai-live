@@ -1,17 +1,18 @@
-
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import PropertyDetailsModal from "../components/property/PropertyDetailsModal";
 import PropertyMatchmaker from "../components/property/PropertyMatchmaker";
-import RequirementCard from "../components/property/RequirementCard"; // NEW: Import RequirementCard
+import RequirementCard from "../components/property/RequirementCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Sparkles, ChevronDown, Zap } from "lucide-react";
+import { AlertCircle, Sparkles, ChevronDown, Zap, RefreshCw, Bell } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -24,13 +25,20 @@ export default function SmartFeed() {
     minPrice: "",
     maxPrice: "",
     expat_mode: false,
-    viewMode: "properties", // NEW: "properties", "requirements", or "both"
+    viewMode: "properties",
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
-  const [itemsToShow, setItemsToShow] = useState(24); // Pagination state
+  const [itemsToShow, setItemsToShow] = useState(24);
   const [matchmakerOpen, setMatchmakerOpen] = useState(false);
 
+  // Real-time update state
+  const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
+  const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
+  const previousCountsRef = useRef({ properties: 0, requirements: 0 });
+  const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
+
   const ITEMS_PER_PAGE = 24;
+  const REFRESH_INTERVAL = 15000; // 15 seconds
 
   // Read filters from URL parameters on mount
   useEffect(() => {
@@ -44,7 +52,7 @@ export default function SmartFeed() {
     if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
     if (urlParams.get('expat_mode')) newFilters.expat_mode = urlParams.get('expat_mode') === 'true';
-    if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode'); // NEW
+    if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode');
     
     setFilters(newFilters);
   }, []);
@@ -54,18 +62,70 @@ export default function SmartFeed() {
     setItemsToShow(ITEMS_PER_PAGE);
   }, [filters]);
 
+  // Fetch properties with auto-refresh
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
+    refetchInterval: REFRESH_INTERVAL, // Auto-refresh every 15 seconds
+    refetchOnWindowFocus: true, // Refresh when user returns to tab
   });
 
-  // NEW: Fetch requirements
+  // Fetch requirements with auto-refresh
   const { data: requirements, isLoading: requirementsLoading } = useQuery({
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true,
   });
+
+  // Detect new items and show notification
+  useEffect(() => {
+    if (!isLoading && !requirementsLoading) {
+      const currentCounts = {
+        properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
+        requirements: requirements.filter(r => r.status === "Active").length
+      };
+
+      // Only check if we have previous counts (not first load)
+      if (previousCountsRef.current.properties > 0 || previousCountsRef.current.requirements > 0) {
+        const newProperties = currentCounts.properties - previousCountsRef.current.properties;
+        const newRequirements = currentCounts.requirements - previousCountsRef.current.requirements;
+
+        if (newProperties > 0 || newRequirements > 0) {
+          setNewItemsCount({ properties: newProperties, requirements: newRequirements });
+          setShowNewItemsBanner(true);
+          setLastUpdateTime(new Date());
+
+          // Show toast notification
+          let message = "";
+          if (newProperties > 0 && newRequirements > 0) {
+            message = `${newProperties} new ${newProperties === 1 ? 'property' : 'properties'} and ${newRequirements} new ${newRequirements === 1 ? 'requirement' : 'requirements'}`;
+          } else if (newProperties > 0) {
+            message = `${newProperties} new ${newProperties === 1 ? 'property' : 'properties'}`;
+          } else {
+            message = `${newRequirements} new ${newRequirements === 1 ? 'requirement' : 'requirements'}`;
+          }
+
+          toast.success(`🎉 ${message} available!`, {
+            description: 'Scroll to top to see the latest additions',
+            duration: 5000,
+            action: {
+              label: 'View',
+              onClick: () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setShowNewItemsBanner(false);
+              }
+            }
+          });
+        }
+      }
+
+      // Update previous counts
+      previousCountsRef.current = currentCounts;
+    }
+  }, [properties, requirements, isLoading, requirementsLoading]);
 
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
@@ -154,7 +214,6 @@ export default function SmartFeed() {
     return results;
   }, [properties, filters]);
 
-  // NEW: Filtered requirements
   const filteredRequirements = useMemo(() => {
     let results = requirements.filter(requirement => {
       if (requirement.status !== "Active") return false;
@@ -212,12 +271,10 @@ export default function SmartFeed() {
     return results;
   }, [requirements, filters]);
 
-  // Combine and paginate based on viewMode
   const getDisplayItems = () => {
     if (filters.viewMode === "requirements") {
       return { items: filteredRequirements, type: "requirements", totalCount: filteredRequirements.length };
     } else if (filters.viewMode === "both") {
-      // Interleave properties and requirements
       const combined = [];
       const maxLength = Math.max(filteredProperties.length, filteredRequirements.length);
       for (let i = 0; i < maxLength; i++) {
@@ -249,8 +306,14 @@ export default function SmartFeed() {
       minPrice: "",
       maxPrice: "",
       expat_mode: false,
-      viewMode: "properties", // NEW: reset viewMode
+      viewMode: "properties",
     });
+  };
+
+  const handleRefresh = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setShowNewItemsBanner(false);
+    setNewItemsCount({ properties: 0, requirements: 0 });
   };
 
   const breadcrumbSchema = {
@@ -266,8 +329,8 @@ export default function SmartFeed() {
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "SmartFeed", // Changed from Properties
-        "item": "https://chariotrealty.com/smartfeed" // Changed from properties
+        "name": "SmartFeed",
+        "item": "https://chariotrealty.com/smartfeed"
       }
     ]
   };
@@ -275,13 +338,50 @@ export default function SmartFeed() {
   return (
     <div className="min-h-screen">
       <SEO
-        title="SmartFeed | AI-Curated Mumbai Properties & Requirements | Chariot Realty" // Changed title
-        description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever." // Changed description
+        title="SmartFeed | AI-Curated Mumbai Properties & Requirements | Chariot Realty"
+        description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever."
         schema={breadcrumbSchema}
-        canonical="https://chariotrealty.com/smartfeed" // Changed canonical
+        canonical="https://chariotrealty.com/smartfeed"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+        {/* New Items Banner */}
+        <AnimatePresence>
+          {showNewItemsBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -20, height: 0 }}
+              className="mb-6"
+            >
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl p-4 shadow-lg border-2 border-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Bell className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg">New Items Available!</p>
+                      <p className="text-sm text-white/90">
+                        {newItemsCount.properties > 0 && `${newItemsCount.properties} new ${newItemsCount.properties === 1 ? 'property' : 'properties'}`}
+                        {newItemsCount.properties > 0 && newItemsCount.requirements > 0 && ' • '}
+                        {newItemsCount.requirements > 0 && `${newItemsCount.requirements} new ${newItemsCount.requirements === 1 ? 'requirement' : 'requirements'}`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleRefresh}
+                    className="bg-white text-green-600 hover:bg-white/90 font-bold"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    View Now
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Hero Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
@@ -290,8 +390,14 @@ export default function SmartFeed() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1> {/* Changed H1 */}
-                <p className="text-sm text-slate-600 font-light">Properties & Requirements • AI-matched</p> {/* Changed P */}
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1>
+                  <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="font-semibold">Live</span>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 font-light">Properties & Requirements • AI-matched • Auto-refresh every 15s</p>
               </div>
             </div>
             
@@ -363,7 +469,7 @@ export default function SmartFeed() {
           filters={filters}
           onFilterChange={setFilters}
           onClearFilters={clearFilters}
-          allProperties={properties} // This will need to be reconsidered if PropertyFilters is to filter requirements too
+          allProperties={properties}
         />
 
         {/* Results Count */}
@@ -429,7 +535,7 @@ export default function SmartFeed() {
                       requirement={item}
                     />
                   );
-                } else { // properties
+                } else {
                   return (
                     <PropertyCard
                       key={item.id}
@@ -495,7 +601,6 @@ export default function SmartFeed() {
           onClose={() => setSelectedProperty(null)}
         />
 
-        {/* AI Matchmaker Modal */}
         <PropertyMatchmaker
           isOpen={matchmakerOpen}
           onClose={() => setMatchmakerOpen(false)}
