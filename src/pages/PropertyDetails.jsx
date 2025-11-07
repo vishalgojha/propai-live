@@ -124,7 +124,7 @@ export default function PropertyDetails() {
 
   const getShareUrl = () => {
     if (property?.slug) {
-      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
+      return `${window.location.origin}/propertydetails?slug=${property.slug}`;
     }
     // Fallback to current URL if slug is not available (e.g., old links) or property is not loaded
     return window.location.href;
