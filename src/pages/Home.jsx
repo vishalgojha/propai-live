@@ -33,10 +33,10 @@ export default function HomePage() {
   // WhatsApp AI Assistant URL
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
   
-  // Admin WhatsApp URL with detailed property submission format
+  // Admin WhatsApp URL with detailed property submission format - UPDATED NUMBER
   const adminWhatsAppMessage = `Hi Chariot Team! 👋
 
-I'd like to list a property. Here are the details:
+I'd like to list a property on PropAI Live. Here are the details:
 
 📍 *Location:* [Building Name, Area]
 🏠 *Property Type:* [2 BHK / 3 BHK / Office / etc.]
@@ -51,9 +51,9 @@ I'd like to list a property. Here are the details:
 💬 Additional Details:
 [Floor, amenities, special features, etc.]
 
-Looking forward to your response!`;
+Looking forward to listing my property!`;
 
-  const adminWhatsAppUrl = `https://wa.me/919819471310?text=${encodeURIComponent(adminWhatsAppMessage)}`;
+  const adminWhatsAppUrl = `https://wa.me/9102269622278?text=${encodeURIComponent(adminWhatsAppMessage)}`;
 
   return (
     <div className="min-h-screen">
