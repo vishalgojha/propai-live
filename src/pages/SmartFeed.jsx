@@ -325,13 +325,13 @@ export default function SmartFeed() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://chariotrealty.com"
+        "item": "https://propai.live"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "SmartFeed",
-        "item": "https://chariotrealty.com/smartfeed"
+        "item": "https://propai.live/smartfeed"
       }
     ]
   };
@@ -339,10 +339,10 @@ export default function SmartFeed() {
   return (
     <div className="min-h-screen">
       <SEO
-        title="SmartFeed | AI-Curated Mumbai Properties & Requirements | Chariot Realty"
+        title="SmartFeed | AI-Curated Mumbai Properties & Requirements | PropAI Live"
         description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever."
         schema={breadcrumbSchema}
-        canonical="https://chariotrealty.com/smartfeed"
+        canonical="https://propai.live/smartfeed"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
