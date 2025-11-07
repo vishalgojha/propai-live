@@ -129,19 +129,7 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* Images */}
-        {property.images && property.images.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 -mx-6 -mt-2 mb-6">
-            {property.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`Property ${idx + 1}`}
-                className="w-full h-48 object-cover first:col-span-2 first:h-64 rounded-2xl"
-              />
-            ))}
-          </div>
-        )}
+        {/* NO IMAGES SECTION - Removed completely */}
 
         {/* Price and Location */}
         <div className="flex items-start justify-between mb-8">
