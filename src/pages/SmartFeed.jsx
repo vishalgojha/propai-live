@@ -37,7 +37,7 @@ export default function SmartFeed() {
   // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
-  const previousCountsRef = useRef({ properties: 0, requirements: 0 });
+  previousCountsRef.current = { properties: 0, requirements: 0 };
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
   const ITEMS_PER_PAGE = 24;
@@ -520,11 +520,11 @@ export default function SmartFeed() {
             </Button>
           </div>
 
-          {/* AI Matchmaker CTA Banner - Mobile/Tablet */}
+          {/* AI Matchmaker CTA Banner - Mobile/Tablet - TONED DOWN */}
           <div className="md:hidden mb-4">
             <div 
               onClick={() => setMatchmakerOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 text-white cursor-pointer hover:shadow-xl transition-all"
+              className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 rounded-2xl p-4 text-white cursor-pointer hover:shadow-lg transition-all shadow-md"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -532,11 +532,11 @@ export default function SmartFeed() {
                     <Zap className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-bold">AI Property Matchmaker</p>
-                    <p className="text-xs text-white/80">Find your perfect property in seconds</p>
+                    <p className="font-bold text-base">AI Property Matchmaker</p>
+                    <p className="text-xs text-white/90">Find your perfect property in seconds</p>
                   </div>
                 </div>
-                <Sparkles className="w-6 h-6" />
+                <Sparkles className="w-5 h-5 opacity-80" />
               </div>
             </div>
           </div>
