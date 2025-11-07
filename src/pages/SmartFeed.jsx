@@ -2,6 +2,8 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import RequirementCard from "../components/property/RequirementCard";
@@ -12,7 +14,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
 
 // LAZY LOAD HEAVY MODALS
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
@@ -467,13 +468,13 @@ export default function SmartFeed() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://propai.live"
+        "item": createPageUrl("/")
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "SmartFeed",
-        "item": "https://propai.live/smartfeed"
+        "item": createPageUrl("/smartfeed")
       }
     ]
   };
@@ -484,7 +485,7 @@ export default function SmartFeed() {
         title="SmartFeed | AI-Curated Mumbai Properties & Requirements | PropAI Live"
         description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever."
         schema={breadcrumbSchema}
-        canonical="https://propai.live/smartfeed"
+        canonical={createPageUrl("/smartfeed")}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
