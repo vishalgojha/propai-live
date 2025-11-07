@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,11 @@ import {
 export default function PropertyDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { propertySlug } = useParams(); // Use URL param instead of query string
+  
+  // Read from URL query params instead of route params
+  const urlParams = new URLSearchParams(window.location.search);
+  const propertySlug = urlParams.get('slug') || urlParams.get('id');
+  
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
 
@@ -34,7 +38,7 @@ export default function PropertyDetails() {
     queryKey: ['property', propertySlug],
     queryFn: async () => {
       const properties = await base44.entities.Property.list();
-      // Look up by slug first, then fallback to ID for old links
+      // Look up by slug first, then fallback to ID
       return properties.find(p => p.slug === propertySlug || p.id === propertySlug);
     },
     enabled: !!propertySlug,
@@ -120,7 +124,7 @@ export default function PropertyDetails() {
 
   const getShareUrl = () => {
     if (property?.slug) {
-      return `${window.location.origin}/p/${property.slug}`;
+      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
     }
     // Fallback to current URL if slug is not available (e.g., old links) or property is not loaded
     return window.location.href;
