@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -97,7 +98,7 @@ export default function BrokerNetwork() {
           const sharedAreas = [...brokerAreas].filter(area => otherAreas.has(area));
           if (sharedAreas.length > 0) {
             score += Math.min(40, sharedAreas.length * 15);
-            reasons.push(`${sharedAreas.length} shared area${sharedAreas.length > 1 ? 's' : ''}: ${sharedAreas.slice(0, 2).join(', ')}`);
+            reasons.push(`${sharedAreas.length} shared area${sharedAreas.length > 1 ? 's' : ''}`);
           }
 
           // 2. Shared buildings (30 points max)
@@ -119,6 +120,7 @@ export default function BrokerNetwork() {
           const sharedBHKs = [...brokerBHKs].filter(bhk => otherBHKs.has(bhk));
           if (sharedBHKs.length > 0) {
             score += 10;
+            reasons.push('Shared BHK types');
           }
 
           // 5. Price range alignment (15 points) - complementary pricing
@@ -134,8 +136,9 @@ export default function BrokerNetwork() {
           }
 
           // 6. Similar listing type focus (10 points)
-          if (broker.specializations?.listing_type_focus === otherBroker.specializations?.listing_type_focus) {
+          if (broker.specializations?.listing_type_focus === otherBroker.specializations?.listing_type_focus && broker.specializations?.listing_type_focus) {
             score += 10;
+            reasons.push('Similar listing focus');
           }
 
           return {
@@ -171,7 +174,8 @@ export default function BrokerNetwork() {
       broker.name?.toLowerCase().includes(query) ||
       broker.phone?.includes(query) ||
       broker.custom_id?.toLowerCase().includes(query) ||
-      broker.areas_covered?.some(area => area.toLowerCase().includes(query))
+      broker.areas_covered?.some(area => area.toLowerCase().includes(query)) ||
+      broker.specializations?.primary_locations?.some(area => area.toLowerCase().includes(query))
     );
   }, [brokerNetwork, searchQuery]);
 
@@ -282,10 +286,10 @@ export default function BrokerNetwork() {
           </div>
         </div>
 
-        {/* Network Grid */}
+        {/* Network Grid - COMPACT VERSION */}
         {brokersLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-96 rounded-3xl" />)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-72 rounded-2xl" />)}
           </div>
         ) : filteredNetwork.length === 0 ? (
           <div className="bg-white rounded-3xl p-16 text-center border-2 border-slate-200">
@@ -294,130 +298,125 @@ export default function BrokerNetwork() {
             <p className="text-slate-500">Try adjusting your search</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredNetwork.map((broker) => (
               <motion.div
                 key={broker.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all border-2 border-slate-200 overflow-hidden"
+                className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all border border-slate-200 overflow-hidden"
               >
-                <div className="p-6">
-                  {/* Broker Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                        <Users className="w-8 h-8 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-1">{broker.name}</h3>
-                        {broker.custom_id && (
-                          <p className="text-xs text-slate-500 font-mono mb-2">{broker.custom_id}</p>
-                        )}
-                        <div className="flex items-center gap-2">
-                          {broker.trust_score && (
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                              <Star className="w-3 h-3 mr-1" fill="currentColor" />
-                              {broker.trust_score}
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            <Home className="w-3 h-3 mr-1" />
-                            {broker.total_listings_count || 0} listings
+                <div className="p-4">
+                  {/* Broker Header - COMPACT */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-slate-900 truncate">{broker.name}</h3>
+                      {broker.custom_id && (
+                        <p className="text-xs text-slate-500 font-mono truncate">{broker.custom_id}</p>
+                      )}
+                      <div className="flex items-center gap-1 mt-1">
+                        {broker.trust_score && (
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs px-1.5 py-0">
+                            <Star className="w-2.5 h-2.5 mr-0.5" fill="currentColor" />
+                            {broker.trust_score}
                           </Badge>
-                        </div>
+                        )}
+                        <Badge variant="outline" className="text-xs px-1.5 py-0">
+                          {broker.total_listings_count || 0} listings
+                        </Badge>
                       </div>
                     </div>
                   </div>
 
-                  {/* Specializations */}
+                  {/* Specializations - COMPACT */}
                   {broker.specializations?.primary_locations && broker.specializations.primary_locations.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-slate-500 mb-2 font-semibold">Specializes in:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {broker.specializations.primary_locations.map((loc, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            <MapPin className="w-3 h-3 mr-1" />
+                    <div className="mb-3">
+                      <div className="flex flex-wrap gap-1">
+                        {broker.specializations.primary_locations.slice(0, 2).map((loc, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs px-2 py-0">
+                            <MapPin className="w-2.5 h-2.5 mr-0.5" />
                             {loc}
                           </Badge>
                         ))}
+                        {broker.specializations.primary_locations.length > 2 && (
+                          <Badge variant="outline" className="text-xs px-2 py-0">
+                            +{broker.specializations.primary_locations.length - 2}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {/* Network Stats */}
-                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-4 mb-4">
-                    <div className="grid grid-cols-2 gap-3 text-center">
+                  {/* Network Stats - COMPACT */}
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-3 mb-3">
+                    <div className="grid grid-cols-2 gap-2 text-center">
                       <div>
-                        <p className="text-2xl font-bold text-purple-700">{broker.connectionCount}</p>
-                        <p className="text-xs text-slate-600">Total Connections</p>
+                        <p className="text-xl font-bold text-purple-700">{broker.connectionCount}</p>
+                        <p className="text-xs text-slate-600">Connections</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-green-700">{broker.strongConnections}</p>
-                        <p className="text-xs text-slate-600">Strong Matches</p>
+                        <p className="text-xl font-bold text-green-700">{broker.strongConnections}</p>
+                        <p className="text-xs text-slate-600">Strong</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Top Connections */}
+                  {/* Top Connections - COMPACT (Show only 2) */}
                   {broker.connections.length > 0 && (
-                    <div className="space-y-3 mb-4">
+                    <div className="space-y-2 mb-3">
                       <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                        Suggested Connections:
+                        Top Matches:
                       </p>
-                      {broker.connections.slice(0, 3).map((conn, idx) => (
+                      {broker.connections.slice(0, 2).map((conn, idx) => (
                         <div
                           key={idx}
-                          className="bg-slate-50 rounded-xl p-3 border border-slate-200"
+                          className="bg-slate-50 rounded-lg p-2 border border-slate-200"
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-slate-900 text-sm">{conn.broker.name}</p>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <p className="font-semibold text-slate-900 text-xs truncate">{conn.broker.name}</p>
                               {conn.isTeamMember && (
-                                <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                                <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs px-1 py-0">
                                   Team
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
                               <TrendingUp className="w-3 h-3 text-green-600" />
-                              <span className="text-sm font-bold text-green-700">{conn.score}%</span>
+                              <span className="text-xs font-bold text-green-700">{conn.score}%</span>
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {conn.reasons.map((reason, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
-                                {reason}
-                              </Badge>
-                            ))}
-                          </div>
+                          <p className="text-xs text-slate-600 truncate">
+                            {conn.reasons[0] || 'Similar market focus'}
+                          </p>
                         </div>
                       ))}
-                      {broker.connections.length > 3 && (
+                      {broker.connections.length > 2 && (
                         <p className="text-xs text-slate-500 text-center">
-                          +{broker.connections.length - 3} more connections
+                          +{broker.connections.length - 2} more
                         </p>
                       )}
                     </div>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-4 border-t border-slate-200">
+                  {/* Actions - COMPACT */}
+                  <div className="flex gap-2 pt-3 border-t border-slate-200">
                     <Button
                       onClick={() => handleWhatsApp(broker)}
-                      className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white"
-                      size="sm"
+                      className="flex-1 bg-[#25D366] hover:bg-[#20BD5A] text-white h-8 text-xs"
                     >
-                      <MessageCircle className="w-4 h-4 mr-2" />
+                      <MessageCircle className="w-3 h-3 mr-1" />
                       Connect
                     </Button>
                     <Button
                       onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
                       variant="outline"
-                      className="flex-1"
-                      size="sm"
+                      className="flex-1 h-8 text-xs"
                     >
-                      View Profile
+                      Profile
                     </Button>
                   </div>
                 </div>
