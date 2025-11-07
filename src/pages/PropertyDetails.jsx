@@ -11,7 +11,8 @@ import {
   Building2, MapPin, Home, Maximize2, Car, MessageCircle,
   Calendar, Armchair, Check, Utensils, ArrowLeft, Share2,
   Eye, Sparkles, Phone, Instagram, Facebook, Twitter,
-  Link as LinkIcon, Layers, Download, X, Linkedin
+  Link as LinkIcon, Layers, Download, X, Linkedin,
+  ChevronLeft, ChevronRight // Added ChevronLeft and ChevronRight for image navigation
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -33,6 +34,7 @@ export default function PropertyDetails() {
   
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0); // State for current image index
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', propertySlug],
@@ -235,6 +237,18 @@ export default function PropertyDetails() {
     return parts.join(', ');
   };
 
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === 0 ? property.images.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === property.images.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
   const propertySchema = property ? {
     "@context": "https://schema.org",
     "@type": property.property_category === "Commercial" ? "CommercialProperty" : "Apartment",
@@ -315,31 +329,83 @@ export default function PropertyDetails() {
           Back to Properties
         </Button>
 
-        {/* Image Gallery */}
-        {property.images && property.images.length > 0 && (
-          <div className="mb-8">
-            <div className="grid grid-cols-4 gap-3">
-              <div className="col-span-4 md:col-span-3 h-96 rounded-3xl overflow-hidden shadow-lg">
-                <img
-                  src={property.images[0]}
-                  alt={property.ai_title || "Property"}
-                  className="w-full h-full object-cover"
-                />
+        {/* Hero Section - Property Images with LAZY LOADING */}
+        <div className="relative mb-8"> {/* Added mb-8 for spacing below hero section */}
+          {property.images && property.images.length > 0 ? (
+            <div className="relative h-[50vh] md:h-[60vh] bg-slate-100 rounded-b-3xl md:rounded-b-[3rem] overflow-hidden">
+              <img
+                src={property.images[currentImageIndex]}
+                alt={`${property.ai_title || property.bhk} - Image ${currentImageIndex + 1}`}
+                loading="eager"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80'; // Fallback image on error
+                }}
+              />
+              
+              {/* Image Navigation Arrows */}
+              {property.images.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg z-10"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-slate-900" />
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg z-10"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-slate-900" />
+                  </button>
+                </>
+              )}
+
+              {/* Image Counter */}
+              <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold z-10">
+                {currentImageIndex + 1} / {property.images.length}
               </div>
-              <div className="col-span-4 md:col-span-1 grid grid-cols-2 md:grid-cols-1 gap-3">
-                {property.images.slice(1, 4).map((img, idx) => (
-                  <div key={idx} className="h-28 md:h-[122px] rounded-2xl overflow-hidden shadow-md">
-                    <img
-                      src={img}
-                      alt={`Property ${idx + 2}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
+
+              {/* Thumbnail Strip with LAZY LOADING */}
+              {property.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex gap-2 bg-black/50 backdrop-blur-sm p-2 rounded-2xl z-10">
+                  {property.images.slice(0, 5).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                        currentImageIndex === idx
+                          ? 'border-white scale-110'
+                          : 'border-transparent opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Thumbnail ${idx + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                  {property.images.length > 5 && (
+                    <div className="w-16 h-16 rounded-xl bg-black/50 flex items-center justify-center text-white text-xs font-bold">
+                      +{property.images.length - 5}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-[40vh] md:h-[50vh] bg-gradient-to-br from-purple-100 to-indigo-100 rounded-b-3xl md:rounded-b-[3rem] flex items-center justify-center">
+              <div className="text-center">
+                <Home className="w-16 h-16 md:w-20 md:h-20 text-purple-300 mx-auto mb-4" />
+                <p className="text-sm md:text-base text-purple-400 font-medium">No Photos Available</p>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Main Content Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-purple-200/50 overflow-hidden mb-8">
