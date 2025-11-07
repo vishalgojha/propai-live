@@ -1,10 +1,9 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  MapPin, Home, DollarSign, Calendar, User, MessageCircle,
-  Sparkles, TrendingUp, Eye, Clock
+  MapPin, Home, Calendar, User, MessageCircle,
+  Sparkles, TrendingUp, Eye, Clock, IndianRupee
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -31,11 +30,9 @@ export default function RequirementCard({ requirement }) {
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     
-    // Use broker_contact if available, otherwise fall back to client_phone, then default to Vishal
-    const phone = requirement.broker_contact || requirement.client_phone || '919819471310';
-    const cleanPhone = phone.replace(/\D/g, '');
+    // Default to Vishal/Kapil (PropAI team) - NOT the client's number
+    const phone = '919819471310'; // Always use PropAI number for requirements
     
-    // Generate requirement URL for sharing
     const requirementUrl = requirement.slug 
       ? `${window.location.origin}/smartfeed?req=${requirement.slug}`
       : `${window.location.origin}/smartfeed`;
@@ -49,7 +46,7 @@ export default function RequirementCard({ requirement }) {
       `I'd like to share property details that match this.\n\n` +
       `Thank you!`;
     
-    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const getUrgencyColor = () => {
@@ -110,9 +107,9 @@ export default function RequirementCard({ requirement }) {
           </span>
         </div>
 
-        {/* Budget */}
+        {/* Budget - FIXED ICON */}
         <div className="flex items-center gap-2 text-sm text-slate-700 mb-3 p-3 bg-cyan-100/50 rounded-xl">
-          <DollarSign className="w-4 h-4 text-cyan-600 flex-shrink-0" />
+          <IndianRupee className="w-4 h-4 text-cyan-600 flex-shrink-0" />
           <span className="font-semibold">{formatBudget()}</span>
         </div>
 
@@ -165,13 +162,13 @@ export default function RequirementCard({ requirement }) {
           </div>
         )}
 
-        {/* WhatsApp Contact Button */}
+        {/* WhatsApp Contact Button - FIXED TO PROPAI NUMBER */}
         <Button
           onClick={handleWhatsApp}
           className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md"
         >
           <MessageCircle className="w-4 h-4" />
-          <span className="text-sm">I Have a Match</span>
+          <span className="text-sm">Contact PropAI Team</span>
         </Button>
 
         {/* Footer Metadata */}
