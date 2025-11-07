@@ -3,34 +3,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin, Home, Calendar, User, MessageCircle,
-  Sparkles, TrendingUp, Eye, Clock, IndianRupee
+  Clock, Copy
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function RequirementCard({ requirement }) {
   const formatBudget = () => {
     if (!requirement.budget_min && !requirement.budget_max) {
-      return "Budget not specified";
+      return { from: "Any", to: "Flexible" };
     }
 
     const unit = requirement.budget_unit === "crores" ? "Cr" : "L";
     
     if (requirement.budget_min && requirement.budget_max) {
-      return `₹${requirement.budget_min}-${requirement.budget_max}${unit}`;
+      return { from: `₹${requirement.budget_min}${unit}`, to: `₹${requirement.budget_max}${unit}` };
     } else if (requirement.budget_max) {
-      return `Up to ₹${requirement.budget_max}${unit}`;
+      return { from: "Any", to: `₹${requirement.budget_max}${unit}` };
     } else if (requirement.budget_min) {
-      return `From ₹${requirement.budget_min}${unit}`;
+      return { from: `₹${requirement.budget_min}${unit}`, to: "Any" };
     }
     
-    return "Budget flexible";
+    return { from: "Any", to: "Flexible" };
   };
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     
-    // Use client_phone if available, otherwise broker_contact, otherwise skip
     const phone = requirement.client_phone || requirement.broker_contact;
     
     if (!phone) {
@@ -47,7 +47,7 @@ export default function RequirementCard({ requirement }) {
     const message = `Hi! I have a property that matches your requirement:\n\n` +
       `🔍 *Looking for:* ${requirement.bhk_preference?.join(', ') || 'Property'}\n` +
       `📍 *Location:* ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n` +
-      `💰 *Budget:* ${formatBudget()}\n` +
+      `💰 *Budget:* ${formatBudget().from} → ${formatBudget().to}\n` +
       `${requirement.custom_id ? `🔖 *Ref:* ${requirement.custom_id}\n` : ''}` +
       `\n📱 *PropAI Live:* ${requirementUrl}\n\n` +
       `I'd like to share property details that match this.\n\n` +
@@ -58,154 +58,173 @@ export default function RequirementCard({ requirement }) {
 
   const getUrgencyColor = () => {
     switch(requirement.urgency) {
-      case 'High': return 'bg-red-500/20 text-red-700 border-red-500';
-      case 'Medium': return 'bg-yellow-500/20 text-yellow-700 border-yellow-500';
-      case 'Low': return 'bg-green-500/20 text-green-700 border-green-500';
-      default: return 'bg-slate-500/20 text-slate-700 border-slate-500';
+      case 'High': return 'bg-red-500 text-white border-0';
+      case 'Medium': return 'bg-amber-400 text-black border-0';
+      case 'Low': return 'bg-green-500 text-white border-0';
+      default: return 'bg-slate-500 text-white border-0';
     }
   };
+
+  const copyCustomId = (e) => {
+    e.stopPropagation();
+    if (requirement.custom_id) {
+      navigator.clipboard.writeText(requirement.custom_id);
+      toast.success('ID copied to clipboard!');
+    }
+  };
+
+  const getTimestamp = () => {
+    if (!requirement.created_date) return null;
+    
+    const created = new Date(requirement.created_date);
+    const now = new Date();
+    const diffHours = Math.floor((now - created) / (1000 * 60 * 60));
+    
+    if (diffHours < 24) return 'Today';
+    if (diffHours < 48) return 'Yesterday';
+    return format(created, 'MMM dd');
+  };
+
+  const budget = formatBudget();
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      className="bg-gradient-to-br from-cyan-50 to-blue-50 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-cyan-200/50 hover:border-cyan-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+      className="bg-white rounded-3xl overflow-hidden border-2 border-slate-200 hover:border-cyan-400 hover:shadow-xl transition-all duration-300"
     >
-      {/* Content Section */}
-      <div className="p-5">
-        {/* Header with Badges */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex flex-wrap gap-2">
-            <Badge className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold text-xs border-0">
-              <Sparkles className="w-3 h-3 mr-1" />
-              Requirement
-            </Badge>
-            {requirement.listing_type && (
-              <Badge className="bg-white border-2 border-cyan-200 text-cyan-700 font-semibold text-xs">
-                {requirement.listing_type}
-              </Badge>
-            )}
+      {/* Header Section */}
+      <div className="p-5 pb-4">
+        {/* Top Row: Location + Urgency + Timestamp */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-xl border border-slate-200">
+              <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-xs text-slate-600 font-medium">
+                {requirement.preferred_locations?.[0] || 'Mumbai'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
             {requirement.urgency && (
-              <Badge className={`${getUrgencyColor()} font-semibold text-xs`}>
-                {requirement.urgency === 'High' && '🔥 '}
-                {requirement.urgency}
+              <Badge className={`${getUrgencyColor()} font-bold text-sm px-3 py-1`}>
+                {requirement.urgency.toUpperCase()}
               </Badge>
             )}
-            {requirement.is_direct_client && (
-              <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 font-semibold text-xs">
-                Direct Client
-              </Badge>
+            {getTimestamp() && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-100 rounded-xl border border-sky-200">
+                <Clock className="w-3.5 h-3.5 text-sky-600" />
+                <span className="text-xs text-sky-700 font-semibold">{getTimestamp()}</span>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Title - Looking for */}
-        <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 leading-tight group-hover:text-cyan-700 transition-colors">
-          Looking for {requirement.bhk_preference?.join(' / ') || 'Property'}
+        {/* Custom ID with Copy */}
+        {requirement.custom_id && (
+          <div 
+            onClick={copyCustomId}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-200 mb-4 cursor-pointer hover:bg-slate-100 transition-colors group"
+          >
+            <span className="text-sm font-mono text-slate-700 flex-1">ID: {requirement.custom_id}</span>
+            <Copy className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+          </div>
+        )}
+
+        {/* Main Title */}
+        <h3 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">
+          {requirement.bhk_preference?.join(' / ') || 'Property'} Required
         </h3>
 
-        {/* Location Preferences */}
-        <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-          <MapPin className="w-4 h-4 text-cyan-500 flex-shrink-0" />
-          <span className="truncate">
-            {requirement.preferred_locations?.join(', ') || 'Flexible location'}
-            {requirement.pocket ? ` (${requirement.pocket})` : ''}
-          </span>
-        </div>
-
-        {/* Budget */}
-        <div className="flex items-center gap-2 text-sm text-slate-700 mb-3 p-3 bg-cyan-100/50 rounded-xl">
-          <IndianRupee className="w-4 h-4 text-cyan-600 flex-shrink-0" />
-          <span className="font-semibold">{formatBudget()}</span>
-        </div>
-
-        {/* Key Details Grid */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {requirement.bhk_preference && requirement.bhk_preference.length > 0 && (
-            <div className="bg-cyan-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-cyan-100">
-              <Home className="w-4 h-4 text-cyan-600 mx-auto mb-1" />
-              <p className="text-xs font-bold text-slate-900 truncate">
-                {requirement.bhk_preference.length} option{requirement.bhk_preference.length > 1 ? 's' : ''}
-              </p>
-            </div>
-          )}
-          {requirement.furnishing_preference && (
-            <div className="bg-cyan-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-cyan-100">
-              <span className="text-lg mb-1">🪑</span>
-              <p className="text-xs font-bold text-slate-900 truncate">{requirement.furnishing_preference}</p>
-            </div>
-          )}
-          {requirement.parking_required && (
-            <div className="bg-cyan-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-cyan-100">
-              <span className="text-lg mb-1">🚗</span>
-              <p className="text-xs font-bold text-slate-900">Required</p>
-            </div>
-          )}
-        </div>
-
-        {/* Client Info (Anonymous for broker referrals) */}
-        <div className="flex items-center gap-2 text-xs text-slate-600 mb-3 p-2 bg-white/50 rounded-lg">
-          <User className="w-3 h-3 text-cyan-500" />
-          <span>
+        {/* Client Name */}
+        <div className="flex items-center gap-2 text-slate-700 mb-5">
+          <User className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-medium">
             {requirement.is_direct_client 
-              ? `Client: ${requirement.client_name}`
-              : `Broker client requirement`}
+              ? requirement.client_name || 'Client'
+              : 'Broker Client Requirement'}
           </span>
         </div>
 
-        {/* AI Match Count */}
-        {requirement.ai_matched_properties && requirement.ai_matched_properties.length > 0 && (
-          <div className="mb-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-bold text-green-700">
-                {requirement.ai_matched_properties.length} AI Matches Found
-              </span>
-              <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs ml-auto">
-                75%+ Match
-              </Badge>
+        {/* Budget Range Section */}
+        <div className="mb-5">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            BUDGET RANGE
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-bold text-sky-600">{budget.from}</span>
+            <span className="text-2xl text-slate-400">→</span>
+            <span className="text-2xl font-bold text-sky-600">{budget.to}</span>
+          </div>
+        </div>
+
+        {/* Looking For Section */}
+        {requirement.bhk_preference && requirement.bhk_preference.length > 0 && (
+          <div className="mb-5">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+              LOOKING FOR
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {requirement.bhk_preference.map((bhk, idx) => (
+                <div key={idx} className="flex items-center gap-2 px-4 py-2.5 bg-sky-100 rounded-xl border border-sky-200">
+                  <Home className="w-4 h-4 text-sky-700" />
+                  <span className="font-bold text-sky-900">{bhk}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* WhatsApp Contact Button - FIXED TO USE CLIENT PHONE */}
-        <Button
-          onClick={handleWhatsApp}
-          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl h-11 flex items-center justify-center gap-2 shadow-md"
-        >
-          <MessageCircle className="w-4 h-4" />
-          <span className="text-sm">I Have a Match</span>
-        </Button>
+        {/* Preferred Locations Section */}
+        {requirement.preferred_locations && requirement.preferred_locations.length > 0 && (
+          <div className="mb-5">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+              PREFERRED LOCATIONS
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {requirement.preferred_locations.map((location, idx) => (
+                <div key={idx} className="flex items-center gap-2 px-4 py-2.5 bg-green-100 rounded-xl border border-green-200">
+                  <MapPin className="w-4 h-4 text-green-700" />
+                  <span className="font-bold text-green-900">{location}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Footer Metadata */}
-        <div className="mt-3 pt-3 border-t border-cyan-100">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            {requirement.created_date && (
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Posted {format(new Date(requirement.created_date), "MMM dd, yyyy")}
-              </span>
+        {/* Additional Details */}
+        {(requirement.furnishing_preference || requirement.parking_required || requirement.possession_timeline) && (
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            {requirement.furnishing_preference && requirement.furnishing_preference !== "Any" && (
+              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-200">
+                <span className="text-lg mb-1">🪑</span>
+                <p className="text-xs font-bold text-slate-900 truncate">{requirement.furnishing_preference}</p>
+              </div>
             )}
-            {requirement.views_count > 0 && (
-              <span className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                {requirement.views_count}
-              </span>
+            {requirement.parking_required && (
+              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-200">
+                <span className="text-lg mb-1">🚗</span>
+                <p className="text-xs font-bold text-slate-900">Required</p>
+              </div>
+            )}
+            {requirement.possession_timeline && (
+              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-200">
+                <Clock className="w-4 h-4 text-slate-600 mx-auto mb-1" />
+                <p className="text-xs font-bold text-slate-900 truncate">{requirement.possession_timeline}</p>
+              </div>
             )}
           </div>
-          {requirement.custom_id && (
-            <div className="flex items-center justify-between mt-2">
-              <span className="font-mono text-cyan-600 text-xs">{requirement.custom_id}</span>
-              {requirement.possession_timeline && (
-                <span className="text-xs text-slate-600 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {requirement.possession_timeline}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        )}
+
+        {/* WhatsApp Contact Button */}
+        <Button
+          onClick={handleWhatsApp}
+          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl h-14 flex items-center justify-center gap-3 shadow-lg text-base"
+        >
+          <MessageCircle className="w-5 h-5" />
+          <span>Contact via WhatsApp</span>
+        </Button>
       </div>
     </motion.div>
   );
