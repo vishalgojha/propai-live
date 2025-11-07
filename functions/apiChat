@@ -1,0 +1,117 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * /api/chat - AI Concierge Chat API
+ * 
+ * Intelligent assistant for property queries, insights, and operations
+ * Context-aware with access to full database
+ */
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Auth check
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ 
+        success: false,
+        error: 'Unauthorized - Admin access required' 
+      }, { status: 401 });
+    }
+
+    const { message, context = {} } = await req.json();
+    
+    if (!message || message.trim().length < 2) {
+      return Response.json({ 
+        success: false,
+        error: 'Message is required' 
+      }, { status: 400 });
+    }
+
+    console.log(`💬 API Chat request: "${message.substring(0, 50)}..."`);
+
+    // Build intelligent context
+    const [properties, requirements, brokers, buildings] = await Promise.all([
+      base44.asServiceRole.entities.Property.list('-created_date', 50),
+      base44.asServiceRole.entities.Requirement.list('-created_date', 20),
+      base44.asServiceRole.entities.Broker.list('-last_activity', 20),
+      base44.asServiceRole.entities.Building.list()
+    ]);
+
+    // System stats for context
+    const stats = {
+      total_properties: properties.length,
+      active_properties: properties.filter(p => p.status === 'Active').length,
+      total_requirements: requirements.length,
+      active_requirements: requirements.filter(r => r.status === 'Active').length,
+      total_brokers: brokers.length,
+      active_brokers: brokers.filter(b => b.status === 'Active').length,
+      total_buildings: buildings.length
+    };
+
+    // Recent activity
+    const recentProperties = properties.slice(0, 5).map(p => ({
+      id: p.custom_id || p.id,
+      title: p.ai_title || `${p.bhk} in ${p.location}`,
+      price: `₹${p.price}${p.price_unit === 'crores' ? ' Cr' : 'L'}`,
+      location: p.location,
+      broker: p.broker_contact,
+      created: p.created_date
+    }));
+
+    // Build AI prompt
+    const prompt = `You are PropAI Concierge - an intelligent assistant for Chariot Realty's property management system.
+
+**USER QUERY:**
+"${message}"
+
+**SYSTEM CONTEXT:**
+Current Database Stats:
+- Properties: ${stats.total_properties} total (${stats.active_properties} active)
+- Requirements: ${stats.total_requirements} total (${stats.active_requirements} active)
+- Brokers: ${stats.total_brokers} (${stats.active_brokers} active)
+- Buildings: ${stats.total_buildings} tracked
+
+Recent Listings (last 5):
+${recentProperties.map((p, i) => `${i + 1}. ${p.title} - ${p.price} in ${p.location} (${p.id})`).join('\n')}
+
+**YOUR CAPABILITIES:**
+1. Answer questions about properties, markets, brokers
+2. Provide insights and analytics
+3. Suggest actions or improvements
+4. Explain system features
+5. Guide on next steps
+
+**RESPONSE GUIDELINES:**
+- Be concise but helpful (2-4 sentences max unless data-heavy)
+- Use emojis sparingly for visual clarity
+- If asking for data, format it clearly
+- Suggest actionable next steps when relevant
+- Reference specific property IDs when discussing listings
+- Be conversational and professional
+
+Respond to the user's query:`;
+
+    const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: prompt,
+      add_context_from_internet: false
+    });
+
+    return Response.json({
+      success: true,
+      message: response.trim(),
+      context: {
+        stats,
+        properties_referenced: recentProperties.length
+      }
+    });
+
+  } catch (error) {
+    console.error('API Chat error:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message 
+    }, { status: 500 });
+  }
+});
