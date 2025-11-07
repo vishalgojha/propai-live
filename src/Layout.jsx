@@ -88,11 +88,17 @@ export default function Layout({ children, currentPageName }) {
     { name: "Insights", icon: BookOpen, path: createPageUrl("Blogs") },
   ];
 
+  // Add Network for ALL logged-in users
+  if (user) {
+    navItems.push(
+      { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
+    );
+  }
+
   // Only show admin link if user is admin
   if (user?.role === 'admin') {
     navItems.push(
       { name: "Admin", icon: Settings, path: createPageUrl("Admin") },
-      { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") },
       { name: "Analytics", icon: Zap, path: createPageUrl("SmartFeedAnalytics") }
     );
   }
