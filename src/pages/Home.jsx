@@ -212,7 +212,7 @@ Looking forward to listing with PropAI Live!`;
         </div>
       </section>
 
-      {/* Featured Properties Section */}
+      {/* Featured Properties Section - NO IMAGES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -245,24 +245,12 @@ Looking forward to listing with PropAI Live!`;
                 className="bg-white rounded-3xl overflow-hidden border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all cursor-pointer"
                 onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`)}
               >
-                <div className="relative h-56 bg-slate-100">
-                  {property.images?.[0] ? (
-                    <img
-                      src={property.images[0]}
-                      alt={property.ai_title || "Property image"}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <HomeIcon className="w-12 h-12 text-slate-300" />
-                    </div>
-                  )}
-                  <Badge className="absolute top-3 left-3 bg-sky-600 text-white border-0">
+                {/* NO IMAGE SECTION - Removed */}
+                
+                <div className="p-6">
+                  <Badge className="mb-3 bg-sky-600 text-white border-0">
                     {property.listing_type}
                   </Badge>
-                </div>
-                <div className="p-6">
                   <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
                     {property.ai_title || `${property.bhk} in ${property.location}`}
                   </h3>
