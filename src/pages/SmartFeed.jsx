@@ -32,10 +32,9 @@ export default function SmartFeed() {
   const [itemsToShow, setItemsToShow] = useState(24);
   const [matchmakerOpen, setMatchmakerOpen] = useState(false);
 
-  // Real-time update state
+  // Real-time update state - FIX: Declare useRef BEFORE using it
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
-  previousCountsRef.current = { properties: 0, requirements: 0 };
   const previousCountsRef = useRef({ properties: 0, requirements: 0 });
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
