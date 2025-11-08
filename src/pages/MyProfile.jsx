@@ -32,6 +32,9 @@ export default function MyProfile() {
   const [teamMemberPhone, setTeamMemberPhone] = useState("");
   const [addingTeamMember, setAddingTeamMember] = useState(false);
 
+  // NEW: State for network view
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'network', 'listings', 'requirements'
+
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
     "BKC", "Worli", "Lower Parel", "Powai",
@@ -91,6 +94,109 @@ export default function MyProfile() {
     };
     loadUser();
   }, [navigate]);
+
+  // NEW: Fetch network connections
+  const { data: allBrokersForNetwork = [] } = useQuery({ // Renamed to avoid conflict with adminAllBrokers
+    queryKey: ['all-brokers-for-network'],
+    queryFn: () => base44.entities.Broker.list(),
+    enabled: !!brokerProfile,
+    initialData: []
+  });
+
+  const { data: allPropertiesForNetwork = [] } = useQuery({
+    queryKey: ['all-properties-for-network'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    enabled: !!brokerProfile,
+    initialData: []
+  });
+
+  const { data: allRequirementsForNetwork = [] } = useQuery({
+    queryKey: ['all-requirements-for-network'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    enabled: !!brokerProfile,
+    initialData: []
+  });
+
+  // NEW: Calculate network connections
+  const networkConnections = useMemo(() => {
+    if (!brokerProfile || !currentUser?.network_connections) return [];
+    
+    return currentUser.network_connections
+      .map(connId => {
+        const broker = allBrokersForNetwork.find(b => b.id === connId); // Using allBrokersForNetwork
+        if (!broker) return null;
+        
+        const brokerListings = allPropertiesForNetwork.filter(p => 
+          p.broker_id === connId && p.status === 'Active' && !p.is_duplicate
+        );
+        
+        return {
+          ...broker,
+          activeListings: brokerListings.length,
+          recentListings: brokerListings.slice(0, 5)
+        };
+      })
+      .filter(Boolean);
+  }, [brokerProfile, currentUser, allBrokersForNetwork, allPropertiesForNetwork]); // Dependency updated
+
+  // NEW: Network listings - from all connected brokers
+  const networkListings = useMemo(() => {
+    if (!currentUser?.network_connections) return [];
+    
+    return allPropertiesForNetwork
+      .filter(p => 
+        currentUser.network_connections.includes(p.broker_id) && 
+        p.status === 'Active' && 
+        !p.is_duplicate
+      )
+      .slice(0, 20); // Show last 20
+  }, [currentUser, allPropertiesForNetwork]);
+
+  // NEW: My requirements with matches from network
+  const myRequirementsWithMatches = useMemo(() => {
+    if (!brokerProfile) return [];
+    
+    const myReqs = allRequirementsForNetwork.filter(r => 
+      r.broker_id === brokerProfile.id && r.status === 'Active'
+    );
+    
+    return myReqs.map(req => {
+      // Find matches from network connections
+      const networkMatches = allPropertiesForNetwork.filter(prop => {
+        // Check if property is from network
+        if (!currentUser?.network_connections?.includes(prop.broker_id)) return false;
+        if (prop.status !== 'Active' || prop.is_duplicate) return false;
+        
+        // Check listing type match
+        if (prop.listing_type !== req.listing_type) return false;
+        
+        // Check BHK match
+        if (req.bhk_preference && req.bhk_preference.length > 0) {
+          if (!req.bhk_preference.includes(prop.bhk)) return false;
+        }
+        
+        // Check location match
+        if (req.preferred_locations && req.preferred_locations.length > 0) {
+          if (!req.preferred_locations.includes(prop.location)) return false;
+        }
+        
+        // Check price range
+        const propPriceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
+        const reqUnit = req.budget_unit === 'crores' ? 'crores' : 'lakhs';
+        const reqMinInLakhs = reqUnit === 'crores' ? (req.budget_min || 0) * 100 : (req.budget_min || 0);
+        const reqMaxInLakhs = reqUnit === 'crores' ? (req.budget_max || 999999) * 100 : (req.budget_max || 999999);
+        
+        if (propPriceInLakhs < reqMinInLakhs || propPriceInLakhs > reqMaxInLakhs) return false;
+        
+        return true;
+      });
+      
+      return {
+        ...req,
+        networkMatches: networkMatches.slice(0, 10)
+      };
+    });
+  }, [brokerProfile, allRequirementsForNetwork, allPropertiesForNetwork, currentUser]);
 
   const handleSaveAreas = async () => {
     try {
@@ -199,7 +305,7 @@ export default function MyProfile() {
       });
       
       await base44.entities.Broker.update(teamMemberBroker.id, {
-        reports_to: brokerProfile.id
+        reports_to: null
       });
       
       setBrokerProfile(prevBrokerProfile => ({
@@ -298,7 +404,7 @@ export default function MyProfile() {
     initialData: []
   });
 
-  const { data: allBrokers = [] } = useQuery({
+  const { data: allBrokers = [] } = useQuery({ // Renamed to adminAllBrokers to avoid conflict
     queryKey: ['admin-all-brokers'],
     queryFn: () => base44.entities.Broker.list(),
     enabled: currentUser?.role === 'admin',
@@ -373,16 +479,16 @@ export default function MyProfile() {
     if (currentUser?.role !== 'admin') return null;
 
     const activeProps = allProperties.filter(p => p.status === 'Active' && !p.is_duplicate);
-    const activeBrokers = allBrokers.filter(b => b.status === 'Active');
+    const activeBrokers = allBrokers.filter(b => b.status === 'Active'); // Using adminAllBrokers
 
     return {
       totalProperties: allProperties.length,
       activeProperties: activeProps.length,
-      totalBrokers: allBrokers.length,
+      totalBrokers: allBrokers.length, // Using adminAllBrokers
       activeBrokers: activeBrokers.length,
-      highTrustBrokers: allBrokers.filter(b => (b.trust_score || 0) >= 75).length
+      highTrustBrokers: allBrokers.filter(b => (b.trust_score || 0) >= 75).length // Using adminAllBrokers
     };
-  }, [currentUser, allProperties, allBrokers]);
+  }, [currentUser, allProperties, allBrokers]); // Dependency updated
 
   if (isLoading) {
     return (
@@ -600,7 +706,7 @@ export default function MyProfile() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
           <div className="mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -635,330 +741,613 @@ export default function MyProfile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Package className="w-4 h-4 text-sky-600" />
-                <p className="text-xs text-slate-600 font-semibold">Active Listings</p>
-              </div>
-              <p className="text-3xl font-bold text-sky-600">{brokerMetrics.activeListings}</p>
-              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalListings} total</p>
-            </Card>
-
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Eye className="w-4 h-4 text-purple-600" />
-                <p className="text-xs text-slate-600 font-semibold">Total Views</p>
-              </div>
-              <p className="text-3xl font-bold text-purple-600">{brokerMetrics.totalViews}</p>
-            </Card>
-
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-2 mb-2">
-                <MessageCircle className="w-4 h-4 text-green-600" />
-                <p className="text-xs text-slate-600 font-semibold">Inquiries</p>
-              </div>
-              <p className="text-3xl font-bold text-green-600">{brokerMetrics.totalInquiries}</p>
-              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.conversionRate}% conv.</p>
-            </Card>
-
-            <Card className="p-4 bg-white border-2 border-slate-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="w-4 h-4 text-cyan-600" />
-                <p className="text-xs text-slate-600 font-semibold">AI Matches</p>
-              </div>
-              <p className="text-3xl font-bold text-cyan-600">{brokerMetrics.totalAIMatches}</p>
-              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.activeRequirements} active reqs</p>
-            </Card>
+          {/* NEW: Tab Navigation */}
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+            <Button
+              onClick={() => setActiveTab('overview')}
+              variant={activeTab === 'overview' ? 'default' : 'outline'}
+              className={activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Overview
+            </Button>
+            <Button
+              onClick={() => setActiveTab('network')}
+              variant={activeTab === 'network' ? 'default' : 'outline'}
+              className={activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              My Network ({networkConnections.length})
+            </Button>
+            <Button
+              onClick={() => setActiveTab('listings')}
+              variant={activeTab === 'listings' ? 'default' : 'outline'}
+              className={activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Network Listings ({networkListings.length})
+            </Button>
+            <Button
+              onClick={() => setActiveTab('requirements')}
+              variant={activeTab === 'requirements' ? 'default' : 'outline'}
+              className={activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+            >
+              <Target className="w-4 h-4 mr-2" />
+              My Requirements ({myRequirementsWithMatches.length})
+            </Button>
           </div>
 
-          {brokerMetrics.top3Properties.length > 0 && (
-            <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-600" />
-                Your Top Viewed Properties
-              </h3>
-              <div className="space-y-3">
-                {brokerMetrics.top3Properties.map((prop, idx) => (
-                  <div
-                    key={prop.id}
-                    className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
-                    onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${prop.id}`)}
+          {/* OVERVIEW TAB */}
+          {activeTab === 'overview' && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4 bg-white border-2 border-slate-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="w-4 h-4 text-sky-600" />
+                    <p className="text-xs text-slate-600 font-semibold">Active Listings</p>
+                  </div>
+                  <p className="text-3xl font-bold text-sky-600">{brokerMetrics.activeListings}</p>
+                  <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalListings} total</p>
+                </Card>
+
+                <Card className="p-4 bg-white border-2 border-slate-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Eye className="w-4 h-4 text-purple-600" />
+                    <p className="text-xs text-slate-600 font-semibold">Total Views</p>
+                  </div>
+                  <p className="text-3xl font-bold text-purple-600">{brokerMetrics.totalViews}</p>
+                </Card>
+
+                <Card className="p-4 bg-white border-2 border-slate-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageCircle className="w-4 h-4 text-green-600" />
+                    <p className="text-xs text-slate-600 font-semibold">Inquiries</p>
+                  </div>
+                  <p className="text-3xl font-bold text-green-600">{brokerMetrics.totalInquiries}</p>
+                  <p className="text-xs text-slate-500 mt-1">{brokerMetrics.conversionRate}% conv.</p>
+                </Card>
+
+                <Card className="p-4 bg-white border-2 border-slate-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-4 h-4 text-cyan-600" />
+                    <p className="text-xs text-slate-600 font-semibold">AI Matches</p>
+                  </div>
+                  <p className="text-3xl font-bold text-cyan-600">{brokerMetrics.totalAIMatches}</p>
+                  <p className="text-xs text-slate-500 mt-1">{brokerMetrics.activeRequirements} active reqs</p>
+                </Card>
+              </div>
+
+              {brokerMetrics.top3Properties.length > 0 && (
+                <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    Your Top Viewed Properties
+                  </h3>
+                  <div className="space-y-3">
+                    {brokerMetrics.top3Properties.map((prop, idx) => (
+                      <div
+                        key={prop.id}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                        onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${prop.id}`)}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                            #{idx + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-slate-900 truncate">
+                              {prop.ai_title || `${prop.bhk} in ${prop.location}`}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              ₹{prop.price}{prop.price_unit === 'crores' ? ' Cr' : 'L'} • {prop.location}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-indigo-600">
+                          <Eye className="w-4 h-4" />
+                          <span className="font-bold">{prop.viewCount}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
+                  </div>
+                  <Button
+                    onClick={() => setEditingAreas(!editingAreas)}
+                    variant="outline"
+                    size="sm"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        #{idx + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 truncate">
-                          {prop.ai_title || `${prop.bhk} in ${prop.location}`}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          ₹{prop.price}{prop.price_unit === 'crores' ? ' Cr' : 'L'} • {prop.location}
-                        </p>
-                      </div>
+                    {editingAreas ? 'Cancel' : 'Edit Areas'}
+                  </Button>
+                </div>
+
+                {editingAreas ? (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Select areas you want to focus on in SmartFeed:
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {popularAreas.map((area) => {
+                        const isSelected = selectedAreas.includes(area);
+                        return (
+                          <Button
+                            key={area}
+                            onClick={() => toggleArea(area)}
+                            variant={isSelected ? "default" : "outline"}
+                            size="sm"
+                            className={`rounded-xl ${
+                              isSelected
+                                ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                                : "border-purple-200 hover:bg-purple-50"
+                            }`}
+                          >
+                            {area}
+                          </Button>
+                        );
+                      })}
                     </div>
-                    <div className="flex items-center gap-2 text-indigo-600">
-                      <Eye className="w-4 h-4" />
-                      <span className="font-bold">{prop.viewCount}</span>
+                    <Button
+                      onClick={handleSaveAreas}
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                    >
+                      Save Preferred Areas
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {currentUser.preferred_areas.map((area) => (
+                          <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {area}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500">
+                        No preferred areas set. Click "Edit Areas" to personalize your SmartFeed.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <Card className="p-6 bg-white border-2 border-slate-200">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Contact Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm text-slate-600">Phone:</span>
+                      <span className="text-sm font-semibold text-slate-900">{brokerProfile.phone}</span>
+                    </div>
+                    {brokerProfile.email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm text-slate-600">Email:</span>
+                        <span className="text-sm font-semibold text-slate-900">{brokerProfile.email}</span>
+                      </div>
+                    )}
+                    {brokerProfile.agency_name && (
+                      <div className="flex items-center gap-3">
+                        <Building2 className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm text-slate-600">Agency:</span>
+                        <span className="text-sm font-semibold text-purple-900">{brokerProfile.agency_name}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                {brokerProfile.specializations && (
+                  <Card className="p-6 bg-white border-2 border-slate-200">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4">Specializations</h3>
+                    {brokerProfile.specializations.primary_locations && brokerProfile.specializations.primary_locations.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs text-slate-600 mb-2">Primary Areas:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {brokerProfile.specializations.primary_locations.map((loc, idx) => (
+                            <Badge key={idx} variant="outline">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {loc}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {brokerProfile.specializations.listing_type_focus && (
+                      <div>
+                        <p className="text-xs text-slate-600 mb-2">Focus:</p>
+                        <Badge className="bg-amber-500 text-white">
+                          {brokerProfile.specializations.listing_type_focus}
+                        </Badge>
+                      </div>
+                    )}
+                  </Card>
+                )}
+              </div>
+
+              <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    My Team ({enrichedTeamMembers.length})
+                  </h3>
+                  <Button
+                    onClick={() => {
+                      setEditingTeam(!editingTeam);
+                      setTeamMemberPhone('');
+                      setAddingTeamMember(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  >
+                    {editingTeam ? 'Cancel' : 'Manage Team'}
+                  </Button>
+                </div>
+
+                {editingTeam && (
+                  <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">Add Team Member by Phone</p>
+                    <p className="text-xs text-blue-700 mb-3">
+                      Enter the 10-digit phone number of a broker already in the PropAI system
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="tel"
+                        value={teamMemberPhone}
+                        onChange={(e) => setTeamMemberPhone(e.target.value)}
+                        placeholder="e.g., 9820056789"
+                        className="flex-1 text-sm"
+                        disabled={addingTeamMember}
+                      />
+                      <Button
+                        onClick={handleAddTeamMember}
+                        disabled={addingTeamMember || !teamMemberPhone.trim()}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        size="sm"
+                      >
+                        {addingTeamMember ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            Adding...
+                          </>
+                        ) : (
+                          'Add'
+                        )}
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </Card>
-          )}
+                )}
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
-              </div>
-              <Button
-                onClick={() => setEditingAreas(!editingAreas)}
-                variant="outline"
-                size="sm"
-                className="border-purple-300 text-purple-700 hover:bg-purple-50"
-              >
-                {editingAreas ? 'Cancel' : 'Edit Areas'}
-              </Button>
-            </div>
-
-            {editingAreas ? (
-              <div>
-                <p className="text-sm text-slate-600 mb-3">
-                  Select areas you want to focus on in SmartFeed:
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {popularAreas.map((area) => {
-                    const isSelected = selectedAreas.includes(area);
-                    return (
-                      <Button
-                        key={area}
-                        onClick={() => toggleArea(area)}
-                        variant={isSelected ? "default" : "outline"}
-                        size="sm"
-                        className={`rounded-xl ${
-                          isSelected
-                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-                            : "border-purple-200 hover:bg-purple-50"
-                        }`}
-                      >
-                        {area}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <Button
-                  onClick={handleSaveAreas}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-                >
-                  Save Preferred Areas
-                </Button>
-              </div>
-            ) : (
-              <div>
-                {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {currentUser.preferred_areas.map((area) => (
-                      <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {area}
-                      </Badge>
+                {enrichedTeamMembers.length > 0 ? (
+                  <div className="space-y-3">
+                    {enrichedTeamMembers.map((member, idx) => (
+                      <div key={member.broker_id || idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <p className="font-semibold text-slate-900">{member.name}</p>
+                              {!member.hasData && (
+                                <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                                  <AlertCircle className="w-3 h-3 mr-1" />
+                                  No listings yet
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-600 mb-1">{member.phone}</p>
+                            {member.agency_name && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Building2 className="w-3 h-3 text-purple-600" />
+                                <p className="text-xs font-semibold text-purple-700">{member.agency_name}</p>
+                              </div>
+                            )}
+                            <p className="text-xs text-blue-600 mt-1">{member.role || 'Team Member'}</p>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-blue-700">{member.co_listing_count}</p>
+                              <p className="text-xs text-slate-600">listings</p>
+                            </div>
+                            {editingTeam && (
+                              <Button
+                                onClick={() => handleRemoveTeamMember(member.broker_id)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">
-                    No preferred areas set. Click "Edit Areas" to personalize your SmartFeed.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <Card className="p-6 bg-white border-2 border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Contact Information</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">Phone:</span>
-                  <span className="text-sm font-semibold text-slate-900">{brokerProfile.phone}</span>
-                </div>
-                {brokerProfile.email && (
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-600">Email:</span>
-                    <span className="text-sm font-semibold text-slate-900">{brokerProfile.email}</span>
-                  </div>
-                )}
-                {brokerProfile.agency_name && (
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm text-slate-600">Agency:</span>
-                    <span className="text-sm font-semibold text-purple-900">{brokerProfile.agency_name}</span>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {brokerProfile.specializations && (
-              <Card className="p-6 bg-white border-2 border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-4">Specializations</h3>
-                {brokerProfile.specializations.primary_locations && brokerProfile.specializations.primary_locations.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs text-slate-600 mb-2">Primary Areas:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {brokerProfile.specializations.primary_locations.map((loc, idx) => (
-                        <Badge key={idx} variant="outline">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {loc}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {brokerProfile.specializations.listing_type_focus && (
-                  <div>
-                    <p className="text-xs text-slate-600 mb-2">Focus:</p>
-                    <Badge className="bg-amber-500 text-white">
-                      {brokerProfile.specializations.listing_type_focus}
-                    </Badge>
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm text-slate-600 mb-2">No team members yet</p>
+                    <p className="text-xs text-slate-500">
+                      Add team members to collaborate on listings and track co-listing performance
+                    </p>
+                    {editingTeam && (
+                      <p className="text-xs text-blue-600 mt-3 font-semibold">
+                        👆 Enter their phone number above to add them
+                      </p>
+                    )}
                   </div>
                 )}
               </Card>
-            )}
-          </div>
 
-          <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                My Team ({enrichedTeamMembers.length})
-              </h3>
-              <Button
-                onClick={() => {
-                  setEditingTeam(!editingTeam);
-                  setTeamMemberPhone('');
-                  setAddingTeamMember(false);
-                }}
-                variant="outline"
-                size="sm"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                {editingTeam ? 'Cancel' : 'Manage Team'}
-              </Button>
-            </div>
+              {brokerProfile.ai_profile_summary && (
+                <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-purple-600" />
+                    Profile Summary
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {brokerProfile.ai_profile_summary}
+                  </p>
+                  {brokerProfile.profile_last_updated && (
+                    <p className="text-xs text-slate-500 mt-3">
+                      Updated: {format(new Date(brokerProfile.profile_last_updated), 'MMMM dd, yyyy')}
+                    </p>
+                  )}
+                </Card>
+              )}
+            </>
+          )}
 
-            {editingTeam && (
-              <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <p className="text-sm font-semibold text-blue-900 mb-2">Add Team Member by Phone</p>
-                <p className="text-xs text-blue-700 mb-3">
-                  Enter the 10-digit phone number of a broker already in the PropAI system
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    type="tel"
-                    value={teamMemberPhone}
-                    onChange={(e) => setTeamMemberPhone(e.target.value)}
-                    placeholder="e.g., 9820056789"
-                    className="flex-1 text-sm"
-                    disabled={addingTeamMember}
-                  />
+          {/* NETWORK TAB */}
+          {activeTab === 'network' && (
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">My Network Connections</h2>
+              
+              {networkConnections.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">No Connections Yet</h3>
+                  <p className="text-slate-600 mb-4">
+                    Visit the Broker Network page to connect with other brokers
+                  </p>
                   <Button
-                    onClick={handleAddTeamMember}
-                    disabled={addingTeamMember || !teamMemberPhone.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    size="sm"
+                    onClick={() => navigate(createPageUrl("BrokerNetwork"))}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
                   >
-                    {addingTeamMember ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      'Add'
-                    )}
+                    Browse Broker Network
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {enrichedTeamMembers.length > 0 ? (
-              <div className="space-y-3">
-                {enrichedTeamMembers.map((member, idx) => (
-                  <div key={member.broker_id || idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <p className="font-semibold text-slate-900">{member.name}</p>
-                          {!member.hasData && (
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              No listings yet
-                            </Badge>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {networkConnections.map(broker => (
+                    <Card key={broker.id} className="p-6 hover:shadow-lg transition-shadow">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900">{broker.name}</h3>
+                          <p className="text-sm text-slate-600">{broker.phone}</p>
+                          {broker.agency_name && (
+                            <p className="text-sm text-purple-700 font-semibold">{broker.agency_name}</p>
                           )}
                         </div>
-                        <p className="text-xs text-slate-600 mb-1">{member.phone}</p>
-                        {member.agency_name && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Building2 className="w-3 h-3 text-purple-600" />
-                            <p className="text-xs font-semibold text-purple-700">{member.agency_name}</p>
+                        <Badge className="bg-sky-100 text-sky-800">
+                          {broker.activeListings} Active Listings
+                        </Badge>
+                      </div>
+                      
+                      {broker.recentListings.length > 0 && (
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700 mb-2">Recent Listings:</p>
+                          <div className="space-y-2">
+                            {broker.recentListings.map(prop => (
+                              <div
+                                key={prop.id}
+                                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer"
+                                onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${prop.id}`)}
+                              >
+                                <div className="flex-1">
+                                  <p className="font-semibold text-sm text-slate-900 truncate">
+                                    {prop.ai_title || `${prop.bhk} in ${prop.location}`}
+                                  </p>
+                                  <p className="text-xs text-slate-500">{prop.location}</p>
+                                </div>
+                                <p className="text-sm font-bold text-sky-600">
+                                  ₹{prop.price}{prop.price_unit === 'crores' ? ' Cr' : 'L'}
+                                </p>
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        <p className="text-xs text-blue-600 mt-1">{member.role || 'Team Member'}</p>
-                      </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-blue-700">{member.co_listing_count}</p>
-                          <p className="text-xs text-slate-600">listings</p>
                         </div>
-                        {editingTeam && (
-                          <Button
-                            onClick={() => handleRemoveTeamMember(member.broker_id)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
+                      )}
+                      
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          onClick={() => {
+                            const message = `Hi ${broker.name}, this is ${brokerProfile.name}. We're connected on PropAI Live. Let's collaborate!`;
+                            window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                          }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          size="sm"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          WhatsApp
+                        </Button>
+                        <Button
+                          onClick={() => navigate(createPageUrl("BrokerProfile") + `?id=${broker.id}`)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          View Profile
+                        </Button>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-600 mb-2">No team members yet</p>
-                <p className="text-xs text-slate-500">
-                  Add team members to collaborate on listings and track co-listing performance
-                </p>
-                {editingTeam && (
-                  <p className="text-xs text-blue-600 mt-3 font-semibold">
-                    👆 Enter their phone number above to add them
-                  </p>
-                )}
-              </div>
-            )}
-          </Card>
-
-          {brokerProfile.ai_profile_summary && (
-            <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Award className="w-5 h-5 text-purple-600" />
-                Profile Summary
-              </h3>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {brokerProfile.ai_profile_summary}
-              </p>
-              {brokerProfile.profile_last_updated && (
-                <p className="text-xs text-slate-500 mt-3">
-                  Updated: {format(new Date(brokerProfile.profile_last_updated), 'MMMM dd, yyyy')}
-                </p>
+                    </Card>
+                  ))}
+                </div>
               )}
-            </Card>
+            </div>
+          )}
+
+          {/* NETWORK LISTINGS TAB */}
+          {activeTab === 'listings' && (
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Listings from My Network</h2>
+              
+              {networkListings.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">No Network Listings</h3>
+                  <p className="text-slate-600">
+                    Your network connections haven't listed any properties yet
+                  </p>
+                </Card>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {networkListings.map(prop => (
+                    <Card
+                      key={prop.id}
+                      className="p-5 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${prop.id}`)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <Badge className="mb-2 bg-purple-100 text-purple-800">
+                            {prop.bhk}
+                          </Badge>
+                          <h3 className="font-bold text-slate-900 line-clamp-2 mb-2">
+                            {prop.ai_title || `${prop.bhk} in ${prop.location}`}
+                          </h3>
+                          <p className="text-sm text-slate-600 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {prop.location}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <p className="text-2xl font-bold text-sky-600">
+                          ₹{prop.price}{prop.price_unit === 'crores' ? ' Cr' : 'L'}
+                        </p>
+                        <Badge variant="outline">{prop.listing_type}</Badge>
+                      </div>
+                      
+                      {prop.broker_name && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          Listed by: {prop.broker_name}
+                        </p>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* REQUIREMENTS TAB */}
+          {activeTab === 'requirements' && (
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">My Requirements & Network Matches</h2>
+              
+              {myRequirementsWithMatches.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Target className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">No Requirements Yet</h3>
+                  <p className="text-slate-600">
+                    Create requirements to get matched with properties from your network
+                  </p>                  
+                  <Button
+                    onClick={() => navigate(createPageUrl("AddRequirement"))} // Assuming an "AddRequirement" page
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white mt-4"
+                  >
+                    Add New Requirement
+                  </Button>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {myRequirementsWithMatches.map(req => (
+                    <Card key={req.id} className="p-6">
+                      <div className="mb-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {req.client_name || 'Requirement'}
+                            </h3>
+                            <div className="flex items-center gap-2 flex-wrap mt-1">
+                              <Badge className="bg-cyan-100 text-cyan-800">
+                                {req.listing_type}
+                              </Badge>
+                              {req.bhk_preference?.map((bhk, idx) => (
+                                <Badge key={idx} variant="outline">{bhk}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <Badge 
+                            className={
+                              req.urgency === 'High' ? 'bg-red-100 text-red-800' : 
+                              req.urgency === 'Medium' ? 'bg-amber-100 text-amber-800' : 
+                              'bg-green-100 text-green-800'
+                            }
+                          >
+                            {req.urgency} Urgency
+                          </Badge>
+                        </div>
+                        
+                        <div className="text-sm text-slate-600">
+                          <p>Budget: ₹{req.budget_min || '—'} - ₹{req.budget_max || '—'} {req.budget_unit}</p>
+                          {req.preferred_locations && req.preferred_locations.length > 0 && (
+                            <p>Locations: {req.preferred_locations.join(', ')}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {req.networkMatches.length > 0 ? (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Badge className="bg-green-500 text-white">
+                              {req.networkMatches.length} Network Matches Found
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {req.networkMatches.map(prop => (
+                              <div
+                                key={prop.id}
+                                className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer"
+                                onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${prop.id}`)}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm text-slate-900 truncate">
+                                    {prop.ai_title || `${prop.bhk} in ${prop.location}`}
+                                  </p>
+                                  <p className="text-xs text-slate-600">
+                                    {prop.location} • Listed by {prop.broker_name || 'Network Broker'}
+                                  </p>
+                                </div>
+                                <p className="text-sm font-bold text-green-700">
+                                  ₹{prop.price}{prop.price_unit === 'crores' ? ' Cr' : 'L'}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 bg-slate-50 rounded-lg">
+                          <p className="text-sm text-slate-600">No matches from your network yet</p>
+                        </div>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
