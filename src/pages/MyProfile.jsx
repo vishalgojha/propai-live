@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input"; // Added Input component
+import { Input } from "@/components/ui/input";
 import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Home, Award, BarChart3, Eye, MessageCircle, Target,
-  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Plus, // Added AlertCircle, X, Plus
-  RefreshCw // Added RefreshCw
+  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -29,7 +27,6 @@ export default function MyProfile() {
   const [editingAreas, setEditingAreas] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState([]);
 
-  // NEW: Team management states
   const [editingTeam, setEditingTeam] = useState(false);
   const [teamMemberPhone, setTeamMemberPhone] = useState("");
   const [addingTeamMember, setAddingTeamMember] = useState(false);
@@ -40,7 +37,6 @@ export default function MyProfile() {
     "Santacruz West", "Versova", "Malad West", "Goregaon West"
   ];
 
-  // Load current user and broker profile
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -55,22 +51,17 @@ export default function MyProfile() {
           setSelectedAreas(user.preferred_areas);
         }
 
-        // IMPROVED: Try broker_id first, then fallback to email/phone matching
         if (user.broker_id) {
           const brokers = await base44.entities.Broker.list();
           const broker = brokers.find(b => b.id === user.broker_id);
           
           if (broker) {
             setBrokerProfile(broker);
-          } else {
-            console.warn('⚠️ broker_id set but broker not found in database');
           }
         } else if (user.email) {
-          // Fallback: Try to find broker by email or phone
           const brokers = await base44.entities.Broker.list();
           
           const matchingBroker = brokers.find(b => {
-            // Normalize phone for comparison
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
             const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
@@ -83,18 +74,15 @@ export default function MyProfile() {
           
           if (matchingBroker) {
             setBrokerProfile(matchingBroker);
-            // Auto-link broker_id to user for future
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
             } catch (error) {
-              console.error('❌ Failed to auto-link broker:', error);
+              console.error('Failed to auto-link broker:', error);
             }
-          } else {
-            console.log('❌ No matching broker found');
           }
         }
       } catch (error) {
-        console.error("❌ Failed to load user:", error);
+        console.error("Failed to load user:", error);
         navigate(createPageUrl("Home"));
       } finally {
         setIsLoading(false);
@@ -127,7 +115,6 @@ export default function MyProfile() {
     }
   };
 
-  // IMPROVED: Add team member with better validation and data fetching
   const handleAddTeamMember = async () => {
     if (!teamMemberPhone.trim() || !brokerProfile) return;
     
@@ -140,11 +127,10 @@ export default function MyProfile() {
         toast.error('Invalid Phone', {
           description: 'Please enter a valid 10-digit phone number'
         });
-        setAddingTeamMember(false); // Reset state here
+        setAddingTeamMember(false);
         return;
       }
       
-      // Find broker by phone
       const brokers = await base44.entities.Broker.list();
       const teamMemberBroker = brokers.find(b => {
         const brokerPhone = normalizePhone(b.phone);
@@ -161,27 +147,25 @@ export default function MyProfile() {
           ),
           duration: 6000
         });
-        setAddingTeamMember(false); // Reset state here
+        setAddingTeamMember(false);
         return;
       }
       
       if (teamMemberBroker.id === brokerProfile.id) {
         toast.error('Cannot add yourself');
-        setAddingTeamMember(false); // Reset state here
+        setAddingTeamMember(false);
         return;
       }
       
-      // Check if already in team
       const currentTeam = brokerProfile.team_members || [];
       if (currentTeam.some(m => m.broker_id === teamMemberBroker.id)) {
         toast.error('Already in team', {
           description: `${teamMemberBroker.name} is already a team member`
         });
-        setAddingTeamMember(false); // Reset state here
+        setAddingTeamMember(false);
         return;
       }
       
-      // IMPROVED: Fetch actual listing count for this broker
       const allProps = await base44.entities.Property.list();
       const memberListings = allProps.filter(p => 
         p.broker_id === teamMemberBroker.id && 
@@ -196,8 +180,8 @@ export default function MyProfile() {
           name: teamMemberBroker.name,
           phone: teamMemberBroker.phone,
           role: teamMemberBroker.agency_name || 'Team Member',
-          co_listing_count: memberListings.length, // REAL DATA
-          agency_name: teamMemberBroker.agency_name // PRESERVE AGENCY NAME
+          co_listing_count: memberListings.length,
+          agency_name: teamMemberBroker.agency_name
         }
       ];
       
@@ -227,7 +211,6 @@ export default function MyProfile() {
     }
   };
 
-  // NEW: Remove team member
   const handleRemoveTeamMember = async (memberBrokerId) => {
     if (!brokerProfile || !window.confirm('Remove this team member?')) return;
     
@@ -241,7 +224,6 @@ export default function MyProfile() {
         team_leader_of: (brokerProfile.team_leader_of || []).filter(id => id !== memberBrokerId)
       });
       
-      // Update team member's reports_to
       await base44.entities.Broker.update(memberBrokerId, {
         reports_to: null
       });
@@ -253,13 +235,10 @@ export default function MyProfile() {
     }
   };
 
-  // Fetch broker's properties (FIXED: filter by broker_id)
   const { data: properties = [] } = useQuery({
     queryKey: ['my-properties', brokerProfile?.id],
     queryFn: async () => {
-      if (!brokerProfile) {
-        return [];
-      }
+      if (!brokerProfile) return [];
       const allProps = await base44.entities.Property.list('-created_date');
       const myProps = allProps.filter(p => p.broker_id === brokerProfile.id);
       return myProps;
@@ -271,9 +250,7 @@ export default function MyProfile() {
   const { data: requirements = [] } = useQuery({
     queryKey: ['my-requirements', brokerProfile?.id],
     queryFn: async () => {
-      if (!brokerProfile) {
-        return [];
-      }
+      if (!brokerProfile) return [];
       const allReqs = await base44.entities.Requirement.list('-created_date');
       const myReqs = allReqs.filter(r => r.broker_id === brokerProfile.id);
       return myReqs;
@@ -285,9 +262,7 @@ export default function MyProfile() {
   const { data: interactions = [] } = useQuery({
     queryKey: ['my-interactions', brokerProfile?.id, properties.length],
     queryFn: async () => {
-      if (!brokerProfile || properties.length === 0) {
-        return [];
-      }
+      if (!brokerProfile || properties.length === 0) return [];
       const allInteractions = await base44.entities.PropertyInteraction.list('-created_date');
       const myPropertyIds = properties.map(p => p.id);
       const myInteractions = allInteractions.filter(i => myPropertyIds.includes(i.property_id));
@@ -297,7 +272,6 @@ export default function MyProfile() {
     initialData: []
   });
 
-  // For admins - system-wide stats
   const { data: allProperties = [] } = useQuery({
     queryKey: ['admin-all-properties'],
     queryFn: () => base44.entities.Property.list(),
@@ -312,14 +286,12 @@ export default function MyProfile() {
     initialData: []
   });
 
-  // IMPROVED: Calculate LIVE listing counts for team members
   const enrichedTeamMembers = useMemo(() => {
-    if (!brokerProfile?.team_members) {
-      return [];
+    if (!brokerProfile?.team_members || properties.length === 0) {
+      return brokerProfile?.team_members || [];
     }
 
     return brokerProfile.team_members.map(member => {
-      // Count LIVE active listings for this broker
       const memberActiveListings = properties.filter(p => 
         p.broker_id === member.broker_id && 
         p.status === 'Active' && 
@@ -328,29 +300,24 @@ export default function MyProfile() {
 
       return {
         ...member,
-        co_listing_count: memberActiveListings, // DYNAMIC COUNT
-        hasData: memberActiveListings > 0 // FLAG to show if they have listings
+        co_listing_count: memberActiveListings,
+        hasData: memberActiveListings > 0
       };
     });
   }, [brokerProfile, properties]);
 
-  // Calculate broker metrics
   const brokerMetrics = useMemo(() => {
-    if (!brokerProfile) {
-      return null;
-    }
+    if (!brokerProfile) return null;
 
     const myProps = properties.filter(p => p.broker_id === brokerProfile.id);
     const activeProps = myProps.filter(p => p.status === 'Active' && !p.is_duplicate);
     const myReqs = requirements.filter(r => r.broker_id === brokerProfile.id);
     const activeReqs = myReqs.filter(r => r.status === 'Active');
 
-    // Calculate total AI matches generated
     const totalAIMatches = myReqs.reduce((sum, req) => {
       return sum + (req.ai_matched_properties?.length || 0);
     }, 0);
 
-    // Get interactions for broker's properties
     const myInteractions = interactions.filter(i =>
       myProps.some(p => p.id === i.property_id)
     );
@@ -359,7 +326,6 @@ export default function MyProfile() {
       ['inquiry', 'whatsapp', 'call'].includes(i.interaction_type)
     ).length;
 
-    // Top 3 most viewed properties
     const propertyViewCounts = myProps.map(prop => {
       const propViews = myInteractions.filter(i =>
         i.property_id === prop.id && i.interaction_type === 'view'
@@ -371,7 +337,7 @@ export default function MyProfile() {
       .sort((a, b) => b.viewCount - a.viewCount)
       .slice(0, 3);
 
-    const metrics = {
+    return {
       totalListings: myProps.length,
       activeListings: activeProps.length,
       totalRequirements: myReqs.length,
@@ -382,11 +348,8 @@ export default function MyProfile() {
       totalAIMatches,
       top3Properties: top3Props
     };
-    
-    return metrics;
   }, [brokerProfile, properties, requirements, interactions]);
 
-  // Admin metrics
   const adminMetrics = useMemo(() => {
     if (currentUser?.role !== 'admin') return null;
 
@@ -422,7 +385,6 @@ export default function MyProfile() {
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -435,7 +397,6 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Admin Stats */}
           {adminMetrics && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="p-5 bg-white border-2 border-slate-200">
@@ -476,7 +437,6 @@ export default function MyProfile() {
             </div>
           )}
 
-          {/* Quick Actions */}
           <Card className="p-6 bg-white border-2 border-slate-200">
             <h3 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -515,8 +475,7 @@ export default function MyProfile() {
             </div>
           </Card>
 
-          {/* Area Preferences Section for Admin */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mt-6 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-purple-600" />
@@ -535,7 +494,7 @@ export default function MyProfile() {
             {editingAreas ? (
               <div>
                 <p className="text-sm text-slate-600 mb-3">
-                  Select areas you want to focus on in SmartFeed:
+                  Select areas you want to focus on:
                 </p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {popularAreas.map((area) => {
@@ -577,14 +536,13 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
-                    No preferred areas set. Click "Edit Areas" to set your focus areas.
+                    No preferred areas set. Click "Edit Areas" to customize your feed.
                   </p>
                 )}
               </div>
             )}
           </div>
 
-          {/* User Info */}
           <Card className="p-6 bg-white border-2 border-slate-200 mt-6">
             <h3 className="text-lg font-bold text-slate-900 mb-4">Account Information</h3>
             <div className="space-y-3">
@@ -617,7 +575,7 @@ export default function MyProfile() {
     );
   }
 
-  // BROKER VIEW - IMPROVED with dynamic team data
+  // BROKER VIEW
   if (brokerProfile && brokerMetrics) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -799,7 +757,6 @@ export default function MyProfile() {
             )}
           </div>
 
-          {/* CONTACT INFORMATION - NOW SHOWS AGENCY NAME */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <Card className="p-6 bg-white border-2 border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Contact Information</h3>
@@ -854,7 +811,6 @@ export default function MyProfile() {
             )}
           </div>
 
-          {/* IMPROVED TEAM SECTION - Dynamic listing counts */}
           <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -898,14 +854,11 @@ export default function MyProfile() {
                   >
                     {addingTeamMember ? (
                       <>
-                        <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                         Adding...
                       </>
                     ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add
-                      </>
+                      'Add'
                     )}
                   </Button>
                 </div>
@@ -918,7 +871,7 @@ export default function MyProfile() {
                   <div key={member.broker_id || idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0 pr-3">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <p className="font-semibold text-slate-900">{member.name}</p>
                           {!member.hasData && (
                             <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
