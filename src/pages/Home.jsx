@@ -13,7 +13,6 @@ import {
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
-import ChatbotWidget from "../components/ChatbotWidget";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -33,48 +32,6 @@ export default function Home() {
     },
     "priceRange": "$$"
   };
-
-  // WhatsApp AI Assistant URL
-  const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
-  
-  // Admin WhatsApp URL with detailed property submission format - UPDATED BRANDING
-  const adminWhatsAppMessage = `Hi PropAI Team! 👋
-
-I'd like to list a property on PropAI Live. Here are the details:
-
-📍 *Location:* [Building Name, Area]
-🏠 *Property Type:* [2 BHK / 3 BHK / Office / etc.]
-💰 *Price:* [Amount in Lakhs/Cr]
-📐 *Carpet Area:* [sq.ft]
-🪑 *Furnishing:* [Fully / Semi / Unfurnished]
-🚗 *Parking:* [Available / Not Available]
-🔑 *Possession:* [Immediate / Date]
-
-📸 *Photos:* [Will share separately]
-
-💬 Additional Details:
-[Floor, amenities, special features, etc.]
-
-Looking forward to listing with PropAI Live!`;
-
-  const adminWhatsAppUrl = `https://wa.me/9102269622278?text=${encodeURIComponent(adminWhatsAppMessage)}`;
-
-  // WhatsApp Auto-Match Number - Virtual Number with AI
-  const whatsappAutoMatchMessage = `Hi PropAI! 👋
-
-I'm looking for a property in Mumbai.
-
-📍 *Location:* [e.g., Bandra West, Juhu]
-🏠 *Type:* [e.g., 2 BHK, 3 BHK, Office]
-💰 *Budget:* [e.g., ₹2-3L rent, ₹5 Cr sale]
-🪑 *Furnishing:* [e.g., Fully Furnished]
-
-📸 Any other details:
-[Parking, amenities, timeline, etc.]
-
-Thanks! 🙏`;
-
-  const whatsappAutoMatchUrl = `https://wa.me/9102269622278?text=${encodeURIComponent(whatsappAutoMatchMessage)}`;
 
   // Mock data fetching for featured properties
   useEffect(() => {
@@ -138,6 +95,12 @@ Thanks! 🙏`;
     { number: "24/7", label: "AI Monitoring" },
   ];
 
+  // Function to open the chat widget (it's in Layout)
+  const handleOpenChat = () => {
+    // Trigger the chat widget to open by dispatching a custom event
+    window.dispatchEvent(new CustomEvent('openChatWidget'));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
@@ -146,9 +109,6 @@ Thanks! 🙏`;
         canonical="https://propai.live/"
         schema={homeSchema}
       />
-
-      {/* Chatbot Widget - Show for ALL users */}
-      <ChatbotWidget />
 
       {/* Hero Section - Light & Clean */}
       <section className="relative bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50 overflow-hidden">
@@ -197,15 +157,7 @@ Thanks! 🙏`;
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
-                onClick={() => window.open(whatsappAutoMatchUrl, '_blank')}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
-              >
-                <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Get AI Matches via WhatsApp
-              </Button>
-              <Button
-                onClick={() => window.open(whatsappAIUrl, '_blank')}
+                onClick={handleOpenChat}
                 size="lg"
                 className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
               >
@@ -586,21 +538,21 @@ Thanks! 🙏`;
             Ready to See the Difference?
           </h2>
           <p className="text-xl text-slate-600 mb-8">
-            Get AI-powered property matches via WhatsApp or explore our smart feed
+            Chat with our AI assistant or explore our smart feed
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => window.open(whatsappAutoMatchUrl, '_blank')}
+              onClick={handleOpenChat}
               size="lg"
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl shadow-lg"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg"
             >
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Get AI Matches via WhatsApp
+              <Bot className="w-5 h-5 mr-2" />
+              Chat with AI Assistant
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl"
             >
               <Search className="w-5 h-5 mr-2" />
               Explore Properties
