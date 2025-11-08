@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
   Users, Building2, MapPin, Star, Package, TrendingUp, Eye,
   MessageCircle, UserPlus, UserCheck, Search, Network,
-  Phone, Mail, Sparkles, Award, DollarSign, ShieldCheck
+  Phone, Mail, Sparkles, Award, DollarSign, ShieldCheck, Target // Added Target icon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -55,6 +56,13 @@ export default function BrokerNetwork() {
   const { data: properties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list(),
+    initialData: [],
+  });
+
+  // ✅ ADD: Fetch requirements
+  const { data: requirements = [] } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.list(),
     initialData: [],
   });
 
@@ -120,6 +128,12 @@ export default function BrokerNetwork() {
       let score = 0;
       const insights = [];
       const isConnected = currentUser?.connected_brokers?.includes(broker.id) || false;
+
+      // ✅ CALCULATE COUNTS
+      const brokerProperties = properties.filter(p => p.broker_id === broker.id);
+      const activeProperties = brokerProperties.filter(p => p.status === 'Active' && !p.is_duplicate);
+      const brokerRequirements = requirements.filter(r => r.broker_id === broker.id);
+      const activeRequirements = brokerRequirements.filter(r => r.status === 'Active');
 
       // Team relationship check (40 points)
       const isTeamMember = currentUserBroker.team_members?.some(m => m.broker_id === broker.id);
@@ -246,10 +260,13 @@ export default function BrokerNetwork() {
         connectionInsights: insights,
         isConnected,
         sharedAreas,
-        sharedBuildings: sharedBuildings.length
+        sharedBuildings: sharedBuildings.length,
+        // ✅ ADD CALCULATED COUNTS
+        active_listings_count: activeProperties.length,
+        active_requirements_count: activeRequirements.length,
       };
     }).filter(Boolean); // Remove null (self)
-  }, [brokers, properties, currentUser, currentUserBroker]);
+  }, [brokers, properties, requirements, currentUser, currentUserBroker]); // Added requirements to dependencies
 
   // Filter and sort network
   const filteredNetwork = useMemo(() => {
@@ -448,6 +465,27 @@ export default function BrokerNetwork() {
                       </div>
                     </div>
                   )}
+
+                  {/* ✅ SHOW LISTINGS + REQUIREMENTS */}
+                  <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-slate-600">
+                        <Package className="w-3 h-3 text-sky-600" />
+                        Active Listings
+                      </span>
+                      <span className="font-bold text-sky-600">{broker.active_listings_count || 0}</span>
+                    </div>
+                    
+                    {broker.active_requirements_count > 0 && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1 text-slate-600">
+                          <Target className="w-3 h-3 text-purple-600" />
+                          Requirements
+                        </span>
+                        <span className="font-bold text-purple-600">{broker.active_requirements_count}</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Contact Info - Show if connected */}
                   {broker.isConnected ? (

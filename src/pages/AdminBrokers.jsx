@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -66,6 +66,24 @@ export default function AdminBrokers() {
     queryFn: () => base44.entities.Requirement.list(),
     initialData: [],
   });
+
+  // CALCULATE REAL-TIME BROKER COUNTS (matches Admin.js pattern)
+  const brokersWithCounts = useMemo(() => {
+    return brokers.map(broker => {
+      const brokerProperties = properties.filter(p => p.broker_id === broker.id);
+      const activeProperties = brokerProperties.filter(p => p.status === 'Active' && !p.is_duplicate);
+      const brokerRequirements = requirements.filter(r => r.broker_id === broker.id);
+      const activeRequirements = brokerRequirements.filter(r => r.status === 'Active');
+      
+      return {
+        ...broker,
+        total_listings_count: brokerProperties.length,
+        active_listings_count: activeProperties.length,
+        total_requirements_count: brokerRequirements.length,
+        active_requirements_count: activeRequirements.length,
+      };
+    });
+  }, [brokers, properties, requirements]);
 
   // Build single broker profile
   const buildBrokerProfile = async (brokerId) => {
@@ -259,8 +277,8 @@ export default function AdminBrokers() {
     window.open(`https://wa.me/${broker.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // Filtered brokers
-  const filteredBrokers = brokers.filter(broker => {
+  // Filtered brokers - USE brokersWithCounts instead of brokers
+  const filteredBrokers = brokersWithCounts.filter(broker => {
     const matchesSearch = !searchQuery ||
       broker.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       broker.phone?.includes(searchQuery) ||
@@ -352,9 +370,9 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
 
   // NEW: Smart CTA logic - determine which CTAs to show based on broker activity
   const getSmartCTAs = (broker) => {
-    const brokerProperties = properties.filter(p => p.broker_id === broker.id);
-    const activeProperties = brokerProperties.filter(p => p.status === 'Active');
-    const mostRecentProperty = brokerProperties.length > 0 ? brokerProperties[0] : null;
+    // We still need to filter properties here if we need the actual objects (e.g., for mostRecentProperty)
+    const brokerPropertiesForObjectAccess = properties.filter(p => p.broker_id === broker.id);
+    const mostRecentProperty = brokerPropertiesForObjectAccess.length > 0 ? brokerPropertiesForObjectAccess[0] : null;
     
     const daysSinceLastActivity = broker.last_activity 
       ? Math.floor((Date.now() - new Date(broker.last_activity).getTime()) / (1000 * 60 * 60 * 24))
@@ -367,7 +385,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     const ctas = [];
 
     // 1. WELCOME: Only if NEW broker (1-3 total listings) AND last activity within 7 days
-    if (brokerProperties.length >= 1 && brokerProperties.length <= 3 && daysSinceLastActivity <= 7 && mostRecentProperty) {
+    if (broker.total_listings_count >= 1 && broker.total_listings_count <= 3 && daysSinceLastActivity <= 7 && mostRecentProperty) {
       ctas.push({
         id: 'welcome',
         label: '👋 Welcome',
@@ -377,7 +395,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     }
 
     // 2. STATS: Only if broker has activity in last 30 days
-    if (daysSinceLastActivity <= 30 && brokerProperties.length > 0) {
+    if (daysSinceLastActivity <= 30 && broker.total_listings_count > 0) {
       ctas.push({
         id: 'stats',
         label: '📊 Stats',
@@ -387,7 +405,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     }
 
     // 3. RECOGNITION: Only if trust_score >= 70 AND has active listings
-    if ((broker.trust_score || 0) >= 70 && activeProperties.length > 0) {
+    if ((broker.trust_score || 0) >= 70 && broker.active_listings_count > 0) {
       ctas.push({
         id: 'recognition',
         label: '⭐ Recognition',
@@ -397,7 +415,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     }
 
     // 4. MATCH ALERT: Only if broker has active listings AND there are requirements in system
-    if (activeProperties.length > 0 && requirements.length > 0) { // requirements.length checks global system requirements
+    if (broker.active_listings_count > 0 && requirements.length > 0) { // requirements.length checks global system requirements
       ctas.push({
         id: 'match',
         label: '🎯 Match Alert',
@@ -407,7 +425,7 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
     }
 
     // Fallback: If no other CTAs qualify, show generic stats (if broker has any listings)
-    if (ctas.length === 0 && brokerProperties.length > 0) {
+    if (ctas.length === 0 && broker.total_listings_count > 0) {
       ctas.push({
         id: 'stats',
         label: '📊 Stats',
@@ -421,18 +439,20 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
 
   // UPDATED: Generate seeding intro message
   const generateSeedingIntro = (broker) => {
-    const brokerProps = properties.filter(p => p.broker_id === broker.id);
-    const brokerLocations = Array.from(new Set(brokerProps.map(p => p.location).filter(Boolean)));
-    const activeReqs = requirements.filter(r => r.status === 'Active');
+    const brokerProperties = properties.filter(p => p.broker_id === broker.id); // Still needed for brokerLocations
+    const brokerLocations = Array.from(new Set(brokerProperties.map(p => p.location).filter(Boolean)));
+    
+    // Using broker's pre-calculated active requirements count
+    const brokerActiveRequirementsCount = broker.active_requirements_count;
     
     return `Hey 👋 this is PropAI Live — Mumbai's AI Assistant for Real Estate.
 
 We've already organized your listings from our internal database to get you started faster 🚀
 
 Here's what PropAI parsed from your records:
-🏠 ${brokerProps.length} properties structured
+🏠 ${broker.total_listings_count} properties structured
 📍 ${brokerLocations.length} locations mapped
-🤝 ${activeReqs.length} active requirements matched
+🤝 ${brokerActiveRequirementsCount} active requirements matched
 
 Now you can send updates or new data directly on WhatsApp:
 📲 Official Number: wa.me/9102269622278
@@ -462,7 +482,8 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
   const BrokerProfileModal = () => {
     if (!selectedBroker) return null;
 
-    const brokerProps = properties.filter(p => p.broker_id === selectedBroker.id);
+    // selectedBroker now comes from filteredBrokers (which is brokersWithCounts), so it has counts
+    // const brokerProps = properties.filter(p => p.broker_id === selectedBroker.id); // No longer needed for counts
 
     return (
       <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
@@ -511,11 +532,11 @@ No spam. No groups. Only verified real-estate intelligence ✅`;
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Total Listings</span>
-                    <span className="font-bold">{brokerProps.length}</span>
+                    <span className="font-bold">{selectedBroker.total_listings_count || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Active Listings</span>
-                    <span className="font-bold text-green-600">{brokerProps.filter(p => p.status === 'Active').length}</span>
+                    <span className="font-bold text-green-600">{selectedBroker.active_listings_count || 0}</span>
                   </div>
                 </div>
               </div>
@@ -885,7 +906,7 @@ Team PropAI
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredBrokers.map((broker) => {
-              const brokerProperties = properties.filter(p => p.broker_id === broker.id);
+              // const brokerProperties = properties.filter(p => p.broker_id === broker.id); // No longer needed for counts directly
               const hasProfile = broker.ai_profile_summary;
               const hasTeam = broker.team_members && broker.team_members.length > 0;
               const smartCTAs = getSmartCTAs(broker);
@@ -947,10 +968,23 @@ Team PropAI
                           <span className="truncate">{broker.agency_name}</span>
                         </span>
                       )}
-                      <span className="flex items-center gap-1">
-                        <Package className="w-3 h-3 flex-shrink-0" />
-                        {brokerProperties.length} listings
-                      </span>
+                      
+                      {/* SHOW BOTH LISTINGS AND REQUIREMENTS */}
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          <Package className="w-3 h-3 flex-shrink-0 text-sky-600" />
+                          <strong className="text-sky-600">{broker.active_listings_count || 0}</strong> listings
+                        </span>
+                        {broker.active_requirements_count > 0 && (
+                          <>
+                            <span className="text-slate-400">•</span>
+                            <span className="flex items-center gap-1">
+                              <Target className="w-3 h-3 flex-shrink-0 text-purple-600" />
+                              <strong className="text-purple-600">{broker.active_requirements_count}</strong> reqs
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* Specializations Preview - COMPACT */}
@@ -982,7 +1016,10 @@ Team PropAI
                         WhatsApp
                       </Button>
                       <Button
-                        onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                        onClick={() => {
+                          setSelectedBroker(broker); // Ensure selectedBroker is set for the modal
+                          setProfileModalOpen(true);
+                        }}
                         size="lg"
                         variant="outline"
                         className="w-full text-sm h-11 font-semibold"
