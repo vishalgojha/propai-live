@@ -148,20 +148,20 @@ Looking forward to listing with PropAI Live!`;
               Powered by Building-Level Intelligence
             </Badge>
 
-            {/* Headline */}
+            {/* NEW Headline - Screenshot Version */}
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
-              Mumbai Real Estate,
+              WhatsApp → Organized Properties.
               <br />
               <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Decoded by AI
+                Instantly.
               </span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
-              Every building has a story. Every street has a pulse. We don't just list properties—
+              Stop losing deals in WhatsApp chaos. AI turns messy broker chats
               <br className="hidden md:block" />
-              <span className="text-slate-700 font-medium">we understand them at a contextual level.</span>
+              <span className="text-slate-700 font-medium">into structured listings in seconds.</span>
             </p>
 
             {/* CTA Buttons */}

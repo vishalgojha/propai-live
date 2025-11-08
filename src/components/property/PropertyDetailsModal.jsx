@@ -92,11 +92,11 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
 
   const getAgentPhone = () => {
     // Use broker contact if available, otherwise PropAI Office
-    return property.broker_contact || "919102269622278";
+    return property.broker_contact || "9102269622278";
   };
 
   const getAgentName = () => {
-    if (property.broker_contact && property.broker_contact !== "919102269622278") {
+    if (property.broker_contact && property.broker_contact !== "9102269622278") {
       return "Broker";
     }
     return "PropAI Team";

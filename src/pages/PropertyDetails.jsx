@@ -72,12 +72,12 @@ export default function PropertyDetails() {
 
   const getAgentPhone = () => {
     // Use broker contact if available, otherwise fallback to PropAI Office
-    return property?.broker_contact || "919102269622278";
+    return property?.broker_contact || "9102269622278";
   };
 
   const getAgentName = () => {
     // Extract name from broker info or use PropAI as fallback
-    if (property?.broker_contact && property?.broker_contact !== "919102269622278") {
+    if (property?.broker_contact && property?.broker_contact !== "9102269622278") {
       return "Broker";
     }
     return "PropAI Team";
@@ -272,9 +272,9 @@ export default function PropertyDetails() {
 
   if (!propertySlug) {
     return (
-      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-[#111111] mb-4">Property not found</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Property not found</h2>
           <Button onClick={() => navigate(createPageUrl("SmartFeed"))}>
             Back to Properties
           </Button>
@@ -285,7 +285,7 @@ export default function PropertyDetails() {
 
   if (isLoading || !property) {
     return (
-      <div className="min-h-screen bg-[#F7F7F7]">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-96 w-full mb-8 rounded-3xl" />
           <Skeleton className="h-12 w-3/4 mb-4" />
@@ -502,7 +502,7 @@ export default function PropertyDetails() {
 
             {/* CTA Section - Responsive */}
             <div className="space-y-3 md:space-y-4">
-              {property.broker_contact && property.broker_contact !== "919102269622278" ? (
+              {property.broker_contact && property.broker_contact !== "9102269622278" ? (
                 <Button
                   onClick={handleWhatsApp}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
@@ -560,7 +560,7 @@ export default function PropertyDetails() {
                       } catch (e) {}
                       
                       const message = `Hi PropAI Team, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
-                      window.open(`https://wa.me/919102269622278?text=${encodeURIComponent(message)}`, '_blank');
+                      window.open(`https://wa.me/9102269622278?text=${encodeURIComponent(message)}`, '_blank');
                     }}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
                     size="lg"
@@ -571,7 +571,7 @@ export default function PropertyDetails() {
                 </div>
               )}
 
-              {property.broker_contact && property.broker_contact !== "919102269622278" ? (
+              {property.broker_contact && property.broker_contact !== "9102269622278" ? (
                 <Button
                   onClick={() => window.open(`tel:${property.broker_contact}`, '_self')}
                   variant="outline"
@@ -591,7 +591,7 @@ export default function PropertyDetails() {
                     Vishal
                   </Button>
                   <Button
-                    onClick={() => window.open(`tel:+919102269622278`, '_self')}
+                    onClick={() => window.open(`tel:02269622278`, '_self')}
                     variant="outline"
                     className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                   >
