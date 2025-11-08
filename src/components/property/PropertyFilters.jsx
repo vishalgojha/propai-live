@@ -2,6 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, X, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -140,7 +147,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
     (filters.location_multi && filters.location_multi.length > 0) ||
     filters.minPrice ||
     filters.maxPrice ||
-    filters.furnishing ||
+    (filters.furnishing && filters.furnishing !== "all") ||
     (filters.listingType && filters.listingType !== "all") ||
     filters.search ||
     (filters.propertyCategory && filters.propertyCategory !== "all");
@@ -318,6 +325,46 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
         </div>
       </div>
 
+      {/* Furnishing & Category - Compact Row */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div>
+          <label className="text-sm font-semibold text-slate-900 mb-2 block">Furnishing</label>
+          <Select 
+            value={filters.furnishing || "all"} 
+            onValueChange={(val) => onFilterChange({ ...filters, furnishing: val })}
+          >
+            <SelectTrigger className="border-purple-200 focus:ring-purple-500 rounded-xl">
+              <SelectValue placeholder="Any" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any</SelectItem>
+              <SelectItem value="Fully Furnished">Fully Furnished</SelectItem>
+              <SelectItem value="Semi-Furnished">Semi-Furnished</SelectItem>
+              <SelectItem value="Unfurnished">Unfurnished</SelectItem>
+              <SelectItem value="Bare Shell">Bare Shell</SelectItem>
+              <SelectItem value="Warm Shell">Warm Shell</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-slate-900 mb-2 block">Category</label>
+          <Select 
+            value={filters.propertyCategory || "all"} 
+            onValueChange={(val) => onFilterChange({ ...filters, propertyCategory: val })}
+          >
+            <SelectTrigger className="border-purple-200 focus:ring-purple-500 rounded-xl">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="Residential">Residential</SelectItem>
+              <SelectItem value="Commercial">Commercial</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Budget Range - Compact */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div>
@@ -373,22 +420,22 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                 ₹{filters.minPrice || "0"}{getPriceUnit()} - ₹{filters.maxPrice || "∞"}{getPriceUnit()}
               </Badge>
             )}
-            {filters.furnishing && (
+            {filters.furnishing && filters.furnishing !== "all" && (
               <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 {filters.furnishing}
-                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: undefined })} />
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: "all" })} />
+              </Badge>
+            )}
+            {filters.propertyCategory && filters.propertyCategory !== "all" && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
+                {filters.propertyCategory}
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
               </Badge>
             )}
             {filters.search && (
               <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
                 Search: "{filters.search}"
-                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, search: undefined })} />
-              </Badge>
-            )}
-            {filters.propertyCategory && filters.propertyCategory !== "all" && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
-                Category: {filters.propertyCategory}
-                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
+                <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => onFilterChange({ ...filters, search: "" })} />
               </Badge>
             )}
           </div>
