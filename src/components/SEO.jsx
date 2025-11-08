@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 
+// Default OG image - using Unsplash placeholder for Mumbai skyline
+const DEFAULT_OG_IMAGE = 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1200&h=630&fit=crop';
+
 export default function SEO({ 
-  title, 
-  description, 
+  title = 'PropAI Live | AI-Powered Mumbai Real Estate Intelligence', 
+  description = 'Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring. Find verified properties with transparent pricing.',
   ogImage, 
   schema,
   canonical 
@@ -24,6 +27,9 @@ export default function SEO({
       document.head.appendChild(meta);
     }
 
+    // Use provided image or default
+    const imageUrl = ogImage || DEFAULT_OG_IMAGE;
+
     // Set OG tags
     const setOGTag = (property, content) => {
       if (!content) return;
@@ -40,9 +46,13 @@ export default function SEO({
 
     setOGTag('og:title', title);
     setOGTag('og:description', description);
-    setOGTag('og:image', ogImage || 'https://propai.live/og-default.jpg');
+    setOGTag('og:image', imageUrl);
+    setOGTag('og:image:width', '1200');
+    setOGTag('og:image:height', '630');
+    setOGTag('og:image:alt', title);
     setOGTag('og:type', 'website');
-    setOGTag('og:url', window.location.href);
+    setOGTag('og:url', canonical || window.location.href);
+    setOGTag('og:site_name', 'PropAI Live');
 
     // Set Twitter Card tags
     const setTwitterTag = (name, content) => {
@@ -59,21 +69,22 @@ export default function SEO({
     };
 
     setTwitterTag('twitter:card', 'summary_large_image');
+    setTwitterTag('twitter:site', '@propailive');
     setTwitterTag('twitter:title', title);
     setTwitterTag('twitter:description', description);
-    setTwitterTag('twitter:image', ogImage || 'https://propai.live/og-default.jpg');
+    setTwitterTag('twitter:image', imageUrl);
+    setTwitterTag('twitter:image:alt', title);
 
     // Set canonical URL
-    if (canonical) {
-      let link = document.querySelector('link[rel="canonical"]');
-      if (link) {
-        link.setAttribute('href', canonical);
-      } else {
-        link = document.createElement('link');
-        link.setAttribute('rel', 'canonical');
-        link.setAttribute('href', canonical);
-        document.head.appendChild(link);
-      }
+    const canonicalUrl = canonical || window.location.href.split('?')[0]; // Remove query params
+    let link = document.querySelector('link[rel="canonical"]');
+    if (link) {
+      link.setAttribute('href', canonicalUrl);
+    } else {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      link.setAttribute('href', canonicalUrl);
+      document.head.appendChild(link);
     }
 
     // Add Schema.org JSON-LD

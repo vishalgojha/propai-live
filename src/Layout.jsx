@@ -47,8 +47,8 @@ export default function Layout({ children, currentPageName }) {
     setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
     setMetaTag('geo.region', 'IN-MH');
     setMetaTag('geo.placename', 'Mumbai');
-    setMetaTag('geo.position', '19.0760;72.8777'); // Mumbai coordinates
-    setMetaTag('ICBM', '19.0760, 72.8777');
+    setMetaTag('geo.position', '19.0760;72.8877'); // Updated to 72.8877
+    setMetaTag('ICBM', '19.0760, 72.8877'); // Updated to 72.8877
     
     // Open Graph defaults
     const setOGTag = (property, content) => {
