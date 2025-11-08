@@ -2,14 +2,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * ULTRA-FAST PROPERTY PARSER
+ * ULTRA-FAST PROPERTY PARSER WITH DEDUPLICATION
  * Target: 1-2 seconds per property
  * 
- * Optimizations:
- * 1. Single LLM call (extraction + content generation)
- * 2. Inline ID generation (no network overhead)
- * 3. Background enrichment (non-blocking)
- * 4. Batch processing ready
+ * NEW: Checks for duplicates BEFORE creating property
+ * Skips creation if duplicate found
+ * 
+ * BROKER LOGIC:
+ * - ALWAYS extracts broker from message content (name + phone)
+ * - Creates broker record UNLESS phone matches admin numbers (Vishal/Office)
+ * - Kapil (+919773757759) is treated as regular broker, NOT admin
  */
 
 // Location codes for custom IDs
@@ -25,6 +27,9 @@ const LOCATION_CODES = {
   'goregaon': 'GOR', 'malad': 'MLD', 'borivali': 'BOR',
   'kandivali': 'KND', 'chembur': 'CHM', 'mumbai': 'MUM'
 };
+
+// Admin numbers that should NOT get broker records
+const ADMIN_NUMBERS = ['919819471310', '9102269622278'];
 
 Deno.serve(async (req) => {
   try {
@@ -47,7 +52,7 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // STEP 1: SINGLE LLM CALL - Extract + Generate Content (~2-3 sec)
+    // STEP 1: SINGLE LLM CALL - Extract + Generate Content
     let extractedData;
     try {
       const extractionPrompt = `Extract property listing AND generate marketing content from this broker message.
@@ -66,7 +71,7 @@ Return this EXACT JSON structure with ALL fields:
   "carpet_area": number or null,
   "built_up_area": number or null,
   "floor": "string or null",
-  "furnishing": "Unfurnished|Semi-Furnished|Fully Furnished|Bare Shell|Warm Shell or null",
+  "furnishing": "Unfurnished|Semi-Furnished|Fully Furnished|Bare Shell|Warm Shell|Not Applicable or null",
   "parking": "string or null",
   "possession": "string or null",
   "location": "string (e.g., 'Bandra West', 'BKC')",
@@ -75,17 +80,61 @@ Return this EXACT JSON structure with ALL fields:
   "listing_type": "Sale|Rent|Lease",
   "amenities": ["array of strings"] or null,
   "description": "string or null (original broker description)",
-  "broker_name": "string (broker's name)",
+  "broker_name": "string (broker's name from message)",
   "broker_phone": "string (phone with country code, e.g., '919820094416')",
   "broker_agency": "string or null",
-  "ai_title": "string (12-18 word natural title, e.g., 'Spacious 2 BHK with Sea View in Prime Bandra Location')",
-  "ai_description": "string (40-60 word compelling paragraph, highlight key features, natural tone)"
+  "ai_title": "string (10-15 word descriptive title)",
+  "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words minimum - MUST be full paragraph)"
 }
 
-IMPORTANT:
-- ai_title: Natural, engaging title (NOT "2 BHK for Sale")
-- ai_description: Full paragraph, conversational, highlight USPs
-- Return ONLY valid JSON, no markdown`;
+**CRITICAL for ai_title:**
+- Create 10-15 word descriptive title that's natural and informative
+- Format: "{Furnishing} {BHK} in {Building Name/Pocket}, {Location}"
+- Examples:
+  * "Fully Furnished 2 BHK in Oberoi Sky Heights, Bandra West"
+  * "Spacious 3 BHK Apartment in Juhu with Sea View"
+  * "Premium Office Space in BKC with Parking"
+- ALWAYS include building name if available
+- Use proper capitalization and grammar
+- NO abbreviations (write "2 BHK" not "2bhk")
+- Make it search-friendly and matchable
+- NO special characters or punctuation except commas
+
+**CRITICAL for ai_description - READ CAREFULLY:**
+- MUST write EXACTLY 4-5 complete sentences
+- MINIMUM 60 words, TARGET 70-80 words
+- Full paragraph format - NO bullet points, NO line breaks
+- Plain, factual tone - state what exists, don't sell it
+- Structure: 
+  * Sentence 1: Location + size + configuration
+  * Sentence 2: Furnishing + floor + view (if available)
+  * Sentence 3: Parking + possession details
+  * Sentence 4: Key amenities
+  * Sentence 5: Additional selling points (if available)
+- NO fancy marketing words like: premium, luxury, stunning, exquisite, world-class, magnificent
+- Use simple direct language
+- NEVER truncate or use "..." - write COMPLETE sentences
+
+**GOOD EXAMPLE (80 words, 4 sentences):**
+"Fully furnished 2 BHK apartment in Oberoi Sky Heights, Bandra West with 1000 sq ft carpet area. Located on the 18th floor offering clear city views with modern interiors and quality fittings. Two covered parking spots included with immediate possession available. Building amenities include gymnasium, swimming pool, landscaped gardens, children's play area, and 24/7 security with CCTV surveillance."
+
+**BAD EXAMPLE (too short, incomplete):**
+"2 BHK in Oberoi Sky Heights. Fully furnished with parking. Good amenities available."
+
+**CRITICAL RULES:**
+- NEVER write less than 60 words
+- ALWAYS write 4-5 complete sentences
+- NO abbreviations (write "square feet" not "sq ft" in description)
+- NO bullet points or dashes
+- Write ONE continuous paragraph
+- Even if original message is short, CREATE A FULL DESCRIPTION from the available data
+
+**CRITICAL for broker extraction:**
+- ALWAYS extract broker name and phone from message content
+- Look for patterns like "Ramesh 9820056789", "Contact Priya 98200xxxxx", "Kapil 9773757759"
+- Phone must have country code (91...)
+
+Return ONLY valid JSON, no markdown`;
 
       extractedData = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: extractionPrompt,
@@ -137,73 +186,143 @@ IMPORTANT:
       }, { status: 400 });
     }
 
-    // STEP 3: HANDLE BROKER WITH FUZZY MATCHING (~200ms)
+    // STEP 2.5: CHECK FOR DUPLICATES BEFORE CREATING
+    console.log('🔍 Checking for duplicates...');
+    const allProperties = await base44.asServiceRole.entities.Property.filter({
+      status: 'Active'
+    });
+
+    // Check if this property already exists
+    const isDuplicate = allProperties.find(existing => {
+      // Same building match
+      const sameBuilding = extractedData.building_name && existing.building_name &&
+        extractedData.building_name.toLowerCase().trim() === existing.building_name.toLowerCase().trim();
+      
+      // Same location
+      const sameLocation = existing.location === extractedData.location;
+      
+      // Same BHK
+      const sameBhk = existing.bhk === extractedData.bhk;
+      
+      // Similar price (±10%)
+      const existingPriceInLakhs = existing.price_unit === 'crores' ? existing.price * 100 : existing.price;
+      const newPriceInLakhs = extractedData.price_unit === 'crores' ? extractedData.price * 100 : extractedData.price;
+      const priceDiff = Math.abs(existingPriceInLakhs - newPriceInLakhs) / existingPriceInLakhs;
+      const similarPrice = priceDiff <= 0.10;
+      
+      // Same floor (if both have floor info)
+      const sameFloor = (!extractedData.floor || !existing.floor) || existing.floor === extractedData.floor;
+      
+      // Similar area (if both have area info) - ±5%
+      let similarArea = true;
+      if (extractedData.carpet_area && existing.carpet_area) {
+        const areaDiff = Math.abs(extractedData.carpet_area - existing.carpet_area) / existing.carpet_area;
+        similarArea = areaDiff <= 0.05;
+      }
+      
+      return sameBuilding && sameLocation && sameBhk && similarPrice && sameFloor && similarArea;
+    });
+
+    if (isDuplicate) {
+      console.log(`⚠️ Duplicate found: ${isDuplicate.custom_id}`);
+      return Response.json({
+        success: false,
+        error: 'Duplicate property detected',
+        duplicate: true,
+        existing_property: {
+          id: isDuplicate.id,
+          custom_id: isDuplicate.custom_id,
+          title: isDuplicate.ai_title || `${isDuplicate.bhk} in ${isDuplicate.location}`,
+          building: isDuplicate.building_name,
+          location: isDuplicate.location,
+          price: `₹${isDuplicate.price}${isDuplicate.price_unit === 'crores' ? ' Cr' : 'L'}`,
+          created_date: isDuplicate.created_date
+        }
+      }, { status: 409 }); // 409 Conflict
+    }
+
+    console.log('✅ No duplicate found, proceeding with creation');
+
+    // STEP 3: HANDLE BROKER - ALWAYS from message content
     let broker = null;
     try {
-      const allBrokers = await base44.asServiceRole.entities.Broker.list();
       const normalizedPhone = extractedData.broker_phone.replace(/\D/g, '');
-      const normalizedName = extractedData.broker_name.toLowerCase().trim();
       
-      // Phone match first (most reliable)
-      broker = allBrokers.find(b => 
-        b.phone && b.phone.replace(/\D/g, '').includes(normalizedPhone.slice(-10))
+      // Check if this is an admin number (Vishal or Office)
+      const isAdminNumber = ADMIN_NUMBERS.some(adminNum => 
+        normalizedPhone.includes(adminNum.slice(-10))
       );
-
-      // Fuzzy name matching if no phone match
-      if (!broker) {
-        broker = allBrokers.find(b => {
-          const brokerNameNorm = b.name.toLowerCase().trim();
-          if (brokerNameNorm === normalizedName) return true;
-          if (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm)) return true;
-          
-          if (extractedData.broker_agency && b.agency_name) {
-            const agencyMatch = b.agency_name.toLowerCase() === extractedData.broker_agency.toLowerCase();
-            if (agencyMatch && (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm))) {
-              return true;
-            }
-          }
-          return false;
-        });
-      }
-
-      if (!broker) {
-        const brokerCount = allBrokers.length + 1;
-        const brokerCustomId = `CHR-BRK-${String(brokerCount).padStart(4, '0')}`;
-        
-        broker = await base44.asServiceRole.entities.Broker.create({
-          custom_id: brokerCustomId,
-          name: extractedData.broker_name,
-          phone: extractedData.broker_phone,
-          agency_name: extractedData.broker_agency,
-          areas_covered: extractedData.location ? [extractedData.location] : [],
-          status: "Active",
-          total_listings_count: 1,
-          active_listings_count: 1,
-          last_activity: new Date().toISOString()
-        });
-        console.log(`✓ Created new broker ${brokerCustomId}: ${extractedData.broker_name}`);
+      
+      if (isAdminNumber) {
+        console.log('⚠️ Admin number detected - not creating broker record');
+        // Don't create broker, will assign directly to Vishal
       } else {
-        const updatedAreasSet = new Set(broker.areas_covered || []);
-        if (extractedData.location) updatedAreasSet.add(extractedData.location);
+        // For ALL other numbers (including Kapil), create/find broker
+        const allBrokers = await base44.asServiceRole.entities.Broker.list();
+        const normalizedName = extractedData.broker_name.toLowerCase().trim();
         
-        await base44.asServiceRole.entities.Broker.update(broker.id, {
-          total_listings_count: (broker.total_listings_count || 0) + 1,
-          active_listings_count: (broker.active_listings_count || 0) + 1,
-          last_activity: new Date().toISOString(),
-          areas_covered: Array.from(updatedAreasSet)
-        });
-        console.log(`✓ Linked to existing broker ${broker.custom_id}: ${broker.name}`);
+        // Try to find existing broker by phone
+        broker = allBrokers.find(b => 
+          b.phone && b.phone.replace(/\D/g, '').includes(normalizedPhone.slice(-10))
+        );
+
+        // If not found by phone, try by name
+        if (!broker) {
+          broker = allBrokers.find(b => {
+            const brokerNameNorm = b.name.toLowerCase().trim();
+            if (brokerNameNorm === normalizedName) return true;
+            if (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm)) return true;
+            
+            if (extractedData.broker_agency && b.agency_name) {
+              const agencyMatch = b.agency_name.toLowerCase() === extractedData.broker_agency.toLowerCase();
+              if (agencyMatch && (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm))) {
+                return true;
+              }
+            }
+            return false;
+          });
+        }
+
+        // Create new broker if not found
+        if (!broker) {
+          const brokerCount = allBrokers.length + 1;
+          const brokerCustomId = `CHR-BRK-${String(brokerCount).padStart(4, '0')}`;
+          
+          broker = await base44.asServiceRole.entities.Broker.create({
+            custom_id: brokerCustomId,
+            name: extractedData.broker_name,
+            phone: extractedData.broker_phone,
+            agency_name: extractedData.broker_agency,
+            areas_covered: extractedData.location ? [extractedData.location] : [],
+            status: "Active",
+            total_listings_count: 1,
+            active_listings_count: 1,
+            last_activity: new Date().toISOString()
+          });
+          console.log(`✓ Created new broker ${brokerCustomId}: ${extractedData.broker_name}`);
+        } else {
+          // Update existing broker
+          const updatedAreasSet = new Set(broker.areas_covered || []);
+          if (extractedData.location) updatedAreasSet.add(extractedData.location);
+          
+          await base44.asServiceRole.entities.Broker.update(broker.id, {
+            total_listings_count: (broker.total_listings_count || 0) + 1,
+            active_listings_count: (broker.active_listings_count || 0) + 1,
+            last_activity: new Date().toISOString(),
+            areas_covered: Array.from(updatedAreasSet)
+          });
+          console.log(`✓ Linked to existing broker ${broker.custom_id}: ${broker.name}`);
+        }
       }
     } catch (brokerError) {
       return Response.json({ 
         success: false,
         error: `Broker creation failed: ${brokerError.message}`,
-        stage: 'broker',
-        extractedData: extractedData
+        stage: 'broker'
       }, { status: 500 });
     }
 
-    // STEP 4: HANDLE BUILDING WITH FUZZY MATCHING (~300ms)
+    // STEP 4: HANDLE BUILDING WITH FUZZY MATCHING
     let buildingId = null;
     let createdNewBuilding = false;
     
@@ -255,7 +374,7 @@ IMPORTANT:
             active_listings: (building.active_listings || 0) + 1,
             known_variants: knownVariants
           });
-          console.log(`✓ Linked to existing building ${building.custom_id}: ${building.name}`);
+          console.log(`✓ Linked to existing building ${building.custom_id}`);
         } else {
           const buildingCount = allBuildings.length + 1;
           const buildingCustomId = `CHR-BLD-${String(buildingCount).padStart(4, '0')}`;
@@ -272,16 +391,15 @@ IMPORTANT:
           });
           buildingId = newBuilding.id;
           createdNewBuilding = true;
-          console.log(`✓ Created new building ${buildingCustomId}: ${extractedData.building_name}`);
+          console.log(`✓ Created new building ${buildingCustomId}`);
         }
       } catch (buildingError) {
         console.warn('Building link failed (non-blocking):', buildingError.message);
       }
     }
 
-    // STEP 5: INLINE ID GENERATION (<10ms)
+    // STEP 5: INLINE ID GENERATION
     const locationCode = LOCATION_CODES[extractedData.location.toLowerCase()] || 'MUM';
-    const allProperties = await base44.asServiceRole.entities.Property.list();
     const nextSequence = allProperties.length + 1;
     const customId = `CHT-${locationCode}-${String(nextSequence).padStart(4, '0')}`;
 
@@ -311,7 +429,6 @@ IMPORTANT:
     
     let slug = slugParts.join('-').substring(0, 60).replace(/-+$/, '');
     
-    // Check slug uniqueness
     const existingWithSlug = allProperties.find(p => p.slug === slug);
     if (existingWithSlug) {
       slug = `${slug}-${String(nextSequence).padStart(4, '0')}`;
@@ -319,7 +436,7 @@ IMPORTANT:
 
     console.log(`✓ Generated ID: ${customId}, Slug: ${slug}`);
 
-    // STEP 6: CREATE PROPERTY (~200ms)
+    // STEP 6: CREATE PROPERTY
     let property;
     try {
       const propertyData = {
@@ -345,9 +462,9 @@ IMPORTANT:
         source_text: message,
         ai_title: extractedData.ai_title,
         ai_description: extractedData.ai_description,
-        broker_id: broker.id,
-        broker_contact: broker.phone,
-        broker_trust_score: broker.trust_score || 50,
+        broker_id: broker ? broker.id : null,
+        broker_contact: broker ? broker.phone : null,
+        broker_trust_score: broker ? (broker.trust_score || 50) : null,
         status: "Active",
         assigned_agent_name: "Vishal"
       };
@@ -358,48 +475,38 @@ IMPORTANT:
       return Response.json({ 
         success: false,
         error: `Property creation failed: ${propertyError.message}`,
-        stage: 'property_creation',
-        extractedData: extractedData
+        stage: 'property_creation'
       }, { status: 500 });
     }
 
-    // STEP 7: BACKGROUND TASKS (non-blocking, fire-and-forget)
+    // STEP 7: BACKGROUND TASKS (non-blocking)
     Promise.all([
-      // Building Intelligence with Auto-Enrichment
       buildingId ? 
         base44.asServiceRole.functions.invoke('buildingIntelligence', { 
           building_id: buildingId,
           building_name: extractedData.building_name,
           location: extractedData.location
-        }).then(() => {
-          console.log(`✓ Building intelligence queued for ${extractedData.building_name}`);
-          if (createdNewBuilding) {
-            console.log('  └─ Auto-enrichment will fetch: developer, amenities, year built, etc.');
-          }
         }).catch(err => console.warn('Building intelligence failed:', err.message))
         : Promise.resolve(),
       
-      // Broker Profiling
-      base44.asServiceRole.functions.invoke('buildBrokerProfile', { 
-        broker_id: broker.id 
-      }).catch(err => console.warn('Broker profiling failed:', err.message)),
+      broker ?
+        base44.asServiceRole.functions.invoke('buildBrokerProfile', { 
+          broker_id: broker.id 
+        }).catch(err => console.warn('Broker profiling failed:', err.message))
+        : Promise.resolve(),
       
-      // PropAI Sync
       base44.asServiceRole.functions.invoke('sendToPropAI', {
         data_type: 'property',
         data: {
           ...property,
-          broker_name: broker.name,
-          broker_phone: broker.phone,
-          broker_agency: broker.agency_name
+          broker_name: broker ? broker.name : 'Chariot Direct',
+          broker_phone: broker ? broker.phone : null,
+          broker_agency: broker ? broker.agency_name : null
         }
       }).catch(err => console.warn('PropAI sync failed:', err.message))
     ]).catch(err => console.warn('Background tasks failed:', err.message));
 
-    console.log(`✅ Property parsed successfully in ~1-2 seconds`);
-    if (createdNewBuilding) {
-      console.log(`🏗️ New building created - auto-enrichment running in background`);
-    }
+    console.log(`✅ Property parsed successfully`);
 
     return Response.json({
       success: true,
@@ -408,11 +515,10 @@ IMPORTANT:
         custom_id: property.custom_id,
         slug: property.slug,
         ai_title: property.ai_title,
-        broker_custom_id: broker.custom_id,
-        broker_name: broker.name,
+        broker_custom_id: broker ? broker.custom_id : null,
+        broker_name: broker ? broker.name : 'Chariot Direct',
         building_custom_id: buildingId ? 
-          (allBuildings.find(b => b.id === buildingId)?.custom_id) : null,
-        building_enrichment_queued: !!buildingId
+          (allBuildings.find(b => b.id === buildingId)?.custom_id) : null
       }
     });
 
@@ -464,3 +570,4 @@ function levenshteinDistance(str1, str2) {
 
   return matrix[str2.length][str1.length];
 }
+
