@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users, Building2, MapPin, Star, TrendingUp, Eye,
-  Search, Network, Target, Zap, Home, Mail
+  Search, Network, Target, Zap, Home, Mail, UserPlus, UserCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -18,9 +17,13 @@ import { Toaster } from "@/components/ui/sonner";
 
 export default function BrokerNetwork() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userBrokerProfile, setUserBrokerProfile] = useState(null);
+  const [connectedBrokerIds, setConnectedBrokerIds] = useState([]);
 
   // Auth check - accessible to all logged-in users
   useEffect(() => {
@@ -31,7 +34,21 @@ export default function BrokerNetwork() {
           navigate(createPageUrl("Home"));
           return;
         }
+        setCurrentUser(user);
         setIsAuthorized(true);
+
+        // Try to find user's broker profile
+        if (user.broker_id) {
+          const brokers = await base44.entities.Broker.list();
+          const myBroker = brokers.find(b => b.id === user.broker_id);
+          if (myBroker) {
+            setUserBrokerProfile(myBroker);
+            
+            // Load existing connections
+            const connections = user.connected_brokers || [];
+            setConnectedBrokerIds(connections);
+          }
+        }
       } catch (error) {
         navigate(createPageUrl("Home"));
       } finally {
@@ -55,11 +72,61 @@ export default function BrokerNetwork() {
     enabled: isAuthorized,
   });
 
+  // Connect/Disconnect Mutation
+  const connectMutation = useMutation({
+    mutationFn: async ({ brokerId, action }) => {
+      let updatedConnections = [...connectedBrokerIds];
+      
+      if (action === 'connect') {
+        if (!updatedConnections.includes(brokerId)) {
+          updatedConnections.push(brokerId);
+        }
+      } else {
+        updatedConnections = updatedConnections.filter(id => id !== brokerId);
+      }
+      
+      await base44.auth.updateMe({ connected_brokers: updatedConnections });
+      return updatedConnections;
+    },
+    onSuccess: (updatedConnections, variables) => {
+      setConnectedBrokerIds(updatedConnections);
+      const broker = brokers.find(b => b.id === variables.brokerId);
+      
+      if (variables.action === 'connect') {
+        toast.success(`✅ Connected with ${broker?.name || 'Broker'}!`, {
+          description: 'You can now see their contact details',
+          duration: 3000
+        });
+      } else {
+        toast.info(`Disconnected from ${broker?.name || 'Broker'}`, {
+          duration: 2000
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to update connection', {
+        description: error.message
+      });
+    }
+  });
+
+  const handleConnect = (brokerId) => {
+    const isConnected = connectedBrokerIds.includes(brokerId);
+    connectMutation.mutate({
+      brokerId,
+      action: isConnected ? 'disconnect' : 'connect'
+    });
+  };
+
   // Calculate network connections for all brokers
   const brokerNetwork = useMemo(() => {
     if (!brokers.length || !properties.length) return [];
 
-    const network = brokers.map(broker => {
+    const network = brokers
+      .filter(b => b.id !== userBrokerProfile?.id) // Don't show yourself
+      .map(broker => {
       const brokerProps = properties.filter(p => p.broker_id === broker.id);
 
       const brokerAreas = new Set(broker.specializations?.primary_locations || broker.areas_covered || []);
@@ -73,7 +140,7 @@ export default function BrokerNetwork() {
         : 0;
 
       const connections = brokers
-        .filter(otherBroker => otherBroker.id !== broker.id)
+        .filter(otherBroker => otherBroker.id !== broker.id && otherBroker.id !== userBrokerProfile?.id)
         .map(otherBroker => {
           const otherProps = properties.filter(p => p.broker_id === otherBroker.id);
           const otherAreas = new Set(otherBroker.specializations?.primary_locations || otherBroker.areas_covered || []);
@@ -147,12 +214,13 @@ export default function BrokerNetwork() {
         ...broker,
         connections,
         connectionCount: connections.length,
-        strongConnections: connections.filter(c => c.score >= 50).length
+        strongConnections: connections.filter(c => c.score >= 50).length,
+        isConnected: connectedBrokerIds.includes(broker.id)
       };
     });
 
     return network.sort((a, b) => b.strongConnections - a.strongConnections);
-  }, [brokers, properties]);
+  }, [brokers, properties, userBrokerProfile, connectedBrokerIds]);
 
   const filteredNetwork = useMemo(() => {
     if (!searchQuery) return brokerNetwork;
@@ -194,9 +262,19 @@ export default function BrokerNetwork() {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Broker Network</h1>
-              <p className="text-sm text-slate-600">Discover connections • View profiles • Network stays in-platform</p>
+              <p className="text-sm text-slate-600">Connect • View profiles • Unlock contact details</p>
             </div>
           </div>
+          
+          {/* Connected Count Badge */}
+          {connectedBrokerIds.length > 0 && (
+            <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2">
+              <UserCheck className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-semibold text-green-700">
+                {connectedBrokerIds.length} Connection{connectedBrokerIds.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -314,11 +392,27 @@ export default function BrokerNetwork() {
                     </div>
                   </div>
 
-                  {/* Contact Info - In-Platform Display */}
-                  {broker.email && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600 mb-3 p-2 bg-slate-50 rounded-lg">
-                      <Mail className="w-3 h-3 text-slate-400" />
-                      <span className="truncate">{broker.email}</span>
+                  {/* Contact Info - Show if connected */}
+                  {broker.isConnected ? (
+                    <>
+                      {broker.email && (
+                        <div className="flex items-center gap-2 text-xs text-slate-700 mb-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                          <Mail className="w-3 h-3 text-green-600" />
+                          <span className="truncate">{broker.email}</span>
+                        </div>
+                      )}
+                      {broker.phone && (
+                        <div className="flex items-center gap-2 text-xs text-slate-700 mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                          <UserCheck className="w-3 h-3 text-green-600" />
+                          <span className="truncate">{broker.phone}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <p className="text-xs text-slate-500 text-center">
+                        🔒 Connect to unlock contact details
+                      </p>
                     </div>
                   )}
 
@@ -355,7 +449,7 @@ export default function BrokerNetwork() {
                     </div>
                   </div>
 
-                  {/* Top Connections (Show only 2) */}
+                  {/* Top Connections */}
                   {broker.connections.length > 0 && (
                     <div className="space-y-2 mb-3">
                       <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
@@ -393,27 +487,36 @@ export default function BrokerNetwork() {
                     </div>
                   )}
 
-                  {/* Actions - IN-PLATFORM ONLY */}
-                  <div className="flex gap-2 pt-3 border-t border-purple-200">
+                  {/* Actions - WITH CONNECT BUTTON */}
+                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-purple-200">
                     <Button
-                      onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-9 text-xs font-semibold"
+                      onClick={() => handleConnect(broker.id)}
+                      disabled={connectMutation.isPending}
+                      className={`h-9 text-xs font-semibold ${
+                        broker.isConnected
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                      }`}
                     >
-                      <Eye className="w-3 h-3 mr-1" />
-                      View Profile
+                      {broker.isConnected ? (
+                        <>
+                          <UserCheck className="w-3 h-3 mr-1" />
+                          Connected
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-3 h-3 mr-1" />
+                          Connect
+                        </>
+                      )}
                     </Button>
                     <Button
-                      onClick={() => {
-                        toast.info('In-platform messaging coming soon!', {
-                          description: 'For now, view their profile to see contact details',
-                          duration: 3000
-                        });
-                      }}
+                      onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
                       variant="outline"
-                      className="flex-1 h-9 text-xs font-semibold border-purple-200"
+                      className="h-9 text-xs font-semibold border-purple-200"
                     >
-                      <Mail className="w-3 h-3 mr-1" />
-                      Message
+                      <Eye className="w-3 h-3 mr-1" />
+                      View
                     </Button>
                   </div>
                 </div>
