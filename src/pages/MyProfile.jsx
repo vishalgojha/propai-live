@@ -27,13 +27,18 @@ export default function MyProfile() {
   const [editingAreas, setEditingAreas] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState([]);
 
+  // NEW: Team management states
+  const [editingTeam, setEditingTeam] = useState(false);
+  const [teamMemberPhone, setTeamMemberPhone] = useState("");
+  const [addingTeamMember, setAddingTeamMember] = useState(false);
+
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
     "BKC", "Worli", "Lower Parel", "Powai",
     "Santacruz West", "Versova", "Malad West", "Goregaon West"
   ];
 
-  // Load current user
+  // Load current user and broker profile
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -47,14 +52,39 @@ export default function MyProfile() {
           setSelectedAreas(user.preferred_areas);
         }
 
-        // If user has email, try to find matching broker
-        if (user.email) {
+        // IMPROVED: Try broker_id first, then fallback to email/phone matching
+        if (user.broker_id) {
+          // User has linked broker ID
+          const broker = await base44.entities.Broker.filter({ id: user.broker_id });
+          if (broker && broker.length > 0) {
+            setBrokerProfile(broker[0]);
+            console.log('✅ Broker profile loaded via broker_id:', broker[0].custom_id);
+          }
+        } else if (user.email) {
+          // Fallback: Try to find broker by email or phone
           const brokers = await base44.entities.Broker.list();
-          const matchingBroker = brokers.find(b =>
-            b.email?.toLowerCase() === user.email.toLowerCase() ||
-            b.phone === user.email // Some users might have phone as email
-          );
-          setBrokerProfile(matchingBroker);
+          const matchingBroker = brokers.find(b => {
+            // Normalize phone for comparison
+            const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
+            const userEmailAsPhone = normalizePhone(user.email); // User email could be a phone number
+            const brokerPhone = normalizePhone(b.phone);
+            
+            return (
+              b.email?.toLowerCase() === user.email.toLowerCase() ||
+              (userEmailAsPhone && brokerPhone && userEmailAsPhone === brokerPhone)
+            );
+          });
+          
+          if (matchingBroker) {
+            setBrokerProfile(matchingBroker);
+            // Auto-link broker_id to user for future
+            try {
+              await base44.auth.updateMe({ broker_id: matchingBroker.id });
+              console.log('✅ Auto-linked broker profile:', matchingBroker.custom_id);
+            } catch (error) {
+              console.error('Failed to auto-link broker:', error);
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to load user:", error);
@@ -74,7 +104,6 @@ export default function MyProfile() {
         description: 'Your SmartFeed will prioritize these areas',
         duration: 3000
       });
-      // Reload user data
       window.location.reload();
     } catch (error) {
       toast.error('Failed to save areas', {
@@ -91,25 +120,143 @@ export default function MyProfile() {
     }
   };
 
-  // Fetch broker's properties (if broker)
+  // NEW: Add team member by phone number
+  const handleAddTeamMember = async () => {
+    if (!teamMemberPhone.trim() || !brokerProfile) return;
+    
+    setAddingTeamMember(true);
+    try {
+      // Normalize phone
+      const normalizePhone = (phone) => phone.replace(/\D/g, '').slice(-10);
+      const normalized = normalizePhone(teamMemberPhone);
+      
+      // Find broker by phone
+      const brokers = await base44.entities.Broker.list();
+      const teamMemberBroker = brokers.find(b => {
+        const brokerPhone = normalizePhone(b.phone);
+        return brokerPhone === normalized;
+      });
+      
+      if (!teamMemberBroker) {
+        toast.error('Broker not found', {
+          description: `No broker with phone ${teamMemberPhone} in system`
+        });
+        return;
+      }
+      
+      if (teamMemberBroker.id === brokerProfile.id) {
+        toast.error('Cannot add yourself', {
+          description: 'You are already the team leader'
+        });
+        return;
+      }
+      
+      // Add to team_members array
+      const currentTeam = brokerProfile.team_members || [];
+      if (currentTeam.some(m => m.broker_id === teamMemberBroker.id)) {
+        toast.error('Already in team', {
+          description: `${teamMemberBroker.name} is already a team member`
+        });
+        return;
+      }
+      
+      const updatedTeam = [
+        ...currentTeam,
+        {
+          broker_id: teamMemberBroker.id,
+          name: teamMemberBroker.name,
+          phone: teamMemberBroker.phone,
+          role: 'Team Member',
+          co_listing_count: 0
+        }
+      ];
+      
+      await base44.entities.Broker.update(brokerProfile.id, {
+        team_members: updatedTeam,
+        team_leader_of: [...(brokerProfile.team_leader_of || []), teamMemberBroker.id]
+      });
+      
+      // Update team member's reports_to
+      await base44.entities.Broker.update(teamMemberBroker.id, {
+        reports_to: brokerProfile.id
+      });
+      
+      toast.success('✅ Team Member Added!', {
+        description: `${teamMemberBroker.name} added to your team`
+      });
+      
+      setTeamMemberPhone('');
+      setEditingTeam(false);
+      window.location.reload();
+    } catch (error) {
+      toast.error('Failed to add team member', {
+        description: error.message
+      });
+    } finally {
+      setAddingTeamMember(false);
+    }
+  };
+
+  // NEW: Remove team member
+  const handleRemoveTeamMember = async (memberBrokerId) => {
+    if (!brokerProfile || !confirm('Are you sure you want to remove this team member? This action cannot be undone.')) return;
+    
+    try {
+      const updatedTeam = (brokerProfile.team_members || []).filter(
+        m => m.broker_id !== memberBrokerId
+      );
+      
+      await base44.entities.Broker.update(brokerProfile.id, {
+        team_members: updatedTeam,
+        team_leader_of: (brokerProfile.team_leader_of || []).filter(id => id !== memberBrokerId)
+      });
+      
+      // Update team member's reports_to
+      await base44.entities.Broker.update(memberBrokerId, {
+        reports_to: null
+      });
+      
+      toast.success('Team member removed');
+      window.location.reload();
+    } catch (error) {
+      toast.error('Failed to remove team member', {
+        description: error.message
+      });
+    }
+  };
+
+  // Fetch broker's properties (FIXED: filter by broker_id)
   const { data: properties = [] } = useQuery({
     queryKey: ['my-properties', brokerProfile?.id],
-    queryFn: () => base44.entities.Property.list(),
+    queryFn: async () => {
+      if (!brokerProfile) return [];
+      const allProps = await base44.entities.Property.list('-created_date');
+      return allProps.filter(p => p.broker_id === brokerProfile.id);
+    },
     enabled: !!brokerProfile,
     initialData: []
   });
 
   const { data: requirements = [] } = useQuery({
     queryKey: ['my-requirements', brokerProfile?.id],
-    queryFn: () => base44.entities.Requirement.list(),
+    queryFn: async () => {
+      if (!brokerProfile) return [];
+      const allReqs = await base44.entities.Requirement.list('-created_date');
+      return allReqs.filter(r => r.broker_id === brokerProfile.id);
+    },
     enabled: !!brokerProfile,
     initialData: []
   });
 
   const { data: interactions = [] } = useQuery({
-    queryKey: ['my-interactions', brokerProfile?.id],
-    queryFn: () => base44.entities.PropertyInteraction.list('-created_date'),
-    enabled: !!brokerProfile,
+    queryKey: ['my-interactions', brokerProfile?.id, properties.length],
+    queryFn: async () => {
+      if (!brokerProfile || properties.length === 0) return [];
+      const allInteractions = await base44.entities.PropertyInteraction.list('-created_date');
+      const myPropertyIds = properties.map(p => p.id);
+      return allInteractions.filter(i => myPropertyIds.includes(i.property_id));
+    },
+    enabled: !!brokerProfile && properties.length > 0,
     initialData: []
   });
 
@@ -237,8 +384,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -639,31 +785,95 @@ export default function MyProfile() {
             )}
           </div>
 
-          {/* Team Members */}
-          {brokerProfile.team_members && brokerProfile.team_members.length > 0 && (
-            <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          {/* ENHANCED: Team Members with Management */}
+          <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                Team Members ({brokerProfile.team_members.length})
+                My Team ({(brokerProfile.team_members || []).length})
               </h3>
+              <Button
+                onClick={() => {
+                  setEditingTeam(!editingTeam);
+                  setTeamMemberPhone(''); // Clear input on cancel
+                  setAddingTeamMember(false); // Reset adding state
+                }}
+                variant="outline"
+                size="sm"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              >
+                {editingTeam ? 'Cancel' : 'Manage Team'}
+              </Button>
+            </div>
+
+            {editingTeam && (
+              <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <p className="text-sm font-semibold text-blue-900 mb-2">Add Team Member by Phone</p>
+                <p className="text-xs text-blue-700 mb-3">
+                  Enter the 10-digit phone number of a broker already in the PropAI system
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={teamMemberPhone}
+                    onChange={(e) => setTeamMemberPhone(e.target.value)}
+                    placeholder="e.g., 9820056789"
+                    className="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    disabled={addingTeamMember}
+                  />
+                  <Button
+                    onClick={handleAddTeamMember}
+                    disabled={addingTeamMember || !teamMemberPhone.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    {addingTeamMember ? 'Adding...' : 'Add'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {brokerProfile.team_members && brokerProfile.team_members.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {brokerProfile.team_members.map((member, idx) => (
-                  <div key={idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div key={member.broker_id || idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900">{member.name}</p>
-                        <p className="text-xs text-slate-600">{member.role || 'Partner'}</p>
+                        <p className="text-xs text-slate-600">{member.phone}</p>
+                        <p className="text-xs text-blue-600 mt-1">{member.role || 'Team Member'}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-blue-700">{member.co_listing_count}</p>
-                        <p className="text-xs text-slate-600">co-listings</p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-blue-700">{member.co_listing_count || 0}</p>
+                          <p className="text-xs text-slate-600">listings</p>
+                        </div>
+                        {editingTeam && (
+                          <Button
+                            onClick={() => handleRemoveTeamMember(member.broker_id)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                          >
+                            <span className="sr-only">Remove {member.name}</span>
+                            &times;
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </Card>
-          )}
+            ) : (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-sm text-slate-600 mb-2">No team members yet</p>
+                <p className="text-xs text-slate-500">
+                  Add team members to collaborate on listings and track co-listing performance
+                </p>
+              </div>
+            )}
+          </Card>
 
           {/* AI Profile Summary */}
           {brokerProfile.ai_profile_summary && (
