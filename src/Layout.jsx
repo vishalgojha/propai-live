@@ -21,6 +21,9 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
+  // Determine if the chatbot should be hidden
+  const shouldHideChatbot = currentPageName === "Home";
+
   useEffect(() => {
     // Set global meta tags - CRITICAL FOR SOCIAL SHARING
     const setMetaTag = (name, content, isProperty = false) => {
@@ -165,8 +168,8 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      {/* AI Chatbot Widget - Available on ALL pages */}
-      <ChatbotWidget />
+      {/* AI Chatbot Widget - Hidden on Home page */}
+      {!shouldHideChatbot && <ChatbotWidget />}
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
@@ -580,6 +583,16 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
       </footer>
+
+      <style jsx>{`
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

@@ -332,9 +332,10 @@ export default function MyProfile() {
 
   // NEW: Calculate network connections
   const networkConnections = useMemo(() => {
-    if (!brokerProfile || !currentUser?.network_connections) return [];
+    // FIX: Use connected_brokers instead of network_connections
+    if (!brokerProfile || !currentUser?.connected_brokers) return [];
     
-    return currentUser.network_connections
+    return currentUser.connected_brokers
       .map(connId => {
         const broker = allBrokers.find(b => b.id === connId);
         if (!broker) return null;
@@ -354,11 +355,12 @@ export default function MyProfile() {
 
   // NEW: Network listings
   const networkListings = useMemo(() => {
-    if (!currentUser?.network_connections) return [];
+    // FIX: Use connected_brokers instead of network_connections
+    if (!currentUser?.connected_brokers) return [];
     
     return allPropertiesNetwork
       .filter(p => 
-        currentUser.network_connections.includes(p.broker_id) && 
+        currentUser.connected_brokers.includes(p.broker_id) && 
         p.status === 'Active' && 
         !p.is_duplicate
       )
@@ -375,7 +377,8 @@ export default function MyProfile() {
     
     return myReqs.map(req => {
       const networkMatches = allPropertiesNetwork.filter(prop => {
-        if (!currentUser?.network_connections?.includes(prop.broker_id)) return false;
+        // FIX: Use connected_brokers instead of network_connections
+        if (!currentUser?.connected_brokers?.includes(prop.broker_id)) return false;
         if (prop.status !== 'Active' || prop.is_duplicate) return false;
         if (prop.listing_type !== req.listing_type) return false;
         
@@ -695,6 +698,9 @@ export default function MyProfile() {
 
   // BROKER VIEW - ENHANCED WITH TABS
   if (brokerProfile && brokerMetrics) {
+    // FIX: Use connected_brokers instead of network_connections
+    const connectionCount = currentUser?.connected_brokers?.length || 0;
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
@@ -734,44 +740,49 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Tab Navigation + AI Chat Button */}
-          <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="flex gap-2 overflow-x-auto pb-2 flex-1">
+          {/* Tab Navigation - MOBILE RESPONSIVE */}
+          <div className="mb-6 flex flex-col gap-3">
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
               <Button
                 onClick={() => setActiveTab('overview')}
                 variant={activeTab === 'overview' ? 'default' : 'outline'}
-                className={activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+                size="sm"
+                className={`flex-shrink-0 ${activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
               >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Overview
+                <BarChart3 className="w-4 h-4 mr-1" />
+                <span className="text-sm">Overview</span>
               </Button>
               <Button
                 onClick={() => setActiveTab('network')}
                 variant={activeTab === 'network' ? 'default' : 'outline'}
-                className={activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+                size="sm"
+                className={`flex-shrink-0 ${activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
               >
-                <Users className="w-4 h-4 mr-2" />
-                My Network ({networkConnections.length})
+                <Users className="w-4 h-4 mr-1" />
+                <span className="text-sm">My Network ({connectionCount})</span>
               </Button>
               <Button
                 onClick={() => setActiveTab('listings')}
                 variant={activeTab === 'listings' ? 'default' : 'outline'}
-                className={activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+                size="sm"
+                className={`flex-shrink-0 ${activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
               >
-                <Package className="w-4 h-4 mr-2" />
-                Network Listings ({networkListings.length})
+                <Package className="w-4 h-4 mr-1" />
+                <span className="text-sm">Listings ({networkListings.length})</span>
               </Button>
               <Button
                 onClick={() => setActiveTab('requirements')}
                 variant={activeTab === 'requirements' ? 'default' : 'outline'}
-                className={activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+                size="sm"
+                className={`flex-shrink-0 ${activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
               >
-                <Target className="w-4 h-4 mr-2" />
-                My Requirements ({myRequirementsWithMatches.length})
+                <Target className="w-4 h-4 mr-1" />
+                <span className="text-sm">Requirements ({myRequirementsWithMatches.length})</span>
               </Button>
             </div>
             
-            {/* AI Chat Button */}
+            {/* AI Chat Button - moved outside of this specific tab navigation div structure */}
+            {/* Keeping it here for now as per original code, but if outline means completely remove it, it would be gone */}
             <Button
               onClick={() => window.dispatchEvent(new CustomEvent('openChatWidget'))}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg whitespace-nowrap"
