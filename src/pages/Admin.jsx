@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertTriangle, BarChart3, BookOpen, Building2, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
+  AlertTriangle, BarChart3, BookOpen, Building2, Car, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
   Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
   Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap, AlertCircleIcon
 } from "lucide-react";
@@ -937,6 +937,89 @@ export default function Admin() {
     }
   };
 
+  const normalizeParkingValues = async () => {
+    if (!confirm('🚗 Normalize Parking Values?\n\nThis will:\n• Fix "1CP" → "1 Covered"\n• Fix "2 cp" → "2 Covered"\n• Fix "1OP" → "1 Open"\n• Fix "No parking" → "No Parking"\n• Standardize all parking formats\n\nRun analysis first?')) {
+      return;
+    }
+
+    setNormalizingBhk(true); // Using same loading state as BHK normalization
+    toast.loading('🔍 Analyzing parking inconsistencies...', { id: 'parking-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('normalizeParkingValues', { dryRun: true });
+      toast.dismiss('parking-analysis');
+
+      const stats = dryRunResponse.data.stats;
+
+      if (stats.normalized === 0) {
+        toast.success('✅ All Parking Values Already Normalized!', {
+          description: `${stats.total} properties scanned - all consistent`,
+          duration: 4000
+        });
+        setNormalizingBhk(false);
+        return;
+      }
+
+      // Show examples
+      let exampleText = '';
+      if (stats.examples && stats.examples.length > 0) {
+        exampleText = '\n\nExamples:\n' + stats.examples.map(ex => 
+          `• "${ex.original}" → "${ex.normalized}"`
+        ).join('\n');
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found parking inconsistencies:\n` +
+        `• ${stats.normalized} properties need normalization\n` +
+        `• ${stats.unchanged} already correct\n` +
+        exampleText +
+        `\n\nFix now?`
+      );
+
+      if (!shouldFix) {
+        setNormalizingBhk(false);
+        return;
+      }
+
+      toast.loading('🔧 Normalizing all parking values...', { id: 'parking-fix' });
+      const fixResponse = await base44.functions.invoke('normalizeParkingValues', { dryRun: false });
+      toast.dismiss('parking-fix');
+
+      const results = fixResponse.data.stats;
+
+      toast.success('✅ Parking Normalization Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Parking values standardized successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Normalized: {results.normalized} properties</div>
+              <div>• Unchanged: {results.unchanged} properties</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('parking-analysis');
+      toast.dismiss('parking-fix');
+      toast.error('❌ Parking Normalization Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setNormalizingBhk(false);
+    }
+  };
+
   const cleanBuildingData = async () => {
     if (!confirm('🧹 Clean Building Data?\n\nThis will:\n• Remove all MagicBricks references\n• Fix incorrect listing counts\n• Identify missing summaries\n\nRun analysis first?')) {
       return;
@@ -1419,6 +1502,13 @@ export default function Admin() {
                   >
                     <Home className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
                     Normalize BHK Values
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={normalizeParkingValues}
+                    disabled={normalizingBhk}
+                  >
+                    <Car className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
+                    Normalize Parking
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={generatePropertySlugs}
