@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -95,11 +96,14 @@ export default function MyProfile() {
     try {
       await base44.auth.updateMe({ preferred_areas: selectedAreas });
       setEditingAreas(false);
+      setCurrentUser(prevUser => ({
+        ...prevUser,
+        preferred_areas: selectedAreas,
+      }));
       toast.success('✅ Preferred Areas Saved!', {
         description: 'Your SmartFeed will prioritize these areas',
         duration: 3000
       });
-      window.location.reload();
     } catch (error) {
       toast.error('Failed to save areas', {
         description: error.message
@@ -173,27 +177,37 @@ export default function MyProfile() {
         !p.is_duplicate
       );
       
+      const newTeamMemberData = {
+        broker_id: teamMemberBroker.id,
+        name: teamMemberBroker.name,
+        phone: teamMemberBroker.phone,
+        role: teamMemberBroker.agency_name || 'Team Member',
+        co_listing_count: memberListings.length,
+        agency_name: teamMemberBroker.agency_name
+      };
+
       const updatedTeam = [
         ...currentTeam,
-        {
-          broker_id: teamMemberBroker.id,
-          name: teamMemberBroker.name,
-          phone: teamMemberBroker.phone,
-          role: teamMemberBroker.agency_name || 'Team Member',
-          co_listing_count: memberListings.length,
-          agency_name: teamMemberBroker.agency_name
-        }
+        newTeamMemberData
       ];
+
+      const updatedTeamLeaderOf = [...(brokerProfile.team_leader_of || []), teamMemberBroker.id];
       
       await base44.entities.Broker.update(brokerProfile.id, {
         team_members: updatedTeam,
-        team_leader_of: [...(brokerProfile.team_leader_of || []), teamMemberBroker.id]
+        team_leader_of: updatedTeamLeaderOf
       });
       
       await base44.entities.Broker.update(teamMemberBroker.id, {
         reports_to: brokerProfile.id
       });
       
+      setBrokerProfile(prevBrokerProfile => ({
+        ...prevBrokerProfile,
+        team_members: updatedTeam,
+        team_leader_of: updatedTeamLeaderOf,
+      }));
+
       toast.success('✅ Team Member Added!', {
         description: `${teamMemberBroker.name} joined your team • ${memberListings.length} active listings`,
         duration: 4000
@@ -201,7 +215,6 @@ export default function MyProfile() {
       
       setTeamMemberPhone('');
       setEditingTeam(false);
-      window.location.reload();
     } catch (error) {
       toast.error('Failed to add team member', {
         description: error.message
@@ -218,18 +231,24 @@ export default function MyProfile() {
       const updatedTeam = (brokerProfile.team_members || []).filter(
         m => m.broker_id !== memberBrokerId
       );
+      const updatedTeamLeaderOf = (brokerProfile.team_leader_of || []).filter(id => id !== memberBrokerId);
       
       await base44.entities.Broker.update(brokerProfile.id, {
         team_members: updatedTeam,
-        team_leader_of: (brokerProfile.team_leader_of || []).filter(id => id !== memberBrokerId)
+        team_leader_of: updatedTeamLeaderOf
       });
       
       await base44.entities.Broker.update(memberBrokerId, {
         reports_to: null
       });
+
+      setBrokerProfile(prevBrokerProfile => ({
+        ...prevBrokerProfile,
+        team_members: updatedTeam,
+        team_leader_of: updatedTeamLeaderOf,
+      }));
       
       toast.success('Team member removed');
-      window.location.reload();
     } catch (error) {
       toast.error('Failed to remove team member');
     }
@@ -408,8 +427,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -420,8 +438,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -432,8 +449,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
             </div>
           )}
 
