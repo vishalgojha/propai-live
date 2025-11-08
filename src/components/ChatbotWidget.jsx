@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -189,14 +188,14 @@ export default function ChatbotWidget() {
 
   return (
     <>
-      {/* Floating Chat Button - Mobile Friendly */}
+      {/* Floating Chat Button - TOP RIGHT */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50"
+            className="fixed top-20 right-4 md:right-6 z-50"
           >
             <Button
               onClick={() => setIsOpen(true)}
@@ -209,17 +208,17 @@ export default function ChatbotWidget() {
         )}
       </AnimatePresence>
 
-      {/* Chat Window - Fully Responsive */}
+      {/* Chat Window - TOP RIGHT POSITION */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
             className={`fixed z-50 ${
               isMinimized 
-                ? 'bottom-4 right-4 md:bottom-6 md:right-6 w-[calc(100vw-2rem)] max-w-xs' 
-                : 'inset-4 md:inset-auto md:bottom-6 md:right-6 md:w-[420px] md:h-[600px]'
+                ? 'top-20 right-4 md:right-6 w-[calc(100vw-2rem)] max-w-xs' 
+                : 'top-20 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-[420px] h-[calc(100vh-6rem)] md:h-[600px]'
             }`}
           >
             <Card className="w-full h-full bg-white shadow-2xl border-2 border-purple-200 overflow-hidden flex flex-col">
