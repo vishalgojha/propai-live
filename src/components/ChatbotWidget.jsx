@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle, X, Send, Loader2, Sparkles, User, Bot,
-  Minimize2, Maximize2, Info
+  Minimize2, Maximize2, Info, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +42,11 @@ export default function ChatbotWidget() {
     "🎨 Making it look pretty...",
     "🔮 Consulting the crystal ball...",
     "🏗️ Building intelligence...",
+    "🔬 Analyzing data patterns...",
+    "🎪 Juggling information...",
+    "🎭 Reading between the lines...",
+    "🎲 Rolling the AI dice...",
+    "🎸 Tuning the algorithms...",
   ];
 
   const scrollToBottom = () => {
@@ -75,10 +80,13 @@ export default function ChatbotWidget() {
     setInput("");
     setIsLoading(true);
 
-    // Show funny loading statuses
+    // Show funny loading statuses every 2 seconds
     const statusInterval = setInterval(() => {
       setFunnyStatus(getRandomStatus());
-    }, 1500);
+    }, 2000);
+
+    // Initial status
+    setFunnyStatus(getRandomStatus());
 
     try {
       const response = await base44.agents.invoke('chariot_master', {
@@ -113,16 +121,20 @@ export default function ChatbotWidget() {
       clearInterval(statusInterval);
       setFunnyStatus("");
 
+      // Enhanced error handling
       const errorMessage = {
         role: "assistant",
-        content: `Oops! 😅 Something went wrong:\n${error.message}\n\nTry again or rephrase your message.`,
-        timestamp: new Date()
+        content: `❌ **Action Not Completed**\n\nSomething went wrong: ${error.message}\n\n**What to do:**\n• Try rephrasing your message\n• Make sure all details are clear\n• If issue persists, contact support at hello@propai.live\n\nDon't worry - your data is safe! Just try again. 🙏`,
+        timestamp: new Date(),
+        isError: true
       };
 
       setMessages(prev => [...prev, errorMessage]);
 
-      toast.error('❌ Failed', {
-        description: error.message
+      toast.error('❌ Action Failed', {
+        description: 'Check the chat for details on what to do next',
+        duration: 5000,
+        className: 'bg-red-600 text-white border-0'
       });
     } finally {
       setIsLoading(false);
@@ -145,68 +157,70 @@ export default function ChatbotWidget() {
 
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button - Mobile Friendly */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50"
           >
             <Button
               onClick={() => setIsOpen(true)}
-              className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-2xl flex items-center justify-center group relative"
+              className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-2xl flex items-center justify-center group relative"
             >
-              <MessageCircle className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+              <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-white group-hover:scale-110 transition-transform" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
             </Button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Chat Window */}
+      {/* Chat Window - Fully Responsive */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className={`fixed ${isMinimized ? 'bottom-6 right-6' : 'bottom-6 right-6'} z-50 ${
-              isMinimized ? 'w-80' : 'w-[420px] h-[600px]'
+            className={`fixed z-50 ${
+              isMinimized 
+                ? 'bottom-4 right-4 md:bottom-6 md:right-6 w-[calc(100vw-2rem)] max-w-xs' 
+                : 'inset-4 md:inset-auto md:bottom-6 md:right-6 md:w-[420px] md:h-[600px]'
             }`}
           >
             <Card className="w-full h-full bg-white shadow-2xl border-2 border-purple-200 overflow-hidden flex flex-col">
               {/* Header */}
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-purple-600" />
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-3 md:p-4 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white">PropAI Assistant</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-white text-sm md:text-base truncate">PropAI Assistant</h3>
                     <div className="flex items-center gap-1">
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                       <span className="text-xs text-white/90">Online</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                   <Button
                     onClick={() => setIsMinimized(!isMinimized)}
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-white hover:bg-white/20"
+                    className="h-7 w-7 md:h-8 md:w-8 text-white hover:bg-white/20"
                   >
-                    {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                    {isMinimized ? <Maximize2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Minimize2 className="w-3.5 h-3.5 md:w-4 md:h-4" />}
                   </Button>
                   <Button
                     onClick={() => setIsOpen(false)}
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-white hover:bg-white/20"
+                    className="h-7 w-7 md:h-8 md:w-8 text-white hover:bg-white/20"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </Button>
                 </div>
               </div>
@@ -219,11 +233,11 @@ export default function ChatbotWidget() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-200"
+                      className="bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-200 flex-shrink-0"
                     >
-                      <div className="p-3">
+                      <div className="p-2.5 md:p-3">
                         <div className="flex items-start gap-2">
-                          <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <Info className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-amber-900 mb-1">Usage Guidelines</p>
                             <ul className="text-xs text-amber-800 space-y-0.5">
@@ -237,7 +251,7 @@ export default function ChatbotWidget() {
                             onClick={() => setShowGuidelines(false)}
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-amber-600 hover:bg-amber-100 flex-shrink-0"
+                            className="h-5 w-5 md:h-6 md:w-6 text-amber-600 hover:bg-amber-100 flex-shrink-0"
                           >
                             <X className="w-3 h-3" />
                           </Button>
@@ -250,42 +264,52 @@ export default function ChatbotWidget() {
                   {!showGuidelines && (
                     <button
                       onClick={() => setShowGuidelines(true)}
-                      className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1 text-xs text-slate-600 border-b border-slate-200"
+                      className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1 text-xs text-slate-600 border-b border-slate-200 flex-shrink-0"
                     >
                       <Info className="w-3 h-3" />
                       <span>Show Usage Guidelines</span>
                     </button>
                   )}
 
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-purple-50/30 to-white">
+                  {/* Messages - Scrollable */}
+                  <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-gradient-to-b from-purple-50/30 to-white">
                     {messages.map((message, idx) => (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex gap-2 md:gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         {message.role === 'assistant' && (
-                          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <Sparkles className="w-4 h-4 text-white" />
+                          <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            message.isError 
+                              ? 'bg-gradient-to-br from-red-500 to-rose-500'
+                              : 'bg-gradient-to-br from-purple-500 to-blue-500'
+                          }`}>
+                            {message.isError ? (
+                              <AlertCircle className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                            )}
                           </div>
                         )}
                         <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+                          className={`max-w-[75%] rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
                             message.role === 'user'
                               ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                              : 'bg-white border border-purple-200 text-slate-800'
+                              : message.isError
+                                ? 'bg-red-50 border border-red-200 text-slate-800'
+                                : 'bg-white border border-purple-200 text-slate-800'
                           }`}
                         >
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                          <p className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                           <p className={`text-xs mt-1 ${message.role === 'user' ? 'text-white/70' : 'text-slate-400'}`}>
                             {format(message.timestamp, 'HH:mm')}
                           </p>
                         </div>
                         {message.role === 'user' && (
-                          <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
-                            <User className="w-4 h-4 text-slate-600" />
+                          <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-600" />
                           </div>
                         )}
                       </motion.div>
@@ -296,13 +320,13 @@ export default function ChatbotWidget() {
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex gap-3 justify-start"
+                        className="flex gap-2 md:gap-3 justify-start"
                       >
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                          <Loader2 className="w-4 h-4 text-white animate-spin" />
+                        <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-white animate-spin" />
                         </div>
-                        <div className="bg-white border border-purple-200 rounded-2xl px-4 py-2.5">
-                          <p className="text-sm text-slate-800 font-medium animate-pulse">
+                        <div className="bg-white border border-purple-200 rounded-2xl px-3 py-2 md:px-4 md:py-2.5">
+                          <p className="text-xs md:text-sm text-slate-800 font-medium animate-pulse">
                             {funnyStatus}
                           </p>
                         </div>
@@ -314,7 +338,7 @@ export default function ChatbotWidget() {
 
                   {/* Quick Actions */}
                   {messages.length <= 1 && !isLoading && (
-                    <div className="p-4 border-t border-purple-100 bg-purple-50/30">
+                    <div className="p-3 md:p-4 border-t border-purple-100 bg-purple-50/30 flex-shrink-0">
                       <p className="text-xs text-slate-600 mb-2 font-semibold">Quick Actions:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {quickActions.map((action, idx) => (
@@ -335,8 +359,8 @@ export default function ChatbotWidget() {
                     </div>
                   )}
 
-                  {/* Input */}
-                  <div className="p-4 border-t border-purple-200 bg-white">
+                  {/* Input - Fixed at Bottom */}
+                  <div className="p-3 md:p-4 border-t border-purple-200 bg-white flex-shrink-0">
                     <div className="flex gap-2">
                       <textarea
                         ref={inputRef}
@@ -345,18 +369,18 @@ export default function ChatbotWidget() {
                         onKeyPress={handleKeyPress}
                         placeholder="Type a message or paste WhatsApp text..."
                         disabled={isLoading}
-                        className="flex-1 resize-none border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm max-h-24"
+                        className="flex-1 resize-none border border-purple-200 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs md:text-sm max-h-20 md:max-h-24"
                         rows={1}
                       />
                       <Button
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
-                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-10 px-4"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-9 md:h-10 px-3 md:px-4 flex-shrink-0"
                       >
                         {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
                         ) : (
-                          <Send className="w-4 h-4" />
+                          <Send className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         )}
                       </Button>
                     </div>
