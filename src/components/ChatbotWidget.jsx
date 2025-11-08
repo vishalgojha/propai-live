@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle, X, Send, Loader2, Sparkles, User, Bot,
-  Minimize2, Maximize2
+  Minimize2, Maximize2, Info
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ export default function ChatbotWidget() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [funnyStatus, setFunnyStatus] = useState("");
+  const [showGuidelines, setShowGuidelines] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -212,6 +213,50 @@ export default function ChatbotWidget() {
 
               {!isMinimized && (
                 <>
+                  {/* Usage Guidelines - Collapsible */}
+                  {showGuidelines && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-200"
+                    >
+                      <div className="p-3">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-amber-900 mb-1">Usage Guidelines</p>
+                            <ul className="text-xs text-amber-800 space-y-0.5">
+                              <li>• ⏳ Wait for AI to respond before sending next message</li>
+                              <li>• 🚫 Don't overload - one request at a time</li>
+                              <li>• ✅ Use responsibly - this helps everyone</li>
+                              <li>• 💡 Be clear and specific for best results</li>
+                            </ul>
+                          </div>
+                          <Button
+                            onClick={() => setShowGuidelines(false)}
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-amber-600 hover:bg-amber-100 flex-shrink-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Show Guidelines Link if Hidden */}
+                  {!showGuidelines && (
+                    <button
+                      onClick={() => setShowGuidelines(true)}
+                      className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1 text-xs text-slate-600 border-b border-slate-200"
+                    >
+                      <Info className="w-3 h-3" />
+                      <span>Show Usage Guidelines</span>
+                    </button>
+                  )}
+
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-purple-50/30 to-white">
                     {messages.map((message, idx) => (
