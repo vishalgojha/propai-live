@@ -70,22 +70,24 @@ export default function PropertyDetails() {
     return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
-  const getAgentPhone = () => {
-    // FIX: If broker_contact is Vishal's personal number, use PropAI Office instead
-    if (!property?.broker_contact || property.broker_contact === '919819471310') {
-      return "9102269622278";
+  const getContactInfo = () => {
+    // Determine phone and contact name based on broker info
+    const hasRealBroker = property?.broker_contact && 
+                         property.broker_contact !== '9102269622278' && 
+                         property.broker_contact !== '919819471310';
+    
+    if (hasRealBroker) {
+      return {
+        phone: property.broker_contact,
+        name: property.broker_name || 'Broker'
+      };
     }
-    return property.broker_contact;
-  };
-
-  const getAgentName = () => {
-    // Extract name from broker info or use PropAI as fallback
-    if (property?.broker_contact && 
-        property.broker_contact !== "9102269622278" && 
-        property.broker_contact !== "919819471310") {
-      return "Broker";
-    }
-    return "PropAI Team";
+    
+    // Default to PropAI Office
+    return {
+      phone: '9102269622278',
+      name: 'PropAI Team'
+    };
   };
 
   const getPropertyUrl = () => {
@@ -149,17 +151,16 @@ export default function PropertyDetails() {
         timestamp: new Date().toISOString()
       });
       
-      // Keep only last 50 contacts
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
     } catch (error) {
       console.error('Failed to track contact:', error);
     }
 
-    const message = `Hi${getAgentName() !== "Broker" ? ` ${getAgentName()}` : ''}, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
+    const contact = getContactInfo();
+    const message = `Hi${contact.name !== 'Broker' && contact.name !== 'PropAI Team' ? ` ${contact.name}` : ''}, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
     
-    const phone = getAgentPhone();
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${contact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const getShareUrl = () => {
@@ -505,110 +506,16 @@ export default function PropertyDetails() {
               </div>
             )}
 
-            {/* CTA Section - Responsive */}
+            {/* CTA Section - Single WhatsApp Button Only */}
             <div className="space-y-3 md:space-y-4">
-              {property.broker_contact && 
-               property.broker_contact !== "9102269622278" && 
-               property.broker_contact !== "919819471310" ? (
-                <Button
-                  onClick={handleWhatsApp}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
-                  size="lg"
-                >
-                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  WhatsApp Broker
-                </Button>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    onClick={() => {
-                      // Track contact
-                      try {
-                        const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
-                        contactHistory.push({
-                          id: property.id,
-                          bhk: property.bhk,
-                          location: property.location,
-                          price: property.price,
-                          price_unit: property.price_unit,
-                          listing_type: property.listing_type,
-                          agent: 'Vishal',
-                          timestamp: new Date().toISOString()
-                        });
-                        localStorage.setItem('propai_contact_history', JSON.stringify(contactHistory.slice(-50)));
-                      } catch (e) {}
-                      
-                      const message = `Hi Vishal, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
-                      window.open(`https://wa.me/919819471310?text=${encodeURIComponent(message)}`, '_blank');
-                    }}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
-                    size="lg"
-                  >
-                    <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                    Vishal
-                  </Button>
-
-                  <Button
-                    onClick={() => {
-                      // Track contact
-                      try {
-                        const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
-                        contactHistory.push({
-                          id: property.id,
-                          bhk: property.bhk,
-                          location: property.location,
-                          price: property.price,
-                          price_unit: property.price_unit,
-                          listing_type: property.listing_type,
-                          agent: 'PropAI Office',
-                          timestamp: new Date().toISOString()
-                        });
-                        localStorage.setItem('propai_contact_history', JSON.stringify(contactHistory.slice(-50)));
-                      } catch (e) {}
-                      
-                      const message = `Hi PropAI Team, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
-                      window.open(`https://wa.me/9102269622278?text=${encodeURIComponent(message)}`, '_blank');
-                    }}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
-                    size="lg"
-                  >
-                    <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                    PropAI Office
-                  </Button>
-                </div>
-              )}
-
-              {property.broker_contact && 
-               property.broker_contact !== "9102269622278" && 
-               property.broker_contact !== "919819471310" ? (
-                <Button
-                  onClick={() => window.open(`tel:${property.broker_contact}`, '_self')}
-                  variant="outline"
-                  className="w-full border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
-                >
-                  <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                  Call Broker
-                </Button>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    onClick={() => window.open(`tel:+919819471310`, '_self')}
-                    variant="outline"
-                    className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
-                  >
-                    <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                    Vishal
-                  </Button>
-                  <Button
-                    onClick={() => window.open(`tel:02269622278`, '_self')}
-                    variant="outline"
-                    className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
-                  >
-                    <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                    PropAI Office
-                  </Button>
-                </div>
-              )}
+              <Button
+                onClick={handleWhatsApp}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                size="lg"
+              >
+                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                WhatsApp {getContactInfo().name}
+              </Button>
 
               <Button
                 onClick={handleShare}
