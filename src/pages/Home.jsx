@@ -517,6 +517,13 @@ Thanks! 🙏`;
       {/* Trust Indicators - Images with lazy loading */}
       <section className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Honest Disclaimer with Humor */}
+          <div className="text-center mb-8">
+            <p className="text-white/90 text-sm font-light italic">
+              ⚠️ Real talk: These numbers are 100% made up. But we're building something real—and we plan to blow past these fake stats. Watch this space. 🚀
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
             {stats.map((stat, idx) => (
               <motion.div
@@ -530,6 +537,13 @@ Thanks! 🙏`;
                 <div className="text-blue-100 text-sm">{stat.label}</div>
               </motion.div>
             ))}
+          </div>
+
+          {/* Aspirational Footer */}
+          <div className="text-center mt-8">
+            <p className="text-white/80 text-xs font-light">
+              (Aspirational AF. But give us a minute—we'll make the real numbers even better.) 💪✨
+            </p>
           </div>
         </div>
       </section>
