@@ -136,7 +136,7 @@ export default function Admin() {
     refetchInterval: 15000,
   });
 
-  // Calculate real-time broker listing counts from properties
+  // ✅ CALCULATE REAL-TIME BROKER LISTING COUNTS
   const brokersWithCounts = useMemo(() => {
     return brokers.map(broker => {
       const brokerProperties = properties.filter(p => p.broker_id === broker.id);
@@ -146,7 +146,6 @@ export default function Admin() {
         ...broker,
         total_listings_count: brokerProperties.length,
         active_listings_count: activeProperties.length,
-        _calculated: true
       };
     });
   }, [brokers, properties]);
@@ -790,7 +789,7 @@ export default function Admin() {
               <div>• Properties: {results.properties_updated} updated</div>
               <div>• Buildings: {results.buildings_updated} updated</div>
               <div>• Requirements: {results.requirements_updated} updated</div>
-              <div>• Locations reduced: ${results.unique_locations_before} → ${results.unique_locations_after}</div>
+              <div>• Locations reduced: {results.unique_locations_before} → {results.unique_locations_after}</div>
               {results.errors > 0 && (
                 <div className="text-red-300">⚠ Errors: {results.errors}</div>
               )}
@@ -1148,9 +1147,9 @@ export default function Admin() {
       needsPhotos: properties.filter(p => !p.images || p.images.length === 0).length,
     },
     brokers: {
-      total: brokersWithCounts.length,
-      active: brokersWithCounts.filter(b => b.status === "Active").length,
-      verified: brokersWithCounts.filter(b => b.verified).length,
+      total: brokers.length,
+      active: brokers.filter(b => b.status === "Active").length,
+      verified: brokers.filter(b => b.verified).length,
     },
     requirements: {
       total: requirements.length,
@@ -1158,7 +1157,7 @@ export default function Admin() {
     }
   };
 
-  // Filtered data
+  // Filtered data - USE CALCULATED COUNTS
   const filteredProperties = properties.filter(property => {
     if (property.is_duplicate) return false;
     
@@ -2025,9 +2024,9 @@ export default function Admin() {
                     </Select>
                   </div>
                   
-                  <div className="bg-green-50 rounded-lg p-3 mt-3 border border-green-200">
-                    <p className="text-xs text-green-800">
-                      <strong>✅ Live Counts:</strong> Listing counts are calculated in real-time from property data (updated every 15s).
+                  <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-200">
+                    <p className="text-xs text-amber-800">
+                      <strong>💡 Tip:</strong> If listing counts are incorrect, click "Data Quality" → "Fix Data Issues" or use "Build All Profiles" to recalculate.
                     </p>
                   </div>
                 </div>
@@ -2040,7 +2039,6 @@ export default function Admin() {
                     </div>
                   ) : (
                     filteredBrokers.map((broker) => {
-                      // Use calculated counts
                       const activeListings = broker.active_listings_count || 0;
                       const totalListings = broker.total_listings_count || 0;
                       
@@ -2071,7 +2069,7 @@ export default function Admin() {
                                 <span>•</span>
                                 <span className="flex items-center gap-1">
                                   <Package className="w-3 h-3" />
-                                  <strong className="text-green-700">{activeListings}</strong> active
+                                  <strong>{activeListings}</strong> active
                                 </span>
                                 {totalListings > activeListings && (
                                   <>
