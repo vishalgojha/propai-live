@@ -4,8 +4,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * ULTRA-FAST PROPERTY PARSER WITH DEDUPLICATION
  * Target: 1-2 seconds per property
  * 
- * NEW: Checks for duplicates BEFORE creating property
- * Skips creation if duplicate found
+ * NEW: Enhanced broker extraction with better pattern recognition
+ * FIXED: More aggressive broker name detection from messages
  * 
  * BROKER LOGIC:
  * - ALWAYS extracts broker from message content (name + phone)
@@ -88,6 +88,64 @@ Return this EXACT JSON structure with ALL fields:
   "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words minimum - MUST be full paragraph)"
 }
 
+**CRITICAL for broker_name extraction - READ CAREFULLY:**
+
+You MUST extract the broker's name from the message. Look for these patterns:
+
+1. **Name + Phone patterns:**
+   - "Ramesh 9820056789"
+   - "Contact Priya 98200xxxxx"
+   - "Kapil 9773757759"
+   - "From Maz 9820..."
+   - "Call Aditya on 9820..."
+
+2. **Signature patterns:**
+   - End of message: "Thanks, Ramesh"
+   - "Regards, Priya Sharma"
+   - "- Kapil"
+   - "Best, Aditya Kumar"
+
+3. **Agency + Name:**
+   - "Lacasaa Real Estate - Ramesh"
+   - "From: Priya (Lacasaa)"
+   - "Maz | Lacasaa Real Estate"
+
+4. **WhatsApp contact names:**
+   - If message has sender info like "Kapil Chariot", "Ramesh Kumar", etc.
+   - Extract JUST the first name or full name if available
+
+5. **Common variations:**
+   - Names at start: "Ramesh here, I have 2BHK..."
+   - Names in middle: "...please contact Priya for viewing..."
+   - Names at end: "...call me - Kapil"
+
+**EXTRACTION RULES:**
+- Extract FULL NAME if present (e.g., "Ramesh Kumar", "Priya Sharma")
+- If only first name, extract that (e.g., "Ramesh", "Priya", "Kapil")
+- If name appears with agency, extract BOTH separately
+- Agency goes in broker_agency field (e.g., "Lacasaa Real Estate")
+- Name goes in broker_name field (e.g., "Ramesh", "Priya Sharma")
+- Phone MUST have 91 country code prefix
+
+**EXAMPLES:**
+
+Message: "2bhk ff 80L Bandra West, Ramesh 9820056789"
+→ broker_name: "Ramesh", broker_phone: "919820056789"
+
+Message: "3bhk available, contact Priya Sharma 98200xxxxx"
+→ broker_name: "Priya Sharma", broker_phone: "9198200xxxxx"
+
+Message: "Office space BKC. Call Kapil 9773757759"
+→ broker_name: "Kapil", broker_phone: "919773757759"
+
+Message: "2bhk rent Juhu. Thanks, Maz - Lacasaa Real Estate"
+→ broker_name: "Maz", broker_agency: "Lacasaa Real Estate"
+
+**IF NO NAME FOUND:**
+- If you cannot find ANY broker name, use "Unknown Broker"
+- Still extract phone number if present
+- This should be RARE - try very hard to find the name
+
 **CRITICAL for ai_title:**
 - Create 10-15 word descriptive title that's natural and informative
 - Format: "{Furnishing} {BHK} in {Building Name/Pocket}, {Location}"
@@ -130,11 +188,6 @@ Return this EXACT JSON structure with ALL fields:
 - Write ONE continuous paragraph
 - Even if original message is short, CREATE A FULL DESCRIPTION from the available data
 
-**CRITICAL for broker extraction:**
-- ALWAYS extract broker name and phone from message content
-- Look for patterns like "Ramesh 9820056789", "Contact Priya 98200xxxxx", "Kapil 9773757759"
-- Phone must have country code (91...)
-
 Return ONLY valid JSON, no markdown`;
 
       extractedData = await base44.asServiceRole.integrations.Core.InvokeLLM({
@@ -166,6 +219,42 @@ Return ONLY valid JSON, no markdown`;
           }
         }
       });
+
+      // ✅ FALLBACK: If broker_name is generic or missing, try regex extraction
+      if (!extractedData.broker_name || 
+          extractedData.broker_name === 'Unknown Broker' ||
+          extractedData.broker_name.toLowerCase().includes('broker')) {
+        
+        console.log('⚠️ Generic broker name detected, trying regex extraction...');
+        
+        // Pattern 1: Name before phone (most common)
+        const namePhonePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*(?::|-)?\s*(\+?91)?[\s-]?([6-9]\d{9})/i;
+        const match1 = message.match(namePhonePattern);
+        
+        if (match1) {
+          extractedData.broker_name = match1[1].trim();
+          console.log(`✓ Extracted name via regex: ${extractedData.broker_name}`);
+        } else {
+          // Pattern 2: Thanks/Regards signature
+          const signaturePattern = /(?:Thanks|Regards|Best|Cheers|From|Contact),?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i;
+          const match2 = message.match(signaturePattern);
+          
+          if (match2) {
+            extractedData.broker_name = match2[1].trim();
+            console.log(`✓ Extracted name from signature: ${extractedData.broker_name}`);
+          } else {
+            // Pattern 3: Dash signature at end
+            const dashPattern = /-\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*$/i;
+            const match3 = message.match(dashPattern);
+            
+            if (match3) {
+              extractedData.broker_name = match3[1].trim();
+              console.log(`✓ Extracted name from dash: ${extractedData.broker_name}`);
+            }
+          }
+        }
+      }
+      
     } catch (llmError) {
       return Response.json({ 
         success: false,
