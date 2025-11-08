@@ -271,7 +271,7 @@ export default function Layout({ children, currentPageName }) {
                           setMobileMenuOpen(false);
                         }}
                         variant="outline"
-                        className="w-full justify-start gap-2 mb-2"
+                        className="w-full justify-start gap-2"
                       >
                         <User className="w-4 h-4" />
                         My Profile
@@ -282,7 +282,7 @@ export default function Layout({ children, currentPageName }) {
                           setMobileMenuOpen(false);
                         }}
                         variant="outline"
-                        className="w-full justify-start gap-2"
+                        className="w-full justify-start gap-2 mt-2"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
@@ -339,6 +339,15 @@ export default function Layout({ children, currentPageName }) {
               <ul className="space-y-3 text-sm text-slate-600 font-light">
                 <li>
                   <Link 
+                    to={createPageUrl("SmartFeed")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    SmartFeed
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Residential"} 
                     className="hover:text-purple-600 transition-colors flex items-center group"
                   >
@@ -382,6 +391,15 @@ export default function Layout({ children, currentPageName }) {
                     Blog & Guides
                   </Link>
                 </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("BrokerNetwork")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Broker Network
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -409,6 +427,15 @@ export default function Layout({ children, currentPageName }) {
                 </li>
                 <li>
                   <Link 
+                    to={createPageUrl("AdminDashboard")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Analytics
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     to={createPageUrl("SmartFeed")} 
                     className="hover:text-purple-600 transition-colors flex items-center group"
                   >
@@ -429,7 +456,7 @@ export default function Layout({ children, currentPageName }) {
               </ul>
             </div>
 
-            {/* Legal - NEW */}
+            {/* Legal */}
             <div className="md:col-span-2">
               <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Legal</h4>
               <ul className="space-y-3 text-sm text-slate-600 font-light">
