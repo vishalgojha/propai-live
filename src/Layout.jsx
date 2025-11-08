@@ -47,7 +47,7 @@ export default function Layout({ children, currentPageName }) {
     
     // Default description (will be overridden by SEO component on specific pages)
     if (!document.querySelector('meta[name="description"]')) {
-      setMetaTag('description', 'AI-powered Mumbai real estate intelligence platform. Real-time property data, building intelligence, and broker trust scoring. Find verified properties with transparent pricing.');
+      setMetaTag('description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.');
     }
     
     // Open Graph defaults - CRITICAL for social sharing
@@ -60,29 +60,29 @@ export default function Layout({ children, currentPageName }) {
     
     // Default OG title (will be overridden by SEO component)
     if (!document.querySelector('meta[property="og:title"]')) {
-      setMetaTag('og:title', 'PropAI Live | AI-Powered Mumbai Real Estate Intelligence', true);
+      setMetaTag('og:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.', true);
     }
     
     // Default OG description (will be overridden by SEO component)
     if (!document.querySelector('meta[property="og:description"]')) {
-      setMetaTag('og:description', 'Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring.', true);
+      setMetaTag('og:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds.', true);
     }
     
-    // Default OG image - UPDATE THIS WITH YOUR ACTUAL IMAGE URL
+    // Default OG image - YOUR BRANDED SCREENSHOT
     if (!document.querySelector('meta[property="og:image"]')) {
-      setMetaTag('og:image', 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1200&auto=format&fit=crop', true);
+      setMetaTag('og:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg', true);
     }
     
     // Twitter Card defaults
     setMetaTag('twitter:card', 'summary_large_image');
     if (!document.querySelector('meta[name="twitter:title"]')) {
-      setMetaTag('twitter:title', 'PropAI Live | AI-Powered Mumbai Real Estate Intelligence');
+      setMetaTag('twitter:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.');
     }
     if (!document.querySelector('meta[name="twitter:description"]')) {
-      setMetaTag('twitter:description', 'Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring.');
+      setMetaTag('twitter:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds.');
     }
     if (!document.querySelector('meta[name="twitter:image"]')) {
-      setMetaTag('twitter:image', 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1200&auto=format&fit=crop');
+      setMetaTag('twitter:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg');
     }
     
     // Additional SEO tags

@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-// Default OG image - using Unsplash placeholder for Mumbai skyline
-const DEFAULT_OG_IMAGE = 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1200&h=630&fit=crop';
+// Default OG image - PropAI Live branded screenshot
+const DEFAULT_OG_IMAGE = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg';
 
 export default function SEO({ 
   title = 'PropAI Live | AI-Powered Mumbai Real Estate Intelligence', 
-  description = 'Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring. Find verified properties with transparent pricing.',
+  description = 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.',
   ogImage, 
   schema,
   canonical 
@@ -27,7 +27,7 @@ export default function SEO({
       document.head.appendChild(meta);
     }
 
-    // Use provided image or default
+    // Use provided image or default branded screenshot
     const imageUrl = ogImage || DEFAULT_OG_IMAGE;
 
     // Set OG tags
@@ -47,9 +47,9 @@ export default function SEO({
     setOGTag('og:title', title);
     setOGTag('og:description', description);
     setOGTag('og:image', imageUrl);
-    setOGTag('og:image:width', '1200');
-    setOGTag('og:image:height', '630');
-    setOGTag('og:image:alt', title);
+    setOGTag('og:image:width', '1080');
+    setOGTag('og:image:height', '1920');
+    setOGTag('og:image:alt', 'PropAI Live - WhatsApp to Organized Properties, Instantly');
     setOGTag('og:type', 'website');
     setOGTag('og:url', canonical || window.location.href);
     setOGTag('og:site_name', 'PropAI Live');
@@ -73,7 +73,7 @@ export default function SEO({
     setTwitterTag('twitter:title', title);
     setTwitterTag('twitter:description', description);
     setTwitterTag('twitter:image', imageUrl);
-    setTwitterTag('twitter:image:alt', title);
+    setTwitterTag('twitter:image:alt', 'PropAI Live - WhatsApp to Organized Properties, Instantly');
 
     // Set canonical URL
     const canonicalUrl = canonical || window.location.href.split('?')[0]; // Remove query params
