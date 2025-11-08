@@ -15,56 +15,82 @@ import {
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
-    // Set global meta tags
-    const setMetaTag = (name, content) => {
-      let tag = document.querySelector(`meta[name="${name}"]`);
+    // Set global meta tags - CRITICAL FOR SOCIAL SHARING
+    const setMetaTag = (name, content, isProperty = false) => {
+      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+      let tag = document.querySelector(selector);
       if (tag) {
         tag.setAttribute('content', content);
       } else {
         tag = document.createElement('meta');
-        tag.setAttribute('name', name);
+        if (isProperty) {
+          tag.setAttribute('property', name);
+        } else {
+          tag.setAttribute('name', name);
+        }
         tag.setAttribute('content', content);
         document.head.appendChild(tag);
       }
     };
 
-    // Default meta tags
+    // Default meta tags - FALLBACK for all pages
     setMetaTag('viewport', 'width=device-width, initial-scale=1.0');
-    setMetaTag('theme-color', '#8B5CF6'); // Purple-500 theme
+    setMetaTag('theme-color', '#8B5CF6');
     setMetaTag('author', 'PropAI Live');
     setMetaTag('robots', 'index, follow');
     
-    // Google Search Console verification (add your actual verification code)
-    setMetaTag('google-site-verification', 'YOUR_GOOGLE_VERIFICATION_CODE_HERE');
+    // Default description (will be overridden by SEO component on specific pages)
+    if (!document.querySelector('meta[name="description"]')) {
+      setMetaTag('description', 'AI-powered Mumbai real estate intelligence platform. Real-time property data, building intelligence, and broker trust scoring. Find verified properties with transparent pricing.');
+    }
+    
+    // Open Graph defaults - CRITICAL for social sharing
+    setMetaTag('og:site_name', 'PropAI Live', true);
+    setMetaTag('og:type', 'website', true);
+    setMetaTag('og:locale', 'en_IN', true);
+    
+    // Set OG URL to current page
+    setMetaTag('og:url', window.location.href, true);
+    
+    // Default OG title (will be overridden by SEO component)
+    if (!document.querySelector('meta[property="og:title"]')) {
+      setMetaTag('og:title', 'PropAI Live | AI-Powered Mumbai Real Estate Intelligence', true);
+    }
+    
+    // Default OG description (will be overridden by SEO component)
+    if (!document.querySelector('meta[property="og:description"]')) {
+      setMetaTag('og:description', 'Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring.', true);
+    }
+    
+    // Default OG image - UPDATE THIS WITH YOUR ACTUAL IMAGE URL
+    if (!document.querySelector('meta[property="og:image"]')) {
+      setMetaTag('og:image', 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1200&auto=format&fit=crop', true);
+    }
+    
+    // Twitter Card defaults
+    setMetaTag('twitter:card', 'summary_large_image');
+    if (!document.querySelector('meta[name="twitter:title"]')) {
+      setMetaTag('twitter:title', 'PropAI Live | AI-Powered Mumbai Real Estate Intelligence');
+    }
+    if (!document.querySelector('meta[name="twitter:description"]')) {
+      setMetaTag('twitter:description', 'Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring.');
+    }
+    if (!document.querySelector('meta[name="twitter:image"]')) {
+      setMetaTag('twitter:image', 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1200&auto=format&fit=crop');
+    }
     
     // Additional SEO tags
     setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
     setMetaTag('geo.region', 'IN-MH');
     setMetaTag('geo.placename', 'Mumbai');
-    setMetaTag('geo.position', '19.0760;72.8877'); // Updated to 72.8877
-    setMetaTag('ICBM', '19.0760, 72.8877'); // Updated to 72.8877
-    
-    // Open Graph defaults
-    const setOGTag = (property, content) => {
-      let tag = document.querySelector(`meta[property="${property}"]`);
-      if (tag) {
-        tag.setAttribute('content', content);
-      } else {
-        tag = document.createElement('meta');
-        tag.setAttribute('property', property);
-        tag.setAttribute('content', content);
-        document.head.appendChild(tag);
-      }
-    };
-
-    setOGTag('og:site_name', 'PropAI Live');
-    setOGTag('og:locale', 'en_IN');
+    setMetaTag('geo.position', '19.0760;72.8777');
+    setMetaTag('ICBM', '19.0760, 72.8777');
     
     // Add RSS Feed auto-discovery
     let rssLink = document.querySelector('link[type="application/rss+xml"]');
@@ -87,7 +113,7 @@ export default function Layout({ children, currentPageName }) {
       sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
       document.head.appendChild(sitemapLink);
     }
-  }, []);
+  }, [location.pathname]); // Re-run when path changes
 
   useEffect(() => {
     // Check if user is logged in and get user data
