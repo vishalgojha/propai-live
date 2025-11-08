@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
-  Users, Building2, MapPin, Star, TrendingUp, Eye,
-  Search, Network, Target, Zap, Home, Mail, UserPlus, UserCheck
+  Users, Building2, MapPin, Star, Package, TrendingUp, Eye,
+  MessageCircle, UserPlus, UserCheck, Search, Network,
+  Phone, Mail, Sparkles, Award, DollarSign, ShieldCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -19,236 +20,273 @@ import { Toaster } from "@/components/ui/sonner";
 export default function BrokerNetwork() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
-  const [userBrokerProfile, setUserBrokerProfile] = useState(null);
-  const [connectedBrokerIds, setConnectedBrokerIds] = useState([]);
+  const [currentUserBroker, setCurrentUserBroker] = useState(null);
 
-  // Auth check - accessible to all logged-in users
+  // Load current user and their broker profile
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadUser = async () => {
       try {
         const user = await base44.auth.me();
-        if (!user) {
-          navigate(createPageUrl("Home"));
-          return;
-        }
         setCurrentUser(user);
-        setIsAuthorized(true);
-
-        // Try to find user's broker profile
-        if (user.broker_id) {
+        
+        // If user has broker_id, fetch their broker profile
+        if (user?.broker_id) {
           const brokers = await base44.entities.Broker.list();
-          const myBroker = brokers.find(b => b.id === user.broker_id);
-          if (myBroker) {
-            setUserBrokerProfile(myBroker);
-            
-            // Load existing connections
-            const connections = user.connected_brokers || [];
-            setConnectedBrokerIds(connections);
-          }
+          const userBroker = brokers.find(b => b.id === user.broker_id);
+          setCurrentUserBroker(userBroker);
         }
       } catch (error) {
-        navigate(createPageUrl("Home"));
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to load user:', error);
       }
     };
-    checkAuth();
-  }, [navigate]);
+    loadUser();
+  }, []);
 
   const { data: brokers = [], isLoading: brokersLoading } = useQuery({
     queryKey: ['brokers'],
-    queryFn: () => base44.entities.Broker.list('-total_listings_count'),
+    queryFn: () => base44.entities.Broker.list('-last_activity'),
     initialData: [],
-    enabled: isAuthorized,
+    refetchInterval: 30000,
   });
 
   const { data: properties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list(),
     initialData: [],
-    enabled: isAuthorized,
   });
 
-  // Connect/Disconnect Mutation
+  // Connect/Disconnect mutation
   const connectMutation = useMutation({
-    mutationFn: async ({ brokerId, action }) => {
-      let updatedConnections = [...connectedBrokerIds];
+    mutationFn: async (brokerId) => {
+      const currentConnections = currentUser?.connected_brokers || [];
+      const isConnected = currentConnections.includes(brokerId);
       
-      if (action === 'connect') {
-        if (!updatedConnections.includes(brokerId)) {
-          updatedConnections.push(brokerId);
-        }
-      } else {
-        updatedConnections = updatedConnections.filter(id => id !== brokerId);
-      }
+      const updatedConnections = isConnected
+        ? currentConnections.filter(id => id !== brokerId)
+        : [...currentConnections, brokerId];
       
       await base44.auth.updateMe({ connected_brokers: updatedConnections });
-      return updatedConnections;
+      return { brokerId, isConnected: !isConnected };
     },
-    onSuccess: (updatedConnections, variables) => {
-      setConnectedBrokerIds(updatedConnections);
-      const broker = brokers.find(b => b.id === variables.brokerId);
+    onSuccess: ({ brokerId, isConnected }) => {
+      const broker = brokers.find(b => b.id === brokerId);
       
-      if (variables.action === 'connect') {
-        toast.success(`✅ Connected with ${broker?.name || 'Broker'}!`, {
-          description: 'You can now see their contact details',
-          duration: 3000
+      if (isConnected) {
+        toast.success(`✅ Connected with ${broker?.name}!`, {
+          description: 'Contact details are now unlocked',
+          duration: 3000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
         });
       } else {
-        toast.info(`Disconnected from ${broker?.name || 'Broker'}`, {
+        toast.info(`Disconnected from ${broker?.name}`, {
           duration: 2000
         });
       }
       
-      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+      // Update local user state
+      setCurrentUser(prev => ({
+        ...prev,
+        connected_brokers: isConnected 
+          ? [...(prev?.connected_brokers || []), brokerId]
+          : (prev?.connected_brokers || []).filter(id => id !== brokerId)
+      }));
     },
     onError: (error) => {
-      toast.error('Failed to update connection', {
+      toast.error('Connection failed', {
         description: error.message
       });
     }
   });
 
   const handleConnect = (brokerId) => {
-    const isConnected = connectedBrokerIds.includes(brokerId);
-    connectMutation.mutate({
-      brokerId,
-      action: isConnected ? 'disconnect' : 'connect'
-    });
+    if (!currentUser) {
+      toast.error('Please login to connect with brokers');
+      navigate(createPageUrl("Home"));
+      return;
+    }
+    connectMutation.mutate(brokerId);
   };
 
-  // Calculate network connections for all brokers
-  const brokerNetwork = useMemo(() => {
-    if (!brokers.length || !properties.length) return [];
+  // Calculate network intelligence
+  const networkData = useMemo(() => {
+    if (!currentUser || !currentUserBroker) return brokers.map(b => ({ ...b, networkScore: 0, isConnected: false }));
 
-    const network = brokers
-      .filter(b => b.id !== userBrokerProfile?.id) // Don't show yourself
-      .map(broker => {
-      const brokerProps = properties.filter(p => p.broker_id === broker.id);
+    return brokers.map(broker => {
+      if (broker.id === currentUserBroker.id) return null; // Don't show self
 
-      const brokerAreas = new Set(broker.specializations?.primary_locations || broker.areas_covered || []);
-      const brokerBuildings = new Set(brokerProps.map(p => p.building_name).filter(Boolean));
-      const brokerBHKs = new Set(brokerProps.map(p => p.bhk).filter(Boolean));
-      const brokerPrices = brokerProps
-        .map(p => p.price_unit === 'crores' ? p.price * 100 : p.price)
-        .filter(Boolean);
-      const avgPrice = brokerPrices.length > 0
-        ? brokerPrices.reduce((a, b) => a + b, 0) / brokerPrices.length
-        : 0;
+      let score = 0;
+      const insights = [];
+      const isConnected = currentUser?.connected_brokers?.includes(broker.id) || false;
 
-      const connections = brokers
-        .filter(otherBroker => otherBroker.id !== broker.id && otherBroker.id !== userBrokerProfile?.id)
-        .map(otherBroker => {
-          const otherProps = properties.filter(p => p.broker_id === otherBroker.id);
-          const otherAreas = new Set(otherBroker.specializations?.primary_locations || otherBroker.areas_covered || []);
-          const otherBuildings = new Set(otherProps.map(p => p.building_name).filter(Boolean));
-          const otherBHKs = new Set(otherProps.map(p => p.bhk).filter(Boolean));
-          const otherPrices = otherProps
-            .map(p => p.price_unit === 'crores' ? p.price * 100 : p.price)
-            .filter(Boolean);
-          const otherAvgPrice = otherPrices.length > 0
-            ? otherPrices.reduce((a, b) => a + b, 0) / otherPrices.length
-            : 0;
+      // Team relationship check (40 points)
+      const isTeamMember = currentUserBroker.team_members?.some(m => m.broker_id === broker.id);
+      const isTeamLeader = broker.team_members?.some(m => m.broker_id === currentUserBroker.id);
+      const sameTeamLeader = currentUserBroker.reports_to && currentUserBroker.reports_to === broker.reports_to;
+      
+      if (isTeamMember) {
+        score += 40;
+        insights.push({
+          type: 'team',
+          icon: '👥',
+          label: 'Your Team Member',
+          description: `${broker.name} is in your team`,
+          color: 'bg-blue-100 text-blue-700 border-blue-300'
+        });
+      } else if (isTeamLeader) {
+        score += 40;
+        insights.push({
+          type: 'team',
+          icon: '⭐',
+          label: 'Your Team Leader',
+          description: `${broker.name} leads your team`,
+          color: 'bg-indigo-100 text-indigo-700 border-indigo-300'
+        });
+      } else if (sameTeamLeader) {
+        score += 35;
+        insights.push({
+          type: 'team',
+          icon: '🤝',
+          label: 'Same Team',
+          description: 'You work under the same team leader',
+          color: 'bg-purple-100 text-purple-700 border-purple-300'
+        });
+      }
 
-          let score = 0;
-          const reasons = [];
+      // Calculate price range complementarity (30 points)
+      const myProps = properties.filter(p => p.broker_id === currentUserBroker.id && p.status === 'Active' && !p.is_duplicate);
+      const theirProps = properties.filter(p => p.broker_id === broker.id && p.status === 'Active' && !p.is_duplicate);
 
-          const sharedAreas = [...brokerAreas].filter(area => otherAreas.has(area));
-          if (sharedAreas.length > 0) {
-            score += Math.min(40, sharedAreas.length * 15);
-            reasons.push(`${sharedAreas.length} shared area${sharedAreas.length > 1 ? 's' : ''}`);
-          }
+      if (myProps.length > 0 && theirProps.length > 0) {
+        const myPrices = myProps.map(p => p.price_unit === 'crores' ? p.price * 100 : p.price);
+        const theirPrices = theirProps.map(p => p.price_unit === 'crores' ? p.price * 100 : p.price);
 
-          const sharedBuildings = [...brokerBuildings].filter(building => otherBuildings.has(building));
-          if (sharedBuildings.length > 0) {
-            score += Math.min(30, sharedBuildings.length * 10);
-            reasons.push(`${sharedBuildings.length} shared building${sharedBuildings.length > 1 ? 's' : ''}`);
-          }
+        const myAvg = myPrices.reduce((a, b) => a + b, 0) / myPrices.length;
+        const theirAvg = theirPrices.reduce((a, b) => a + b, 0) / theirPrices.length;
 
-          const isTeamMember = broker.team_members?.some(tm => tm.broker_id === otherBroker.id);
-          const isInOtherTeam = otherBroker.team_members?.some(tm => tm.broker_id === broker.id);
-          if (isTeamMember || isInOtherTeam) {
-            score += 50;
-            reasons.push('Known team member');
-          }
+        const priceDiff = Math.abs(myAvg - theirAvg);
+        const percentDiff = priceDiff / Math.max(myAvg, theirAvg);
 
-          const sharedBHKs = [...brokerBHKs].filter(bhk => otherBHKs.has(bhk));
-          if (sharedBHKs.length > 0) {
-            score += 10;
-            reasons.push('Shared BHK types');
-          }
+        // Complementary if price ranges differ by 30%+ (different market segments)
+        if (percentDiff > 0.3) {
+          score += 30;
+          const higherBroker = theirAvg > myAvg ? broker.name : 'You';
+          const lowerBroker = theirAvg > myAvg ? 'You' : broker.name;
+          
+          insights.push({
+            type: 'price',
+            icon: '💰',
+            label: 'Complementary Price Range',
+            description: `${higherBroker} handle${higherBroker === 'You' ? '' : 's'} premium segment, ${lowerBroker} handle${lowerBroker === 'You' ? '' : 's'} mid-range`,
+            color: 'bg-emerald-100 text-emerald-700 border-emerald-300'
+          });
+        } 
+        // Similar price range (15 points - potential competition but also collaboration)
+        else if (percentDiff < 0.15) {
+          score += 15;
+          insights.push({
+            type: 'price',
+            icon: '🎯',
+            label: 'Similar Price Range',
+            description: 'You both serve the same market segment',
+            color: 'bg-amber-100 text-amber-700 border-amber-300'
+          });
+        }
+      }
 
-          if (avgPrice && otherAvgPrice) {
-            const priceDiff = Math.abs(avgPrice - otherAvgPrice) / Math.max(avgPrice, otherAvgPrice);
-            if (priceDiff < 0.3) {
-              score += 15;
-              reasons.push('Similar price range');
-            } else if (priceDiff > 0.5 && priceDiff < 1.5) {
-              score += 10;
-              reasons.push('Complementary price segments');
-            }
-          }
+      // Shared locations (20 points)
+      const myAreas = currentUserBroker.specializations?.primary_locations || currentUserBroker.areas_covered || [];
+      const theirAreas = broker.specializations?.primary_locations || broker.areas_covered || [];
+      const sharedAreas = myAreas.filter(area => theirAreas.includes(area));
 
-          if (broker.specializations?.listing_type_focus === otherBroker.specializations?.listing_type_focus && broker.specializations?.listing_type_focus) {
-            score += 10;
-            reasons.push('Similar listing focus');
-          }
+      if (sharedAreas.length > 0) {
+        score += Math.min(20, sharedAreas.length * 7);
+        insights.push({
+          type: 'location',
+          icon: '📍',
+          label: `${sharedAreas.length} Shared Area${sharedAreas.length > 1 ? 's' : ''}`,
+          description: sharedAreas.slice(0, 2).join(', ') + (sharedAreas.length > 2 ? '...' : ''),
+          color: 'bg-cyan-100 text-cyan-700 border-cyan-300'
+        });
+      }
 
-          return {
-            broker: otherBroker,
-            score: Math.round(score),
-            reasons,
-            sharedAreas,
-            sharedBuildings,
-            isTeamMember: isTeamMember || isInOtherTeam
-          };
-        })
-        .filter(conn => conn.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
+      // Shared buildings (15 points)
+      const myBuildings = [...new Set(myProps.map(p => p.building_id).filter(Boolean))];
+      const theirBuildings = [...new Set(theirProps.map(p => p.building_id).filter(Boolean))];
+      const sharedBuildings = myBuildings.filter(b => theirBuildings.includes(b));
+
+      if (sharedBuildings.length > 0) {
+        score += Math.min(15, sharedBuildings.length * 5);
+        insights.push({
+          type: 'building',
+          icon: '🏢',
+          label: `${sharedBuildings.length} Shared Building${sharedBuildings.length > 1 ? 's' : ''}`,
+          description: 'You list properties in the same buildings',
+          color: 'bg-violet-100 text-violet-700 border-violet-300'
+        });
+      }
+
+      // High trust score (10 points)
+      if (broker.trust_score >= 85) {
+        score += 10;
+        insights.push({
+          type: 'trust',
+          icon: '🛡️',
+          label: 'High Trust Score',
+          description: `${broker.trust_score}/100 - Reliable broker`,
+          color: 'bg-green-100 text-green-700 border-green-300'
+        });
+      }
 
       return {
         ...broker,
-        connections,
-        connectionCount: connections.length,
-        strongConnections: connections.filter(c => c.score >= 50).length,
-        isConnected: connectedBrokerIds.includes(broker.id)
+        networkScore: Math.min(100, score),
+        connectionInsights: insights,
+        isConnected,
+        sharedAreas,
+        sharedBuildings: sharedBuildings.length
       };
-    });
+    }).filter(Boolean); // Remove null (self)
+  }, [brokers, properties, currentUser, currentUserBroker]);
 
-    return network.sort((a, b) => b.strongConnections - a.strongConnections);
-  }, [brokers, properties, userBrokerProfile, connectedBrokerIds]);
-
+  // Filter and sort network
   const filteredNetwork = useMemo(() => {
-    if (!searchQuery) return brokerNetwork;
-    
-    const query = searchQuery.toLowerCase();
-    return brokerNetwork.filter(broker => 
-      broker.name?.toLowerCase().includes(query) ||
-      broker.phone?.includes(query) ||
-      broker.custom_id?.toLowerCase().includes(query) ||
-      broker.agency_name?.toLowerCase().includes(query) || // Added agency name to search
-      broker.areas_covered?.some(area => area.toLowerCase().includes(query)) ||
-      broker.specializations?.primary_locations?.some(area => area.toLowerCase().includes(query))
-    );
-  }, [brokerNetwork, searchQuery]);
+    let filtered = networkData;
 
-  if (isLoading) {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(broker => 
+        broker.name?.toLowerCase().includes(query) ||
+        broker.phone?.includes(query) ||
+        broker.agency_name?.toLowerCase().includes(query) ||
+        broker.areas_covered?.some(area => area.toLowerCase().includes(query)) ||
+        broker.specializations?.primary_locations?.some(loc => loc.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort by network score (highest first)
+    return filtered.sort((a, b) => b.networkScore - a.networkScore);
+  }, [networkData, searchQuery]);
+
+  const connectedCount = currentUser?.connected_brokers?.length || 0;
+  const strongConnections = filteredNetwork.filter(b => b.networkScore >= 50).length;
+
+  if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <Network className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-slate-600 font-medium">Loading network...</p>
+          <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Login Required</h2>
+          <p className="text-slate-600 mb-4">Please login to access the broker network</p>
+          <Button onClick={() => navigate(createPageUrl("Home"))}>
+            Go to Home
+          </Button>
         </div>
       </div>
     );
   }
-
-  if (!isAuthorized) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -257,83 +295,56 @@ export default function BrokerNetwork() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
-              <Network className="w-6 h-6 text-white" />
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
+                <Network className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">
+                  Broker Network
+                </h1>
+                <p className="text-sm text-slate-600 font-light">Connect, collaborate, and grow together</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Broker Network</h1>
-              <p className="text-sm text-slate-600">Connect • View profiles • Unlock contact details</p>
-            </div>
+            {connectedCount > 0 && (
+              <Badge className="bg-green-100 text-green-700 border-green-300 text-lg px-4 py-2">
+                <UserCheck className="w-5 h-5 mr-2" />
+                {connectedCount} Connection{connectedCount > 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
-          
-          {/* Connected Count Badge */}
-          {connectedBrokerIds.length > 0 && (
-            <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2">
-              <UserCheck className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-semibold text-green-700">
-                {connectedBrokerIds.length} Connection{connectedBrokerIds.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Users className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{brokerNetwork.length}</p>
-                <p className="text-xs text-slate-500">Active Brokers</p>
-              </div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Card className="p-4 bg-white border-2 border-purple-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-purple-600" />
+              <p className="text-xs text-slate-600 font-semibold">Network Size</p>
             </div>
-          </div>
+            <p className="text-3xl font-bold text-purple-600">{filteredNetwork.length}</p>
+            <p className="text-xs text-slate-500 mt-1">Active brokers</p>
+          </Card>
 
-          <div className="bg-white rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                <Zap className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {brokerNetwork.reduce((sum, b) => sum + b.strongConnections, 0)}
-                </p>
-                <p className="text-xs text-slate-500">Strong Connections</p>
-              </div>
+          <Card className="p-4 bg-white border-2 border-green-200">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+              <p className="text-xs text-slate-600 font-semibold">Strong Matches</p>
             </div>
-          </div>
+            <p className="text-3xl font-bold text-green-600">{strongConnections}</p>
+            <p className="text-xs text-slate-500 mt-1">50%+ compatibility</p>
+          </Card>
 
-          <div className="bg-white rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {new Set(properties.map(p => p.building_name).filter(Boolean)).size}
-                </p>
-                <p className="text-xs text-slate-500">Shared Buildings</p>
-              </div>
+          <Card className="p-4 bg-white border-2 border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <UserCheck className="w-5 h-5 text-blue-600" />
+              <p className="text-xs text-slate-600 font-semibold">Your Connections</p>
             </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {new Set(brokers.flatMap(b => b.areas_covered || [])).size}
-                </p>
-                <p className="text-xs text-slate-500">Coverage Areas</p>
-              </div>
-            </div>
-          </div>
+            <p className="text-3xl font-bold text-blue-600">{connectedCount}</p>
+            <p className="text-xs text-slate-500 mt-1">Unlocked contacts</p>
+          </Card>
         </div>
 
         {/* Search */}
@@ -352,7 +363,7 @@ export default function BrokerNetwork() {
         {/* Network Grid */}
         {brokersLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-72 rounded-2xl" />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-96 rounded-2xl" />)}
           </div>
         ) : filteredNetwork.length === 0 ? (
           <div className="bg-white rounded-3xl p-16 text-center border-2 border-purple-200">
@@ -400,25 +411,64 @@ export default function BrokerNetwork() {
                     </div>
                   </div>
 
+                  {/* Connection Insights - INTELLIGENT REASONS */}
+                  {broker.connectionInsights && broker.connectionInsights.length > 0 && (
+                    <div className="mb-3 space-y-1.5">
+                      {broker.connectionInsights.slice(0, 3).map((insight, idx) => (
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-2 p-2 rounded-lg border ${insight.color}`}
+                        >
+                          <span className="text-base">{insight.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate">{insight.label}</p>
+                            <p className="text-xs opacity-80 truncate">{insight.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Network Score */}
+                  {broker.networkScore > 0 && (
+                    <div className="mb-3 p-2 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-700">Network Match</span>
+                        <span className="text-xs font-bold text-purple-700">{broker.networkScore}%</span>
+                      </div>
+                      <div className="w-full bg-purple-200 rounded-full h-1.5">
+                        <div 
+                          className={`h-1.5 rounded-full ${
+                            broker.networkScore >= 70 ? 'bg-green-500' :
+                            broker.networkScore >= 40 ? 'bg-blue-500' :
+                            'bg-purple-500'
+                          }`}
+                          style={{ width: `${broker.networkScore}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Contact Info - Show if connected */}
                   {broker.isConnected ? (
-                    <>
-                      {broker.email && (
-                        <div className="flex items-center gap-2 text-xs text-slate-700 mb-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                          <Mail className="w-3 h-3 text-green-600" />
-                          <span className="truncate">{broker.email}</span>
-                        </div>
-                      )}
+                    <div className="mb-3 p-3 bg-green-50 rounded-lg border border-green-200 space-y-1">
+                      <p className="text-xs font-semibold text-green-700 mb-1.5">🔓 Unlocked Contact</p>
                       {broker.phone && (
-                        <div className="flex items-center gap-2 text-xs text-slate-700 mb-3 p-2 bg-green-50 rounded-lg border border-green-200">
-                          <UserCheck className="w-3 h-3 text-green-600" />
-                          <span className="truncate">{broker.phone}</span>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-3 h-3 text-green-600" />
+                          <p className="text-xs font-mono text-slate-900">{broker.phone}</p>
                         </div>
                       )}
-                    </>
+                      {broker.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-3 h-3 text-green-600" />
+                          <p className="text-xs text-slate-900 truncate">{broker.email}</p>
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <div className="mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
-                      <p className="text-xs text-slate-500 text-center">
+                    <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <p className="text-xs text-slate-600 text-center">
                         🔒 Connect to unlock contact details
                       </p>
                     </div>
@@ -427,75 +477,24 @@ export default function BrokerNetwork() {
                   {/* Specializations */}
                   {broker.specializations?.primary_locations && broker.specializations.primary_locations.length > 0 && (
                     <div className="mb-3">
+                      <p className="text-xs text-slate-600 mb-1.5 font-semibold">Primary Areas:</p>
                       <div className="flex flex-wrap gap-1">
-                        {broker.specializations.primary_locations.slice(0, 2).map((loc, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs px-2 py-0">
+                        {broker.specializations.primary_locations.slice(0, 3).map((loc, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
                             <MapPin className="w-2.5 h-2.5 mr-0.5" />
                             {loc}
                           </Badge>
                         ))}
-                        {broker.specializations.primary_locations.length > 2 && (
-                          <Badge variant="outline" className="text-xs px-2 py-0">
-                            +{broker.specializations.primary_locations.length - 2}
+                        {broker.specializations.primary_locations.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{broker.specializations.primary_locations.length - 3}
                           </Badge>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* Network Stats */}
-                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-3 mb-3">
-                    <div className="grid grid-cols-2 gap-2 text-center">
-                      <div>
-                        <p className="text-xl font-bold text-purple-700">{broker.connectionCount}</p>
-                        <p className="text-xs text-slate-600">Connections</p>
-                      </div>
-                      <div>
-                        <p className="text-xl font-bold text-green-700">{broker.strongConnections}</p>
-                        <p className="text-xs text-slate-600">Strong</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Top Connections */}
-                  {broker.connections.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                        Top Matches:
-                      </p>
-                      {broker.connections.slice(0, 2).map((conn, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-slate-50 rounded-lg p-2 border border-slate-200"
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <p className="font-semibold text-slate-900 text-xs truncate">{conn.broker.name}</p>
-                              {conn.isTeamMember && (
-                                <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs px-1 py-0">
-                                  Team
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-0.5 flex-shrink-0">
-                              <TrendingUp className="w-3 h-3 text-green-600" />
-                              <span className="text-xs font-bold text-green-700">{conn.score}%</span>
-                            </div>
-                          </div>
-                          <p className="text-xs text-slate-600 truncate">
-                            {conn.reasons[0] || 'Similar market focus'}
-                          </p>
-                        </div>
-                      ))}
-                      {broker.connections.length > 2 && (
-                        <p className="text-xs text-slate-500 text-center">
-                          +{broker.connections.length - 2} more
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions - WITH CONNECT BUTTON */}
+                  {/* Actions - SMART CONNECT BUTTON */}
                   <div className="grid grid-cols-2 gap-2 pt-3 border-t border-purple-200">
                     <Button
                       onClick={() => handleConnect(broker.id)}
@@ -503,7 +502,9 @@ export default function BrokerNetwork() {
                       className={`h-9 text-xs font-semibold ${
                         broker.isConnected
                           ? 'bg-green-600 hover:bg-green-700 text-white'
-                          : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                          : broker.networkScore >= 50
+                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                            : 'bg-slate-600 hover:bg-slate-700 text-white'
                       }`}
                     >
                       {broker.isConnected ? (
@@ -514,7 +515,7 @@ export default function BrokerNetwork() {
                       ) : (
                         <>
                           <UserPlus className="w-3 h-3 mr-1" />
-                          Connect
+                          {broker.networkScore >= 50 ? 'Smart Match' : 'Connect'}
                         </>
                       )}
                     </Button>
