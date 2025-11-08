@@ -1045,6 +1045,77 @@ export default function Admin() {
     }
   };
 
+  const backfillBrokerNames = async () => {
+    if (!confirm('🔤 Backfill Broker Names?\n\nThis will cache broker names on all properties for faster display.\n\nRun analysis first?')) return;
+    setGeneratingSlugs(true);
+    toast.loading('🔍 Analyzing properties needing broker names...', { id: 'broker-names-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('backfillBrokerNames', { mode: 'dry_run' });
+      toast.dismiss('broker-names-analysis');
+
+      const summary = dryRunResponse.data.summary;
+      if (summary.missing_broker_name === 0) {
+        toast.success('✅ All Broker Names Already Cached!', {
+          description: `${summary.properties_with_broker_id} properties checked - all have broker names`,
+          duration: 4000
+        });
+        setGeneratingSlugs(false);
+        return;
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found issues:\n` +
+        `• ${summary.missing_broker_name} properties missing broker_name\n` +
+        `• ${summary.properties_with_broker_id} total properties with brokers\n` +
+        `• ${summary.broker_not_found} broker IDs not found\n\n` +
+        `Cache broker names now?`
+      );
+
+      if (!shouldFix) {
+        setGeneratingSlugs(false);
+        return;
+      }
+
+      toast.loading('🔧 Caching broker names...', { id: 'broker-names-fix' });
+      const fixResponse = await base44.functions.invoke('backfillBrokerNames', { mode: 'live' });
+      toast.dismiss('broker-names-fix');
+
+      const results = fixResponse.data.summary;
+
+      toast.success('✅ Broker Names Cached!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Property cards will now show actual broker names</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Updated: {results.updated} properties</div>
+              <div>• Unchanged: {results.unchanged} properties</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('broker-names-analysis');
+      toast.dismiss('broker-names-fix');
+      toast.error('❌ Backfill Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1302,6 +1373,17 @@ export default function Admin() {
               >
                 <AlertTriangle className={`w-4 h-4 mr-2 ${backfillingIds ? 'animate-spin' : ''}`} />
                 {backfillingIds ? 'Fixing...' : 'Fix IDs'}
+              </Button>
+
+              {/* NEW: Backfill Broker Names Button */}
+              <Button
+                onClick={backfillBrokerNames}
+                disabled={generatingSlugs}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
+              >
+                <Users className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                Cache Names
               </Button>
 
               {/* Data Quality Menu */}

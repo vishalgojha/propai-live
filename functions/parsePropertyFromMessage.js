@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -12,6 +11,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * - ALWAYS extracts broker from message content (name + phone)
  * - Creates broker record UNLESS phone matches admin numbers (Vishal/Office)
  * - Kapil (+919773757759) is treated as regular broker, NOT admin
+ * 
+ * CACHES broker_name on property for quick display
  */
 
 // Location codes for custom IDs
@@ -245,6 +246,8 @@ Return ONLY valid JSON, no markdown`;
 
     // STEP 3: HANDLE BROKER - ALWAYS from message content
     let broker = null;
+    let brokerName = extractedData.broker_name; // Cache the name for property
+    
     try {
       const normalizedPhone = extractedData.broker_phone.replace(/\D/g, '');
       
@@ -255,7 +258,7 @@ Return ONLY valid JSON, no markdown`;
       
       if (isAdminNumber) {
         console.log('⚠️ Admin number detected - not creating broker record');
-        // Don't create broker, will assign directly to Vishal
+        brokerName = 'PropAI Team'; // Override name for admin listings
       } else {
         // For ALL other numbers (including Kapil), create/find broker
         const allBrokers = await base44.asServiceRole.entities.Broker.list();
@@ -312,6 +315,11 @@ Return ONLY valid JSON, no markdown`;
             areas_covered: Array.from(updatedAreasSet)
           });
           console.log(`✓ Linked to existing broker ${broker.custom_id}: ${broker.name}`);
+        }
+        
+        // Use the broker's actual name from database (in case it was normalized)
+        if (broker) {
+          brokerName = broker.name;
         }
       }
     } catch (brokerError) {
@@ -436,7 +444,7 @@ Return ONLY valid JSON, no markdown`;
 
     console.log(`✓ Generated ID: ${customId}, Slug: ${slug}`);
 
-    // STEP 6: CREATE PROPERTY
+    // STEP 6: CREATE PROPERTY WITH CACHED BROKER NAME
     let property;
     try {
       const propertyData = {
@@ -464,13 +472,14 @@ Return ONLY valid JSON, no markdown`;
         ai_description: extractedData.ai_description,
         broker_id: broker ? broker.id : null,
         broker_contact: broker ? broker.phone : null,
+        broker_name: brokerName, // ✅ CACHED BROKER NAME
         broker_trust_score: broker ? (broker.trust_score || 50) : null,
         status: "Active",
         assigned_agent_name: "Vishal"
       };
 
       property = await base44.asServiceRole.entities.Property.create(propertyData);
-      console.log(`✓ Created property ${customId}`);
+      console.log(`✓ Created property ${customId} with broker_name: ${brokerName}`);
     } catch (propertyError) {
       return Response.json({ 
         success: false,
@@ -499,7 +508,7 @@ Return ONLY valid JSON, no markdown`;
         data_type: 'property',
         data: {
           ...property,
-          broker_name: broker ? broker.name : 'Chariot Direct',
+          broker_name: brokerName,
           broker_phone: broker ? broker.phone : null,
           broker_agency: broker ? broker.agency_name : null
         }
@@ -516,7 +525,7 @@ Return ONLY valid JSON, no markdown`;
         slug: property.slug,
         ai_title: property.ai_title,
         broker_custom_id: broker ? broker.custom_id : null,
-        broker_name: broker ? broker.name : 'Chariot Direct',
+        broker_name: brokerName,
         building_custom_id: buildingId ? 
           (allBuildings.find(b => b.id === buildingId)?.custom_id) : null
       }
@@ -570,4 +579,3 @@ function levenshteinDistance(str1, str2) {
 
   return matrix[str2.length][str1.length];
 }
-
