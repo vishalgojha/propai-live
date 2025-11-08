@@ -44,7 +44,16 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     
-    const phone = requirement.client_phone || requirement.broker_contact;
+    // Check if there are matches first
+    if (matchedProperties.length === 0) {
+      toast.warning('⚠️ No Matches Yet', {
+        description: 'No properties match this requirement yet',
+        duration: 3000
+      });
+      return;
+    }
+    
+    const phone = requirement.broker_contact || requirement.client_phone;
     
     if (!phone) {
       toast.error('⚠️ Contact information not available');
@@ -52,12 +61,24 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
     }
     
     const cleanPhone = phone.replace(/\D/g, '');
-    const clientName = requirement.client_name || 'there';
+    
+    // Determine recipient - if it's a broker requirement, address the broker
+    const recipientName = requirement.is_direct_client 
+      ? (requirement.client_name || 'there')
+      : 'there'; // For brokers, use generic greeting
     
     // Build message with matched properties
-    let message = `Hi ${clientName}! 👋\n\n`;
-    message += `I found ${matchedProperties.length} ${matchedProperties.length === 1 ? 'property' : 'properties'} matching your requirement:\n\n`;
-    message += `🔍 *Your Requirement:*\n`;
+    let message = `Hi${recipientName !== 'there' ? ` ${recipientName}` : ''}! 👋\n\n`;
+    
+    if (requirement.is_direct_client) {
+      // Message for direct client
+      message += `I found ${matchedProperties.length} ${matchedProperties.length === 1 ? 'property' : 'properties'} matching your requirement:\n\n`;
+    } else {
+      // Message for broker
+      message += `Found ${matchedProperties.length} ${matchedProperties.length === 1 ? 'property' : 'properties'} matching this requirement:\n\n`;
+    }
+    
+    message += `🔍 *Requirement:*\n`;
     message += `• ${requirement.bhk_preference?.join(', ') || 'Property'}\n`;
     message += `• ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n`;
     message += `• Budget: ${budget.from} → ${budget.to}\n\n`;
@@ -81,7 +102,13 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
     
     message += `📱 View all matches on PropAI Live:\n`;
     message += `www.propai.live\n\n`;
-    message += `Can we schedule viewings? 🏠\n\n`;
+    
+    if (requirement.is_direct_client) {
+      message += `Can we schedule viewings? 🏠\n\n`;
+    } else {
+      message += `Let me know if you'd like to discuss these options! 🏠\n\n`;
+    }
+    
     message += `Team PropAI`;
     
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -204,7 +231,7 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
         </div>
 
         {/* AI Matches Badge */}
-        {matchedProperties.length > 0 && (
+        {matchedProperties.length > 0 ? (
           <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-purple-600" />
@@ -213,6 +240,18 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
                   {matchedProperties.length} AI {matchedProperties.length === 1 ? 'Match' : 'Matches'} Found
                 </p>
                 <p className="text-xs text-purple-700">Ready to share via WhatsApp</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-slate-400" />
+              <div>
+                <p className="text-sm font-bold text-slate-600">
+                  No Matches Yet
+                </p>
+                <p className="text-xs text-slate-500">Waiting for matching properties</p>
               </div>
             </div>
           </div>
@@ -232,13 +271,23 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
           </div>
         )}
 
-        {/* WhatsApp Contact Button */}
+        {/* WhatsApp Contact Button - Disabled if no matches */}
         <Button
           onClick={handleWhatsApp}
-          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md"
+          disabled={matchedProperties.length === 0}
+          className={`w-full font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md ${
+            matchedProperties.length === 0
+              ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+              : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+          }`}
         >
           <MessageCircle className="w-4 h-4" />
-          <span>Share {matchedProperties.length} {matchedProperties.length === 1 ? 'Match' : 'Matches'}</span>
+          <span>
+            {matchedProperties.length === 0 
+              ? 'No Matches to Share' 
+              : `Share ${matchedProperties.length} ${matchedProperties.length === 1 ? 'Match' : 'Matches'}`
+            }
+          </span>
         </Button>
 
         {/* Footer */}
