@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input"; // Added Input component
 import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Home, Award, BarChart3, Eye, MessageCircle, Target,
-  Calendar, Phone, Mail, Edit, Settings
+  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Plus, // Added AlertCircle, X, Plus
+  RefreshCw // Added RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -48,13 +50,6 @@ export default function MyProfile() {
           return;
         }
         
-        console.log('👤 Current User:', {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          broker_id: user.broker_id || 'NOT SET'
-        });
-        
         setCurrentUser(user);
         if (user.preferred_areas) {
           setSelectedAreas(user.preferred_areas);
@@ -62,22 +57,17 @@ export default function MyProfile() {
 
         // IMPROVED: Try broker_id first, then fallback to email/phone matching
         if (user.broker_id) {
-          // User has linked broker ID
-          console.log('🔍 Looking up broker by broker_id:', user.broker_id);
           const brokers = await base44.entities.Broker.list();
           const broker = brokers.find(b => b.id === user.broker_id);
           
           if (broker) {
             setBrokerProfile(broker);
-            console.log('✅ Broker profile loaded via broker_id:', broker.custom_id);
           } else {
             console.warn('⚠️ broker_id set but broker not found in database');
           }
         } else if (user.email) {
           // Fallback: Try to find broker by email or phone
-          console.log('🔍 No broker_id - trying to match by email/phone:', user.email);
           const brokers = await base44.entities.Broker.list();
-          console.log(`📊 Total brokers in system: ${brokers.length}`);
           
           const matchingBroker = brokers.find(b => {
             // Normalize phone for comparison
@@ -88,35 +78,19 @@ export default function MyProfile() {
             const emailMatch = b.email?.toLowerCase() === user.email.toLowerCase();
             const phoneMatch = userEmailAsPhone && brokerPhone && userEmailAsPhone === brokerPhone;
             
-            if (emailMatch || phoneMatch) {
-              console.log('🎯 Potential match found:', {
-                broker_name: b.name,
-                broker_id: b.id,
-                broker_phone: b.phone,
-                broker_email: b.email,
-                match_type: emailMatch ? 'email' : 'phone'
-              });
-            }
-            
             return emailMatch || phoneMatch;
           });
           
           if (matchingBroker) {
             setBrokerProfile(matchingBroker);
-            console.log('✅ Broker profile found! Attempting auto-link...');
             // Auto-link broker_id to user for future
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
-              console.log('✅ Auto-linked broker_id to user:', matchingBroker.custom_id);
             } catch (error) {
               console.error('❌ Failed to auto-link broker:', error);
             }
           } else {
             console.log('❌ No matching broker found');
-            console.log('💡 TIP: To link your profile, admin needs to:');
-            console.log('   1. Find your broker record in Admin → Brokers');
-            console.log('   2. Copy the broker ID');
-            console.log('   3. Run: await base44.auth.updateMe({ broker_id: "BROKER_ID_HERE" })');
           }
         }
       } catch (error) {
@@ -153,15 +127,22 @@ export default function MyProfile() {
     }
   };
 
-  // NEW: Add team member by phone number
+  // IMPROVED: Add team member with better validation and data fetching
   const handleAddTeamMember = async () => {
     if (!teamMemberPhone.trim() || !brokerProfile) return;
     
     setAddingTeamMember(true);
     try {
-      // Normalize phone
       const normalizePhone = (phone) => phone.replace(/\D/g, '').slice(-10);
       const normalized = normalizePhone(teamMemberPhone);
+      
+      if (normalized.length !== 10) {
+        toast.error('Invalid Phone', {
+          description: 'Please enter a valid 10-digit phone number'
+        });
+        setAddingTeamMember(false); // Reset state here
+        return;
+      }
       
       // Find broker by phone
       const brokers = await base44.entities.Broker.list();
@@ -171,27 +152,42 @@ export default function MyProfile() {
       });
       
       if (!teamMemberBroker) {
-        toast.error('Broker not found', {
-          description: `No broker with phone ${teamMemberPhone} in system`
+        toast.error('❌ Broker Not Found', {
+          description: (
+            <div className="space-y-2">
+              <p>No broker with phone {teamMemberPhone} exists in PropAI system.</p>
+              <p className="text-xs opacity-90">💡 They need to list at least one property first, then you can add them to your team.</p>
+            </div>
+          ),
+          duration: 6000
         });
+        setAddingTeamMember(false); // Reset state here
         return;
       }
       
       if (teamMemberBroker.id === brokerProfile.id) {
-        toast.error('Cannot add yourself', {
-          description: 'You are already the team leader'
-        });
+        toast.error('Cannot add yourself');
+        setAddingTeamMember(false); // Reset state here
         return;
       }
       
-      // Add to team_members array
+      // Check if already in team
       const currentTeam = brokerProfile.team_members || [];
       if (currentTeam.some(m => m.broker_id === teamMemberBroker.id)) {
         toast.error('Already in team', {
           description: `${teamMemberBroker.name} is already a team member`
         });
+        setAddingTeamMember(false); // Reset state here
         return;
       }
+      
+      // IMPROVED: Fetch actual listing count for this broker
+      const allProps = await base44.entities.Property.list();
+      const memberListings = allProps.filter(p => 
+        p.broker_id === teamMemberBroker.id && 
+        p.status === 'Active' && 
+        !p.is_duplicate
+      );
       
       const updatedTeam = [
         ...currentTeam,
@@ -199,8 +195,9 @@ export default function MyProfile() {
           broker_id: teamMemberBroker.id,
           name: teamMemberBroker.name,
           phone: teamMemberBroker.phone,
-          role: 'Team Member',
-          co_listing_count: 0
+          role: teamMemberBroker.agency_name || 'Team Member',
+          co_listing_count: memberListings.length, // REAL DATA
+          agency_name: teamMemberBroker.agency_name // PRESERVE AGENCY NAME
         }
       ];
       
@@ -209,13 +206,13 @@ export default function MyProfile() {
         team_leader_of: [...(brokerProfile.team_leader_of || []), teamMemberBroker.id]
       });
       
-      // Update team member's reports_to
       await base44.entities.Broker.update(teamMemberBroker.id, {
         reports_to: brokerProfile.id
       });
       
       toast.success('✅ Team Member Added!', {
-        description: `${teamMemberBroker.name} added to your team`
+        description: `${teamMemberBroker.name} joined your team • ${memberListings.length} active listings`,
+        duration: 4000
       });
       
       setTeamMemberPhone('');
@@ -232,7 +229,7 @@ export default function MyProfile() {
 
   // NEW: Remove team member
   const handleRemoveTeamMember = async (memberBrokerId) => {
-    if (!brokerProfile || !window.confirm('Are you sure you want to remove this team member? This action cannot be undone.')) return;
+    if (!brokerProfile || !window.confirm('Remove this team member?')) return;
     
     try {
       const updatedTeam = (brokerProfile.team_members || []).filter(
@@ -252,9 +249,7 @@ export default function MyProfile() {
       toast.success('Team member removed');
       window.location.reload();
     } catch (error) {
-      toast.error('Failed to remove team member', {
-        description: error.message
-      });
+      toast.error('Failed to remove team member');
     }
   };
 
@@ -263,13 +258,10 @@ export default function MyProfile() {
     queryKey: ['my-properties', brokerProfile?.id],
     queryFn: async () => {
       if (!brokerProfile) {
-        console.log('⚠️ No broker profile - skipping properties fetch');
         return [];
       }
-      console.log('📦 Fetching properties for broker:', brokerProfile.id);
       const allProps = await base44.entities.Property.list('-created_date');
       const myProps = allProps.filter(p => p.broker_id === brokerProfile.id);
-      console.log(`✅ Found ${myProps.length} properties for broker ${brokerProfile.custom_id}`);
       return myProps;
     },
     enabled: !!brokerProfile,
@@ -280,13 +272,10 @@ export default function MyProfile() {
     queryKey: ['my-requirements', brokerProfile?.id],
     queryFn: async () => {
       if (!brokerProfile) {
-        console.log('⚠️ No broker profile - skipping requirements fetch');
         return [];
       }
-      console.log('📋 Fetching requirements for broker:', brokerProfile.id);
       const allReqs = await base44.entities.Requirement.list('-created_date');
       const myReqs = allReqs.filter(r => r.broker_id === brokerProfile.id);
-      console.log(`✅ Found ${myReqs.length} requirements for broker ${brokerProfile.custom_id}`);
       return myReqs;
     },
     enabled: !!brokerProfile,
@@ -297,14 +286,11 @@ export default function MyProfile() {
     queryKey: ['my-interactions', brokerProfile?.id, properties.length],
     queryFn: async () => {
       if (!brokerProfile || properties.length === 0) {
-        console.log('⚠️ No broker profile or no properties - skipping interactions fetch');
         return [];
       }
-      console.log('📊 Fetching interactions for', properties.length, 'properties');
       const allInteractions = await base44.entities.PropertyInteraction.list('-created_date');
       const myPropertyIds = properties.map(p => p.id);
       const myInteractions = allInteractions.filter(i => myPropertyIds.includes(i.property_id));
-      console.log(`✅ Found ${myInteractions.length} interactions`);
       return myInteractions;
     },
     enabled: !!brokerProfile && properties.length > 0,
@@ -326,14 +312,34 @@ export default function MyProfile() {
     initialData: []
   });
 
+  // IMPROVED: Calculate LIVE listing counts for team members
+  const enrichedTeamMembers = useMemo(() => {
+    if (!brokerProfile?.team_members) {
+      return [];
+    }
+
+    return brokerProfile.team_members.map(member => {
+      // Count LIVE active listings for this broker
+      const memberActiveListings = properties.filter(p => 
+        p.broker_id === member.broker_id && 
+        p.status === 'Active' && 
+        !p.is_duplicate
+      ).length;
+
+      return {
+        ...member,
+        co_listing_count: memberActiveListings, // DYNAMIC COUNT
+        hasData: memberActiveListings > 0 // FLAG to show if they have listings
+      };
+    });
+  }, [brokerProfile, properties]);
+
   // Calculate broker metrics
   const brokerMetrics = useMemo(() => {
     if (!brokerProfile) {
-      console.log('⚠️ No broker profile - metrics will be null');
       return null;
     }
 
-    console.log('📊 Calculating broker metrics...');
     const myProps = properties.filter(p => p.broker_id === brokerProfile.id);
     const activeProps = myProps.filter(p => p.status === 'Active' && !p.is_duplicate);
     const myReqs = requirements.filter(r => r.broker_id === brokerProfile.id);
@@ -377,7 +383,6 @@ export default function MyProfile() {
       top3Properties: top3Props
     };
     
-    console.log('✅ Broker Metrics:', metrics);
     return metrics;
   }, [brokerProfile, properties, requirements, interactions]);
 
@@ -612,13 +617,13 @@ export default function MyProfile() {
     );
   }
 
-  // BROKER VIEW - rest of the code stays the same
+  // BROKER VIEW - IMPROVED with dynamic team data
   if (brokerProfile && brokerMetrics) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
           <div className="mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -627,7 +632,18 @@ export default function MyProfile() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
-                  <p className="text-slate-600">{brokerProfile.custom_id}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-slate-600">{brokerProfile.custom_id}</p>
+                    {brokerProfile.agency_name && (
+                      <>
+                        <span className="text-slate-400">•</span>
+                        <div className="flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-purple-600" />
+                          <p className="text-sm font-semibold text-purple-700">{brokerProfile.agency_name}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -734,7 +750,7 @@ export default function MyProfile() {
             {editingAreas ? (
               <div>
                 <p className="text-sm text-slate-600 mb-3">
-                  Select areas you want to focus on:
+                  Select areas you want to focus on in SmartFeed:
                 </p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {popularAreas.map((area) => {
@@ -776,13 +792,14 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
-                    No preferred areas set. Click "Edit Areas" to customize your feed.
+                    No preferred areas set. Click "Edit Areas" to personalize your SmartFeed.
                   </p>
                 )}
               </div>
             )}
           </div>
 
+          {/* CONTACT INFORMATION - NOW SHOWS AGENCY NAME */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <Card className="p-6 bg-white border-2 border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Contact Information</h3>
@@ -801,9 +818,9 @@ export default function MyProfile() {
                 )}
                 {brokerProfile.agency_name && (
                   <div className="flex items-center gap-3">
-                    <Building2 className="w-4 h-4 text-slate-500" />
+                    <Building2 className="w-4 h-4 text-purple-600" />
                     <span className="text-sm text-slate-600">Agency:</span>
-                    <span className="text-sm font-semibold text-slate-900">{brokerProfile.agency_name}</span>
+                    <span className="text-sm font-semibold text-purple-900">{brokerProfile.agency_name}</span>
                   </div>
                 )}
               </div>
@@ -837,11 +854,12 @@ export default function MyProfile() {
             )}
           </div>
 
+          {/* IMPROVED TEAM SECTION - Dynamic listing counts */}
           <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                My Team ({(brokerProfile.team_members || []).length})
+                My Team ({enrichedTeamMembers.length})
               </h3>
               <Button
                 onClick={() => {
@@ -864,12 +882,12 @@ export default function MyProfile() {
                   Enter the 10-digit phone number of a broker already in the PropAI system
                 </p>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="tel"
                     value={teamMemberPhone}
                     onChange={(e) => setTeamMemberPhone(e.target.value)}
                     placeholder="e.g., 9820056789"
-                    className="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="flex-1 text-sm"
                     disabled={addingTeamMember}
                   />
                   <Button
@@ -878,25 +896,49 @@ export default function MyProfile() {
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     size="sm"
                   >
-                    {addingTeamMember ? 'Adding...' : 'Add'}
+                    {addingTeamMember ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
             )}
 
-            {brokerProfile.team_members && brokerProfile.team_members.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {brokerProfile.team_members.map((member, idx) => (
-                  <div key={member.broker_id || idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+            {enrichedTeamMembers.length > 0 ? (
+              <div className="space-y-3">
+                {enrichedTeamMembers.map((member, idx) => (
+                  <div key={member.broker_id || idx} className="p-4 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors">
                     <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900">{member.name}</p>
-                        <p className="text-xs text-slate-600">{member.phone}</p>
+                      <div className="flex-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-slate-900">{member.name}</p>
+                          {!member.hasData && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              No listings yet
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600 mb-1">{member.phone}</p>
+                        {member.agency_name && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Building2 className="w-3 h-3 text-purple-600" />
+                            <p className="text-xs font-semibold text-purple-700">{member.agency_name}</p>
+                          </div>
+                        )}
                         <p className="text-xs text-blue-600 mt-1">{member.role || 'Team Member'}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3 flex-shrink-0">
                         <div className="text-right">
-                          <p className="text-sm font-bold text-blue-700">{member.co_listing_count || 0}</p>
+                          <p className="text-lg font-bold text-blue-700">{member.co_listing_count}</p>
                           <p className="text-xs text-slate-600">listings</p>
                         </div>
                         {editingTeam && (
@@ -906,8 +948,7 @@ export default function MyProfile() {
                             size="sm"
                             className="text-red-600 hover:bg-red-50 h-8 w-8 p-0"
                           >
-                            <span className="sr-only">Remove {member.name}</span>
-                            &times;
+                            <X className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
@@ -922,6 +963,11 @@ export default function MyProfile() {
                 <p className="text-xs text-slate-500">
                   Add team members to collaborate on listings and track co-listing performance
                 </p>
+                {editingTeam && (
+                  <p className="text-xs text-blue-600 mt-3 font-semibold">
+                    👆 Enter their phone number above to add them
+                  </p>
+                )}
               </div>
             )}
           </Card>
