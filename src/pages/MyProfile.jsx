@@ -1229,7 +1229,7 @@ export default function MyProfile() {
                           </Badge>
                           <h3 className="font-bold text-slate-900 line-clamp-2 mb-2">
                             {prop.ai_title || `${prop.bhk} in ${prop.location}`}
-                          </h3>
+                          </h3 >
                           <p className="text-sm text-slate-600 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {prop.location}
