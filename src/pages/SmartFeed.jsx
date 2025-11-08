@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,11 +9,12 @@ import PropertyFilters from "../components/property/PropertyFilters";
 import RequirementCard from "../components/property/RequirementCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, Brain, X } from "lucide-react";
+import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, Brain, X, MapPin, Settings, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge"; // Added Badge import
 
 // LAZY LOAD HEAVY MODALS
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
@@ -33,6 +35,7 @@ export default function SmartFeed() {
   const [itemsToShow, setItemsToShow] = useState(24);
   const [userPreferences, setUserPreferences] = useState(null);
   const [showAutoMatchBanner, setShowAutoMatchBanner] = useState(true);
+  const [user, setUser] = useState(null); // Added user state
 
   // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
@@ -44,6 +47,25 @@ export default function SmartFeed() {
   const REFRESH_INTERVAL = 15000; // 15 seconds
 
   const navigate = useNavigate();
+
+  // Load current user
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        setUser(null);
+      }
+    };
+    loadUser();
+  }, []); // Empty dependency array means it runs once on mount
+
+  // POPULAR MUMBAI AREAS (for quick filters)
+  const popularAreas = [
+    "Bandra West", "Juhu", "Andheri West", "Khar West", 
+    "BKC", "Worli", "Lower Parel", "Powai"
+  ];
 
   // Load user preferences from localStorage
   useEffect(() => {
@@ -127,7 +149,7 @@ export default function SmartFeed() {
     }
   };
 
-  // Read filters from URL parameters on mount
+  // Read filters from URL parameters and apply user preferences on mount/user load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const newFilters = { ...filters };
@@ -140,8 +162,13 @@ export default function SmartFeed() {
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
     if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode');
     
+    // NEW: Apply user's preferred areas if they exist and no location filter is set via URL
+    if (user?.preferred_areas && user.preferred_areas.length > 0 && !urlParams.get('location')) {
+      newFilters.location_multi = user.preferred_areas;
+    }
+    
     setFilters(newFilters);
-  }, []);
+  }, [user]); // Re-run when user object changes (e.g., after loading)
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -426,6 +453,15 @@ export default function SmartFeed() {
     setNewItemsCount({ properties: 0, requirements: 0 });
   };
 
+  const handleAreaQuickFilter = (area) => {
+    const currentAreas = filters.location_multi || [];
+    if (currentAreas.includes(area)) {
+      setFilters({ ...filters, location_multi: currentAreas.filter(a => a !== area) });
+    } else {
+      setFilters({ ...filters, location_multi: [...currentAreas, area] });
+    }
+  };
+
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -511,7 +547,63 @@ export default function SmartFeed() {
                 <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 15s</p>
               </div>
             </div>
+            {user && ( // My Areas button
+              <Button
+                onClick={() => navigate(createPageUrl("MyProfile"))}
+                variant="outline"
+                size="sm"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                My Areas
+              </Button>
+            )}
           </div>
+        </div>
+
+        {/* NEW: Area Quick Filters - Popular Mumbai Areas */}
+        <div className="mb-6 bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="w-4 h-4 text-purple-600" />
+            <h3 className="text-sm font-bold text-slate-900">Quick Area Filters</h3>
+            {user?.preferred_areas && user.preferred_areas.length > 0 && (
+              <Badge className="bg-purple-100 text-purple-700 border-purple-300 text-xs">
+                Your Areas
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {popularAreas.map((area) => {
+              const isSelected = filters.location_multi?.includes(area);
+              const isPreferred = user?.preferred_areas?.includes(area);
+              
+              return (
+                <Button
+                  key={area}
+                  onClick={() => handleAreaQuickFilter(area)}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  className={`rounded-xl font-semibold ${
+                    isSelected
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
+                      : isPreferred
+                        ? "border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100"
+                        : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                  }`}
+                >
+                  {isPreferred && <Star className="w-3 h-3 mr-1" fill="currentColor" />}
+                  {area}
+                </Button>
+              );
+            })}
+          </div>
+          
+          {user?.preferred_areas && user.preferred_areas.length > 0 && (
+            <p className="text-xs text-purple-600 mt-2">
+              ⭐ Starred areas are from your preferences
+            </p>
+          )}
         </div>
 
         {/* Auto-Match Intelligence Banner - Only show if user has preferences */}

@@ -24,6 +24,15 @@ export default function MyProfile() {
   const [currentUser, setCurrentUser] = useState(null);
   const [brokerProfile, setBrokerProfile] = useState(null);
 
+  const [editingAreas, setEditingAreas] = useState(false);
+  const [selectedAreas, setSelectedAreas] = useState([]);
+
+  const popularAreas = [
+    "Bandra West", "Juhu", "Andheri West", "Khar West",
+    "BKC", "Worli", "Lower Parel", "Powai",
+    "Santacruz West", "Versova", "Malad West", "Goregaon West"
+  ];
+
   // Load current user
   useEffect(() => {
     const loadUser = async () => {
@@ -34,6 +43,9 @@ export default function MyProfile() {
           return;
         }
         setCurrentUser(user);
+        if (user.preferred_areas) {
+          setSelectedAreas(user.preferred_areas);
+        }
 
         // If user has email, try to find matching broker
         if (user.email) {
@@ -53,6 +65,31 @@ export default function MyProfile() {
     };
     loadUser();
   }, [navigate]);
+
+  const handleSaveAreas = async () => {
+    try {
+      await base44.auth.updateMe({ preferred_areas: selectedAreas });
+      setEditingAreas(false);
+      toast.success('✅ Preferred Areas Saved!', {
+        description: 'Your SmartFeed will prioritize these areas',
+        duration: 3000
+      });
+      // Reload user data
+      window.location.reload();
+    } catch (error) {
+      toast.error('Failed to save areas', {
+        description: error.message
+      });
+    }
+  };
+
+  const toggleArea = (area) => {
+    if (selectedAreas.includes(area)) {
+      setSelectedAreas(selectedAreas.filter(a => a !== area));
+    } else {
+      setSelectedAreas([...selectedAreas, area]);
+    }
+  };
 
   // Fetch broker's properties (if broker)
   const { data: properties = [] } = useQuery({
@@ -171,10 +208,10 @@ export default function MyProfile() {
   // ADMIN VIEW
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
 
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
@@ -268,6 +305,75 @@ export default function MyProfile() {
             </div>
           </Card>
 
+          {/* NEW: Area Preferences Section for Admin */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mt-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
+              </div>
+              <Button
+                onClick={() => setEditingAreas(!editingAreas)}
+                variant="outline"
+                size="sm"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {editingAreas ? 'Cancel' : 'Edit Areas'}
+              </Button>
+            </div>
+
+            {editingAreas ? (
+              <div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Select areas you want to focus on in SmartFeed:
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {popularAreas.map((area) => {
+                    const isSelected = selectedAreas.includes(area);
+                    return (
+                      <Button
+                        key={area}
+                        onClick={() => toggleArea(area)}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className={`rounded-xl ${
+                          isSelected
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                            : "border-purple-200 hover:bg-purple-50"
+                        }`}
+                      >
+                        {area}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  onClick={handleSaveAreas}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                >
+                  Save Preferred Areas
+                </Button>
+              </div>
+            ) : (
+              <div>
+                {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {currentUser.preferred_areas.map((area) => (
+                      <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    No preferred areas set. Click "Edit Areas" to set your focus areas.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* User Info */}
           <Card className="p-6 bg-white border-2 border-slate-200 mt-6">
             <h3 className="text-lg font-bold text-slate-900 mb-4">Account Information</h3>
@@ -304,10 +410,10 @@ export default function MyProfile() {
   // BROKER VIEW (or admin who also has broker profile)
   if (brokerProfile && brokerMetrics) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
 
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -406,6 +512,75 @@ export default function MyProfile() {
               </div>
             </Card>
           )}
+
+          {/* NEW: Area Preferences for Brokers */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
+              </div>
+              <Button
+                onClick={() => setEditingAreas(!editingAreas)}
+                variant="outline"
+                size="sm"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {editingAreas ? 'Cancel' : 'Edit Areas'}
+              </Button>
+            </div>
+
+            {editingAreas ? (
+              <div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Select areas you want to focus on:
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {popularAreas.map((area) => {
+                    const isSelected = selectedAreas.includes(area);
+                    return (
+                      <Button
+                        key={area}
+                        onClick={() => toggleArea(area)}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className={`rounded-xl ${
+                          isSelected
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                            : "border-purple-200 hover:bg-purple-50"
+                        }`}
+                      >
+                        {area}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  onClick={handleSaveAreas}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                >
+                  Save Preferred Areas
+                </Button>
+              </div>
+            ) : (
+              <div>
+                {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {currentUser.preferred_areas.map((area) => (
+                      <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    No preferred areas set. Click "Edit Areas" to customize your feed.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Profile Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -514,16 +689,89 @@ export default function MyProfile() {
 
   // REGULAR USER (not admin, no broker profile found)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <User className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentUser.full_name || 'User Profile'}</h1>
           <p className="text-slate-600">{currentUser.email}</p>
+        </div>
+
+        {/* NEW: Area Preferences for Regular Users */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-purple-600" />
+              <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
+            </div>
+            <Button
+              onClick={() => setEditingAreas(!editingAreas)}
+              variant="outline"
+              size="sm"
+              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+            >
+              {editingAreas ? 'Cancel' : 'Edit Areas'}
+            </Button>
+          </div>
+
+          {editingAreas ? (
+            <div>
+              <p className="text-sm text-slate-600 mb-3">
+                Select areas you're interested in for personalized SmartFeed:
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {popularAreas.map((area) => {
+                  const isSelected = selectedAreas.includes(area);
+                  return (
+                    <Button
+                      key={area}
+                      onClick={() => toggleArea(area)}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      className={`rounded-xl ${
+                        isSelected
+                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                          : "border-purple-200 hover:bg-purple-50"
+                      }`}
+                    >
+                      {area}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                onClick={handleSaveAreas}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+              >
+                Save Preferred Areas
+              </Button>
+            </div>
+          ) : (
+            <div>
+              {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {currentUser.preferred_areas.map((area) => (
+                    <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {area}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No preferred areas set. Click "Edit Areas" to personalize your SmartFeed.
+                </p>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-purple-600 mt-3">
+            💡 SmartFeed will highlight properties in your preferred areas
+          </p>
         </div>
 
         <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
