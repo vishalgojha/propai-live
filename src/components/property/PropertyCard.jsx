@@ -7,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -407,14 +407,23 @@ export default function PropertyCard({ property, onViewDetails }) {
             </button>
           )}
 
+          {/* Location with Pocket */}
           <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-3">
             <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
             <span className="truncate">
-              {property.location}
+              {property.pocket ? (
+                <>
+                  <span className="font-semibold text-slate-800">{property.pocket}</span>
+                  <span className="text-slate-500 mx-1">•</span>
+                  <span>{property.location}</span>
+                </>
+              ) : (
+                property.location
+              )}
             </span>
           </div>
 
-          {/* PRICE - MOVED HERE ABOVE DESCRIPTION */}
+          {/* PRICE */}
           <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
             <div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
@@ -428,7 +437,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             )}
           </div>
 
-          {/* AI DESCRIPTION WITH SHOW MORE/LESS */}
+          {/* AI DESCRIPTION */}
           {property.ai_description && (
             <div className="mb-4">
               <p className="text-sm text-slate-600 leading-relaxed">
@@ -454,6 +463,23 @@ export default function PropertyCard({ property, onViewDetails }) {
                     </>
                   )}
                 </button>
+              )}
+            </div>
+          )}
+
+          {/* AMENITIES - Show top 3 */}
+          {property.amenities && property.amenities.length > 0 && (
+            <div className="mb-3 flex items-center gap-1.5 flex-wrap">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              {property.amenities.slice(0, 3).map((amenity, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-700">
+                  {amenity}
+                </Badge>
+              ))}
+              {property.amenities.length > 3 && (
+                <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200 text-slate-600">
+                  +{property.amenities.length - 3} more
+                </Badge>
               )}
             </div>
           )}
