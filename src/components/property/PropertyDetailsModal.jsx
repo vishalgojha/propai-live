@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import {
   Dialog,
@@ -10,10 +9,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin, Home, Maximize2, Car, MessageCircle, Building2,
-  Calendar, Armchair, Check, Utensils
+  Calendar, Armchair, Check, Utensils, ArrowRight
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const createPageUrl = (pageName) => {
+  switch (pageName) {
+    case "BuildingProfile":
+      return "/buildingprofile";
+    default:
+      return "/";
+  }
+};
 
 export default function PropertyDetailsModal({ property, isOpen, onClose }) {
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (property && isOpen) {
       // Inject property-specific schema
@@ -26,13 +37,13 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           "@type": "PostalAddress",
           "streetAddress": property.building_name || property.pocket || property.location || "",
           "addressLocality": property.location || property.location_id || "Mumbai",
-          "addressRegion": "Mumbai", // Assuming Mumbai for now
+          "addressRegion": "Mumbai",
           "addressCountry": "IN"
         },
         "floorSize": property.carpet_area ? {
           "@type": "QuantitativeValue",
           "value": property.carpet_area,
-          "unitCode": "FTK" // Square feet
+          "unitCode": "FTK"
         } : undefined,
         "numberOfRooms": property.bhk ? parseInt(property.bhk.split(' ')[0]) || undefined : undefined,
         "petsAllowed": (property.veg_nonveg === "Both" || property.veg_nonveg === "Non-Veg Allowed") ? true : undefined,
@@ -72,7 +83,6 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
         }
       };
     }
-    // Cleanup if modal closes or property becomes null while open
     return () => {
       const existingScript = document.querySelector('script[data-property-schema]');
       if (existingScript) {
@@ -91,7 +101,6 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
   };
 
   const getAgentPhone = () => {
-    // FIX: If broker_contact is Vishal's personal number, use PropAI Office instead
     if (!property.broker_contact || property.broker_contact === '919819471310') {
       return "9102269622278";
     }
@@ -112,6 +121,13 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
     const message = `Hi ${getAgentName()}, I'm interested in:\n\n${title}\n${formatPrice()}\n\nCan you share more details?`;
     const phone = getAgentPhone();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleBuildingClick = () => {
+    if (property.building_id) {
+      onClose();
+      navigate(`${createPageUrl("BuildingProfile")}?id=${property.building_id}`);
+    }
   };
 
   const getLocationDisplay = () => {
@@ -135,7 +151,26 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* NO IMAGES SECTION - Removed completely */}
+        {/* Building Intelligence Link - NEW */}
+        {property.building_name && property.building_id && (
+          <button
+            onClick={handleBuildingClick}
+            className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-2xl border-2 border-indigo-200 hover:border-indigo-300 transition-all group mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-slate-900 text-sm group-hover:text-indigo-700 transition-colors">
+                  {property.building_name}
+                </p>
+                <p className="text-xs text-slate-600">View building intel • Pricing • All listings</p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+          </button>
+        )}
 
         {/* Price and Location */}
         <div className="flex items-start justify-between mb-8">

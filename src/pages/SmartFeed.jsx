@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +8,7 @@ import PropertyFilters from "../components/property/PropertyFilters";
 import RequirementCard from "../components/property/RequirementCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Sparkles, ChevronDown, Zap, RefreshCw, Bell, TrendingUp, Eye, Heart } from "lucide-react";
+import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, Brain, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +16,6 @@ import { toast } from "sonner";
 
 // LAZY LOAD HEAVY MODALS
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
-const PropertyMatchmaker = lazy(() => import("../components/property/PropertyMatchmaker"));
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -33,8 +31,8 @@ export default function SmartFeed() {
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24);
-  const [matchmakerOpen, setMatchmakerOpen] = useState(false);
   const [userPreferences, setUserPreferences] = useState(null);
+  const [showAutoMatchBanner, setShowAutoMatchBanner] = useState(true);
 
   // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
@@ -173,7 +171,7 @@ export default function SmartFeed() {
     if (!isLoading && !requirementsLoading) {
       const currentCounts = {
         properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
-        requirements: requirements.filter(r => r.status === "Active").length // FIXED: removed AI matches requirement
+        requirements: requirements.filter(r => r.status === "Active").length
       };
 
       if (previousCountsRef.current.properties > 0 || previousCountsRef.current.requirements > 0) {
@@ -330,9 +328,6 @@ export default function SmartFeed() {
   const filteredRequirements = useMemo(() => {
     let results = requirements.filter(requirement => {
       if (requirement.status !== "Active") return false;
-
-      // REMOVED: The AI matches filter - show ALL active requirements now
-      // Users can see all requirements, even without AI matches
 
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -513,32 +508,48 @@ export default function SmartFeed() {
                     <span className="font-semibold">Live</span>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 font-light">Properties & Requirements • AI-matched • Auto-refresh every 15s</p>
+                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 15s</p>
               </div>
             </div>
-            
-            {/* AI Matchmaker Button */}
-            <Button
-              onClick={() => setMatchmakerOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold shadow-lg hidden md:flex"
-              size="lg"
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              AI Matchmaker
-            </Button>
-          </div>
-
-          {/* AI Matchmaker CTA Banner - Mobile/Tablet */}
-          <div className="md:hidden mb-4">
-            <Button
-              onClick={() => setMatchmakerOpen(true)}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 rounded-2xl shadow-md"
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              AI Property Matchmaker
-            </Button>
           </div>
         </div>
+
+        {/* Auto-Match Intelligence Banner - Only show if user has preferences */}
+        {userPreferences && showAutoMatchBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl p-4 border-2 border-purple-300"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 mb-1 flex items-center gap-2">
+                    🎯 Smart Matching Active
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    Your feed learns from your {userPreferences.totalViews} views & {userPreferences.totalContacts} contacts. 
+                    Properties matching your preferences are ranked higher automatically.
+                  </p>
+                  <p className="text-xs text-purple-700 mt-2 font-semibold">
+                    💡 Keep browsing → Better recommendations
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAutoMatchBanner(false)}
+                className="h-8 w-8 hover:bg-purple-200 flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Personalized For You Section */}
         {userPreferences && personalizedProperties.length > 0 && filters.viewMode === "properties" && (
@@ -766,20 +777,12 @@ export default function SmartFeed() {
           </div>
         )}
 
-        {/* LAZY LOADED MODALS WITH SUSPENSE */}
+        {/* LAZY LOADED MODAL WITH SUSPENSE */}
         <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
           <PropertyDetailsModal
             property={selectedProperty}
             isOpen={!!selectedProperty}
             onClose={() => setSelectedProperty(null)}
-          />
-        </Suspense>
-
-        <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
-          <PropertyMatchmaker
-            isOpen={matchmakerOpen}
-            onClose={() => setMatchmakerOpen(false)}
-            allProperties={properties}
           />
         </Suspense>
       </div>

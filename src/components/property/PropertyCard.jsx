@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -22,6 +21,8 @@ const createPageUrl = (pageName) => {
   switch (pageName) {
     case "PropertyDetails":
       return "/propertydetails";
+    case "BuildingProfile":
+      return "/buildingprofile";
     default:
       return "/";
   }
@@ -115,6 +116,11 @@ export default function PropertyCard({ property, onViewDetails }) {
     }
   };
 
+  const handleBuildingClick = (e, buildingId) => {
+    e.stopPropagation();
+    navigate(`${createPageUrl("BuildingProfile")}?id=${buildingId}`);
+  };
+
   const getShareUrl = () => {
     if (property.slug) {
       return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
@@ -186,7 +192,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  // FIX: If broker_contact is Vishal's personal number, treat it as PropAI Office
   const primaryContact = (property.broker_contact && property.broker_contact !== '919819471310') 
     ? property.broker_contact 
     : '9102269622278';
@@ -243,10 +248,23 @@ export default function PropertyCard({ property, onViewDetails }) {
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
+          {/* Building Name as Clickable Chip - NEW */}
+          {property.building_name && property.building_id && (
+            <button
+              onClick={(e) => handleBuildingClick(e, property.building_id)}
+              className="flex items-center gap-1.5 mb-3 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-xl border border-indigo-200 hover:border-indigo-300 transition-all group/building"
+            >
+              <Building2 className="w-3.5 h-3.5 text-indigo-600 group-hover/building:scale-110 transition-transform" />
+              <span className="text-xs font-semibold text-indigo-700 group-hover/building:text-indigo-800">
+                {property.building_name}
+              </span>
+            </button>
+          )}
+
           <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-3">
             <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
             <span className="truncate">
-              {property.building_name ? `${property.building_name}, ` : ''}
+              {property.building_name ? '' : ''}
               {property.location}
             </span>
           </div>
