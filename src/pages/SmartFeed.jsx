@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useEffect, useRef, lazy, Suspense, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -21,9 +20,25 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Info } from "lucide-react";
-import { debounce } from "lodash";
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
+
+// 🚀 PERFORMANCE OPTIMIZATION: Debounce hook to reduce query frequency
+function useDebounce(value, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -38,40 +53,27 @@ export default function SmartFeed() {
     viewMode: "properties",
     sortBy: "brokertrust",
   });
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24);
   const [userPreferences, setUserPreferences] = useState(null);
   const [showAutoMatchBanner, setShowAutoMatchBanner] = useState(true);
   const [user, setUser] = useState(null);
 
+  // 🚀 OPTIMIZATION: Debounce search to reduce query load
+  const debouncedSearch = useDebounce(filters.search, 400);
+
+  // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
   const previousCountsRef = useRef({ properties: 0, requirements: 0 });
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
   const ITEMS_PER_PAGE = 24;
-  const REFRESH_INTERVAL = 30000; // ⚡ OPTIMIZED: Reduced from 15s to 30s
+  const REFRESH_INTERVAL = 15000; // 15 seconds
 
   const navigate = useNavigate();
 
-  const popularAreas = [
-    "Bandra West", "Juhu", "Andheri West", "Khar West", 
-    "BKC", "Worli", "Lower Parel", "Powai"
-  ];
-
-  // ⚡ OPTIMIZATION: Debounced search - only trigger filtering after user stops typing
-  const debouncedSearch = useCallback(
-    debounce((searchValue) => {
-      setDebouncedSearchQuery(searchValue);
-    }, 300),
-    []
-  );
-
-  useEffect(() => {
-    debouncedSearch(filters.search);
-  }, [filters.search, debouncedSearch]);
-
+  // Load current user
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -84,6 +86,13 @@ export default function SmartFeed() {
     loadUser();
   }, []);
 
+  // POPULAR MUMBAI AREAS (for quick filters)
+  const popularAreas = [
+    "Bandra West", "Juhu", "Andheri West", "Khar West", 
+    "BKC", "Worli", "Lower Parel", "Powai"
+  ];
+
+  // Load user preferences from localStorage
   useEffect(() => {
     const loadPreferences = () => {
       try {
@@ -141,26 +150,7 @@ export default function SmartFeed() {
     loadPreferences();
   }, []);
 
-  const trackPropertyView = (property) => {
-    try {
-      const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
-      viewHistory.push({
-        id: property.id,
-        bhk: property.bhk,
-        location: property.location,
-        price: property.price,
-        price_unit: property.price_unit,
-        listing_type: property.listing_type,
-        timestamp: new Date().toISOString()
-      });
-      
-      const recentViews = viewHistory.slice(-50);
-      localStorage.setItem('propai_view_history', JSON.stringify(recentViews));
-    } catch (error) {
-      console.error('Failed to track view:', error);
-    }
-  };
-
+  // Read filters from URL parameters and apply user preferences on mount/user load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const newFilters = { ...filters };
@@ -180,32 +170,36 @@ export default function SmartFeed() {
     setFilters(newFilters);
   }, [user]);
 
+  // Reset pagination when filters change
   useEffect(() => {
     setItemsToShow(ITEMS_PER_PAGE);
   }, [filters]);
 
-  // ⚡ OPTIMIZATION: Aggressive caching for properties (5 min stale time)
+  // 🚀 CRITICAL OPTIMIZATION: Aggressive caching for properties
+  // 📊 BASE44 INDEXING NEEDED: location, bhk, price, status, listing_type, property_category, broker_trust_score, created_date, is_duplicate
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
-    staleTime: 5 * 60 * 1000, // ⚡ 5 minutes - data doesn't change that fast
-    cacheTime: 10 * 60 * 1000, // ⚡ Keep in cache for 10 minutes
+    staleTime: 30000, // 🚀 Data stays fresh for 30s - reduces DB hits
+    cacheTime: 300000, // 🚀 Cache for 5 mins - keeps data in memory
     refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: false, // ⚡ Don't refetch on every tab switch
+    refetchOnWindowFocus: true,
   });
 
-  // ⚡ OPTIMIZATION: Aggressive caching for requirements
+  // 🚀 CRITICAL OPTIMIZATION: Aggressive caching for requirements
+  // 📊 BASE44 INDEXING NEEDED: status, listing_type, broker_id, created_date
   const { data: requirements, isLoading: requirementsLoading } = useQuery({
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    staleTime: 30000, // 🚀 Data stays fresh for 30s
+    cacheTime: 300000, // 🚀 Cache for 5 mins
     refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 
+  // Detect new items and show notification
   useEffect(() => {
     if (!isLoading && !requirementsLoading) {
       const currentCounts = {
@@ -249,6 +243,7 @@ export default function SmartFeed() {
     }
   }, [properties, requirements, isLoading, requirementsLoading]);
 
+  // Get personalized recommendations
   const personalizedProperties = useMemo(() => {
     if (!userPreferences || !properties.length) return [];
     
@@ -275,16 +270,16 @@ export default function SmartFeed() {
       .slice(0, 6);
   }, [properties, userPreferences]);
 
-  // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
+  // 🚀 OPTIMIZATION: Use debounced search in filtering
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
       if (property.status !== "Active" || property.is_duplicate === true) {
         return false;
       }
 
-      // ⚡ Use debounced search query
-      if (debouncedSearchQuery) {
-        const searchLower = debouncedSearchQuery.toLowerCase();
+      // 🚀 Use debounced search value
+      if (debouncedSearch) {
+        const searchLower = debouncedSearch.toLowerCase();
         const matchesSearch = 
           property.building_name?.toLowerCase().includes(searchLower) ||
           property.location?.toLowerCase().includes(searchLower) ||
@@ -334,6 +329,7 @@ export default function SmartFeed() {
       return true;
     });
 
+    // SORTING LOGIC
     results.sort((a, b) => {
       switch (filters.sortBy) {
         case 'latest':
@@ -367,14 +363,14 @@ export default function SmartFeed() {
     });
 
     return results;
-  }, [properties, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, filters.sortBy, debouncedSearchQuery]);
+  }, [properties, filters, debouncedSearch]); // 🚀 Use debouncedSearch dependency
 
   const filteredRequirements = useMemo(() => {
     let results = requirements.filter(requirement => {
       if (requirement.status !== "Active") return false;
 
-      if (debouncedSearchQuery) {
-        const searchLower = debouncedSearchQuery.toLowerCase();
+      if (debouncedSearch) {
+        const searchLower = debouncedSearch.toLowerCase();
         const matchesSearch = 
           requirement.preferred_locations?.some(loc => loc.toLowerCase().includes(searchLower)) ||
           requirement.bhk_preference?.some(bhk => bhk.toLowerCase().includes(searchLower)) ||
@@ -423,7 +419,7 @@ export default function SmartFeed() {
     });
 
     return results;
-  }, [requirements, filters.bhk_multi, filters.location_multi, filters.listingType, filters.furnishing, debouncedSearchQuery]);
+  }, [requirements, filters, debouncedSearch]);
 
   const getDisplayItems = () => {
     if (filters.viewMode === "requirements") {
@@ -479,6 +475,27 @@ export default function SmartFeed() {
     }
   };
 
+  // Track property view
+  const trackPropertyView = (property) => {
+    try {
+      const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
+      viewHistory.push({
+        id: property.id,
+        bhk: property.bhk,
+        location: property.location,
+        price: property.price,
+        price_unit: property.price_unit,
+        listing_type: property.listing_type,
+        timestamp: new Date().toISOString()
+      });
+      
+      const recentViews = viewHistory.slice(-50);
+      localStorage.setItem('propai_view_history', JSON.stringify(recentViews));
+    } catch (error) {
+      console.error('Failed to track view:', error);
+    }
+  };
+
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -509,6 +526,7 @@ export default function SmartFeed() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
 
+        {/* New Items Banner */}
         <AnimatePresence>
           {showNewItemsBanner && (
             <motion.div
@@ -545,6 +563,7 @@ export default function SmartFeed() {
           )}
         </AnimatePresence>
 
+        {/* Hero Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -559,7 +578,7 @@ export default function SmartFeed() {
                     <span className="font-semibold">Live</span>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 30s</p>
+                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 15s</p>
               </div>
             </div>
             {user && (
@@ -576,6 +595,7 @@ export default function SmartFeed() {
           </div>
         </div>
 
+        {/* NEW: Area Quick Filters */}
         <div className="mb-6 bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="w-4 h-4 text-purple-600" />
@@ -620,6 +640,7 @@ export default function SmartFeed() {
           )}
         </div>
 
+        {/* Auto-Match Intelligence Banner */}
         {userPreferences && showAutoMatchBanner && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -656,6 +677,7 @@ export default function SmartFeed() {
           </motion.div>
         )}
 
+        {/* Personalized For You Section */}
         {userPreferences && personalizedProperties.length > 0 && filters.viewMode === "properties" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -712,6 +734,7 @@ export default function SmartFeed() {
           </motion.div>
         )}
 
+        {/* View Mode Toggle */}
         <div className="mb-6 flex justify-center">
           <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
             <Button
@@ -741,6 +764,7 @@ export default function SmartFeed() {
           </div>
         </div>
 
+        {/* Filters */}
         <PropertyFilters
           filters={filters}
           onFilterChange={setFilters}
@@ -748,6 +772,7 @@ export default function SmartFeed() {
           allProperties={properties}
         />
 
+        {/* Sort Selector */}
         <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
             <p className="text-sm text-[#3B3B3B]">
@@ -755,6 +780,10 @@ export default function SmartFeed() {
               <span className="font-bold text-[#111111]">{totalFilteredItems}</span>{' '}
               {displayType === "properties" ? "properties" : displayType === "requirements" ? "requirements" : "items"}
             </p>
+            {/* 🚀 Show debounce indicator when search is active */}
+            {filters.search !== debouncedSearch && (
+              <p className="text-xs text-purple-600 mt-1">🔍 Searching...</p>
+            )}
           </div>
           
           {filters.viewMode === "properties" && (
@@ -873,6 +902,7 @@ export default function SmartFeed() {
           )}
         </div>
 
+        {/* Error State */}
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -882,6 +912,7 @@ export default function SmartFeed() {
           </Alert>
         )}
 
+        {/* Loading State */}
         {(isLoading || requirementsLoading) && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
@@ -900,6 +931,7 @@ export default function SmartFeed() {
           </div>
         )}
 
+        {/* Display Items */}
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -944,6 +976,7 @@ export default function SmartFeed() {
               })}
             </div>
 
+            {/* Load More Button */}
             {hasMore && (
               <div className="mt-12 flex justify-center">
                 <Button
@@ -960,6 +993,7 @@ export default function SmartFeed() {
               </div>
             )}
 
+            {/* End of results message */}
             {!hasMore && allItems.length > ITEMS_PER_PAGE && (
               <div className="mt-12 text-center">
                 <div className="inline-block bg-white rounded-2xl px-6 py-3 border-2 border-[#F7F7F7]">
@@ -975,6 +1009,7 @@ export default function SmartFeed() {
           </>
         )}
 
+        {/* Empty State */}
         {!isLoading && !requirementsLoading && allItems.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-[#F7F7F7] rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-[#3B3B3B]/10">

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -37,16 +37,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
-// Simple debounce utility function
-function debounce(func, delay) {
-  let timeout;
-  return function(...args) {
-    const context = this;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), delay);
-  };
-}
-
 export default function Admin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -57,14 +47,12 @@ export default function Admin() {
 
   // Properties state
   const [propSearchQuery, setPropSearchQuery] = useState("");
-  const [debouncedPropSearch, setDebouncedPropSearch] = useState(""); // Debounced state for properties
   const [propStatusFilter, setPropStatusFilter] = useState("Active");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
   // Brokers state
   const [brokerSearchQuery, setBrokerSearchQuery] = useState("");
-  const [debouncedBrokerSearch, setDebouncedBrokerSearch] = useState(""); // Debounced state for brokers
   const [brokerStatusFilter, setBrokerStatusFilter] = useState("all");
 
   // Image upload states
@@ -73,9 +61,13 @@ export default function Admin() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [imagesToUpload, setImagesToUpload] = useState([]);
 
+  // 🚀 OPTIMIZATION: Background job tracking
+  const [jobStatus, setJobStatus] = useState({});
+  const [activeJobs, setActiveJobs] = useState([]);
+
   // Processing states
   const [dealsLoading, setDealsLoading] = useState(false);
-  const [generatingSlugs, setGeneratingSlugs] = useState(false); // Used for multiple background tasks
+  const [generatingSlugs, setGeneratingSlugs] = useState(false);
   const [detectingDuplicates, setDetectingDuplicates] = useState(false);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   const [testingPropAI, setTestingPropAI] = useState(false);
@@ -90,31 +82,6 @@ export default function Admin() {
   const [buildingQuery, setBuildingQuery] = useState("");
   const [buildingQueryResult, setBuildingQueryResult] = useState(null);
   const [queryingBuilding, setQueryingBuilding] = useState(false);
-
-  // ⚡ OPTIMIZATION: Debounced search for properties
-  const debouncedPropSearchFn = useCallback(
-    debounce((searchValue) => {
-      setDebouncedPropSearch(searchValue);
-      setCurrentPage(1); // Reset to page 1 on search
-    }, 400),
-    []
-  );
-
-  useEffect(() => {
-    debouncedPropSearchFn(propSearchQuery);
-  }, [propSearchQuery, debouncedPropSearchFn]);
-
-  // ⚡ OPTIMIZATION: Debounced search for brokers
-  const debouncedBrokerSearchFn = useCallback(
-    debounce((searchValue) => {
-      setDebouncedBrokerSearch(searchValue);
-    }, 400),
-    []
-  );
-
-  useEffect(() => {
-    debouncedBrokerSearchFn(brokerSearchQuery);
-  }, [brokerSearchQuery, debouncedBrokerSearchFn]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -135,49 +102,50 @@ export default function Admin() {
   }, [navigate]);
 
   // Queries with auto-refresh
-  // ⚡ OPTIMIZATION: Longer stale time for admin data (2 min)
+  // 🚀 CRITICAL OPTIMIZATION: Aggressive caching for admin queries
+  // 📊 BASE44 INDEXING NEEDED: status, is_duplicate, broker_id, listing_type, created_date
   const { data: properties = [], isLoading: propertiesLoading } = useQuery({
     queryKey: ['admin-properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    staleTime: 2 * 60 * 1000, // ⚡ 2 minutes - admin data doesn't need real-time accuracy
-    cacheTime: 5 * 60 * 1000,
-    refetchInterval: 30000, // ⚡ Reduced from 15s to 30s
-    refetchOnWindowFocus: false,
+    staleTime: 30000, // 🚀 30s stale time for admin view
+    cacheTime: 300000, // 🚀 5 min cache
+    refetchInterval: 15000,
   });
 
+  // 🚀 OPTIMIZATION: Separate duplicate query with caching
   const { data: duplicates = [], isLoading: duplicatesLoading } = useQuery({
     queryKey: ['duplicate-properties'],
     queryFn: () => base44.entities.Property.filter({ is_duplicate: true }, '-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    staleTime: 5 * 60 * 1000, // ⚡ 5 minutes - duplicates don't change often
-    cacheTime: 10 * 60 * 1000,
-    refetchInterval: 60000, // ⚡ 1 minute
-    refetchOnWindowFocus: false,
+    staleTime: 30000,
+    cacheTime: 300000,
+    refetchInterval: 15000,
   });
 
+  // 🚀 OPTIMIZATION: Broker query with caching
+  // 📊 BASE44 INDEXING NEEDED: status, verified, last_activity
   const { data: brokers = [] } = useQuery({
     queryKey: ['brokers'],
     queryFn: () => base44.entities.Broker.list('-last_activity'),
     initialData: [],
     enabled: isAuthorized,
-    staleTime: 3 * 60 * 1000, // ⚡ 3 minutes
-    cacheTime: 10 * 60 * 1000,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: false,
+    staleTime: 30000,
+    cacheTime: 300000,
+    refetchInterval: 15000,
   });
 
+  // 🚀 OPTIMIZATION: Requirements query with caching
   const { data: requirements = [] } = useQuery({
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    staleTime: 2 * 60 * 1000,
-    cacheTime: 5 * 60 * 1000,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: false,
+    staleTime: 30000,
+    cacheTime: 300000,
+    refetchInterval: 15000,
   });
 
   // ✅ CALCULATE REAL-TIME BROKER LISTING COUNTS
@@ -212,6 +180,28 @@ export default function Admin() {
       setImagesToUpload([]);
     },
   });
+
+  // 🚀 NEW: Helper function to track long-running jobs
+  const trackJob = (jobName, promise) => {
+    const jobId = Date.now().toString();
+    setActiveJobs(prev => [...prev, { id: jobId, name: jobName, startTime: Date.now() }]);
+    
+    promise.finally(() => {
+      setActiveJobs(prev => prev.filter(j => j.id !== jobId));
+    });
+    
+    return promise;
+  };
+
+  // 🚀 OPTIMIZATION: Add timeout wrapper for heavy operations
+  const withTimeout = async (asyncFn, timeoutMs = 30000) => {
+    return Promise.race([
+      asyncFn(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)
+      )
+    ]);
+  };
 
   // Image upload handlers
   const handleImageUpload = (property) => {
@@ -1214,15 +1204,14 @@ export default function Admin() {
   };
 
   // Filtered data - USE CALCULATED COUNTS
-  // ⚡ OPTIMIZATION: Use debounced search queries for filtering
   const filteredProperties = properties.filter(property => {
     if (property.is_duplicate) return false;
     
-    const matchesSearch = !debouncedPropSearch ||
-      property.building_name?.toLowerCase().includes(debouncedPropSearch.toLowerCase()) ||
-      property.location?.toLowerCase().includes(debouncedPropSearch.toLowerCase()) ||
-      property.custom_id?.toLowerCase().includes(debouncedPropSearch.toLowerCase()) ||
-      property.bhk?.toLowerCase().includes(debouncedPropSearch.toLowerCase());
+    const matchesSearch = !propSearchQuery ||
+      property.building_name?.toLowerCase().includes(propSearchQuery.toLowerCase()) ||
+      property.location?.toLowerCase().includes(propSearchQuery.toLowerCase()) ||
+      property.custom_id?.toLowerCase().includes(propSearchQuery.toLowerCase()) ||
+      property.bhk?.toLowerCase().includes(propSearchQuery.toLowerCase());
 
     const matchesStatus = propStatusFilter === "all" || property.status === propStatusFilter;
 
@@ -1230,10 +1219,10 @@ export default function Admin() {
   });
 
   const filteredBrokers = brokersWithCounts.filter(broker => {
-    const matchesSearch = !debouncedBrokerSearch ||
-      broker.name?.toLowerCase().includes(debouncedBrokerSearch.toLowerCase()) ||
-      broker.phone?.includes(debouncedBrokerSearch) ||
-      broker.agency_name?.toLowerCase().includes(debouncedBrokerSearch.toLowerCase());
+    const matchesSearch = !brokerSearchQuery ||
+      broker.name?.toLowerCase().includes(brokerSearchQuery.toLowerCase()) ||
+      broker.phone?.includes(brokerSearchQuery) ||
+      broker.agency_name?.toLowerCase().includes(brokerSearchQuery.toLowerCase());
 
     let matchesStatus = true;
     if (brokerStatusFilter === "Active") {
@@ -1380,6 +1369,30 @@ export default function Admin() {
     </Dialog>
   );
 
+  // 🚀 ENHANCEMENT: Show active jobs indicator
+  const ActiveJobsIndicator = () => {
+    if (activeJobs.length === 0) return null;
+    
+    return (
+      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-2xl shadow-2xl border-2 border-purple-300 p-4 max-w-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <RefreshCw className="w-4 h-4 text-purple-600 animate-spin" />
+          <span className="font-bold text-sm text-slate-900">Background Jobs Running</span>
+        </div>
+        <div className="space-y-2">
+          {activeJobs.map(job => (
+            <div key={job.id} className="text-xs text-slate-600 flex items-center justify-between">
+              <span>{job.name}</span>
+              <span className="text-purple-600">
+                {Math.floor((Date.now() - job.startTime) / 1000)}s
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -1398,6 +1411,9 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Toaster position="top-center" richColors closeButton />
+      
+      {/* 🚀 NEW: Active jobs indicator */}
+      <ActiveJobsIndicator />
       
       {/* Fixed Header */}
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
@@ -1693,7 +1709,7 @@ export default function Admin() {
                         value={propSearchQuery}
                         onChange={(e) => {
                           setPropSearchQuery(e.target.value);
-                          // setCurrentPage(1); // Removed: Handled by debouncedPropSearchFn
+                          setCurrentPage(1);
                         }}
                         className="pl-10"
                       />
