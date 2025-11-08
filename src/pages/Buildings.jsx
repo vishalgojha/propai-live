@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -8,112 +8,107 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Building2, MapPin, TrendingUp, Package, Search, ChevronDown, Users, Star
+  Building2, Search, MapPin, Star, ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { debounce } from "lodash";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import SEO from "../components/SEO";
-
-// 🚀 PERFORMANCE OPTIMIZATION: Debounce hook
-function useDebounce(value, delay = 300) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 export default function Buildings() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const [itemsToShow, setItemsToShow] = useState(24);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  
+  const [buildingsToShow, setBuildingsToShow] = useState(9);
+  const BUILDINGS_PER_LOAD = 9;
 
-  // 🚀 OPTIMIZATION: Debounce search
-  const debouncedSearch = useDebounce(searchQuery, 400);
+  // ⚡ OPTIMIZATION: Debounced search
+  const debouncedSearch = useCallback(
+    debounce((searchValue) => {
+      setDebouncedSearchQuery(searchValue);
+    }, 300),
+    []
+  );
 
-  const ITEMS_PER_PAGE = 24;
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, debouncedSearch]);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         setUser(null);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
   }, []);
 
-  // 🚀 CRITICAL OPTIMIZATION: Aggressive caching for buildings
-  // 📊 BASE44 INDEXING NEEDED: location, name, total_listings, active_listings, verified
+  const isAdmin = user?.role === 'admin';
+
+  // ⚡ OPTIMIZATION: Aggressive caching for buildings (10 min stale time)
   const { data: buildings = [], isLoading } = useQuery({
     queryKey: ['buildings'],
-    queryFn: () => base44.entities.Building.list('-total_listings'),
+    queryFn: () => base44.entities.Building.list('-active_listings'),
     initialData: [],
-    staleTime: 60000, // 🚀 Buildings change less frequently - 1 min stale time
-    cacheTime: 600000, // 🚀 Cache for 10 mins
-    refetchOnWindowFocus: false, // 🚀 Don't refetch on window focus (reduces load)
+    staleTime: 10 * 60 * 1000, // ⚡ 10 minutes - buildings don't change frequently
+    cacheTime: 15 * 60 * 1000, // ⚡ 15 minutes in cache
+    refetchOnWindowFocus: false,
   });
 
-  // 🚀 OPTIMIZATION: Cache property count query separately
-  // 📊 BASE44 INDEXING NEEDED: status, is_duplicate
+  // ⚡ OPTIMIZATION: Cache properties for building stats
   const { data: properties = [] } = useQuery({
-    queryKey: ['properties-count'],
-    queryFn: () => base44.entities.Property.list(),
+    queryKey: ['properties-for-buildings'],
+    queryFn: () => base44.entities.Property.filter({ status: "Active" }),
     initialData: [],
-    staleTime: 60000, // 🚀 1 min stale time
-    cacheTime: 600000, // 🚀 10 min cache
-    select: (data) => data.filter(p => p.status === 'Active' && !p.is_duplicate), // 🚀 Filter in select to cache filtered result
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  const uniqueLocations = useMemo(() => {
-    const locations = new Set(buildings.map(b => b.location).filter(Boolean));
-    return Array.from(locations).sort();
+  const locations = useMemo(() => {
+    return [...new Set(buildings.map(b => b.location).filter(Boolean))];
   }, [buildings]);
 
-  // 🚀 OPTIMIZATION: Use debounced search in filtering
+  // ⚡ OPTIMIZATION: Use debounced search query
   const filteredBuildings = useMemo(() => {
     return buildings.filter(building => {
-      // 🚀 Use debounced search value
-      if (debouncedSearch) {
-        const searchLower = debouncedSearch.toLowerCase();
-        const matchesSearch = 
-          building.name?.toLowerCase().includes(searchLower) ||
-          building.location?.toLowerCase().includes(searchLower) ||
-          building.pocket?.toLowerCase().includes(searchLower) ||
-          building.developer_name?.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
+      const matchesSearch = !debouncedSearchQuery ||
+        building.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        building.location?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        building.pocket?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        building.developer_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
-      if (selectedLocation !== "all" && building.location !== selectedLocation) {
-        return false;
-      }
+      const matchesLocation = locationFilter === "all" || building.location === locationFilter;
 
-      return true;
+      return matchesSearch && matchesLocation;
     });
-  }, [buildings, debouncedSearch, selectedLocation]);
+  }, [buildings, debouncedSearchQuery, locationFilter]);
 
-  const displayedBuildings = filteredBuildings.slice(0, itemsToShow);
-  const hasMore = itemsToShow < filteredBuildings.length;
+  useEffect(() => {
+    setBuildingsToShow(BUILDINGS_PER_LOAD);
+  }, [debouncedSearchQuery, locationFilter]);
 
-  const loadMore = () => {
-    setItemsToShow(prev => Math.min(prev + ITEMS_PER_PAGE, filteredBuildings.length));
+  const displayedBuildings = useMemo(() => {
+    return filteredBuildings.slice(0, buildingsToShow);
+  }, [filteredBuildings, buildingsToShow]);
+
+  const handleLoadMore = () => {
+    setBuildingsToShow(prev => prev + BUILDINGS_PER_LOAD);
   };
 
-  const stats = {
-    total: buildings.length,
-    verified: buildings.filter(b => b.verified).length,
-    withListings: buildings.filter(b => (b.active_listings || 0) > 0).length,
+  const handleBuildingClick = (building) => {
+    navigate(createPageUrl("BuildingProfile") + `?id=${building.id}`);
   };
 
   const breadcrumbSchema = {
@@ -124,28 +119,30 @@ export default function Buildings() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://propai.live"
+        "item": "https://chariotrealty.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Buildings",
-        "item": "https://propai.live/buildings"
+        "item": "https://chariotrealty.com/buildings"
       }
     ]
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <Toaster position="top-center" richColors closeButton />
+
       <SEO
-        title="Mumbai Buildings Directory | Building Intelligence | PropAI Live"
-        description="Browse comprehensive building profiles with pricing data, amenities, and market insights. AI-powered building intelligence for Mumbai real estate."
+        title="Mumbai Buildings Directory | Street-Level Intelligence"
+        description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
         schema={breadcrumbSchema}
-        canonical="https://propai.live/buildings"
+        canonical="https://chariotrealty.com/buildings"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -153,211 +150,212 @@ export default function Buildings() {
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">Building Intelligence</h1>
-              <p className="text-sm text-slate-600 font-light">Deep insights into Mumbai's buildings</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">Mumbai Buildings</h1>
+              <p className="text-sm text-slate-600 font-light">Street-level property intelligence</p>
             </div>
           </div>
         </div>
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-                <p className="text-xs text-slate-500">Buildings Mapped</p>
-              </div>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
+            <p className="text-xs text-slate-600 mb-1">Total Buildings</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{buildings.length}</p>
           </div>
-
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                <Star className="w-5 h-5 text-green-600" fill="currentColor" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.verified}</p>
-                <p className="text-xs text-slate-500">Verified</p>
-              </div>
-            </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
+            <p className="text-xs text-slate-600 mb-1">Verified</p>
+            <p className="text-2xl font-bold text-green-600">{buildings.filter(b => b.verified).length}</p>
           </div>
-
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
-                <Package className="w-5 h-5 text-sky-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.withListings}</p>
-                <p className="text-xs text-slate-500">With Active Listings</p>
-              </div>
-            </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
+            <p className="text-xs text-slate-600 mb-1">Total Listings</p>
+            <p className="text-2xl font-bold text-purple-600">{buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
+            <p className="text-xs text-slate-600 mb-1">Active Listings</p>
+            <p className="text-2xl font-bold text-blue-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
           </div>
         </div>
 
-        {/* Search & Filters */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200 mb-8">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+        {/* Filters */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search buildings, locations, developers..."
+                placeholder="Search buildings, developers, or areas..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 border-purple-200 focus-visible:ring-purple-500 h-12 rounded-xl"
+                className="pl-11 border-purple-200 focus-visible:ring-purple-500"
               />
             </div>
             <select
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="h-12 px-4 rounded-xl border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              className="h-11 rounded-xl border border-purple-200 px-4 font-semibold focus:ring-purple-500"
             >
               <option value="all">All Locations</option>
-              {uniqueLocations.map((loc) => (
+              {locations.map(loc => (
                 <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
           </div>
-          
-          {/* 🚀 Show search indicator */}
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <p className="text-slate-500">
-              {filteredBuildings.length} building{filteredBuildings.length !== 1 ? 's' : ''} found
-            </p>
-            {searchQuery !== debouncedSearch && (
-              <p className="text-purple-600 text-xs">🔍 Searching...</p>
-            )}
-          </div>
         </div>
 
-        {/* Buildings Grid */}
-        {isLoading ? (
+        {/* Loading State */}
+        {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200">
-                <Skeleton className="h-6 w-3/4 mb-4" />
-                <Skeleton className="h-4 w-1/2 mb-6" />
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <Skeleton className="h-16" />
-                  <Skeleton className="h-16" />
-                </div>
-                <Skeleton className="h-10 w-full" />
-              </div>
+            {[...Array(BUILDINGS_PER_LOAD)].map((_, i) => (
+              <Skeleton key={i} className="h-80 rounded-3xl" />
             ))}
           </div>
-        ) : filteredBuildings.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 bg-purple-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-purple-200">
-              <Building2 className="w-10 h-10 text-slate-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">No buildings found</h3>
-            <p className="text-slate-600 mb-6">Try adjusting your search or filters</p>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredBuildings.length === 0 && (
+          <div className="bg-white rounded-3xl p-12 text-center border-2 border-[#F7F7F7]">
+            <Building2 className="w-12 h-12 text-[#3B3B3B] mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-[#111111] mb-2">No buildings found</h3>
+            <p className="text-[#3B3B3B]">Try adjusting your search or filters</p>
           </div>
-        ) : (
+        )}
+
+        {/* Buildings Grid */}
+        {!isLoading && displayedBuildings.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedBuildings.map((building) => (
                 <motion.div
                   key={building.id}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -4 }}
-                  className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-purple-200 hover:border-purple-400 cursor-pointer"
-                  onClick={() => navigate(createPageUrl("BuildingProfile") + `?id=${building.id}`)}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "100px" }}
+                  onClick={() => handleBuildingClick(building)}
+                  className="bg-white rounded-3xl overflow-hidden border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all cursor-pointer group"
                 >
                   <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-slate-900 mb-2 leading-tight line-clamp-2">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
                           {building.name}
                         </h3>
-                        <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-                          <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                          <span className="line-clamp-1">{building.location}</span>
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-2">
+                          <MapPin className="w-3.5 h-3.5 text-purple-500" />
+                          <span>{building.location}</span>
+                          {building.pocket && (
+                            <>
+                              <span className="text-slate-400">•</span>
+                              <span className="text-xs">{building.pocket}</span>
+                            </>
+                          )}
                         </div>
                       </div>
-                      {building.verified && (
-                        <Badge className="bg-green-500 text-white border-0 flex-shrink-0">
-                          <Star className="w-3 h-3 mr-1" fill="currentColor" />
-                          Verified
-                        </Badge>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {building.verified && (
+                          <Badge className="bg-green-500/20 text-green-700 border-green-500 text-xs">
+                            Verified
+                          </Badge>
+                        )}
+                        {!building.verified && (
+                          <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
+                            Auto
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
-                    {building.building_type && (
-                      <Badge variant="outline" className="mb-4">
-                        {building.building_type}
-                      </Badge>
+                    {(building.building_type || building.management_quality) && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {building.building_type && (
+                          <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 bg-purple-50">
+                            {building.building_type}
+                          </Badge>
+                        )}
+                        {building.management_quality && building.management_quality !== "Unknown" && (
+                          <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
+                            <Star className="w-3 h-3 mr-1" />
+                            {building.management_quality}
+                          </Badge>
+                        )}
+                      </div>
                     )}
 
                     {building.tags && building.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {building.tags.slice(0, 3).map((tag, idx) => (
-                          <Badge key={idx} className="bg-purple-100 text-purple-800 border-purple-300 text-xs">
+                          <Badge key={idx} variant="outline" className="text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
                             {tag}
                           </Badge>
                         ))}
+                        {building.tags.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{building.tags.length - 3} more
+                          </Badge>
+                        )}
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="bg-purple-50 rounded-xl p-3 text-center">
-                        <p className="text-2xl font-bold text-purple-600">{building.active_listings || 0}</p>
-                        <p className="text-xs text-slate-500">Active</p>
+                    <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-purple-50/60 rounded-2xl">
+                      <div className="text-center">
+                        <p className="text-xs text-slate-600 mb-1">Active Listings</p>
+                        <p className="text-lg font-bold text-purple-800">
+                          {building.active_listings !== undefined && building.active_listings !== null 
+                            ? building.active_listings 
+                            : 0}
+                        </p>
                       </div>
-                      <div className="bg-sky-50 rounded-xl p-3 text-center">
-                        <p className="text-2xl font-bold text-sky-600">{building.total_listings || 0}</p>
-                        <p className="text-xs text-slate-500">Total</p>
-                      </div>
+                      {building.year_built ? (
+                        <div className="text-center">
+                          <p className="text-xs text-slate-600 mb-1">Built</p>
+                          <p className="text-lg font-bold text-purple-800">{building.year_built}</p>
+                        </div>
+                      ) : (building.total_listings !== undefined && building.total_listings !== null) && (
+                        <div className="text-center">
+                          <p className="text-xs text-slate-600 mb-1">Total Listings</p>
+                          <p className="text-lg font-bold text-indigo-800">{building.total_listings || 0}</p>
+                        </div>
+                      )}
                     </div>
 
                     {(building.avg_rent_2bhk || building.avg_sale_2bhk) && (
-                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-3 mb-4">
-                        <p className="text-xs text-slate-500 mb-1">Avg 2 BHK Price</p>
-                        <p className="font-bold text-slate-900">
-                          {building.avg_rent_2bhk 
-                            ? `₹${building.avg_rent_2bhk}L/mo` 
-                            : building.avg_sale_2bhk 
-                              ? `₹${building.avg_sale_2bhk}L`
-                              : 'N/A'}
-                        </p>
+                      <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200/50">
+                        <p className="text-xs text-slate-600 mb-2 font-semibold">Average Pricing:</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {building.avg_rent_2bhk && (
+                            <div>
+                              <p className="text-slate-500">2 BHK Rent</p>
+                              <p className="font-bold text-purple-800">₹{building.avg_rent_2bhk}L</p>
+                            </div>
+                          )}
+                          {building.avg_sale_2bhk && (
+                            <div>
+                              <p className="text-slate-500">2 BHK Sale</p>
+                              <p className="font-bold text-purple-800">₹{building.avg_sale_2bhk} Cr</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl">
-                      View Building Profile
+                    <Button
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl shadow-md"
+                    >
+                      View Details
+                      <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </motion.div>
               ))}
             </div>
 
-            {hasMore && (
-              <div className="mt-12 flex justify-center">
+            {displayedBuildings.length < filteredBuildings.length && (
+              <div className="flex justify-center mt-8">
                 <Button
-                  onClick={loadMore}
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg"
+                  onClick={handleLoadMore}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg"
+                  disabled={isLoading}
                 >
-                  <ChevronDown className="w-5 h-5 mr-2" />
-                  Load More Buildings
-                  <span className="ml-2 text-xs opacity-80">
-                    ({filteredBuildings.length - itemsToShow} remaining)
-                  </span>
+                  Load More Buildings ({filteredBuildings.length - displayedBuildings.length} left)
                 </Button>
-              </div>
-            )}
-
-            {!hasMore && filteredBuildings.length > ITEMS_PER_PAGE && (
-              <div className="mt-12 text-center">
-                <div className="inline-block bg-white rounded-2xl px-6 py-3 border-2 border-purple-200">
-                  <p className="text-sm text-slate-600 font-medium">
-                    🎯 You've viewed all {filteredBuildings.length} buildings
-                  </p>
-                </div>
               </div>
             )}
           </>
