@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -46,6 +47,14 @@ export default function MyProfile() {
           navigate(createPageUrl("Home"));
           return;
         }
+        
+        console.log('👤 Current User:', {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          broker_id: user.broker_id || 'NOT SET'
+        });
+        
         setCurrentUser(user);
         if (user.preferred_areas) {
           setSelectedAreas(user.preferred_areas);
@@ -54,39 +63,64 @@ export default function MyProfile() {
         // IMPROVED: Try broker_id first, then fallback to email/phone matching
         if (user.broker_id) {
           // User has linked broker ID
-          const broker = await base44.entities.Broker.filter({ id: user.broker_id });
-          if (broker && broker.length > 0) {
-            setBrokerProfile(broker[0]);
-            console.log('✅ Broker profile loaded via broker_id:', broker[0].custom_id);
+          console.log('🔍 Looking up broker by broker_id:', user.broker_id);
+          const brokers = await base44.entities.Broker.list();
+          const broker = brokers.find(b => b.id === user.broker_id);
+          
+          if (broker) {
+            setBrokerProfile(broker);
+            console.log('✅ Broker profile loaded via broker_id:', broker.custom_id);
+          } else {
+            console.warn('⚠️ broker_id set but broker not found in database');
           }
         } else if (user.email) {
           // Fallback: Try to find broker by email or phone
+          console.log('🔍 No broker_id - trying to match by email/phone:', user.email);
           const brokers = await base44.entities.Broker.list();
+          console.log(`📊 Total brokers in system: ${brokers.length}`);
+          
           const matchingBroker = brokers.find(b => {
             // Normalize phone for comparison
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
             const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
             
-            return (
-              b.email?.toLowerCase() === user.email.toLowerCase() ||
-              (userEmailAsPhone && brokerPhone && userEmailAsPhone === brokerPhone)
-            );
+            const emailMatch = b.email?.toLowerCase() === user.email.toLowerCase();
+            const phoneMatch = userEmailAsPhone && brokerPhone && userEmailAsPhone === brokerPhone;
+            
+            if (emailMatch || phoneMatch) {
+              console.log('🎯 Potential match found:', {
+                broker_name: b.name,
+                broker_id: b.id,
+                broker_phone: b.phone,
+                broker_email: b.email,
+                match_type: emailMatch ? 'email' : 'phone'
+              });
+            }
+            
+            return emailMatch || phoneMatch;
           });
           
           if (matchingBroker) {
             setBrokerProfile(matchingBroker);
+            console.log('✅ Broker profile found! Attempting auto-link...');
             // Auto-link broker_id to user for future
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
-              console.log('✅ Auto-linked broker profile:', matchingBroker.custom_id);
+              console.log('✅ Auto-linked broker_id to user:', matchingBroker.custom_id);
             } catch (error) {
-              console.error('Failed to auto-link broker:', error);
+              console.error('❌ Failed to auto-link broker:', error);
             }
+          } else {
+            console.log('❌ No matching broker found');
+            console.log('💡 TIP: To link your profile, admin needs to:');
+            console.log('   1. Find your broker record in Admin → Brokers');
+            console.log('   2. Copy the broker ID');
+            console.log('   3. Run: await base44.auth.updateMe({ broker_id: "BROKER_ID_HERE" })');
           }
         }
       } catch (error) {
-        console.error("Failed to load user:", error);
+        console.error("❌ Failed to load user:", error);
         navigate(createPageUrl("Home"));
       } finally {
         setIsLoading(false);
@@ -228,9 +262,15 @@ export default function MyProfile() {
   const { data: properties = [] } = useQuery({
     queryKey: ['my-properties', brokerProfile?.id],
     queryFn: async () => {
-      if (!brokerProfile) return [];
+      if (!brokerProfile) {
+        console.log('⚠️ No broker profile - skipping properties fetch');
+        return [];
+      }
+      console.log('📦 Fetching properties for broker:', brokerProfile.id);
       const allProps = await base44.entities.Property.list('-created_date');
-      return allProps.filter(p => p.broker_id === brokerProfile.id);
+      const myProps = allProps.filter(p => p.broker_id === brokerProfile.id);
+      console.log(`✅ Found ${myProps.length} properties for broker ${brokerProfile.custom_id}`);
+      return myProps;
     },
     enabled: !!brokerProfile,
     initialData: []
@@ -239,9 +279,15 @@ export default function MyProfile() {
   const { data: requirements = [] } = useQuery({
     queryKey: ['my-requirements', brokerProfile?.id],
     queryFn: async () => {
-      if (!brokerProfile) return [];
+      if (!brokerProfile) {
+        console.log('⚠️ No broker profile - skipping requirements fetch');
+        return [];
+      }
+      console.log('📋 Fetching requirements for broker:', brokerProfile.id);
       const allReqs = await base44.entities.Requirement.list('-created_date');
-      return allReqs.filter(r => r.broker_id === brokerProfile.id);
+      const myReqs = allReqs.filter(r => r.broker_id === brokerProfile.id);
+      console.log(`✅ Found ${myReqs.length} requirements for broker ${brokerProfile.custom_id}`);
+      return myReqs;
     },
     enabled: !!brokerProfile,
     initialData: []
@@ -250,10 +296,16 @@ export default function MyProfile() {
   const { data: interactions = [] } = useQuery({
     queryKey: ['my-interactions', brokerProfile?.id, properties.length],
     queryFn: async () => {
-      if (!brokerProfile || properties.length === 0) return [];
+      if (!brokerProfile || properties.length === 0) {
+        console.log('⚠️ No broker profile or no properties - skipping interactions fetch');
+        return [];
+      }
+      console.log('📊 Fetching interactions for', properties.length, 'properties');
       const allInteractions = await base44.entities.PropertyInteraction.list('-created_date');
       const myPropertyIds = properties.map(p => p.id);
-      return allInteractions.filter(i => myPropertyIds.includes(i.property_id));
+      const myInteractions = allInteractions.filter(i => myPropertyIds.includes(i.property_id));
+      console.log(`✅ Found ${myInteractions.length} interactions`);
+      return myInteractions;
     },
     enabled: !!brokerProfile && properties.length > 0,
     initialData: []
@@ -276,8 +328,12 @@ export default function MyProfile() {
 
   // Calculate broker metrics
   const brokerMetrics = useMemo(() => {
-    if (!brokerProfile) return null;
+    if (!brokerProfile) {
+      console.log('⚠️ No broker profile - metrics will be null');
+      return null;
+    }
 
+    console.log('📊 Calculating broker metrics...');
     const myProps = properties.filter(p => p.broker_id === brokerProfile.id);
     const activeProps = myProps.filter(p => p.status === 'Active' && !p.is_duplicate);
     const myReqs = requirements.filter(r => r.broker_id === brokerProfile.id);
@@ -309,7 +365,7 @@ export default function MyProfile() {
       .sort((a, b) => b.viewCount - a.viewCount)
       .slice(0, 3);
 
-    return {
+    const metrics = {
       totalListings: myProps.length,
       activeListings: activeProps.length,
       totalRequirements: myReqs.length,
@@ -320,6 +376,9 @@ export default function MyProfile() {
       totalAIMatches,
       top3Properties: top3Props
     };
+    
+    console.log('✅ Broker Metrics:', metrics);
+    return metrics;
   }, [brokerProfile, properties, requirements, interactions]);
 
   // Admin metrics
