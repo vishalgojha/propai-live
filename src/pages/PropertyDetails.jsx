@@ -71,16 +71,16 @@ export default function PropertyDetails() {
   };
 
   const getAgentPhone = () => {
-    // Use broker contact if available, otherwise fallback to Vishal
-    return property?.broker_contact || "919819471310";
+    // Use broker contact if available, otherwise fallback to PropAI Office
+    return property?.broker_contact || "919102269622278";
   };
 
   const getAgentName = () => {
-    // Extract name from broker info or use Vishal as fallback
-    if (property?.broker_contact && property?.broker_contact !== "919819471310") {
+    // Extract name from broker info or use PropAI as fallback
+    if (property?.broker_contact && property?.broker_contact !== "919102269622278") {
       return "Broker";
     }
-    return "Vishal";
+    return "PropAI Team";
   };
 
   const getPropertyUrl = () => {
@@ -502,7 +502,7 @@ export default function PropertyDetails() {
 
             {/* CTA Section - Responsive */}
             <div className="space-y-3 md:space-y-4">
-              {property.broker_contact && property.broker_contact !== "919819471310" ? (
+              {property.broker_contact && property.broker_contact !== "919102269622278" ? (
                 <Button
                   onClick={handleWhatsApp}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
@@ -553,25 +553,25 @@ export default function PropertyDetails() {
                           price: property.price,
                           price_unit: property.price_unit,
                           listing_type: property.listing_type,
-                          agent: 'Kapil',
+                          agent: 'PropAI Office',
                           timestamp: new Date().toISOString()
                         });
                         localStorage.setItem('propai_contact_history', JSON.stringify(contactHistory.slice(-50)));
                       } catch (e) {}
                       
-                      const message = `Hi Kapil, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
-                      window.open(`https://wa.me/919773757759?text=${encodeURIComponent(message)}`, '_blank');
+                      const message = `Hi PropAI Team, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
+                      window.open(`https://wa.me/919102269622278?text=${encodeURIComponent(message)}`, '_blank');
                     }}
-                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
                     size="lg"
                   >
                     <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                    Kapil
+                    PropAI Office
                   </Button>
                 </div>
               )}
 
-              {property.broker_contact && property.broker_contact !== "919819471310" ? (
+              {property.broker_contact && property.broker_contact !== "919102269622278" ? (
                 <Button
                   onClick={() => window.open(`tel:${property.broker_contact}`, '_self')}
                   variant="outline"
@@ -591,12 +591,12 @@ export default function PropertyDetails() {
                     Vishal
                   </Button>
                   <Button
-                    onClick={() => window.open(`tel:+919773757759`, '_self')}
+                    onClick={() => window.open(`tel:+919102269622278`, '_self')}
                     variant="outline"
                     className="border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
                   >
                     <Phone className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                    Kapil
+                    PropAI Office
                   </Button>
                 </div>
               )}

@@ -91,14 +91,15 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
   };
 
   const getAgentPhone = () => {
-    if (property.assigned_agent === "Kapil") {
-      return "919773757759";
-    }
-    return "919819471310";
+    // Use broker contact if available, otherwise PropAI Office
+    return property.broker_contact || "919102269622278";
   };
 
   const getAgentName = () => {
-    return property.assigned_agent || "Vishal";
+    if (property.broker_contact && property.broker_contact !== "919102269622278") {
+      return "Broker";
+    }
+    return "PropAI Team";
   };
 
   const handleWhatsApp = () => {

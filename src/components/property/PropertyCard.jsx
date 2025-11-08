@@ -186,8 +186,8 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  const primaryContact = property.broker_contact || '919819471310';
-  const hasContact = !!property.broker_contact && property.broker_contact !== '919819471310';
+  const primaryContact = property.broker_contact || '919102269622278'; // Updated default contact number
+  const hasContact = !!property.broker_contact && property.broker_contact !== '919102269622278';
   const contactLabel = hasContact ? 'Broker' : 'PropAI';
 
   // Check if description is long (more than 120 characters)
