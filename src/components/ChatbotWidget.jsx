@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -276,6 +277,7 @@ export default function ChatbotWidget() {
                               <li>• 🚫 Don't overload - one request at a time</li>
                               <li>• ✅ Use responsibly - this helps everyone</li>
                               <li>• 💡 Be clear and specific for best results</li>
+                              <li>• 📞 Include valid broker phone number (10 digits) for parsing</li>
                             </ul>
                           </div>
                           <Button
