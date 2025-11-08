@@ -769,7 +769,7 @@ export default function SmartFeed() {
         />
 
         {/* Sort Selector - ENHANCED WITH EXPLANATION */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
             <p className="text-sm text-[#3B3B3B]">
               Showing <span className="font-bold text-[#111111]">{displayedItems.length}</span> of{' '}
@@ -779,9 +779,9 @@ export default function SmartFeed() {
           </div>
           
           {filters.viewMode === "properties" && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600 font-semibold">Sort by:</span>
-              <div className="flex gap-2">
+            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+              <span className="text-sm text-slate-600 font-semibold whitespace-nowrap">Sort by:</span>
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => setFilters({ ...filters, sortBy: 'latest' })}
                   variant={filters.sortBy === 'latest' ? "default" : "outline"}
