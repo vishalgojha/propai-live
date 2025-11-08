@@ -58,6 +58,23 @@ Looking forward to listing with PropAI Live!`;
 
   const adminWhatsAppUrl = `https://wa.me/9102269622278?text=${encodeURIComponent(adminWhatsAppMessage)}`;
 
+  // WhatsApp Auto-Match Number - Virtual Number with AI
+  const whatsappAutoMatchMessage = `Hi PropAI! 👋
+
+I'm looking for a property in Mumbai.
+
+📍 *Location:* [e.g., Bandra West, Juhu]
+🏠 *Type:* [e.g., 2 BHK, 3 BHK, Office]
+💰 *Budget:* [e.g., ₹2-3L rent, ₹5 Cr sale]
+🪑 *Furnishing:* [e.g., Fully Furnished]
+
+📸 Any other details:
+[Parking, amenities, timeline, etc.]
+
+Thanks! 🙏`;
+
+  const whatsappAutoMatchUrl = `https://wa.me/9102269622278?text=${encodeURIComponent(whatsappAutoMatchMessage)}`;
+
   // Mock data fetching for featured properties
   useEffect(() => {
     const fetchFeaturedProperties = async () => {
@@ -176,17 +193,17 @@ Looking forward to listing with PropAI Live!`;
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
-                onClick={() => window.open(adminWhatsAppUrl, '_blank')}
+                onClick={() => window.open(whatsappAutoMatchUrl, '_blank')}
                 size="lg"
-                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
+                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
               >
                 <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Post to Admin
+                Get AI Matches via WhatsApp
               </Button>
               <Button
                 onClick={() => window.open(whatsappAIUrl, '_blank')}
                 size="lg"
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
+                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
               >
                 <Bot className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                 Chat with AI Assistant
@@ -551,21 +568,21 @@ Looking forward to listing with PropAI Live!`;
             Ready to See the Difference?
           </h2>
           <p className="text-xl text-slate-600 mb-8">
-            Chat with our AI Assistant or explore Mumbai's smartest property feed
+            Get AI-powered property matches via WhatsApp or explore our smart feed
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => window.open(whatsappAIUrl, '_blank')}
+              onClick={() => window.open(whatsappAutoMatchUrl, '_blank')}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl shadow-lg"
             >
-              <Bot className="w-5 h-5 mr-2" />
-              Chat with AI Assistant
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Get AI Matches via WhatsApp
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl"
             >
               <Search className="w-5 h-5 mr-2" />
               Explore Properties
