@@ -1205,7 +1205,7 @@ export default function Admin() {
                     <img 
                       src={img} 
                       alt={`${idx + 1}`} 
-                      className="w-full h-24 object-cover rounded-lg"
+                      className="w-full h-24 object-cover rounded-xl"
                     />
                     <Button
                       onClick={() => handleRemoveImage(img)}
@@ -1654,6 +1654,12 @@ export default function Admin() {
                     <span>Brokers ({stats.brokers.active})</span>
                   </div>
                 </SelectItem>
+                <SelectItem value="broker-analytics">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Broker Analytics</span>
+                  </div>
+                </SelectItem>
                 <SelectItem value="requirements">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
@@ -2019,7 +2025,6 @@ export default function Admin() {
                     </div>
                   ) : (
                     filteredBrokers.map((broker) => {
-                      // Use cached counts from broker entity (more reliable)
                       const activeListings = broker.active_listings_count || 0;
                       const totalListings = broker.total_listings_count || 0;
                       
@@ -2072,12 +2077,20 @@ export default function Admin() {
                               WhatsApp
                             </Button>
                             <Button
-                              onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                              onClick={() => navigate(createPageUrl("BrokerProfile") + `?id=${broker.id}`)}
                               variant="outline"
                               size="sm"
                             >
                               <Eye className="w-4 h-4 mr-2" />
                               View Profile
+                            </Button>
+                            <Button
+                              onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <BarChart3 className="w-4 h-4 mr-2" />
+                              Analytics
                             </Button>
                           </div>
                         </div>
@@ -2085,6 +2098,31 @@ export default function Admin() {
                     })
                   )}
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* NEW: Broker Analytics Tab */}
+          {activeTab === "broker-analytics" && (
+            <motion.div
+              key="broker-analytics"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="bg-white rounded-3xl p-8 border-2 border-purple-200 text-center">
+                <BarChart3 className="w-16 h-16 text-purple-600 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">Broker Analytics</h3>
+                <p className="text-slate-600 mb-6">
+                  View detailed performance analytics for all brokers
+                </p>
+                <Button
+                  onClick={() => navigate(createPageUrl("BrokerPerformance"))}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Open Broker Analytics Dashboard
+                </Button>
               </div>
             </motion.div>
           )}

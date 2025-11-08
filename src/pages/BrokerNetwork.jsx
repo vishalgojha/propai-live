@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -511,7 +512,7 @@ export default function BrokerNetwork() {
                       )}
                     </Button>
                     <Button
-                      onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
+                      onClick={() => navigate(createPageUrl("BrokerProfile") + `?id=${broker.id}`)}
                       variant="outline"
                       className="h-9 text-xs font-semibold border-purple-200"
                     >
