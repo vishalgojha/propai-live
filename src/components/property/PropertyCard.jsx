@@ -3,12 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -30,9 +32,100 @@ const createPageUrl = (pageName) => {
 
 export default function PropertyCard({ property, onViewDetails }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Load current user
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        setCurrentUser(null);
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Refresh mutation
+  const refreshMutation = useMutation({
+    mutationFn: async (propertyId) => {
+      const now = new Date().toISOString();
+      return base44.entities.Property.update(propertyId, {
+        created_date: now,
+        last_refreshed: now,
+        refresh_count: (property.refresh_count || 0) + 1
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success('🔄 Property Refreshed!', {
+        description: 'Listing moved to top of feed',
+        duration: 3000
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to refresh', {
+        description: error.message
+      });
+    }
+  });
+
+  // Check if user can refresh this property
+  const canRefresh = () => {
+    if (!currentUser) return false;
+    
+    // Admin can refresh any property
+    if (currentUser.role === 'admin') return true;
+    
+    // Broker can refresh their own properties
+    // Check if user's email matches broker contact (for registered brokers)
+    if (currentUser.email && property.broker_contact) {
+      // Normalize phone numbers for comparison
+      const normalizedUserPhone = currentUser.email.replace(/\D/g, '');
+      const normalizedBrokerPhone = property.broker_contact.replace(/\D/g, '');
+      if (normalizedUserPhone === normalizedBrokerPhone) return true;
+    }
+    
+    return false;
+  };
+
+  // Check if property can be refreshed (24 hour cooldown)
+  const canRefreshNow = () => {
+    if (!property.last_refreshed) return true;
+    
+    const lastRefresh = new Date(property.last_refreshed);
+    const now = new Date();
+    const hoursSinceRefresh = (now - lastRefresh) / (1000 * 60 * 60);
+    
+    return hoursSinceRefresh >= 24;
+  };
+
+  const handleRefresh = async (e) => {
+    e.stopPropagation();
+    
+    if (!canRefreshNow()) {
+      const lastRefresh = new Date(property.last_refreshed);
+      const now = new Date();
+      const hoursSinceRefresh = Math.floor((now - lastRefresh) / (1000 * 60 * 60));
+      const hoursRemaining = 24 - hoursSinceRefresh;
+      
+      toast.warning('⏰ Refresh Cooldown', {
+        description: `You can refresh again in ${hoursRemaining} hours`,
+        duration: 3000
+      });
+      return;
+    }
+    
+    setIsRefreshing(true);
+    await refreshMutation.mutateAsync(property.id);
+    setIsRefreshing(false);
+  };
 
   // Track property contact when WhatsApp is clicked
   const trackPropertyContact = (property) => {
@@ -235,7 +328,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       >
         {/* Main Content Section */}
         <div className="p-4">
-          {/* Badges and Share Button at top */}
+          {/* Badges, Share and Refresh at top */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex flex-wrap gap-1.5">
               {property.listing_type && (
@@ -251,12 +344,30 @@ export default function PropertyCard({ property, onViewDetails }) {
               )}
             </div>
             
-            <button
-              onClick={handleShare}
-              className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleShare}
+                className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              
+              {/* Refresh Button - Only for owner/admin */}
+              {canRefresh() && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className={`flex items-center text-xs p-1.5 rounded-lg transition-colors ${
+                    canRefreshNow()
+                      ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                      : 'text-slate-400 cursor-not-allowed'
+                  }`}
+                  title={canRefreshNow() ? 'Refresh listing (brings to top)' : 'Can refresh in 24 hours'}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </button>
+              )}
+            </div>
           </div>
 
           <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-purple-700 transition-colors">
@@ -355,6 +466,9 @@ export default function PropertyCard({ property, onViewDetails }) {
               <span className="flex items-center gap-1 truncate">
                 <Calendar className="w-3 h-3 flex-shrink-0" />
                 <span className="truncate">{format(new Date(property.created_date), "MMM dd")}</span>
+                {property.refresh_count > 0 && (
+                  <span className="text-blue-600 font-semibold ml-1">↻{property.refresh_count}</span>
+                )}
               </span>
             )}
             <div className="flex items-center gap-2">
