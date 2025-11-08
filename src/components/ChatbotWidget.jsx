@@ -59,6 +59,19 @@ export default function ChatbotWidget() {
     }
   }, [isOpen, isMinimized]);
 
+  // Listen for custom event to open chat
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsOpen(true);
+    };
+    
+    window.addEventListener('openChatWidget', handleOpenChat);
+    
+    return () => {
+      window.removeEventListener('openChatWidget', handleOpenChat);
+    };
+  }, []);
+
   // Initialize conversation when widget opens
   useEffect(() => {
     if (isOpen && !conversation) {
