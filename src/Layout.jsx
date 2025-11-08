@@ -163,13 +163,10 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Determine if we should hide the chatbot on this page
-  const shouldHideChatbot = location.pathname === createPageUrl("Home") || location.pathname === '/';
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      {/* AI Chatbot Widget - Hidden on Home page */}
-      {!shouldHideChatbot && <ChatbotWidget />}
+      {/* AI Chatbot Widget - Available on ALL pages */}
+      <ChatbotWidget />
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
