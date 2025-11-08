@@ -315,13 +315,19 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  // Determine contact button label with broker name
+  // Determine contact button label with ONLY first name
   const hasRealBroker = property.broker_contact && 
                        property.broker_contact !== '9102269622278' && 
                        property.broker_contact !== '919819471310';
   
+  // Extract first name only (before first space)
+  const getFirstName = (fullName) => {
+    if (!fullName) return 'Broker';
+    return fullName.split(' ')[0];
+  };
+  
   const contactButtonLabel = hasRealBroker 
-    ? (property.broker_name || 'Broker')
+    ? getFirstName(property.broker_name)
     : 'PropAI Team';
 
   // Check if description is long (more than 120 characters)
@@ -466,7 +472,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* WhatsApp Contact Button - ONLY BUTTON, with broker name */}
+          {/* WhatsApp Contact Button - ONLY BUTTON, with FIRST NAME only */}
           <Button
             onClick={handleWhatsAppContact}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md"
@@ -500,6 +506,7 @@ export default function PropertyCard({ property, onViewDetails }) {
         </div>
       </motion.div>
 
+      {/* Share Modal */}
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
         <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
