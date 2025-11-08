@@ -355,7 +355,7 @@ Thanks! 🙏`;
               <div className="space-y-2 text-sm text-slate-700">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <span>Auto-scores brokers: duplicate rate, response time, photo sharing</span>
+                  <span>Auto-scores brokers: duplicate rate, response time, data accuracy</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />

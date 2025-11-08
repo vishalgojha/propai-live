@@ -614,7 +614,7 @@ export default function SmartFeed() {
                   onClick={() => handleAreaQuickFilter(area)}
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
-                  className={`rounded-xl font-semibold ${
+                  className={`rounded-xl ${
                     isSelected
                       ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
                       : isPreferred
@@ -834,7 +834,7 @@ export default function SmartFeed() {
                             <ul className="space-y-1.5 text-slate-600">
                               <li className="flex items-start gap-2">
                                 <span className="text-green-600 font-bold">✓</span>
-                                <span><strong>Duplicate Rate:</strong> Lower is better. Brokers who don't spam the same property repeatedly score higher.</span>
+                                <span><strong>Duplicate Rate:</strong> Brokers who don't spam the same property repeatedly score higher.</span>
                               </li>
                               <li className="flex items-start gap-2">
                                 <span className="text-green-600 font-bold">✓</span>
@@ -842,7 +842,7 @@ export default function SmartFeed() {
                               </li>
                               <li className="flex items-start gap-2">
                                 <span className="text-green-600 font-bold">✓</span>
-                                <span><strong>Photo Quality:</strong> Listings with clear photos indicate professionalism.</span>
+                                <span><strong>Data Accuracy:</strong> Brokers who provide complete, accurate details score higher.</span>
                               </li>
                               <li className="flex items-start gap-2">
                                 <span className="text-green-600 font-bold">✓</span>
