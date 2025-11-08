@@ -81,19 +81,35 @@ export default function PropertyCard({ property, onViewDetails }) {
     return `${window.location.origin}/propertydetails?id=${property.id}`;
   };
 
-  const handleWhatsAppContact = (e, phone, contactName = '') => {
+  const handleWhatsAppContact = (e) => {
     e.stopPropagation();
     
     trackPropertyContact(property);
     
-    if (!phone) {
-      alert(`⚠️ Broker contact not available.\n\nPlease update broker contact info in Admin → Brokers.`);
+    // Determine phone and contact name
+    const primaryContact = (property.broker_contact && 
+                           property.broker_contact !== '919819471310' && 
+                           property.broker_contact !== '9102269622278') 
+      ? property.broker_contact 
+      : '9102269622278';
+    
+    const hasRealBroker = property.broker_contact && 
+                         property.broker_contact !== '9102269622278' && 
+                         property.broker_contact !== '919819471310';
+    
+    // Use cached broker_name if available, otherwise use generic name
+    const contactName = hasRealBroker 
+      ? (property.broker_name || 'Broker')
+      : 'PropAI Team';
+    
+    if (!primaryContact) {
+      alert(`⚠️ Contact not available.\n\nPlease update contact info in Admin.`);
       return;
     }
     
     const propertyLink = getPropertyUrl();
     
-    const message = `Hi${contactName ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
+    const message = `Hi${contactName !== 'Broker' && contactName !== 'PropAI Team' ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
@@ -103,7 +119,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       `Please share more details.\n\n` +
       `Thank you!`;
     
-    window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${primaryContact.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleCardClick = () => {
@@ -192,15 +208,14 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  const primaryContact = (property.broker_contact && property.broker_contact !== '919819471310') 
-    ? property.broker_contact 
-    : '9102269622278';
+  // Determine contact button label with broker name
+  const hasRealBroker = property.broker_contact && 
+                       property.broker_contact !== '9102269622278' && 
+                       property.broker_contact !== '919819471310';
   
-  const hasContact = !!property.broker_contact && 
-    property.broker_contact !== '9102269622278' && 
-    property.broker_contact !== '919819471310';
-  
-  const contactLabel = hasContact ? 'Broker' : 'PropAI';
+  const contactButtonLabel = hasRealBroker 
+    ? (property.broker_name || 'Broker')
+    : 'PropAI Team';
 
   // Check if description is long (more than 120 characters)
   const isDescriptionLong = property.ai_description && property.ai_description.length > 120;
@@ -248,7 +263,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          {/* Building Name as Clickable Chip - NEW */}
+          {/* Building Name as Clickable Chip */}
           {property.building_name && property.building_id && (
             <button
               onClick={(e) => handleBuildingClick(e, property.building_id)}
@@ -264,7 +279,6 @@ export default function PropertyCard({ property, onViewDetails }) {
           <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-3">
             <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
             <span className="truncate">
-              {property.building_name ? '' : ''}
               {property.location}
             </span>
           </div>
@@ -327,13 +341,13 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* Contact Button */}
+          {/* WhatsApp Contact Button - ONLY BUTTON, with broker name */}
           <Button
-            onClick={(e) => handleWhatsAppContact(e, primaryContact, hasContact ? '' : 'PropAI Team')}
+            onClick={handleWhatsAppContact}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>WhatsApp {contactLabel}</span>
+            <span>WhatsApp {contactButtonLabel}</span>
           </Button>
 
           <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
