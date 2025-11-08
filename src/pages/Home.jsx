@@ -13,12 +13,14 @@ import {
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
+import InlineChatWidget from "../components/InlineChatWidget";
 
 export default function Home() {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [featuredProperties, setFeaturedProperties] = useState([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(true);
+  const [showInlineChat, setShowInlineChat] = useState(false);
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -95,12 +97,6 @@ export default function Home() {
     { number: "24/7", label: "AI Monitoring" },
   ];
 
-  // Function to open the chat widget (it's in Layout)
-  const handleOpenChat = () => {
-    // Trigger the chat widget to open by dispatching a custom event
-    window.dispatchEvent(new CustomEvent('openChatWidget'));
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
@@ -157,7 +153,7 @@ export default function Home() {
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
-                onClick={handleOpenChat}
+                onClick={() => setShowInlineChat(!showInlineChat)}
                 size="lg"
                 className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
               >
@@ -165,6 +161,16 @@ export default function Home() {
                 Chat with AI Assistant
               </Button>
             </div>
+
+            {/* Inline Chat Widget */}
+            {showInlineChat && (
+              <div className="mb-12">
+                <InlineChatWidget
+                  isOpen={showInlineChat}
+                  onClose={() => setShowInlineChat(false)}
+                />
+              </div>
+            )}
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
@@ -542,7 +548,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={handleOpenChat}
+              onClick={() => setShowInlineChat(true)}
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg"
             >
