@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -10,7 +9,7 @@ import {
   CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
   Zap, BookOpen, Globe, Bot, Home as HomeIcon, MapPin
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 import InlineChatWidget from "../components/InlineChatWidget";
@@ -73,7 +72,7 @@ export default function Home() {
           images: ["https://images.unsplash.com/photo-1549887534-1541e932662f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
         },
         {
-          id: "4", // Example of property without image
+          id: "4",
           ai_title: "1 BHK for rent in Andheri East",
           bhk: "1 BHK",
           location: "Andheri East, Mumbai",
@@ -125,7 +124,7 @@ export default function Home() {
               Powered by Building-Level Intelligence
             </Badge>
 
-            {/* NEW Headline - Screenshot Version */}
+            {/* Headline */}
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
               WhatsApp → Organized Properties.
               <br />
@@ -142,7 +141,7 @@ export default function Home() {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
@@ -162,15 +161,23 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Inline Chat Widget */}
-            {showInlineChat && (
-              <div className="mb-12">
-                <InlineChatWidget
-                  isOpen={showInlineChat}
-                  onClose={() => setShowInlineChat(false)}
-                />
-              </div>
-            )}
+            {/* Inline Chat Widget - WITH SMOOTH ANIMATION */}
+            <AnimatePresence mode="wait">
+              {showInlineChat && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginBottom: 48 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <InlineChatWidget
+                    isOpen={showInlineChat}
+                    onClose={() => setShowInlineChat(false)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
@@ -224,8 +231,6 @@ export default function Home() {
                 className="bg-white rounded-3xl overflow-hidden border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all cursor-pointer"
                 onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`)}
               >
-                {/* NO IMAGE SECTION - Removed */}
-                
                 <div className="p-6">
                   <Badge className="mb-3 bg-sky-600 text-white border-0">
                     {property.listing_type}
