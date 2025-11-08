@@ -12,17 +12,13 @@ import { toast } from "sonner";
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: "👋 Hey! I'm your PropAI assistant. Just forward me any property message from WhatsApp and I'll list it instantly. Or ask me anything about Mumbai real estate!",
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [funnyStatus, setFunnyStatus] = useState("");
   const [showGuidelines, setShowGuidelines] = useState(true);
+  const [conversation, setConversation] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -63,20 +59,57 @@ export default function ChatbotWidget() {
     }
   }, [isOpen, isMinimized]);
 
+  // Initialize conversation when widget opens
+  useEffect(() => {
+    if (isOpen && !conversation) {
+      initializeConversation();
+    }
+  }, [isOpen]);
+
+  // Subscribe to conversation updates
+  useEffect(() => {
+    if (!conversation) return;
+
+    const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
+      // Update messages from conversation snapshot
+      setMessages(data.messages || []);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [conversation?.id]);
+
+  const initializeConversation = async () => {
+    setIsInitializing(true);
+    try {
+      const newConversation = await base44.agents.createConversation({
+        agent_name: "chariot_master",
+        metadata: {
+          name: "PropAI Chat",
+          description: "Property listing and search assistance"
+        }
+      });
+      setConversation(newConversation);
+    } catch (error) {
+      console.error('Failed to initialize conversation:', error);
+      toast.error('Failed to start chat', {
+        description: 'Please try again',
+        duration: 3000
+      });
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
   const getRandomStatus = () => {
     return funnyStatuses[Math.floor(Math.random() * funnyStatuses.length)];
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !conversation) return;
 
-    const userMessage = {
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const userMessageContent = input.trim();
     setInput("");
     setIsLoading(true);
 
@@ -89,33 +122,31 @@ export default function ChatbotWidget() {
     setFunnyStatus(getRandomStatus());
 
     try {
-      const response = await base44.agents.invoke('chariot_master', {
-        message: userMessage.content
+      // Add message to conversation (this will trigger AI response)
+      await base44.agents.addMessage(conversation, {
+        role: "user",
+        content: userMessageContent
       });
 
       clearInterval(statusInterval);
       setFunnyStatus("");
 
-      const assistantMessage = {
-        role: "assistant",
-        content: response,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Show appropriate toast
-      if (response.includes('✅') || response.includes('Listed')) {
-        toast.success('🎉 Property Listed!', {
-          description: 'Your property is now live on SmartFeed',
-          duration: 3000,
-          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
-        });
-      } else if (response.includes('duplicate') || response.includes('Already')) {
-        toast.warning('⚠️ Duplicate Detected', {
-          description: 'This property already exists',
-          duration: 3000
-        });
+      // Check if response indicates success
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'assistant') {
+        const content = lastMessage.content;
+        if (content.includes('✅') || content.includes('Listed')) {
+          toast.success('🎉 Property Listed!', {
+            description: 'Your property is now live on SmartFeed',
+            duration: 3000,
+            className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+          });
+        } else if (content.includes('duplicate') || content.includes('Already')) {
+          toast.warning('⚠️ Duplicate Detected', {
+            description: 'This property already exists',
+            duration: 3000
+          });
+        }
       }
     } catch (error) {
       clearInterval(statusInterval);
@@ -273,7 +304,13 @@ export default function ChatbotWidget() {
 
                   {/* Messages - Scrollable */}
                   <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-gradient-to-b from-purple-50/30 to-white">
-                    {messages.map((message, idx) => (
+                    {isInitializing && (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+                      </div>
+                    )}
+
+                    {!isInitializing && messages.map((message, idx) => (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, y: 10 }}
@@ -303,9 +340,11 @@ export default function ChatbotWidget() {
                           }`}
                         >
                           <p className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                          <p className={`text-xs mt-1 ${message.role === 'user' ? 'text-white/70' : 'text-slate-400'}`}>
-                            {format(message.timestamp, 'HH:mm')}
-                          </p>
+                          {message.created_at && (
+                            <p className={`text-xs mt-1 ${message.role === 'user' ? 'text-white/70' : 'text-slate-400'}`}>
+                              {format(new Date(message.created_at), 'HH:mm')}
+                            </p>
+                          )}
                         </div>
                         {message.role === 'user' && (
                           <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
@@ -337,7 +376,7 @@ export default function ChatbotWidget() {
                   </div>
 
                   {/* Quick Actions */}
-                  {messages.length <= 1 && !isLoading && (
+                  {messages.length === 0 && !isLoading && !isInitializing && (
                     <div className="p-3 md:p-4 border-t border-purple-100 bg-purple-50/30 flex-shrink-0">
                       <p className="text-xs text-slate-600 mb-2 font-semibold">Quick Actions:</p>
                       <div className="grid grid-cols-2 gap-2">
@@ -368,13 +407,13 @@ export default function ChatbotWidget() {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Type a message or paste WhatsApp text..."
-                        disabled={isLoading}
+                        disabled={isLoading || isInitializing}
                         className="flex-1 resize-none border border-purple-200 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs md:text-sm max-h-20 md:max-h-24"
                         rows={1}
                       />
                       <Button
                         onClick={handleSend}
-                        disabled={!input.trim() || isLoading}
+                        disabled={!input.trim() || isLoading || isInitializing}
                         className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-9 md:h-10 px-3 md:px-4 flex-shrink-0"
                       >
                         {isLoading ? (
