@@ -71,13 +71,18 @@ export default function PropertyDetails() {
   };
 
   const getAgentPhone = () => {
-    // Use broker contact if available, otherwise fallback to PropAI Office
-    return property?.broker_contact || "9102269622278";
+    // FIX: If broker_contact is Vishal's personal number, use PropAI Office instead
+    if (!property?.broker_contact || property.broker_contact === '919819471310') {
+      return "9102269622278";
+    }
+    return property.broker_contact;
   };
 
   const getAgentName = () => {
     // Extract name from broker info or use PropAI as fallback
-    if (property?.broker_contact && property?.broker_contact !== "9102269622278") {
+    if (property?.broker_contact && 
+        property.broker_contact !== "9102269622278" && 
+        property.broker_contact !== "919819471310") {
       return "Broker";
     }
     return "PropAI Team";
@@ -502,7 +507,9 @@ export default function PropertyDetails() {
 
             {/* CTA Section - Responsive */}
             <div className="space-y-3 md:space-y-4">
-              {property.broker_contact && property.broker_contact !== "9102269622278" ? (
+              {property.broker_contact && 
+               property.broker_contact !== "9102269622278" && 
+               property.broker_contact !== "919819471310" ? (
                 <Button
                   onClick={handleWhatsApp}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold h-12 md:h-14 rounded-2xl shadow-lg text-sm md:text-base"
@@ -571,7 +578,9 @@ export default function PropertyDetails() {
                 </div>
               )}
 
-              {property.broker_contact && property.broker_contact !== "9102269622278" ? (
+              {property.broker_contact && 
+               property.broker_contact !== "9102269622278" && 
+               property.broker_contact !== "919819471310" ? (
                 <Button
                   onClick={() => window.open(`tel:${property.broker_contact}`, '_self')}
                   variant="outline"

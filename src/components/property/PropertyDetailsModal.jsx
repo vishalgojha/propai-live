@@ -91,12 +91,17 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
   };
 
   const getAgentPhone = () => {
-    // Use broker contact if available, otherwise PropAI Office
-    return property.broker_contact || "9102269622278";
+    // FIX: If broker_contact is Vishal's personal number, use PropAI Office instead
+    if (!property.broker_contact || property.broker_contact === '919819471310') {
+      return "9102269622278";
+    }
+    return property.broker_contact;
   };
 
   const getAgentName = () => {
-    if (property.broker_contact && property.broker_contact !== "9102269622278") {
+    if (property.broker_contact && 
+        property.broker_contact !== "9102269622278" && 
+        property.broker_contact !== "919819471310") {
       return "Broker";
     }
     return "PropAI Team";

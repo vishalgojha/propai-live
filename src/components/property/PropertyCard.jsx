@@ -186,8 +186,15 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  const primaryContact = property.broker_contact || '9102269622278';
-  const hasContact = !!property.broker_contact && property.broker_contact !== '9102269622278';
+  // FIX: If broker_contact is Vishal's personal number, treat it as PropAI Office
+  const primaryContact = (property.broker_contact && property.broker_contact !== '919819471310') 
+    ? property.broker_contact 
+    : '9102269622278';
+  
+  const hasContact = !!property.broker_contact && 
+    property.broker_contact !== '9102269622278' && 
+    property.broker_contact !== '919819471310';
+  
   const contactLabel = hasContact ? 'Broker' : 'PropAI';
 
   // Check if description is long (more than 120 characters)
