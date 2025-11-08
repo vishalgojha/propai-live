@@ -15,6 +15,14 @@ import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Info } from "lucide-react";
+
+const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -760,7 +768,7 @@ export default function SmartFeed() {
           allProperties={properties}
         />
 
-        {/* Sort Selector - NEW */}
+        {/* Sort Selector - ENHANCED WITH EXPLANATION */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-sm text-[#3B3B3B]">
@@ -786,18 +794,78 @@ export default function SmartFeed() {
                 >
                   📅 Latest
                 </Button>
-                <Button
-                  onClick={() => setFilters({ ...filters, sortBy: 'brokertrust' })}
-                  variant={filters.sortBy === 'brokertrust' ? "default" : "outline"}
-                  size="sm"
-                  className={`rounded-xl ${
-                    filters.sortBy === 'brokertrust'
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
-                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
-                  }`}
-                >
-                  🛡️ BrokerTrust™
-                </Button>
+                
+                {/* BrokerTrust™ Button with Info Popover */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    onClick={() => setFilters({ ...filters, sortBy: 'brokertrust' })}
+                    variant={filters.sortBy === 'brokertrust' ? "default" : "outline"}
+                    size="sm"
+                    className={`rounded-xl ${
+                      filters.sortBy === 'brokertrust'
+                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
+                        : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                    }`}
+                  >
+                    🛡️ BrokerTrust™
+                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-5 h-5 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors">
+                        <Info className="w-3 h-3 text-purple-600" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="end">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">🛡️</span>
+                          </div>
+                          <h4 className="font-bold text-slate-900">How BrokerTrust™ Works</h4>
+                        </div>
+                        
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          We analyze broker performance to help you find reliable listings. This isn't a judgment—it's a quality filter.
+                        </p>
+                        
+                        <div className="space-y-2">
+                          <div className="text-xs">
+                            <p className="font-semibold text-slate-900 mb-1">Score Factors (0-100):</p>
+                            <ul className="space-y-1.5 text-slate-600">
+                              <li className="flex items-start gap-2">
+                                <span className="text-green-600 font-bold">✓</span>
+                                <span><strong>Duplicate Rate:</strong> Lower is better. Brokers who don't spam the same property repeatedly score higher.</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="text-green-600 font-bold">✓</span>
+                                <span><strong>Response Time:</strong> Fast responders (under 2 hours) get bonus points.</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="text-green-600 font-bold">✓</span>
+                                <span><strong>Photo Quality:</strong> Listings with clear photos indicate professionalism.</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="text-green-600 font-bold">✓</span>
+                                <span><strong>Availability Confirmation:</strong> Brokers who confirm availability before listing score higher.</span>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                            <p className="text-xs text-amber-800">
+                              <strong>Why It Matters:</strong> High-trust listings (85+) are more likely to be accurate, available, and worth your time.
+                            </p>
+                          </div>
+                          
+                          <p className="text-xs text-slate-500 italic">
+                            Scores update automatically based on broker activity. All brokers start at 50 and can improve over time.
+                          </p>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
                 <Button
                   onClick={() => setFilters({ ...filters, sortBy: 'price_low' })}
                   variant={filters.sortBy === 'price_low' ? "default" : "outline"}
