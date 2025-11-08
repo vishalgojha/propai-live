@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -66,7 +65,7 @@ export default function MyProfile() {
           const matchingBroker = brokers.find(b => {
             // Normalize phone for comparison
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
-            const userEmailAsPhone = normalizePhone(user.email); // User email could be a phone number
+            const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
             
             return (
@@ -199,7 +198,7 @@ export default function MyProfile() {
 
   // NEW: Remove team member
   const handleRemoveTeamMember = async (memberBrokerId) => {
-    if (!brokerProfile || !confirm('Are you sure you want to remove this team member? This action cannot be undone.')) return;
+    if (!brokerProfile || !window.confirm('Are you sure you want to remove this team member? This action cannot be undone.')) return;
     
     try {
       const updatedTeam = (brokerProfile.team_members || []).filter(
@@ -384,7 +383,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -451,7 +451,7 @@ export default function MyProfile() {
             </div>
           </Card>
 
-          {/* NEW: Area Preferences Section for Admin */}
+          {/* Area Preferences Section for Admin */}
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mt-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -553,14 +553,13 @@ export default function MyProfile() {
     );
   }
 
-  // BROKER VIEW (or admin who also has broker profile)
+  // BROKER VIEW - rest of the code stays the same
   if (brokerProfile && brokerMetrics) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
           <div className="mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -584,7 +583,6 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Key Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card className="p-4 bg-white border-2 border-slate-200">
               <div className="flex items-center gap-2 mb-2">
@@ -622,7 +620,6 @@ export default function MyProfile() {
             </Card>
           </div>
 
-          {/* Top Performing Properties */}
           {brokerMetrics.top3Properties.length > 0 && (
             <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -659,7 +656,6 @@ export default function MyProfile() {
             </Card>
           )}
 
-          {/* NEW: Area Preferences for Brokers */}
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -728,9 +724,7 @@ export default function MyProfile() {
             )}
           </div>
 
-          {/* Profile Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Contact & Agency */}
             <Card className="p-6 bg-white border-2 border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Contact Information</h3>
               <div className="space-y-3">
@@ -756,7 +750,6 @@ export default function MyProfile() {
               </div>
             </Card>
 
-            {/* Specializations */}
             {brokerProfile.specializations && (
               <Card className="p-6 bg-white border-2 border-slate-200">
                 <h3 className="text-lg font-bold text-slate-900 mb-4">Specializations</h3>
@@ -785,7 +778,6 @@ export default function MyProfile() {
             )}
           </div>
 
-          {/* ENHANCED: Team Members with Management */}
           <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -795,8 +787,8 @@ export default function MyProfile() {
               <Button
                 onClick={() => {
                   setEditingTeam(!editingTeam);
-                  setTeamMemberPhone(''); // Clear input on cancel
-                  setAddingTeamMember(false); // Reset adding state
+                  setTeamMemberPhone('');
+                  setAddingTeamMember(false);
                 }}
                 variant="outline"
                 size="sm"
@@ -875,7 +867,6 @@ export default function MyProfile() {
             )}
           </Card>
 
-          {/* AI Profile Summary */}
           {brokerProfile.ai_profile_summary && (
             <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200">
               <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -897,7 +888,7 @@ export default function MyProfile() {
     );
   }
 
-  // REGULAR USER (not admin, no broker profile found)
+  // REGULAR USER
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
@@ -911,7 +902,6 @@ export default function MyProfile() {
           <p className="text-slate-600">{currentUser.email}</p>
         </div>
 
-        {/* NEW: Area Preferences for Regular Users */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
