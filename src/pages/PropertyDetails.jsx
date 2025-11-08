@@ -136,9 +136,10 @@ export default function PropertyDetails() {
     return details.join('\n');
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     // Track WhatsApp contact
     try {
+      // Local storage tracking (for user preferences)
       const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
       contactHistory.push({
         id: property.id,
@@ -153,8 +154,21 @@ export default function PropertyDetails() {
       
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
+
+      // Server-side tracking (for analytics)
+      const contact = getContactInfo();
+      const contactedVia = contact.phone === '9102269622278' ? 'propai_office' : 'broker';
+      
+      await base44.functions.invoke('trackContactInteraction', {
+        property_id: property.id,
+        broker_id: property.broker_id || null,
+        interaction_type: 'whatsapp',
+        broker_contact: property.broker_contact || null,
+        contacted_via: contactedVia
+      });
     } catch (error) {
       console.error('Failed to track contact:', error);
+      // Don't block user flow if tracking fails
     }
 
     const contact = getContactInfo();

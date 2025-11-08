@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,8 +129,9 @@ export default function PropertyCard({ property, onViewDetails }) {
   };
 
   // Track property contact when WhatsApp is clicked
-  const trackPropertyContact = (property) => {
+  const trackPropertyContact = async (property, contactedVia) => {
     try {
+      // Local storage tracking (for user preferences)
       const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
       contactHistory.push({
         id: property.id,
@@ -143,8 +145,18 @@ export default function PropertyCard({ property, onViewDetails }) {
       
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
+
+      // Server-side tracking (for analytics)
+      await base44.functions.invoke('trackContactInteraction', {
+        property_id: property.id,
+        broker_id: property.broker_id || null,
+        interaction_type: 'whatsapp',
+        broker_contact: property.broker_contact || null,
+        contacted_via: contactedVia // 'broker' or 'propai_office'
+      });
     } catch (error) {
       console.error('Failed to track contact:', error);
+      // Don't block the user flow if tracking fails
     }
   };
 
@@ -174,10 +186,8 @@ export default function PropertyCard({ property, onViewDetails }) {
     return `${window.location.origin}/propertydetails?id=${property.id}`;
   };
 
-  const handleWhatsAppContact = (e) => {
+  const handleWhatsAppContact = async (e) => {
     e.stopPropagation();
-    
-    trackPropertyContact(property);
     
     // Determine phone and contact name
     const primaryContact = (property.broker_contact && 
@@ -199,6 +209,10 @@ export default function PropertyCard({ property, onViewDetails }) {
       alert(`⚠️ Contact not available.\n\nPlease update contact info in Admin.`);
       return;
     }
+
+    // Track the contact
+    const contactedVia = hasRealBroker ? 'broker' : 'propai_office';
+    await trackPropertyContact(property, contactedVia);
     
     const propertyLink = getPropertyUrl();
     
