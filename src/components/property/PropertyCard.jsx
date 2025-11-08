@@ -414,6 +414,20 @@ export default function PropertyCard({ property, onViewDetails }) {
             </span>
           </div>
 
+          {/* PRICE - MOVED HERE ABOVE DESCRIPTION */}
+          <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
+            <div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                {formatPrice()}
+              </span>
+            </div>
+            {property.carpet_area && (
+              <span className="text-sm text-slate-500">
+                {property.carpet_area} sq.ft
+              </span>
+            )}
+          </div>
+
           {/* AI DESCRIPTION WITH SHOW MORE/LESS */}
           {property.ai_description && (
             <div className="mb-4">
@@ -443,19 +457,6 @@ export default function PropertyCard({ property, onViewDetails }) {
               )}
             </div>
           )}
-
-          <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
-            <div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                {formatPrice()}
-              </span>
-            </div>
-            {property.carpet_area && (
-              <span className="text-sm text-slate-500">
-                {property.carpet_area} sq.ft
-              </span>
-            )}
-          </div>
 
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
