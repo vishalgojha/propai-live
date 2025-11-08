@@ -14,10 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge"; // Added Badge import
-
-// LAZY LOAD HEAVY MODALS
-const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
+import { Badge } from "@/components/ui/badge";
 
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
@@ -30,6 +27,7 @@ export default function SmartFeed() {
     minPrice: "",
     maxPrice: "",
     viewMode: "properties",
+    sortBy: "brokertrust", // NEW: default to BrokerTrust™ ranking
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24);
@@ -335,18 +333,41 @@ export default function SmartFeed() {
       return true;
     });
 
-    // BROKERTRUST™ RANKING
+    // SORTING LOGIC - Based on user selection
     results.sort((a, b) => {
-      const trustScoreA = a.broker_trust_score || 50;
-      const trustScoreB = b.broker_trust_score || 50;
-      
-      if (trustScoreB !== trustScoreA) {
-        return trustScoreB - trustScoreA;
+      switch (filters.sortBy) {
+        case 'latest':
+          // Sort by date only (newest first)
+          const dateA = new Date(a.last_refreshed || a.created_date);
+          const dateB = new Date(b.last_refreshed || b.created_date);
+          return dateB.getTime() - dateA.getTime();
+        
+        case 'price_low':
+          // Sort by price (low to high)
+          const priceA = a.price_unit === 'crores' ? a.price * 100 : a.price;
+          const priceB = b.price_unit === 'crores' ? b.price * 100 : b.price;
+          return priceA - priceB;
+        
+        case 'price_high':
+          // Sort by price (high to low)
+          const priceAH = a.price_unit === 'crores' ? a.price * 100 : a.price;
+          const priceBH = b.price_unit === 'crores' ? b.price * 100 : b.price;
+          return priceBH - priceAH;
+        
+        case 'brokertrust':
+        default:
+          // BrokerTrust™ ranking (trust score first, then date)
+          const trustScoreA = a.broker_trust_score || 50;
+          const trustScoreB = b.broker_trust_score || 50;
+          
+          if (trustScoreB !== trustScoreA) {
+            return trustScoreB - trustScoreA;
+          }
+          
+          const dateAT = new Date(a.last_refreshed || a.created_date);
+          const dateBT = new Date(b.last_refreshed || b.created_date);
+          return dateBT.getTime() - dateAT.getTime();
       }
-      
-      const dateA = new Date(a.created_date);
-      const dateB = new Date(b.created_date);
-      return dateB.getTime() - dateA.getTime();
     });
 
     return results;
@@ -444,6 +465,7 @@ export default function SmartFeed() {
       minPrice: "",
       maxPrice: "",
       viewMode: "properties",
+      sortBy: "brokertrust", // Reset sortBy as well
     });
   };
 
@@ -738,13 +760,71 @@ export default function SmartFeed() {
           allProperties={properties}
         />
 
-        {/* Results Count */}
-        <div className="mb-6">
-          <p className="text-sm text-[#3B3B3B]">
-            Showing <span className="font-bold text-[#111111]">{displayedItems.length}</span> of{' '}
-            <span className="font-bold text-[#111111]">{totalFilteredItems}</span>{' '}
-            {displayType === "properties" ? "properties" : displayType === "requirements" ? "requirements" : "items"}
-          </p>
+        {/* Sort Selector - NEW */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-[#3B3B3B]">
+              Showing <span className="font-bold text-[#111111]">{displayedItems.length}</span> of{' '}
+              <span className="font-bold text-[#111111]">{totalFilteredItems}</span>{' '}
+              {displayType === "properties" ? "properties" : displayType === "requirements" ? "requirements" : "items"}
+            </p>
+          </div>
+          
+          {filters.viewMode === "properties" && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600 font-semibold">Sort by:</span>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setFilters({ ...filters, sortBy: 'latest' })}
+                  variant={filters.sortBy === 'latest' ? "default" : "outline"}
+                  size="sm"
+                  className={`rounded-xl ${
+                    filters.sortBy === 'latest'
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
+                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                  }`}
+                >
+                  📅 Latest
+                </Button>
+                <Button
+                  onClick={() => setFilters({ ...filters, sortBy: 'brokertrust' })}
+                  variant={filters.sortBy === 'brokertrust' ? "default" : "outline"}
+                  size="sm"
+                  className={`rounded-xl ${
+                    filters.sortBy === 'brokertrust'
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
+                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                  }`}
+                >
+                  🛡️ BrokerTrust™
+                </Button>
+                <Button
+                  onClick={() => setFilters({ ...filters, sortBy: 'price_low' })}
+                  variant={filters.sortBy === 'price_low' ? "default" : "outline"}
+                  size="sm"
+                  className={`rounded-xl ${
+                    filters.sortBy === 'price_low'
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
+                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                  }`}
+                >
+                  💰 Price ↑
+                </Button>
+                <Button
+                  onClick={() => setFilters({ ...filters, sortBy: 'price_high' })}
+                  variant={filters.sortBy === 'price_high' ? "default" : "outline"}
+                  size="sm"
+                  className={`rounded-xl ${
+                    filters.sortBy === 'price_high'
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
+                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                  }`}
+                >
+                  💰 Price ↓
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error State */}
