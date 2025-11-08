@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -15,11 +15,25 @@ import {
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import SEO from "../components/SEO";
+import { debounce } from 'lodash-es'; // Assuming lodash-es is used for debounce utility
 
 export default function Blogs() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    debounce((searchValue) => {
+      setDebouncedSearchQuery(searchValue);
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, debouncedSearch]);
 
   // Read category from URL parameters on mount
   useEffect(() => {
@@ -30,10 +44,14 @@ export default function Blogs() {
     }
   }, []);
 
+  // Aggressive caching for blogs (10 min stale time)
   const { data: blogs = [], isLoading } = useQuery({
     queryKey: ['blogs'],
     queryFn: () => base44.entities.Blog.filter({ status: "Published" }, "-created_date"),
     initialData: [],
+    staleTime: 10 * 60 * 1000, // 10 minutes - blogs are mostly static
+    cacheTime: 20 * 60 * 1000, // 20 minutes in cache
+    refetchOnWindowFocus: false,
   });
 
   const categories = [
@@ -46,10 +64,10 @@ export default function Blogs() {
 
   const filteredBlogs = blogs.filter(blog => {
     const matchesCategory = selectedCategory === "all" || blog.category === selectedCategory;
-    const matchesSearch = !searchQuery ||
-      blog.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      blog.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      blog.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = !debouncedSearchQuery ||
+      blog.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      blog.excerpt?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      blog.tags?.some(tag => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 

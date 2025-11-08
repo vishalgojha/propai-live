@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -37,6 +37,16 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
+// Simple debounce utility function
+function debounce(func, delay) {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -47,12 +57,14 @@ export default function Admin() {
 
   // Properties state
   const [propSearchQuery, setPropSearchQuery] = useState("");
+  const [debouncedPropSearch, setDebouncedPropSearch] = useState(""); // Debounced state for properties
   const [propStatusFilter, setPropStatusFilter] = useState("Active");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
   // Brokers state
   const [brokerSearchQuery, setBrokerSearchQuery] = useState("");
+  const [debouncedBrokerSearch, setDebouncedBrokerSearch] = useState(""); // Debounced state for brokers
   const [brokerStatusFilter, setBrokerStatusFilter] = useState("all");
 
   // Image upload states
@@ -79,6 +91,31 @@ export default function Admin() {
   const [buildingQueryResult, setBuildingQueryResult] = useState(null);
   const [queryingBuilding, setQueryingBuilding] = useState(false);
 
+  // ⚡ OPTIMIZATION: Debounced search for properties
+  const debouncedPropSearchFn = useCallback(
+    debounce((searchValue) => {
+      setDebouncedPropSearch(searchValue);
+      setCurrentPage(1); // Reset to page 1 on search
+    }, 400),
+    []
+  );
+
+  useEffect(() => {
+    debouncedPropSearchFn(propSearchQuery);
+  }, [propSearchQuery, debouncedPropSearchFn]);
+
+  // ⚡ OPTIMIZATION: Debounced search for brokers
+  const debouncedBrokerSearchFn = useCallback(
+    debounce((searchValue) => {
+      setDebouncedBrokerSearch(searchValue);
+    }, 400),
+    []
+  );
+
+  useEffect(() => {
+    debouncedBrokerSearchFn(brokerSearchQuery);
+  }, [brokerSearchQuery, debouncedBrokerSearchFn]);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -98,12 +135,16 @@ export default function Admin() {
   }, [navigate]);
 
   // Queries with auto-refresh
+  // ⚡ OPTIMIZATION: Longer stale time for admin data (2 min)
   const { data: properties = [], isLoading: propertiesLoading } = useQuery({
     queryKey: ['admin-properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 15000,
+    staleTime: 2 * 60 * 1000, // ⚡ 2 minutes - admin data doesn't need real-time accuracy
+    cacheTime: 5 * 60 * 1000,
+    refetchInterval: 30000, // ⚡ Reduced from 15s to 30s
+    refetchOnWindowFocus: false,
   });
 
   const { data: duplicates = [], isLoading: duplicatesLoading } = useQuery({
@@ -111,7 +152,10 @@ export default function Admin() {
     queryFn: () => base44.entities.Property.filter({ is_duplicate: true }, '-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 15000,
+    staleTime: 5 * 60 * 1000, // ⚡ 5 minutes - duplicates don't change often
+    cacheTime: 10 * 60 * 1000,
+    refetchInterval: 60000, // ⚡ 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const { data: brokers = [] } = useQuery({
@@ -119,7 +163,10 @@ export default function Admin() {
     queryFn: () => base44.entities.Broker.list('-last_activity'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 15000,
+    staleTime: 3 * 60 * 1000, // ⚡ 3 minutes
+    cacheTime: 10 * 60 * 1000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: requirements = [] } = useQuery({
@@ -127,7 +174,10 @@ export default function Admin() {
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
     enabled: isAuthorized,
-    refetchInterval: 15000,
+    staleTime: 2 * 60 * 1000,
+    cacheTime: 5 * 60 * 1000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // ✅ CALCULATE REAL-TIME BROKER LISTING COUNTS
@@ -1164,14 +1214,15 @@ export default function Admin() {
   };
 
   // Filtered data - USE CALCULATED COUNTS
+  // ⚡ OPTIMIZATION: Use debounced search queries for filtering
   const filteredProperties = properties.filter(property => {
     if (property.is_duplicate) return false;
     
-    const matchesSearch = !propSearchQuery ||
-      property.building_name?.toLowerCase().includes(propSearchQuery.toLowerCase()) ||
-      property.location?.toLowerCase().includes(propSearchQuery.toLowerCase()) ||
-      property.custom_id?.toLowerCase().includes(propSearchQuery.toLowerCase()) ||
-      property.bhk?.toLowerCase().includes(propSearchQuery.toLowerCase());
+    const matchesSearch = !debouncedPropSearch ||
+      property.building_name?.toLowerCase().includes(debouncedPropSearch.toLowerCase()) ||
+      property.location?.toLowerCase().includes(debouncedPropSearch.toLowerCase()) ||
+      property.custom_id?.toLowerCase().includes(debouncedPropSearch.toLowerCase()) ||
+      property.bhk?.toLowerCase().includes(debouncedPropSearch.toLowerCase());
 
     const matchesStatus = propStatusFilter === "all" || property.status === propStatusFilter;
 
@@ -1179,10 +1230,10 @@ export default function Admin() {
   });
 
   const filteredBrokers = brokersWithCounts.filter(broker => {
-    const matchesSearch = !brokerSearchQuery ||
-      broker.name?.toLowerCase().includes(brokerSearchQuery.toLowerCase()) ||
-      broker.phone?.includes(brokerSearchQuery) ||
-      broker.agency_name?.toLowerCase().includes(brokerSearchQuery.toLowerCase());
+    const matchesSearch = !debouncedBrokerSearch ||
+      broker.name?.toLowerCase().includes(debouncedBrokerSearch.toLowerCase()) ||
+      broker.phone?.includes(debouncedBrokerSearch) ||
+      broker.agency_name?.toLowerCase().includes(debouncedBrokerSearch.toLowerCase());
 
     let matchesStatus = true;
     if (brokerStatusFilter === "Active") {
@@ -1642,7 +1693,7 @@ export default function Admin() {
                         value={propSearchQuery}
                         onChange={(e) => {
                           setPropSearchQuery(e.target.value);
-                          setCurrentPage(1);
+                          // setCurrentPage(1); // Removed: Handled by debouncedPropSearchFn
                         }}
                         className="pl-10"
                       />

@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Info } from "lucide-react";
+import { debounce } from "lodash";
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
 
@@ -35,26 +36,42 @@ export default function SmartFeed() {
     minPrice: "",
     maxPrice: "",
     viewMode: "properties",
-    sortBy: "brokertrust", // NEW: default to BrokerTrust™ ranking
+    sortBy: "brokertrust",
   });
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(24);
   const [userPreferences, setUserPreferences] = useState(null);
   const [showAutoMatchBanner, setShowAutoMatchBanner] = useState(true);
-  const [user, setUser] = useState(null); // Added user state
+  const [user, setUser] = useState(null);
 
-  // Real-time update state
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
   const previousCountsRef = useRef({ properties: 0, requirements: 0 });
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
   const ITEMS_PER_PAGE = 24;
-  const REFRESH_INTERVAL = 15000; // 15 seconds
+  const REFRESH_INTERVAL = 30000; // ⚡ OPTIMIZED: Reduced from 15s to 30s
 
   const navigate = useNavigate();
 
-  // Load current user
+  const popularAreas = [
+    "Bandra West", "Juhu", "Andheri West", "Khar West", 
+    "BKC", "Worli", "Lower Parel", "Powai"
+  ];
+
+  // ⚡ OPTIMIZATION: Debounced search - only trigger filtering after user stops typing
+  const debouncedSearch = useCallback(
+    debounce((searchValue) => {
+      setDebouncedSearchQuery(searchValue);
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(filters.search);
+  }, [filters.search, debouncedSearch]);
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -65,15 +82,8 @@ export default function SmartFeed() {
       }
     };
     loadUser();
-  }, []); // Empty dependency array means it runs once on mount
+  }, []);
 
-  // POPULAR MUMBAI AREAS (for quick filters)
-  const popularAreas = [
-    "Bandra West", "Juhu", "Andheri West", "Khar West", 
-    "BKC", "Worli", "Lower Parel", "Powai"
-  ];
-
-  // Load user preferences from localStorage
   useEffect(() => {
     const loadPreferences = () => {
       try {
@@ -81,7 +91,6 @@ export default function SmartFeed() {
         const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
         
         if (viewHistory.length > 0 || contactHistory.length > 0) {
-          // Analyze patterns
           const allProperties = [...viewHistory, ...contactHistory];
           const bhkCounts = {};
           const locationCounts = {};
@@ -98,7 +107,6 @@ export default function SmartFeed() {
             }
           });
           
-          // Extract top preferences
           const topBhks = Object.entries(bhkCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 2)
@@ -133,7 +141,6 @@ export default function SmartFeed() {
     loadPreferences();
   }, []);
 
-  // Track property view
   const trackPropertyView = (property) => {
     try {
       const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
@@ -147,7 +154,6 @@ export default function SmartFeed() {
         timestamp: new Date().toISOString()
       });
       
-      // Keep only last 50 views
       const recentViews = viewHistory.slice(-50);
       localStorage.setItem('propai_view_history', JSON.stringify(recentViews));
     } catch (error) {
@@ -155,7 +161,6 @@ export default function SmartFeed() {
     }
   };
 
-  // Read filters from URL parameters and apply user preferences on mount/user load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const newFilters = { ...filters };
@@ -168,38 +173,39 @@ export default function SmartFeed() {
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
     if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode');
     
-    // NEW: Apply user's preferred areas if they exist and no location filter is set via URL
     if (user?.preferred_areas && user.preferred_areas.length > 0 && !urlParams.get('location')) {
       newFilters.location_multi = user.preferred_areas;
     }
     
     setFilters(newFilters);
-  }, [user]); // Re-run when user object changes (e.g., after loading)
+  }, [user]);
 
-  // Reset pagination when filters change
   useEffect(() => {
     setItemsToShow(ITEMS_PER_PAGE);
   }, [filters]);
 
-  // Fetch properties with auto-refresh
+  // ⚡ OPTIMIZATION: Aggressive caching for properties (5 min stale time)
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
+    staleTime: 5 * 60 * 1000, // ⚡ 5 minutes - data doesn't change that fast
+    cacheTime: 10 * 60 * 1000, // ⚡ Keep in cache for 10 minutes
     refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // ⚡ Don't refetch on every tab switch
   });
 
-  // Fetch requirements with auto-refresh
+  // ⚡ OPTIMIZATION: Aggressive caching for requirements
   const { data: requirements, isLoading: requirementsLoading } = useQuery({
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
     refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
-  // Detect new items and show notification
   useEffect(() => {
     if (!isLoading && !requirementsLoading) {
       const currentCounts = {
@@ -243,7 +249,6 @@ export default function SmartFeed() {
     }
   }, [properties, requirements, isLoading, requirementsLoading]);
 
-  // Get personalized recommendations
   const personalizedProperties = useMemo(() => {
     if (!userPreferences || !properties.length) return [];
     
@@ -252,40 +257,34 @@ export default function SmartFeed() {
       .map(property => {
         let score = 0;
         
-        // BHK match (30 points)
         if (userPreferences.bhks.includes(property.bhk)) score += 30;
-        
-        // Location match (30 points)
         if (userPreferences.locations.includes(property.location)) score += 30;
-        
-        // Listing type match (20 points)
         if (property.listing_type === userPreferences.listingType) score += 20;
         
-        // Price proximity (20 points)
         if (userPreferences.avgPrice) {
           const propertyPriceInLakhs = property.price_unit === 'crores' ? property.price * 100 : property.price;
           const priceDiff = Math.abs(propertyPriceInLakhs - userPreferences.avgPrice) / userPreferences.avgPrice;
-          if (priceDiff < 0.2) score += 20; // Within 20%
-          else if (priceDiff < 0.4) score += 10; // Within 40%
+          if (priceDiff < 0.2) score += 20;
+          else if (priceDiff < 0.4) score += 10;
         }
         
         return { ...property, matchScore: score };
       })
-      .filter(p => p.matchScore >= 30) // At least one major match
+      .filter(p => p.matchScore >= 30)
       .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 6); // Top 6 personalized
+      .slice(0, 6);
   }, [properties, userPreferences]);
 
+  // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
-      // Exclude inactive and duplicate properties
       if (property.status !== "Active" || property.is_duplicate === true) {
         return false;
       }
 
-      // Text search
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+      // ⚡ Use debounced search query
+      if (debouncedSearchQuery) {
+        const searchLower = debouncedSearchQuery.toLowerCase();
         const matchesSearch = 
           property.building_name?.toLowerCase().includes(searchLower) ||
           property.location?.toLowerCase().includes(searchLower) ||
@@ -298,32 +297,26 @@ export default function SmartFeed() {
         if (!matchesSearch) return false;
       }
 
-      // Multi-select BHK
       if (filters.bhk_multi && filters.bhk_multi.length > 0) {
         if (!filters.bhk_multi.includes(property.bhk)) return false;
       }
 
-      // Multi-select Location
       if (filters.location_multi && filters.location_multi.length > 0) {
         if (!filters.location_multi.includes(property.location)) return false;
       }
 
-      // Property Category
       if (filters.propertyCategory && filters.propertyCategory !== "all") {
         if (property.property_category !== filters.propertyCategory) return false;
       }
 
-      // Listing Type
       if (filters.listingType && filters.listingType !== "all") {
         if (property.listing_type !== filters.listingType) return false;
       }
 
-      // Furnishing
       if (filters.furnishing && filters.furnishing !== "all") {
         if (property.furnishing !== filters.furnishing) return false;
       }
 
-      // Budget filtering with dynamic unit handling
       if (filters.minPrice || filters.maxPrice) {
         const filterUnit = (filters.listingType === 'Sale' || filters.listingType === 'Pre Leased') ? 'crores' : 'lakhs';
         
@@ -341,30 +334,25 @@ export default function SmartFeed() {
       return true;
     });
 
-    // SORTING LOGIC - Based on user selection
     results.sort((a, b) => {
       switch (filters.sortBy) {
         case 'latest':
-          // Sort by date only (newest first)
           const dateA = new Date(a.last_refreshed || a.created_date);
           const dateB = new Date(b.last_refreshed || b.created_date);
           return dateB.getTime() - dateA.getTime();
         
         case 'price_low':
-          // Sort by price (low to high)
           const priceA = a.price_unit === 'crores' ? a.price * 100 : a.price;
           const priceB = b.price_unit === 'crores' ? b.price * 100 : b.price;
           return priceA - priceB;
         
         case 'price_high':
-          // Sort by price (high to low)
           const priceAH = a.price_unit === 'crores' ? a.price * 100 : a.price;
           const priceBH = b.price_unit === 'crores' ? b.price * 100 : b.price;
           return priceBH - priceAH;
         
         case 'brokertrust':
         default:
-          // BrokerTrust™ ranking (trust score first, then date)
           const trustScoreA = a.broker_trust_score || 50;
           const trustScoreB = b.broker_trust_score || 50;
           
@@ -379,14 +367,14 @@ export default function SmartFeed() {
     });
 
     return results;
-  }, [properties, filters]);
+  }, [properties, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, filters.sortBy, debouncedSearchQuery]);
 
   const filteredRequirements = useMemo(() => {
     let results = requirements.filter(requirement => {
       if (requirement.status !== "Active") return false;
 
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+      if (debouncedSearchQuery) {
+        const searchLower = debouncedSearchQuery.toLowerCase();
         const matchesSearch = 
           requirement.preferred_locations?.some(loc => loc.toLowerCase().includes(searchLower)) ||
           requirement.bhk_preference?.some(bhk => bhk.toLowerCase().includes(searchLower)) ||
@@ -420,7 +408,6 @@ export default function SmartFeed() {
       return true;
     });
 
-    // Sort by urgency and date
     results.sort((a, b) => {
       const urgencyOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
       const urgencyA = urgencyOrder[a.urgency] || 0;
@@ -436,7 +423,7 @@ export default function SmartFeed() {
     });
 
     return results;
-  }, [requirements, filters]);
+  }, [requirements, filters.bhk_multi, filters.location_multi, filters.listingType, filters.furnishing, debouncedSearchQuery]);
 
   const getDisplayItems = () => {
     if (filters.viewMode === "requirements") {
@@ -473,7 +460,7 @@ export default function SmartFeed() {
       minPrice: "",
       maxPrice: "",
       viewMode: "properties",
-      sortBy: "brokertrust", // Reset sortBy as well
+      sortBy: "brokertrust",
     });
   };
 
@@ -522,7 +509,6 @@ export default function SmartFeed() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
 
-        {/* New Items Banner */}
         <AnimatePresence>
           {showNewItemsBanner && (
             <motion.div
@@ -559,7 +545,6 @@ export default function SmartFeed() {
           )}
         </AnimatePresence>
 
-        {/* Hero Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -574,10 +559,10 @@ export default function SmartFeed() {
                     <span className="font-semibold">Live</span>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 15s</p>
+                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 30s</p>
               </div>
             </div>
-            {user && ( // My Areas button
+            {user && (
               <Button
                 onClick={() => navigate(createPageUrl("MyProfile"))}
                 variant="outline"
@@ -591,7 +576,6 @@ export default function SmartFeed() {
           </div>
         </div>
 
-        {/* NEW: Area Quick Filters - Popular Mumbai Areas */}
         <div className="mb-6 bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="w-4 h-4 text-purple-600" />
@@ -636,7 +620,6 @@ export default function SmartFeed() {
           )}
         </div>
 
-        {/* Auto-Match Intelligence Banner - Only show if user has preferences */}
         {userPreferences && showAutoMatchBanner && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -673,7 +656,6 @@ export default function SmartFeed() {
           </motion.div>
         )}
 
-        {/* Personalized For You Section */}
         {userPreferences && personalizedProperties.length > 0 && filters.viewMode === "properties" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -730,7 +712,6 @@ export default function SmartFeed() {
           </motion.div>
         )}
 
-        {/* View Mode Toggle */}
         <div className="mb-6 flex justify-center">
           <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
             <Button
@@ -760,7 +741,6 @@ export default function SmartFeed() {
           </div>
         </div>
 
-        {/* Filters */}
         <PropertyFilters
           filters={filters}
           onFilterChange={setFilters}
@@ -768,7 +748,6 @@ export default function SmartFeed() {
           allProperties={properties}
         />
 
-        {/* Sort Selector - ENHANCED WITH EXPLANATION */}
         <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
             <p className="text-sm text-[#3B3B3B]">
@@ -795,7 +774,6 @@ export default function SmartFeed() {
                   📅 Latest
                 </Button>
                 
-                {/* BrokerTrust™ Button with Info Popover */}
                 <div className="flex items-center gap-1">
                   <Button
                     onClick={() => setFilters({ ...filters, sortBy: 'brokertrust' })}
@@ -895,7 +873,6 @@ export default function SmartFeed() {
           )}
         </div>
 
-        {/* Error State */}
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -905,7 +882,6 @@ export default function SmartFeed() {
           </Alert>
         )}
 
-        {/* Loading State */}
         {(isLoading || requirementsLoading) && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
@@ -924,7 +900,6 @@ export default function SmartFeed() {
           </div>
         )}
 
-        {/* Display Items */}
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -969,7 +944,6 @@ export default function SmartFeed() {
               })}
             </div>
 
-            {/* Load More Button */}
             {hasMore && (
               <div className="mt-12 flex justify-center">
                 <Button
@@ -986,7 +960,6 @@ export default function SmartFeed() {
               </div>
             )}
 
-            {/* End of results message */}
             {!hasMore && allItems.length > ITEMS_PER_PAGE && (
               <div className="mt-12 text-center">
                 <div className="inline-block bg-white rounded-2xl px-6 py-3 border-2 border-[#F7F7F7]">
@@ -1002,7 +975,6 @@ export default function SmartFeed() {
           </>
         )}
 
-        {/* Empty State */}
         {!isLoading && !requirementsLoading && allItems.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-[#F7F7F7] rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-[#3B3B3B]/10">
@@ -1017,7 +989,6 @@ export default function SmartFeed() {
           </div>
         )}
 
-        {/* LAZY LOADED MODAL WITH SUSPENSE */}
         <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
           <PropertyDetailsModal
             property={selectedProperty}

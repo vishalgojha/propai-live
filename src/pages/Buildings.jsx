@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -16,15 +16,38 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import SEO from "../components/SEO";
 
+// A simple debounce utility function
+const debounce = (func, delay) => {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+};
+
 export default function Buildings() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
   const [buildingsToShow, setBuildingsToShow] = useState(9);
   const BUILDINGS_PER_LOAD = 9;
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    debounce((searchValue) => {
+      setDebouncedSearchQuery(searchValue);
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, debouncedSearch]);
 
   // Load user for admin check
   useEffect(() => {
@@ -44,16 +67,24 @@ export default function Buildings() {
 
   const isAdmin = user?.role === 'admin';
 
+  // Aggressive caching for buildings (10 min stale time)
   const { data: buildings = [], isLoading } = useQuery({
     queryKey: ['buildings'],
     queryFn: () => base44.entities.Building.list('-active_listings'),
     initialData: [],
+    staleTime: 10 * 60 * 1000, // 10 minutes - buildings don't change frequently
+    cacheTime: 15 * 60 * 1000, // 15 minutes in cache
+    refetchOnWindowFocus: false,
   });
 
+  // Cache properties for building stats
   const { data: properties = [] } = useQuery({
-    queryKey: ['properties'],
+    queryKey: ['properties-for-buildings'],
     queryFn: () => base44.entities.Property.filter({ status: "Active" }),
     initialData: [],
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Get unique locations
@@ -61,25 +92,25 @@ export default function Buildings() {
     return [...new Set(buildings.map(b => b.location).filter(Boolean))];
   }, [buildings]);
 
-  // Filter buildings based on search and location
+  // Filter buildings based on debounced search and location
   const filteredBuildings = useMemo(() => {
     return buildings.filter(building => {
-      const matchesSearch = !searchQuery ||
-        building.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        building.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        building.pocket?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        building.developer_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = !debouncedSearchQuery ||
+        building.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        building.location?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        building.pocket?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        building.developer_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
       const matchesLocation = locationFilter === "all" || building.location === locationFilter;
 
       return matchesSearch && matchesLocation;
     });
-  }, [buildings, searchQuery, locationFilter]);
+  }, [buildings, debouncedSearchQuery, locationFilter]);
 
   // Effect to reset buildingsToShow when filters change
   useEffect(() => {
     setBuildingsToShow(BUILDINGS_PER_LOAD);
-  }, [searchQuery, locationFilter]);
+  }, [debouncedSearchQuery, locationFilter]);
 
   const displayedBuildings = useMemo(() => {
     return filteredBuildings.slice(0, buildingsToShow);
