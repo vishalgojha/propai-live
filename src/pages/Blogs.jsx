@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -13,27 +13,14 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { debounce } from "lodash";
 import SEO from "../components/SEO";
 
 export default function Blogs() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // ⚡ OPTIMIZATION: Debounced search
-  const debouncedSearch = useCallback(
-    debounce((searchValue) => {
-      setDebouncedSearchQuery(searchValue);
-    }, 300),
-    []
-  );
-
-  useEffect(() => {
-    debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch]);
-
+  // Read category from URL parameters on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get('category');
@@ -60,14 +47,17 @@ export default function Blogs() {
     { name: "Rental & Legal", value: "Rental & Legal", icon: FileText },
   ];
 
-  const filteredBlogs = blogs.filter(blog => {
-    const matchesCategory = selectedCategory === "all" || blog.category === selectedCategory;
-    const matchesSearch = !debouncedSearchQuery ||
-      blog.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      blog.excerpt?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      blog.tags?.some(tag => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
+  // ⚡ OPTIMIZATION: Memoize filtered blogs to avoid recalculation on every render
+  const filteredBlogs = useMemo(() => {
+    return blogs.filter(blog => {
+      const matchesCategory = selectedCategory === "all" || blog.category === selectedCategory;
+      const matchesSearch = !searchQuery ||
+        blog.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        blog.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        blog.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+  }, [blogs, selectedCategory, searchQuery]);
 
   const featuredBlog = blogs.find(b => b.featured) || blogs[0];
 
