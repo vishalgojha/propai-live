@@ -467,12 +467,12 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           )}
 
-          {/* AMENITIES - Show top 3 */}
+          {/* AMENITIES - Show top 3 - PURPLE THEME */}
           {property.amenities && property.amenities.length > 0 && (
             <div className="mb-3 flex items-center gap-1.5 flex-wrap">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
               {property.amenities.slice(0, 3).map((amenity, idx) => (
-                <Badge key={idx} variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-700">
+                <Badge key={idx} variant="outline" className="text-xs bg-purple-50 border-purple-200 text-purple-700">
                   {amenity}
                 </Badge>
               ))}
