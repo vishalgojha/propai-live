@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -134,10 +135,13 @@ export default function BrokerProfile() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">{broker.name}</h1>
-                <p className="text-slate-600">{broker.custom_id}</p>
                 {broker.agency_name && (
-                  <p className="text-sm text-slate-500 mt-1">{broker.agency_name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    <p className="text-lg font-semibold text-purple-700">{broker.agency_name}</p>
+                  </div>
                 )}
+                <p className="text-slate-600 mt-1">{broker.custom_id}</p>
               </div>
             </div>
 

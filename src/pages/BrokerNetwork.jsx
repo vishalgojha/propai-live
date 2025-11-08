@@ -231,6 +231,7 @@ export default function BrokerNetwork() {
       broker.name?.toLowerCase().includes(query) ||
       broker.phone?.includes(query) ||
       broker.custom_id?.toLowerCase().includes(query) ||
+      broker.agency_name?.toLowerCase().includes(query) || // Added agency name to search
       broker.areas_covered?.some(area => area.toLowerCase().includes(query)) ||
       broker.specializations?.primary_locations?.some(area => area.toLowerCase().includes(query))
     );
@@ -340,7 +341,7 @@ export default function BrokerNetwork() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Search brokers by name, phone, area..."
+              placeholder="Search brokers by name, phone, area, agency..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-11 border-purple-200 focus-visible:ring-purple-500"
@@ -376,6 +377,12 @@ export default function BrokerNetwork() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-base font-bold text-slate-900 truncate">{broker.name}</h3>
+                      {broker.agency_name && (
+                        <p className="text-xs text-purple-600 font-semibold truncate flex items-center gap-1">
+                          <Building2 className="w-3 h-3" />
+                          {broker.agency_name}
+                        </p>
+                      )}
                       {broker.custom_id && (
                         <p className="text-xs text-slate-500 font-mono truncate">{broker.custom_id}</p>
                       )}

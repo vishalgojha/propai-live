@@ -2036,6 +2036,12 @@ export default function Admin() {
                           <div className="flex items-start justify-between mb-3">
                             <div>
                               <h3 className="text-lg font-bold text-slate-900 mb-1">{broker.name}</h3>
+                              {broker.agency_name && (
+                                <div className="flex items-center gap-1 mb-2">
+                                  <Building2 className="w-3 h-3 text-purple-600" />
+                                  <p className="text-sm font-semibold text-purple-700">{broker.agency_name}</p>
+                                </div>
+                              )}
                               {broker.custom_id && (
                                 <Badge variant="outline" className="font-mono text-xs mb-2">
                                   {broker.custom_id}
@@ -2082,7 +2088,7 @@ export default function Admin() {
                               size="sm"
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              View Profile
+                              Profile
                             </Button>
                             <Button
                               onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${broker.id}`)}
