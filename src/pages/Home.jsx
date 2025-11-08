@@ -13,12 +13,15 @@ import {
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
+import ChatbotWidget from "../components/ChatbotWidget";
 
 export default function Home() {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [featuredProperties, setFeaturedProperties] = useState([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -32,6 +35,21 @@ export default function Home() {
     },
     "priceRange": "$$"
   };
+
+  // Load current user
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        setCurrentUser(null);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+    loadUser();
+  }, []);
 
   // WhatsApp AI Assistant URL
   const whatsappAIUrl = base44.agents.getWhatsAppConnectURL('chariot_master');
@@ -145,6 +163,9 @@ Thanks! 🙏`;
         canonical="https://propai.live/"
         schema={homeSchema}
       />
+
+      {/* Chatbot Widget - Only for logged-in users */}
+      {!isLoadingUser && currentUser && <ChatbotWidget />}
 
       {/* Hero Section - Light & Clean */}
       <section className="relative bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50 overflow-hidden">
