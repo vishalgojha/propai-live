@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -32,8 +31,8 @@ export default function MyProfile() {
   const [teamMemberPhone, setTeamMemberPhone] = useState("");
   const [addingTeamMember, setAddingTeamMember] = useState(false);
 
-  // NEW: State for network view
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'network', 'listings', 'requirements'
+  // NEW: Tab navigation state
+  const [activeTab, setActiveTab] = useState('overview');
 
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
@@ -94,109 +93,6 @@ export default function MyProfile() {
     };
     loadUser();
   }, [navigate]);
-
-  // NEW: Fetch network connections
-  const { data: allBrokersForNetwork = [] } = useQuery({ // Renamed to avoid conflict with adminAllBrokers
-    queryKey: ['all-brokers-for-network'],
-    queryFn: () => base44.entities.Broker.list(),
-    enabled: !!brokerProfile,
-    initialData: []
-  });
-
-  const { data: allPropertiesForNetwork = [] } = useQuery({
-    queryKey: ['all-properties-for-network'],
-    queryFn: () => base44.entities.Property.list('-created_date'),
-    enabled: !!brokerProfile,
-    initialData: []
-  });
-
-  const { data: allRequirementsForNetwork = [] } = useQuery({
-    queryKey: ['all-requirements-for-network'],
-    queryFn: () => base44.entities.Requirement.list('-created_date'),
-    enabled: !!brokerProfile,
-    initialData: []
-  });
-
-  // NEW: Calculate network connections
-  const networkConnections = useMemo(() => {
-    if (!brokerProfile || !currentUser?.network_connections) return [];
-    
-    return currentUser.network_connections
-      .map(connId => {
-        const broker = allBrokersForNetwork.find(b => b.id === connId); // Using allBrokersForNetwork
-        if (!broker) return null;
-        
-        const brokerListings = allPropertiesForNetwork.filter(p => 
-          p.broker_id === connId && p.status === 'Active' && !p.is_duplicate
-        );
-        
-        return {
-          ...broker,
-          activeListings: brokerListings.length,
-          recentListings: brokerListings.slice(0, 5)
-        };
-      })
-      .filter(Boolean);
-  }, [brokerProfile, currentUser, allBrokersForNetwork, allPropertiesForNetwork]); // Dependency updated
-
-  // NEW: Network listings - from all connected brokers
-  const networkListings = useMemo(() => {
-    if (!currentUser?.network_connections) return [];
-    
-    return allPropertiesForNetwork
-      .filter(p => 
-        currentUser.network_connections.includes(p.broker_id) && 
-        p.status === 'Active' && 
-        !p.is_duplicate
-      )
-      .slice(0, 20); // Show last 20
-  }, [currentUser, allPropertiesForNetwork]);
-
-  // NEW: My requirements with matches from network
-  const myRequirementsWithMatches = useMemo(() => {
-    if (!brokerProfile) return [];
-    
-    const myReqs = allRequirementsForNetwork.filter(r => 
-      r.broker_id === brokerProfile.id && r.status === 'Active'
-    );
-    
-    return myReqs.map(req => {
-      // Find matches from network connections
-      const networkMatches = allPropertiesForNetwork.filter(prop => {
-        // Check if property is from network
-        if (!currentUser?.network_connections?.includes(prop.broker_id)) return false;
-        if (prop.status !== 'Active' || prop.is_duplicate) return false;
-        
-        // Check listing type match
-        if (prop.listing_type !== req.listing_type) return false;
-        
-        // Check BHK match
-        if (req.bhk_preference && req.bhk_preference.length > 0) {
-          if (!req.bhk_preference.includes(prop.bhk)) return false;
-        }
-        
-        // Check location match
-        if (req.preferred_locations && req.preferred_locations.length > 0) {
-          if (!req.preferred_locations.includes(prop.location)) return false;
-        }
-        
-        // Check price range
-        const propPriceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
-        const reqUnit = req.budget_unit === 'crores' ? 'crores' : 'lakhs';
-        const reqMinInLakhs = reqUnit === 'crores' ? (req.budget_min || 0) * 100 : (req.budget_min || 0);
-        const reqMaxInLakhs = reqUnit === 'crores' ? (req.budget_max || 999999) * 100 : (req.budget_max || 999999);
-        
-        if (propPriceInLakhs < reqMinInLakhs || propPriceInLakhs > reqMaxInLakhs) return false;
-        
-        return true;
-      });
-      
-      return {
-        ...req,
-        networkMatches: networkMatches.slice(0, 10)
-      };
-    });
-  }, [brokerProfile, allRequirementsForNetwork, allPropertiesForNetwork, currentUser]);
 
   const handleSaveAreas = async () => {
     try {
@@ -305,7 +201,7 @@ export default function MyProfile() {
       });
       
       await base44.entities.Broker.update(teamMemberBroker.id, {
-        reports_to: null
+        reports_to: brokerProfile.id
       });
       
       setBrokerProfile(prevBrokerProfile => ({
@@ -397,6 +293,28 @@ export default function MyProfile() {
     initialData: []
   });
 
+  // NEW: Fetch data for network tabs
+  const { data: allBrokers = [] } = useQuery({
+    queryKey: ['all-brokers-network'],
+    queryFn: () => base44.entities.Broker.list(),
+    enabled: !!brokerProfile,
+    initialData: []
+  });
+
+  const { data: allPropertiesNetwork = [] } = useQuery({
+    queryKey: ['all-properties-network'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    enabled: !!brokerProfile,
+    initialData: []
+  });
+
+  const { data: allRequirementsNetwork = [] } = useQuery({
+    queryKey: ['all-requirements-network'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    enabled: !!brokerProfile,
+    initialData: []
+  });
+
   const { data: allProperties = [] } = useQuery({
     queryKey: ['admin-all-properties'],
     queryFn: () => base44.entities.Property.list(),
@@ -404,12 +322,86 @@ export default function MyProfile() {
     initialData: []
   });
 
-  const { data: allBrokers = [] } = useQuery({ // Renamed to adminAllBrokers to avoid conflict
+  const { data: allBrokersAdmin = [] } = useQuery({
     queryKey: ['admin-all-brokers'],
     queryFn: () => base44.entities.Broker.list(),
     enabled: currentUser?.role === 'admin',
     initialData: []
   });
+
+  // NEW: Calculate network connections
+  const networkConnections = useMemo(() => {
+    if (!brokerProfile || !currentUser?.network_connections) return [];
+    
+    return currentUser.network_connections
+      .map(connId => {
+        const broker = allBrokers.find(b => b.id === connId);
+        if (!broker) return null;
+        
+        const brokerListings = allPropertiesNetwork.filter(p => 
+          p.broker_id === connId && p.status === 'Active' && !p.is_duplicate
+        );
+        
+        return {
+          ...broker,
+          activeListings: brokerListings.length,
+          recentListings: brokerListings.slice(0, 5)
+        };
+      })
+      .filter(Boolean);
+  }, [brokerProfile, currentUser, allBrokers, allPropertiesNetwork]);
+
+  // NEW: Network listings
+  const networkListings = useMemo(() => {
+    if (!currentUser?.network_connections) return [];
+    
+    return allPropertiesNetwork
+      .filter(p => 
+        currentUser.network_connections.includes(p.broker_id) && 
+        p.status === 'Active' && 
+        !p.is_duplicate
+      )
+      .slice(0, 20);
+  }, [currentUser, allPropertiesNetwork]);
+
+  // NEW: Requirements with network matches
+  const myRequirementsWithMatches = useMemo(() => {
+    if (!brokerProfile) return [];
+    
+    const myReqs = allRequirementsNetwork.filter(r => 
+      r.broker_id === brokerProfile.id && r.status === 'Active'
+    );
+    
+    return myReqs.map(req => {
+      const networkMatches = allPropertiesNetwork.filter(prop => {
+        if (!currentUser?.network_connections?.includes(prop.broker_id)) return false;
+        if (prop.status !== 'Active' || prop.is_duplicate) return false;
+        if (prop.listing_type !== req.listing_type) return false;
+        
+        if (req.bhk_preference && req.bhk_preference.length > 0) {
+          if (!req.bhk_preference.includes(prop.bhk)) return false;
+        }
+        
+        if (req.preferred_locations && req.preferred_locations.length > 0) {
+          if (!req.preferred_locations.includes(prop.location)) return false;
+        }
+        
+        const propPriceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
+        const reqUnit = req.budget_unit === 'crores' ? 'crores' : 'lakhs';
+        const reqMinInLakhs = reqUnit === 'crores' ? (req.budget_min || 0) * 100 : (req.budget_min || 0);
+        const reqMaxInLakhs = reqUnit === 'crores' ? (req.budget_max || 999999) * 100 : (req.budget_max || 999999);
+        
+        if (propPriceInLakhs < reqMinInLakhs || propPriceInLakhs > reqMaxInLakhs) return false;
+        
+        return true;
+      });
+      
+      return {
+        ...req,
+        networkMatches: networkMatches.slice(0, 10)
+      };
+    });
+  }, [brokerProfile, allRequirementsNetwork, allPropertiesNetwork, currentUser]);
 
   const enrichedTeamMembers = useMemo(() => {
     if (!brokerProfile?.team_members || properties.length === 0) {
@@ -479,16 +471,16 @@ export default function MyProfile() {
     if (currentUser?.role !== 'admin') return null;
 
     const activeProps = allProperties.filter(p => p.status === 'Active' && !p.is_duplicate);
-    const activeBrokers = allBrokers.filter(b => b.status === 'Active'); // Using adminAllBrokers
+    const activeBrokers = allBrokersAdmin.filter(b => b.status === 'Active');
 
     return {
       totalProperties: allProperties.length,
       activeProperties: activeProps.length,
-      totalBrokers: allBrokers.length, // Using adminAllBrokers
+      totalBrokers: allBrokersAdmin.length,
       activeBrokers: activeBrokers.length,
-      highTrustBrokers: allBrokers.filter(b => (b.trust_score || 0) >= 75).length // Using adminAllBrokers
+      highTrustBrokers: allBrokersAdmin.filter(b => (b.trust_score || 0) >= 75).length
     };
-  }, [currentUser, allProperties, allBrokers]); // Dependency updated
+  }, [currentUser, allProperties, allBrokersAdmin]);
 
   if (isLoading) {
     return (
@@ -503,7 +495,7 @@ export default function MyProfile() {
 
   if (!currentUser) return null;
 
-  // ADMIN VIEW
+  // ADMIN VIEW - Keep existing
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -600,7 +592,7 @@ export default function MyProfile() {
             </div>
           </Card>
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6 mt-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-purple-600" />
@@ -700,7 +692,7 @@ export default function MyProfile() {
     );
   }
 
-  // BROKER VIEW
+  // BROKER VIEW - ENHANCED WITH TABS
   if (brokerProfile && brokerMetrics) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -741,7 +733,7 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* NEW: Tab Navigation */}
+          {/* Tab Navigation */}
           <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
             <Button
               onClick={() => setActiveTab('overview')}
@@ -1196,7 +1188,7 @@ export default function MyProfile() {
             </div>
           )}
 
-          {/* NETWORK LISTINGS TAB */}
+          {/* LISTINGS TAB */}
           {activeTab === 'listings' && (
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-4">Listings from My Network</h2>
@@ -1262,13 +1254,7 @@ export default function MyProfile() {
                   <h3 className="text-xl font-bold text-slate-900 mb-2">No Requirements Yet</h3>
                   <p className="text-slate-600">
                     Create requirements to get matched with properties from your network
-                  </p>                  
-                  <Button
-                    onClick={() => navigate(createPageUrl("AddRequirement"))} // Assuming an "AddRequirement" page
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white mt-4"
-                  >
-                    Add New Requirement
-                  </Button>
+                  </p>
                 </Card>
               ) : (
                 <div className="space-y-6">
