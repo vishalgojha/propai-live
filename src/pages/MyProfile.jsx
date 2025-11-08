@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Home, Award, BarChart3, Eye, MessageCircle, Target,
-  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2
+  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -495,7 +496,7 @@ export default function MyProfile() {
 
   if (!currentUser) return null;
 
-  // ADMIN VIEW - Keep existing
+  // ADMIN VIEW
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -733,39 +734,51 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+          {/* Tab Navigation + AI Chat Button */}
+          <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex gap-2 overflow-x-auto pb-2 flex-1">
+              <Button
+                onClick={() => setActiveTab('overview')}
+                variant={activeTab === 'overview' ? 'default' : 'outline'}
+                className={activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Overview
+              </Button>
+              <Button
+                onClick={() => setActiveTab('network')}
+                variant={activeTab === 'network' ? 'default' : 'outline'}
+                className={activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                My Network ({networkConnections.length})
+              </Button>
+              <Button
+                onClick={() => setActiveTab('listings')}
+                variant={activeTab === 'listings' ? 'default' : 'outline'}
+                className={activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Network Listings ({networkListings.length})
+              </Button>
+              <Button
+                onClick={() => setActiveTab('requirements')}
+                variant={activeTab === 'requirements' ? 'default' : 'outline'}
+                className={activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+              >
+                <Target className="w-4 h-4 mr-2" />
+                My Requirements ({myRequirementsWithMatches.length})
+              </Button>
+            </div>
+            
+            {/* AI Chat Button */}
             <Button
-              onClick={() => setActiveTab('overview')}
-              variant={activeTab === 'overview' ? 'default' : 'outline'}
-              className={activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
+              onClick={() => window.dispatchEvent(new CustomEvent('openChatWidget'))}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg whitespace-nowrap"
+              size="lg"
             >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Overview
-            </Button>
-            <Button
-              onClick={() => setActiveTab('network')}
-              variant={activeTab === 'network' ? 'default' : 'outline'}
-              className={activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
-            >
-              <Users className="w-4 h-4 mr-2" />
-              My Network ({networkConnections.length})
-            </Button>
-            <Button
-              onClick={() => setActiveTab('listings')}
-              variant={activeTab === 'listings' ? 'default' : 'outline'}
-              className={activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
-            >
-              <Package className="w-4 h-4 mr-2" />
-              Network Listings ({networkListings.length})
-            </Button>
-            <Button
-              onClick={() => setActiveTab('requirements')}
-              variant={activeTab === 'requirements' ? 'default' : 'outline'}
-              className={activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
-            >
-              <Target className="w-4 h-4 mr-2" />
-              My Requirements ({myRequirementsWithMatches.length})
+              <Bot className="w-5 h-5 mr-2" />
+              Chat with AI Assistant
             </Button>
           </div>
 
