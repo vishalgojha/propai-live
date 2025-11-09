@@ -1170,6 +1170,91 @@ export default function Admin() {
     }
   };
 
+  const normalizeBrokerPhones = async () => {
+    if (!confirm('📞 Normalize Broker Phone Numbers?\n\nThis will:\n• Fix wrong country codes (+961 → +91)\n• Standardize all phone formats\n• Extract last 10 digits for valid Indian numbers\n\nRun analysis first?')) {
+      return;
+    }
+
+    setNormalizingBhk(true); // Using this as a generic 'normalizing' state
+    toast.loading('🔍 Analyzing broker phone numbers...', { id: 'phone-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('normalizeBrokerPhones', { mode: 'dry_run' });
+      toast.dismiss('phone-analysis');
+
+      const summary = dryRunResponse.data.summary;
+
+      if (summary.fixed === 0) {
+        toast.success('✅ All Phone Numbers Already Normalized!', {
+          description: `${summary.total_brokers} brokers scanned - ${summary.valid_phones} valid`,
+          duration: 4000
+        });
+        setNormalizingBhk(false);
+        return;
+      }
+
+      // Show examples
+      let exampleText = '';
+      if (summary.examples && summary.examples.length > 0) {
+        exampleText = '\n\nExamples:\n' + summary.examples.slice(0, 3).map(ex => 
+          `• ${ex.name}: "${ex.old}" → "${ex.new}" (${ex.reason})`
+        ).join('\n');
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found phone number issues:\n` +
+        `• ${summary.fixed} brokers need phone normalization\n` +
+        `• ${summary.already_correct} already correct\n` +
+        `• ${summary.invalid_phones} invalid phone numbers\n` +
+        exampleText +
+        `\n\nFix now?`
+      );
+
+      if (!shouldFix) {
+        setNormalizingBhk(false);
+        return;
+      }
+
+      toast.loading('🔧 Normalizing broker phone numbers...', { id: 'phone-fix' });
+      const fixResponse = await base44.functions.invoke('normalizeBrokerPhones', { mode: 'live' });
+      toast.dismiss('phone-fix');
+
+      const results = fixResponse.data.summary;
+
+      toast.success('✅ Phone Normalization Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Broker phones standardized successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Fixed: {results.fixed} brokers</div>
+              <div>• Already correct: {results.already_correct} brokers</div>
+              <div>• Invalid: {results.invalid_phones} brokers</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['brokers'] });
+
+    } catch (error) {
+      toast.dismiss('phone-analysis');
+      toast.dismiss('phone-fix');
+      toast.error('❌ Phone Normalization Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setNormalizingBhk(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1488,6 +1573,13 @@ export default function Admin() {
                   >
                     <Car className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
                     Normalize Parking
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={normalizeBrokerPhones}
+                    disabled={normalizingBhk}
+                  >
+                    <Phone className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
+                    Normalize Phone Numbers
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={generatePropertySlugs}
