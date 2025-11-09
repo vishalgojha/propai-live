@@ -573,7 +573,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -584,159 +585,160 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
-                <Card className="p-5 bg-white border-2 border-slate-200">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                      <Award className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
-                      <p className="text-sm text-slate-600">High Trust Brokers</p>
-                    </div>
+              <Card className="p-5 bg-white border-2 border-slate-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <Award className="w-5 h-5 text-amber-600" />
                   </div>
-                </Card>
-              </div>
-            )}
-
-            <Card className="p-6 bg-white border-2 border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Button
-                  onClick={() => navigate(createPageUrl("Admin"))}
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col gap-2"
-                >
-                  <Settings className="w-6 h-6 text-purple-600" />
-                  <span className="text-sm font-semibold">Admin Panel</span>
-                </Button>
-                <Button
-                  onClick={() => navigate(createPageUrl("AdminDashboard"))}
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col gap-2"
-                >
-                  <BarChart3 className="w-6 h-6 text-sky-600" />
-                  <span className="text-sm font-semibold">Analytics</span>
-                </Button>
-                <Button
-                  onClick={() => navigate(createPageUrl("AdminBrokers"))}
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col gap-2"
-                >
-                  <Users className="w-6 h-6 text-indigo-600" />
-                  <span className="text-sm font-semibold">Brokers</span>
-                </Button>
-                <Button
-                  onClick={() => navigate(createPageUrl("AdminRequirements"))}
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col gap-2"
-                >
-                  <Target className="w-6 h-6 text-green-600" />
-                  <span className="text-sm font-semibold">Requirements</span>
-                </Button>
-              </div>
-            </Card>
-
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6 mt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
-                </div>
-                <Button
-                  onClick={() => setEditingAreas(!editingAreas)}
-                  variant="outline"
-                  size="sm"
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                >
-                  {editingAreas ? 'Cancel' : 'Edit Areas'}
-                </Button>
-              </div>
-
-              {editingAreas ? (
-                <div>
-                  <p className="text-sm text-slate-600 mb-3">
-                    Select areas you want to focus on:
-                  </p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {popularAreas.map((area) => {
-                      const isSelected = selectedAreas.includes(area);
-                      return (
-                        <Button
-                          key={area}
-                          onClick={() => toggleArea(area)}
-                          variant={isSelected ? "default" : "outline"}
-                          size="sm"
-                          className={`rounded-xl ${
-                            isSelected
-                              ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-                              : "border-purple-200 hover:bg-purple-50"
-                          }`}
-                        >
-                          {area}
-                        </Button>
-                      );
-                    })}
+                  <div>
+                    <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
+                    <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                  <Button
-                    onClick={handleSaveAreas}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-                  >
-                    Save Preferred Areas
-                  </Button>
                 </div>
-              ) : (
-                <div>
-                  {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {currentUser.preferred_areas.map((area) => (
-                        <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {area}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500">
-                      No preferred areas set. Click "Edit Areas" to customize your feed.
-                    </p>
-                  )}
-                </div>
-              )}
+              </Card>
+            </div>
+          )}
+
+          <Card className="p-6 bg-white border-2 border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Button
+                onClick={() => navigate(createPageUrl("Admin"))}
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2"
+              >
+                <Settings className="w-6 h-6 text-purple-600" />
+                <span className="text-sm font-semibold">Admin Panel</span>
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("AdminDashboard"))}
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2"
+              >
+                <BarChart3 className="w-6 h-6 text-sky-600" />
+                <span className="text-sm font-semibold">Analytics</span>
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("AdminBrokers"))}
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2"
+              >
+                <Users className="w-6 h-6 text-indigo-600" />
+                <span className="text-sm font-semibold">Brokers</span>
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("AdminRequirements"))}
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2"
+              >
+                <Target className="w-6 h-6 text-green-600" />
+                <span className="text-sm font-semibold">Requirements</span>
+              </Button>
+            </div>
+          </Card>
+
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
+              </div>
+              <Button
+                onClick={() => setEditingAreas(!editingAreas)}
+                variant="outline"
+                size="sm"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {editingAreas ? 'Cancel' : 'Edit Areas'}
+              </Button>
             </div>
 
-            <Card className="p-6 bg-white border-2 border-slate-200 mt-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Account Information</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">Name:</span>
-                  <span className="text-sm font-semibold text-slate-900">{currentUser.full_name || 'Not set'}</span>
+            {editingAreas ? (
+              <div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Select areas you want to focus on:
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {popularAreas.map((area) => {
+                    const isSelected = selectedAreas.includes(area);
+                    return (
+                      <Button
+                        key={area}
+                        onClick={() => toggleArea(area)}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className={`rounded-xl ${
+                          isSelected
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                            : "border-purple-200 hover:bg-purple-50"
+                        }`}
+                      >
+                        {area}
+                      </Button>
+                    );
+                  })}
                 </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">Email:</span>
-                  <span className="text-sm font-semibold text-slate-900">{currentUser.email}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Shield className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">Role:</span>
-                  <Badge className="bg-purple-100 text-purple-800">Administrator</Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">Member since:</span>
-                  <span className="text-sm font-semibold text-slate-900">
-                    {format(new Date(currentUser.created_date), 'MMMM yyyy')}
-                  </span>
-                </div>
+                <Button
+                  onClick={handleSaveAreas}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                >
+                  Save Preferred Areas
+                </Button>
               </div>
-            </Card>
+            ) : (
+              <div>
+                {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {currentUser.preferred_areas.map((area) => (
+                      <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    No preferred areas set. Click "Edit Areas" to customize your feed.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
+
+          <Card className="p-6 bg-white border-2 border-slate-200 mt-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Account Information</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <User className="w-4 h-4 text-slate-500" />
+                <span className="text-sm text-slate-600">Name:</span>
+                <span className="text-sm font-semibold text-slate-900">{currentUser.full_name || 'Not set'}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-slate-500" />
+                <span className="text-sm text-slate-600">Email:</span>
+                <span className="text-sm font-semibold text-slate-900">{currentUser.email}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Shield className="w-4 h-4 text-slate-500" />
+                <span className="text-sm text-slate-600">Role:</span>
+                <Badge className="bg-purple-100 text-purple-800">Administrator</Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <span className="text-sm text-slate-600">Member since:</span>
+                <span className="text-sm font-semibold text-slate-900">
+                  {format(new Date(currentUser.created_date), 'MMMM yyyy')}
+                </span>
+              </div>
+            </div>
+          </Card>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
   // BROKER VIEW - ENHANCED WITH TABS
   // Use connected_brokers instead of network_connections
