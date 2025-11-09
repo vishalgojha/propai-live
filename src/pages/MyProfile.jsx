@@ -529,8 +529,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -740,52 +739,66 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Tab Navigation - MOBILE RESPONSIVE */}
-          <div className="mb-6 flex flex-col gap-3">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
+          {/* Tab Navigation - MOBILE RESPONSIVE WITH SELECT DROPDOWN */}
+          <div className="mb-6">
+            {/* Mobile: Dropdown */}
+            <div className="block md:hidden mb-3">
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-slate-900 font-semibold focus:outline-none focus:border-purple-500"
+              >
+                <option value="overview">📊 Overview</option>
+                <option value="network">👥 My Network ({connectionCount})</option>
+                <option value="listings">📦 Listings ({networkListings.length})</option>
+                <option value="requirements">🎯 Requirements ({myRequirementsWithMatches.length})</option>
+              </select>
+            </div>
+
+            {/* Desktop: Buttons */}
+            <div className="hidden md:flex gap-2">
               <Button
                 onClick={() => setActiveTab('overview')}
                 variant={activeTab === 'overview' ? 'default' : 'outline'}
                 size="sm"
-                className={`flex-shrink-0 ${activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
+                className={activeTab === 'overview' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
               >
                 <BarChart3 className="w-4 h-4 mr-1" />
-                <span className="text-sm">Overview</span>
+                Overview
               </Button>
               <Button
                 onClick={() => setActiveTab('network')}
                 variant={activeTab === 'network' ? 'default' : 'outline'}
                 size="sm"
-                className={`flex-shrink-0 ${activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
+                className={activeTab === 'network' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
               >
                 <Users className="w-4 h-4 mr-1" />
-                <span className="text-sm">My Network ({connectionCount})</span>
+                My Network ({connectionCount})
               </Button>
               <Button
                 onClick={() => setActiveTab('listings')}
                 variant={activeTab === 'listings' ? 'default' : 'outline'}
                 size="sm"
-                className={`flex-shrink-0 ${activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
+                className={activeTab === 'listings' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
               >
                 <Package className="w-4 h-4 mr-1" />
-                <span className="text-sm">Listings ({networkListings.length})</span>
+                Listings ({networkListings.length})
               </Button>
               <Button
                 onClick={() => setActiveTab('requirements')}
                 variant={activeTab === 'requirements' ? 'default' : 'outline'}
                 size="sm"
-                className={`flex-shrink-0 ${activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}`}
+                className={activeTab === 'requirements' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : ''}
               >
                 <Target className="w-4 h-4 mr-1" />
-                <span className="text-sm">Requirements ({myRequirementsWithMatches.length})</span>
+                Requirements ({myRequirementsWithMatches.length})
               </Button>
             </div>
             
-            {/* AI Chat Button - moved outside of this specific tab navigation div structure */}
-            {/* Keeping it here for now as per original code, but if outline means completely remove it, it would be gone */}
+            {/* AI Chat Button */}
             <Button
               onClick={() => window.dispatchEvent(new CustomEvent('openChatWidget'))}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg whitespace-nowrap"
+              className="w-full md:w-auto mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg"
               size="lg"
             >
               <Bot className="w-5 h-5 mr-2" />
