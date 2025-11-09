@@ -1685,12 +1685,6 @@ export default function Admin() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              {/* Broker Trust Score */}
-              <Button onClick={recalculateBrokerTrust} size="sm" variant="outline">
-                <Star className="w-4 h-4 mr-2" />
-                Trust
-              </Button>
             </div>
           </div>
 
@@ -1884,7 +1878,7 @@ export default function Admin() {
                               <div className="flex items-center gap-4 text-xs text-slate-500">
                                 <span>{property.location}</span>
                                 <span>•</span>
-                                <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                                <span>₹${property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
                               </div>
                             </div>
 
@@ -2018,7 +2012,7 @@ export default function Admin() {
                             <div className="flex items-center gap-4 text-xs text-slate-500">
                               <span>{property.location}</span>
                               <span>•</span>
-                              <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                              <span>₹${property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
                             </div>
                           </div>
 
