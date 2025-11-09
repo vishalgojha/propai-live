@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -159,6 +160,19 @@ export default function Home() {
                 <Bot className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                 Chat with AI Assistant
               </Button>
+            </div>
+
+            {/* ✅ NEW: WhatsApp AI Connect Button */}
+            <div className="flex justify-center mb-8">
+              <a
+                href={base44.agents.getWhatsAppConnectURL('chariot_master')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Connect WhatsApp AI
+              </a>
             </div>
 
             {/* Inline Chat Widget - WITH SMOOTH ANIMATION */}
