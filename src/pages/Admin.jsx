@@ -84,6 +84,7 @@ export default function Admin() {
   const [normalizingLocations, setNormalizingLocations] = useState(false);
   const [normalizingBhk, setNormalizingBhk] = useState(false);
   const [cleaningBuildings, setCleaningBuildings] = useState(false);
+  const [recalculatingTrust, setRecalculatingTrust] = useState(false); // NEW STATE for broker trust
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -318,6 +319,7 @@ export default function Admin() {
 
   const recalculateBrokerTrust = async () => {
     if (!confirm('Recalculate all broker trust scores?')) return;
+    setRecalculatingTrust(true); // Set loading state
     try {
       const response = await base44.functions.invoke('calculateBrokerTrust', { recalculateAll: true });
       toast.success('✅ Broker Trust Scores Updated', {
@@ -331,6 +333,8 @@ export default function Admin() {
         description: error.message,
         className: 'bg-red-600 text-white border-0'
       });
+    } finally {
+      setRecalculatingTrust(false); // Reset loading state
     }
   };
 
@@ -1649,6 +1653,14 @@ export default function Admin() {
                     <Sparkles className={`w-4 h-4 mr-2 ${dealsLoading ? 'animate-spin' : ''}`} />
                     Deals Radar
                   </DropdownMenuItem>
+                  {/* Moved Broker Trust Score here */}
+                  <DropdownMenuItem
+                    onClick={recalculateBrokerTrust}
+                    disabled={recalculatingTrust}
+                  >
+                    <Star className={`w-4 h-4 mr-2 ${recalculatingTrust ? 'animate-spin' : ''}`} />
+                    Recalculate Broker Trust
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -1878,7 +1890,7 @@ export default function Admin() {
                               <div className="flex items-center gap-4 text-xs text-slate-500">
                                 <span>{property.location}</span>
                                 <span>•</span>
-                                <span>₹${property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                                <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
                               </div>
                             </div>
 
@@ -2012,7 +2024,7 @@ export default function Admin() {
                             <div className="flex items-center gap-4 text-xs text-slate-500">
                               <span>{property.location}</span>
                               <span>•</span>
-                              <span>₹${property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
+                              <span>₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}</span>
                             </div>
                           </div>
 
