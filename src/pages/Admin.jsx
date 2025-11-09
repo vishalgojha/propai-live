@@ -1259,6 +1259,85 @@ export default function Admin() {
     }
   };
 
+  const backfillBrokerContacts = async () => {
+    if (!confirm('📞 Sync Broker Contacts?\n\nThis will update cached broker_contact on all properties with the latest normalized phone numbers from Broker table.\n\nRun analysis first?')) return;
+    setGeneratingSlugs(true);
+    toast.loading('🔍 Analyzing cached broker contacts...', { id: 'contact-sync-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('backfillBrokerContacts', { mode: 'dry_run' });
+      toast.dismiss('contact-sync-analysis');
+
+      const summary = dryRunResponse.data.summary;
+      if (summary.properties_to_update === 0) {
+        toast.success('✅ All Broker Contacts Already Synced!', {
+          description: `${summary.total_properties} properties checked - all up to date`,
+          duration: 4000
+        });
+        setGeneratingSlugs(false);
+        return;
+      }
+
+      // Show examples
+      let exampleText = '';
+      if (dryRunResponse.data.examples && dryRunResponse.data.examples.length > 0) {
+        exampleText = '\n\nExamples:\n' + dryRunResponse.data.examples.slice(0, 3).map(ex => 
+          `• ${ex.custom_id || ex.broker_name}: "${ex.old_contact}" → "${ex.new_contact}"`
+        ).join('\n');
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found outdated broker contacts:\n` +
+        `• ${summary.properties_to_update} properties need sync\n` +
+        `• ${summary.already_correct} already correct\n` +
+        exampleText +
+        `\n\nSync now?`
+      );
+
+      if (!shouldFix) {
+        setGeneratingSlugs(false);
+        return;
+      }
+
+      toast.loading('🔧 Syncing broker contacts...', { id: 'contact-sync-fix' });
+      const fixResponse = await base44.functions.invoke('backfillBrokerContacts', { mode: 'live' });
+      toast.dismiss('contact-sync-fix');
+
+      const results = fixResponse.data.summary;
+
+      toast.success('✅ Broker Contacts Synced!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">WhatsApp buttons will now use correct numbers</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Updated: {results.updated} properties</div>
+              <div>• Unchanged: {results.unchanged} properties</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('contact-sync-analysis');
+      toast.dismiss('contact-sync-fix');
+      toast.error('❌ Contact Sync Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setGeneratingSlugs(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1584,6 +1663,13 @@ export default function Admin() {
                   >
                     <Phone className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
                     Normalize Phone Numbers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={backfillBrokerContacts}
+                    disabled={generatingSlugs}
+                  >
+                    <Phone className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
+                    Sync Broker Contacts
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={generatePropertySlugs}
