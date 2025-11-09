@@ -189,16 +189,48 @@ export default function PropertyCard({ property, onViewDetails }) {
   const handleWhatsAppContact = async (e) => {
     e.stopPropagation();
     
-    // Determine phone and contact name
-    const primaryContact = (property.broker_contact && 
-                           property.broker_contact !== '919819471310' && 
-                           property.broker_contact !== '9102269622278') 
-      ? property.broker_contact 
-      : '9102269622278';
+    // Helper function to normalize Indian phone numbers
+    const normalizeIndianPhone = (phone) => {
+      if (!phone) return null;
+      
+      // Remove all non-digits
+      let cleaned = phone.replace(/\D/g, '');
+      
+      // Remove country code variants (+91, 91, 0091, etc.)
+      if (cleaned.startsWith('91') && cleaned.length === 12) {
+        cleaned = cleaned.substring(2); // Remove 91
+      } else if (cleaned.startsWith('0091') && cleaned.length === 14) {
+        cleaned = cleaned.substring(4); // Remove 0091
+      } else if (cleaned.startsWith('961') && cleaned.length >= 10) {
+        // FIX: Handle Lebanese code +961 that was mistakenly used
+        // Extract last 10 digits
+        cleaned = cleaned.slice(-10);
+      }
+      
+      // If too long, take last 10 digits (Indian mobile is 10 digits)
+      if (cleaned.length > 10) {
+        cleaned = cleaned.slice(-10);
+      }
+      
+      // Validate: must be exactly 10 digits starting with 6-9
+      if (cleaned.length === 10 && cleaned[0] >= '6' && cleaned[0] <= '9') {
+        return '91' + cleaned; // Return with country code for WhatsApp
+      }
+      
+      return null;
+    };
     
-    const hasRealBroker = property.broker_contact && 
-                         property.broker_contact !== '9102269622278' && 
-                         property.broker_contact !== '919819471310';
+    // Determine phone and contact name
+    const rawBrokerContact = property.broker_contact;
+    const normalizedBrokerContact = normalizeIndianPhone(rawBrokerContact);
+    
+    const hasRealBroker = normalizedBrokerContact && 
+                         normalizedBrokerContact !== '919102269622278' && 
+                         normalizedBrokerContact !== '919819471310';
+    
+    const primaryContact = hasRealBroker 
+      ? normalizedBrokerContact
+      : '919102269622278';
     
     // Use cached broker_name if available, otherwise use generic name
     const contactName = hasRealBroker 
@@ -206,7 +238,10 @@ export default function PropertyCard({ property, onViewDetails }) {
       : 'PropAI Team';
     
     if (!primaryContact) {
-      alert(`⚠️ Contact not available.\n\nPlease update contact info in Admin.`);
+      toast.error('⚠️ Invalid phone number', {
+        description: 'Please update contact info in Admin',
+        duration: 3000
+      });
       return;
     }
 
@@ -226,7 +261,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       `Please share more details.\n\n` +
       `Thank you!`;
     
-    window.open(`https://wa.me/${primaryContact.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${primaryContact}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleCardClick = () => {
