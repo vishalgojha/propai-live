@@ -1410,7 +1410,7 @@ export default function Admin() {
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-32">
       <Toaster position="top-center" richColors closeButton />
       
       {/* Fixed Header */}
@@ -1651,7 +1651,8 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32">
+      {/* MAIN CONTENT AREA - FIXED */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <AnimatePresence mode="wait">
           {/* Overview Tab */}
           {activeTab === "overview" && (
