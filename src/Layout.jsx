@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -25,6 +26,22 @@ export default function Layout({ children, currentPageName }) {
   }, [location.pathname]);
 
   useEffect(() => {
+    // ✅ PERFORMANCE: Add preconnect hints for third-party origins
+    const addPreconnect = (href, crossorigin = false) => {
+      if (!document.querySelector(`link[rel="preconnect"][href="${href}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = href;
+        if (crossorigin) link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+      }
+    };
+
+    // Preconnect to Supabase storage (for images)
+    addPreconnect('https://qtrypzzcjebvfcihiynt.supabase.co', true);
+    // Preconnect to Base44 API
+    addPreconnect('https://api.base44.com', true);
+
     // Always set meta tags, don't check if they exist first
     const setMetaTag = (name, content, isProperty = false) => {
       const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
@@ -98,6 +115,19 @@ export default function Layout({ children, currentPageName }) {
       sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
       document.head.appendChild(sitemapLink);
     }
+
+    // ✅ PERFORMANCE: Add dns-prefetch as fallback for older browsers
+    const addDnsPrefetch = (href) => {
+      if (!document.querySelector(`link[rel="dns-prefetch"][href="${href}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'dns-prefetch';
+        link.href = href;
+        document.head.appendChild(link);
+      }
+    };
+    
+    addDnsPrefetch('https://qtrypzzcjebvfcihiynt.supabase.co');
+    addDnsPrefetch('https://api.base44.com');
   }, [location.pathname]);
 
   useEffect(() => {
