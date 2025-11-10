@@ -36,7 +36,8 @@ export default function MyProfile() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     agency_name: "",
-    email: ""
+    email: "",
+    phone: "" // Added phone to profileData
   });
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -63,40 +64,51 @@ export default function MyProfile() {
           setSelectedAreas(user.preferred_areas);
         }
 
+        // ✅ ENHANCED: Better broker matching logic
         if (user.broker_id) {
           const brokers = await base44.entities.Broker.list();
           const broker = brokers.find(b => b.id === user.broker_id);
           
           if (broker) {
             setBrokerProfile(broker);
-            // Initialize profile data
             setProfileData({
               agency_name: broker.agency_name || "",
-              email: broker.email || ""
+              email: broker.email || "",
+              phone: broker.phone || "" // Added phone
             });
           }
         } else if (user.email) {
+          // Try to auto-link broker by email or phone
           const brokers = await base44.entities.Broker.list();
           
           const matchingBroker = brokers.find(b => {
+            // Email match
+            if (b.email?.toLowerCase() === user.email.toLowerCase()) return true;
+            
+            // Phone match - extract last 10 digits
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
             const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
             
-            const emailMatch = b.email?.toLowerCase() === user.email.toLowerCase();
-            const phoneMatch = userEmailAsPhone && brokerPhone && userEmailAsPhone === brokerPhone;
+            const phoneMatch = userEmailAsPhone && brokerPhone && 
+                              userEmailAsPhone.length === 10 && 
+                              userEmailAsPhone === brokerPhone;
             
-            return emailMatch || phoneMatch;
+            return phoneMatch;
           });
           
           if (matchingBroker) {
             setBrokerProfile(matchingBroker);
             setProfileData({
               agency_name: matchingBroker.agency_name || "",
-              email: matchingBroker.email || ""
+              email: matchingBroker.email || "",
+              phone: matchingBroker.phone || "" // Added phone
             });
+            
+            // Auto-link broker to user
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
+              setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
             } catch (error) {
               console.error('Failed to auto-link broker:', error);
             }
@@ -131,26 +143,47 @@ export default function MyProfile() {
     }
   };
 
-  // NEW: Save profile handler
+  // ✅ ENHANCED: Save profile with phone update
   const handleSaveProfile = async () => {
     if (!brokerProfile) return;
     
     setSavingProfile(true);
     try {
+      // Normalize phone number if changed
+      let normalizedPhone = profileData.phone.trim();
+      if (normalizedPhone) {
+        normalizedPhone = normalizedPhone.replace(/\D/g, ''); // Remove non-digits
+        if (normalizedPhone.length === 10 && !normalizedPhone.startsWith('91')) {
+          normalizedPhone = '91' + normalizedPhone; // Prepend 91 for 10-digit numbers
+        } else if (normalizedPhone.length === 12 && normalizedPhone.startsWith('91')) {
+          // Already 91 prefixed 10-digit number, keep as is
+        } else if (normalizedPhone.length === 0) {
+          normalizedPhone = null; // If empty after cleanup, set to null
+        } else {
+          // Other lengths, assume it's incorrect or keep as is if API handles it.
+          // For now, let's just use it as is if it's not a standard 10 or 12 digit.
+          // More robust validation could be added here.
+        }
+      } else {
+        normalizedPhone = null; // If input is empty, set to null
+      }
+      
       await base44.entities.Broker.update(brokerProfile.id, {
         agency_name: profileData.agency_name.trim() || null,
-        email: profileData.email.trim() || null
+        email: profileData.email.trim() || null,
+        phone: normalizedPhone // Use normalizedPhone
       });
       
       setBrokerProfile(prev => ({
         ...prev,
         agency_name: profileData.agency_name.trim() || null,
-        email: profileData.email.trim() || null
+        email: profileData.email.trim() || null,
+        phone: normalizedPhone || prev.phone // Update with normalized phone
       }));
       
       setEditingProfile(false);
       toast.success('✅ Profile Updated!', {
-        description: 'Your agency details have been saved',
+        description: 'Your details have been saved',
         duration: 3000
       });
     } catch (error) {
@@ -573,8 +606,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -585,8 +617,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -597,9 +628,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </div>
-              </Card>
-            </div>
+                </Card>
+              </div>
           )}
 
           <Card className="p-6 bg-white border-2 border-slate-200">
@@ -927,7 +957,7 @@ export default function MyProfile() {
                 </Card>
               )}
 
-              {/* NEW: Edit Profile Section */}
+              {/* Profile Details Section - ENHANCED */}
               <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -941,7 +971,8 @@ export default function MyProfile() {
                         // Reset to current values when opening
                         setProfileData({
                           agency_name: brokerProfile.agency_name || "",
-                          email: brokerProfile.email || ""
+                          email: brokerProfile.email || "",
+                          phone: brokerProfile.phone || "" // Added phone
                         });
                       }
                     }}
@@ -984,6 +1015,22 @@ export default function MyProfile() {
                       />
                       <p className="text-xs text-slate-500 mt-1">
                         For contact purposes only
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                        Phone Number
+                      </label>
+                      <Input
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        placeholder="9820056789"
+                        className="text-sm"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        10-digit mobile number (will be normalized with 91 prefix)
                       </p>
                     </div>
 
