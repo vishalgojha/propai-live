@@ -39,6 +39,7 @@ export default function PropertyCard({ property, onViewDetails }) {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [developer, setDeveloper] = useState(null); // ✅ NEW: Developer state
 
   // Load current user
   useEffect(() => {
@@ -52,6 +53,35 @@ export default function PropertyCard({ property, onViewDetails }) {
     };
     loadUser();
   }, []);
+
+  // ✅ NEW: Fetch developer if building has developer_id
+  useEffect(() => {
+    const loadDeveloper = async () => {
+      if (!property?.building_id) {
+        setDeveloper(null); // Reset developer if no building_id
+        return;
+      }
+      
+      try {
+        // Fetch building to get developer_id
+        const buildings = await base44.entities.Building.list();
+        const building = buildings.find(b => b.id === property.building_id);
+        
+        if (building?.developer_id) {
+          const developers = await base44.entities.Developer.list();
+          const dev = developers.find(d => d.id === building.developer_id);
+          setDeveloper(dev);
+        } else {
+          setDeveloper(null);
+        }
+      } catch (error) {
+        console.error('Failed to load developer:', error);
+        setDeveloper(null); // Reset developer on error
+      }
+    };
+    
+    loadDeveloper();
+  }, [property?.building_id]);
 
   // Refresh mutation
   const refreshMutation = useMutation({
@@ -346,6 +376,16 @@ export default function PropertyCard({ property, onViewDetails }) {
     ? property.ai_description.substring(0, 120) + '...' 
     : property.ai_description;
 
+  // ✅ NEW: Get tier badge color
+  const getTierBadgeClass = (tier) => {
+    switch (tier) {
+      case "Tier 1": return "bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0";
+      case "Tier 2": return "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0";
+      case "Tier 3": return "bg-gradient-to-r from-emerald-500 to-green-500 text-white border-0";
+      default: return "bg-gray-500 text-white border-0";
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -364,6 +404,12 @@ export default function PropertyCard({ property, onViewDetails }) {
               {property.listing_type && (
                 <Badge className="bg-purple-100 border border-purple-300 text-purple-700 font-semibold text-xs">
                   {property.listing_type}
+                </Badge>
+              )}
+              {/* ✅ NEW: Developer Tier Badge */}
+              {developer?.tier && (
+                <Badge className={`${getTierBadgeClass(developer.tier)} font-bold text-xs shadow-sm`}>
+                  {developer.tier}
                 </Badge>
               )}
               {property.broker_trust_score >= 85 && (
@@ -404,16 +450,24 @@ export default function PropertyCard({ property, onViewDetails }) {
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          {/* Building Name as Clickable Chip */}
+          {/* ✅ ENHANCED: Building Name Chip with Developer Info */}
           {property.building_name && property.building_id && (
             <button
               onClick={(e) => handleBuildingClick(e, property.building_id)}
               className="flex items-center gap-1.5 mb-3 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-xl border border-indigo-200 hover:border-indigo-300 transition-all group/building"
             >
               <Building2 className="w-3.5 h-3.5 text-indigo-600 group-hover/building:scale-110 transition-transform" />
-              <span className="text-xs font-semibold text-indigo-700 group-hover/building:text-indigo-800">
-                {property.building_name}
-              </span>
+              <div className="flex flex-col items-start">
+                <span className="text-xs font-semibold text-indigo-700 group-hover/building:text-indigo-800">
+                  {property.building_name}
+                </span>
+                {/* ✅ NEW: Show developer name if available */}
+                {developer?.name && (
+                  <span className="text-xs text-indigo-600/70">
+                    by {developer.name}
+                  </span>
+                )}
+              </div>
             </button>
           )}
 

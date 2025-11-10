@@ -85,6 +85,7 @@ export default function Admin() {
   const [normalizingBhk, setNormalizingBhk] = useState(false);
   const [cleaningBuildings, setCleaningBuildings] = useState(false);
   const [recalculatingTrust, setRecalculatingTrust] = useState(false); // NEW STATE for broker trust
+  const [backfillingDevelopers, setBackfillingDevelopers] = useState(false); // NEW STATE for backfilling developers
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -1345,6 +1346,71 @@ export default function Admin() {
     }
   };
 
+  // ✅ NEW: Backfill Developers
+  const backfillDevelopers = async () => {
+    if (!confirm('🏗️ Link Buildings to Developers?\n\nThis will:\n• Match building.developer_name → Developer entity\n• Set developer_id and developer_tier\n• Calculate stats per developer\n\nRun analysis first?')) {
+      return;
+    }
+
+    setBackfillingDevelopers(true);
+    toast.loading('🔍 Analyzing building-developer relationships...', { id: 'dev-backfill' });
+
+    try {
+      const response = await base44.functions.invoke('backfillDevelopers');
+      toast.dismiss('dev-backfill');
+
+      const stats = response.data.stats;
+
+      if (stats.matched === 0) {
+        toast.success('✅ All Buildings Already Linked!', {
+          description: `${stats.total_buildings} buildings scanned`,
+          duration: 4000
+        });
+        setBackfillingDevelopers(false);
+        return;
+      }
+
+      toast.success('✅ Developer Backfill Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Buildings linked to developers</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Matched: {stats.matched} buildings</div>
+              <div>• Updated: {stats.updated} buildings</div>
+              <div>• Unmatched: {stats.unmatched} buildings</div>
+              {stats.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {stats.errors}</div>
+              )}
+            </div>
+            {response.data.developer_stats && (
+              <div className="text-xs mt-2 pt-2 border-t border-white/20">
+                Top: {Object.entries(response.data.developer_stats)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 3)
+                  .map(([name, count]) => `${name} (${count})`)
+                  .join(', ')}
+              </div>
+            )}
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0',
+        duration: 10000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('dev-backfill');
+      toast.error('❌ Developer Backfill Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setBackfillingDevelopers(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1359,7 +1425,7 @@ export default function Admin() {
       message += `• Client Requirements: ${activeReqs} active searches\n\n`;
       message += `Let's discuss availability and potential matches.\n\n`;
     } else if (activeListings > 0) {
-      message += `Regarding your ${activeListings} active listing${activeListings > 1 ? 's' : ''} on PropAI SmartFeed.\n\n`;
+      message += `Regarding your ${activeListings} active listing${activeListings > 1 ? 's' : ''} on PropAI SmartFeed.`;
       message += `We're seeing good traction on your properties. Let's discuss any updates or new listings.\n\n`;
     } else if (activeReqs > 0) {
       message += `You have ${activeReqs} active client requirement${activeReqs > 1 ? 's' : ''} on our system.\n\n`;
@@ -1465,7 +1531,7 @@ export default function Admin() {
                     <img 
                       src={img} 
                       alt={`${idx + 1}`} 
-                      className="w-full h-24 object-cover rounded-xl"
+                      className="w-full h-full object-cover rounded-xl"
                     />
                     <Button
                       onClick={() => handleRemoveImage(img)}
@@ -1757,7 +1823,7 @@ export default function Admin() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Buildings Menu */}
+              {/* Buildings Menu - ENHANCED */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="border-cyan-300 text-cyan-700 hover:bg-cyan-50">
@@ -1767,6 +1833,13 @@ export default function Admin() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={backfillDevelopers}
+                    disabled={backfillingDevelopers}
+                  >
+                    <Building2 className={`w-4 h-4 mr-2 ${backfillingDevelopers ? 'animate-spin' : ''}`} />
+                    Link to Developers
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={cleanBuildingData}
                     disabled={cleaningBuildings}
