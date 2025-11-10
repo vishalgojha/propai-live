@@ -14,6 +14,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 import InlineChatWidget from "../components/InlineChatWidget";
+import { Toaster } from "sonner"; // Assuming Toaster comes from sonner, common in shadcn/ui setups
+import {
+  generateWebSiteJsonLd,
+  generateOrganizationJsonLd,
+  generateBreadcrumbJsonLd
+} from "../utils/jsonLdGenerators";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -97,13 +103,26 @@ export default function Home() {
     { number: "24/7", label: "AI Monitoring" },
   ];
 
+  // ✅ Generate JSON-LD for Home page
+  const webSiteJsonLd = generateWebSiteJsonLd();
+  const organizationJsonLd = generateOrganizationJsonLd();
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: typeof window !== 'undefined' ? window.location.origin : 'https://propai.live' }
+  ]);
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <Toaster position="top-center" richColors closeButton />
+
+      {/* ✅ Enhanced SEO with structured data */}
       <SEO
-        title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence Platform"
-        description="Real-time property data for Mumbai. AI-powered matching, building intelligence, and broker trust scoring. Find verified properties with transparent pricing."
-        canonical="https://propai.live/"
-        schema={homeSchema}
+        title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence"
+        description="Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence."
+        schema={Array.isArray(homeSchema) ? [...homeSchema, webSiteJsonLd] : [homeSchema, webSiteJsonLd]} // Ensure homeSchema is correctly handled if it's not an array initially.
+        organization={organizationJsonLd}
+        breadcrumbs={breadcrumbJsonLd}
+        canonical={typeof window !== 'undefined' ? window.location.origin : 'https://propai.live'}
       />
 
       {/* Hero Section - Light & Clean */}

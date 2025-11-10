@@ -23,15 +23,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Toaster } from "sonner"; // Added Toaster import
+import {
+  generatePropertyJsonLd,
+  generateOrganizationJsonLd,
+  generateBreadcrumbJsonLd
+} from "../utils/jsonLdGenerators";
+
 
 export default function PropertyDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   // Read from URL query params instead of route params
   const urlParams = new URLSearchParams(window.location.search);
   const propertySlug = urlParams.get('slug') || urlParams.get('id');
-  
+
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   // REMOVED: const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
@@ -47,8 +54,8 @@ export default function PropertyDetails() {
   });
 
   const incrementViewsMutation = useMutation({
-    mutationFn: (propId) => base44.entities.Property.update(propId, { 
-      views_count: (property?.views_count || 0) + 1 
+    mutationFn: (propId) => base44.entities.Property.update(propId, {
+      views_count: (property?.views_count || 0) + 1
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', propertySlug] });
@@ -72,17 +79,17 @@ export default function PropertyDetails() {
 
   const getContactInfo = () => {
     // Determine phone and contact name based on broker info
-    const hasRealBroker = property?.broker_contact && 
-                         property.broker_contact !== '9102269622278' && 
+    const hasRealBroker = property?.broker_contact &&
+                         property.broker_contact !== '9102269622278' &&
                          property.broker_contact !== '919819471310';
-    
+
     if (hasRealBroker) {
       return {
         phone: property.broker_contact,
         name: property.broker_name || 'Broker'
       };
     }
-    
+
     // Default to PropAI Office
     return {
       phone: '9102269622278',
@@ -99,19 +106,19 @@ export default function PropertyDetails() {
 
   const getFullPropertyDetails = () => {
     if (!property) return '';
-    
+
     const details = [];
-    
+
     // Basic info
     details.push(`📍 Property: ${property.ai_title || `${property.bhk} in ${property.location}`}`);
     details.push(`💰 Price: ${formatPrice()}`);
     details.push(`🏠 Type: ${property.listing_type} | ${property.property_type || 'Apartment'}`);
-    
+
     // Location details
     if (property.building_name) details.push(`🏢 Building: ${property.building_name}`);
     if (property.location) details.push(`📌 Location: ${property.location}`);
     if (property.pocket) details.push(`📍 Area: ${property.pocket}`);
-    
+
     // Property specs
     if (property.carpet_area) details.push(`📐 Carpet Area: ${property.carpet_area} sq.ft`);
     if (property.built_up_area) details.push(`📏 Built-up: ${property.built_up_area} sq.ft`);
@@ -120,19 +127,19 @@ export default function PropertyDetails() {
     if (property.floor) details.push(`🏗️ Floor: ${property.floor}${property.total_floors ? ` of ${property.total_floors}` : ''}`);
     if (property.possession) details.push(`📅 Possession: ${property.possession}`);
     if (property.view) details.push(`🌅 View: ${property.view}`);
-    
+
     // Additional info
     if (property.veg_nonveg && property.veg_nonveg !== 'N/A') details.push(`🍽️ Food: ${property.veg_nonveg}`);
     if (property.amenities && property.amenities.length > 0) {
       details.push(`✨ Amenities: ${property.amenities.join(', ')}`);
     }
-    
+
     // Reference ID
     if (property.custom_id) details.push(`🔖 Ref ID: ${property.custom_id}`);
-    
+
     // Branding link
     details.push(`\n📱 View on PropAI Live: ${getPropertyUrl()}`);
-    
+
     return details.join('\n');
   };
 
@@ -151,14 +158,14 @@ export default function PropertyDetails() {
         broker_contact: property.broker_contact,
         timestamp: new Date().toISOString()
       });
-      
+
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
 
       // Server-side tracking (for analytics)
       const contact = getContactInfo();
       const contactedVia = contact.phone === '9102269622278' ? 'propai_office' : 'broker';
-      
+
       await base44.functions.invoke('trackContactInteraction', {
         property_id: property.id,
         broker_id: property.broker_id || null,
@@ -173,7 +180,7 @@ export default function PropertyDetails() {
 
     const contact = getContactInfo();
     const message = `Hi${contact.name !== 'Broker' && contact.name !== 'PropAI Team' ? ` ${contact.name}` : ''}, I'm interested in this property:\n\n${getFullPropertyDetails()}\n\n${property.ai_description ? `📝 ${property.ai_description}\n\n` : ''}Please share:\n✅ Latest photos\n✅ Availability status\n✅ Viewing schedule\n\nFound via www.propai.live\n\nThank you!`;
-    
+
     window.open(`https://wa.me/${contact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -195,10 +202,10 @@ export default function PropertyDetails() {
     if (property.furnishing) details.push(`🪑 ${property.furnishing}`);
     if (property.parking) details.push(`🚗 ${property.parking}`);
     if (property.floor) details.push(`🏗️ Floor ${property.floor}`);
-    
+
     details.push('\n📱 View full details on PropAI Live');
     details.push('✨ Verified listings | Transparent pricing | No spam');
-    
+
     return details.join('\n');
   };
 
@@ -257,38 +264,25 @@ export default function PropertyDetails() {
     return parts.join(', ');
   };
 
+  // ✅ Generate JSON-LD structured data
+  const propertyJsonLd = property ? generatePropertyJsonLd(property) : null;
+  const organizationJsonLd = generateOrganizationJsonLd();
+  const breadcrumbJsonLd = property ? generateBreadcrumbJsonLld([
+    { name: "Home", url: window.location.origin },
+    { name: "Properties", url: `${window.location.origin}/smartfeed` },
+    { name: property.location, url: `${window.location.origin}/smartfeed?location=${encodeURIComponent(property.location)}` },
+    { name: property.ai_title || `${property.bhk} in ${property.location}`, url: window.location.href }
+  ]) : null;
+
   // REMOVED: handlePrevImage and handleNextImage functions
 
-  const propertySchema = property ? {
-    "@context": "https://schema.org",
-    "@type": property.property_category === "Commercial" ? "CommercialProperty" : "Apartment",
-    "name": property.ai_title || (property.bhk ? `${property.bhk} in ${property.location || 'Mumbai'}` : property.building_name || 'Property'),
-    "description": property.ai_description || property.description || "",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": property.building_name || property.pocket || property.location || "",
-      "addressLocality": property.location || property.location_id || "Mumbai",
-      "addressRegion": "Mumbai",
-      "addressCountry": "IN"
-    },
-    "floorSize": property.carpet_area ? {
-      "@type": "QuantitativeValue",
-      "value": property.carpet_area,
-      "unitCode": "FTK"
-    } : undefined,
-    "numberOfRooms": property.bhk ? parseInt(property.bhk.split(' ')[0]) || undefined : undefined,
-    "amenityFeature": property.amenities?.map(a => ({
-      "@type": "LocationFeatureSpecification",
-      "name": a
-    })) || [],
-    "image": property.images?.length > 0 ? property.images : undefined,
-    "offers": {
-      "@type": "Offer",
-      "price": property.price_unit === "crores" ? property.price * 10000000 : property.price * 100000,
-      "priceCurrency": "INR",
-      "availability": property.status === "Active" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
-    }
-  } : null;
+  // ✅ Updated schema generation for SEO - now using utility function
+  const generatePropertySchema = () => {
+    if (!property) return null;
+
+    // Use the utility function to generate the complete JSON-LD
+    return propertyJsonLd;
+  };
 
   if (!propertySlug) {
     return (
@@ -317,18 +311,23 @@ export default function PropertyDetails() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <Toaster position="top-center" richColors closeButton />
+
+      {/* ✅ Enhanced SEO with JSON-LD structured data */}
       {property && (
         <SEO
-          title={`${property.ai_title || `${property.bhk} in ${property.location}`} | Chariot Realty`}
-          description={property.ai_description || property.description || `${property.bhk} property for ${property.listing_type} in ${property.location}`}
+          title={`${property.ai_title || `${property.bhk} in ${property.location}`} | PropAI Live`}
+          description={property.ai_description || `${property.bhk} property for ${property.listing_type} in ${property.location}. ${property.furnishing ? property.furnishing + '.' : ''} ${property.carpet_area ? property.carpet_area + ' sq.ft.' : ''} View details and contact broker on PropAI Live.`}
           ogImage={property.images?.[0]}
-          schema={propertySchema}
+          schema={propertyJsonLd ? [propertyJsonLd] : []}
+          organization={organizationJsonLd}
+          breadcrumbs={breadcrumbJsonLd}
           canonical={getShareUrl()}
         />
       )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        
+
         {/* Back Button */}
         <Button
           onClick={() => navigate(createPageUrl("SmartFeed"))}
@@ -343,7 +342,7 @@ export default function PropertyDetails() {
 
         {/* Main Content Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-purple-200/50 overflow-hidden mb-8">
-          
+
           {/* Header Section */}
           <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 md:px-8 py-6 border-b border-purple-100">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
@@ -364,13 +363,13 @@ export default function PropertyDetails() {
                     {property.status}
                   </Badge>
                 </div>
-                
+
                 {property.ai_title && (
                   <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 leading-tight">
                     {property.ai_title}
                   </h1>
                 )}
-                
+
                 <div className="flex items-center gap-2 text-slate-600 mb-3">
                   <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
                   <p className="text-sm md:text-base">{getLocationDisplay()}</p>
@@ -413,7 +412,7 @@ export default function PropertyDetails() {
 
           {/* Content Section */}
           <div className="p-6 md:p-8">
-            
+
             {/* AI Description */}
             {property.ai_description && (
               <div className="mb-8 p-4 md:p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
@@ -564,7 +563,7 @@ export default function PropertyDetails() {
               Share Property
             </DialogTitle>
           </DialogHeader>
-          
+
           {/* Share Buttons */}
           <div className="space-y-3">
             <Button
@@ -604,7 +603,7 @@ export default function PropertyDetails() {
               {copied ? "✅ Link Copied!" : "Copy Link"}
             </Button>
           </div>
-          
+
           {/* Share URL Preview */}
           <div className="bg-stone-50 rounded-lg p-3 mt-2">
             <p className="text-xs text-stone-500 mb-1">Share link:</p>

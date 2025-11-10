@@ -13,7 +13,7 @@ import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, B
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -22,6 +22,12 @@ import {
 } from "@/components/ui/popover";
 import { Info } from "lucide-react";
 import { debounce } from "lodash";
+import {
+  generateWebSiteJsonLd,
+  generateOrganizationJsonLd,
+  generateBreadcrumbJsonLd
+} from "../utils/jsonLdGenerators";
+
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
 
@@ -56,7 +62,7 @@ export default function SmartFeed() {
   const navigate = useNavigate();
 
   const popularAreas = [
-    "Bandra West", "Juhu", "Andheri West", "Khar West", 
+    "Bandra West", "Juhu", "Andheri West", "Khar West",
     "BKC", "Worli", "Lower Parel", "Powai"
   ];
 
@@ -89,14 +95,14 @@ export default function SmartFeed() {
       try {
         const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
         const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
-        
+
         if (viewHistory.length > 0 || contactHistory.length > 0) {
           const allProperties = [...viewHistory, ...contactHistory];
           const bhkCounts = {};
           const locationCounts = {};
           const listingTypeCounts = {};
           const priceRanges = [];
-          
+
           allProperties.forEach(prop => {
             if (prop.bhk) bhkCounts[prop.bhk] = (bhkCounts[prop.bhk] || 0) + 1;
             if (prop.location) locationCounts[prop.location] = (locationCounts[prop.location] || 0) + 1;
@@ -106,24 +112,24 @@ export default function SmartFeed() {
               priceRanges.push(priceInLakhs);
             }
           });
-          
+
           const topBhks = Object.entries(bhkCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 2)
             .map(e => e[0]);
-          
+
           const topLocations = Object.entries(locationCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
             .map(e => e[0]);
-          
+
           const topListingType = Object.entries(listingTypeCounts)
             .sort((a, b) => b[1] - a[1])[0]?.[0];
-          
-          const avgPrice = priceRanges.length > 0 
+
+          const avgPrice = priceRanges.length > 0
             ? Math.round(priceRanges.reduce((a, b) => a + b, 0) / priceRanges.length)
             : null;
-          
+
           setUserPreferences({
             bhks: topBhks,
             locations: topLocations,
@@ -137,7 +143,7 @@ export default function SmartFeed() {
         console.error('Failed to load user preferences:', error);
       }
     };
-    
+
     loadPreferences();
   }, []);
 
@@ -153,7 +159,7 @@ export default function SmartFeed() {
         listing_type: property.listing_type,
         timestamp: new Date().toISOString()
       });
-      
+
       const recentViews = viewHistory.slice(-50);
       localStorage.setItem('propai_view_history', JSON.stringify(recentViews));
     } catch (error) {
@@ -164,7 +170,7 @@ export default function SmartFeed() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const newFilters = { ...filters };
-    
+
     if (urlParams.get('search')) newFilters.search = urlParams.get('search');
     if (urlParams.get('listingType')) newFilters.listingType = urlParams.get('listingType');
     if (urlParams.get('propertyCategory')) newFilters.propertyCategory = urlParams.get('propertyCategory');
@@ -172,11 +178,11 @@ export default function SmartFeed() {
     if (urlParams.get('minPrice')) newFilters.minPrice = urlParams.get('minPrice');
     if (urlParams.get('maxPrice')) newFilters.maxPrice = urlParams.get('maxPrice');
     if (urlParams.get('viewMode')) newFilters.viewMode = urlParams.get('viewMode');
-    
+
     if (user?.preferred_areas && user.preferred_areas.length > 0 && !urlParams.get('location')) {
       newFilters.location_multi = user.preferred_areas;
     }
-    
+
     setFilters(newFilters);
   }, [user]);
 
@@ -251,23 +257,23 @@ export default function SmartFeed() {
 
   const personalizedProperties = useMemo(() => {
     if (!userPreferences || !properties.length) return [];
-    
+
     return properties
       .filter(p => p.status === "Active" && !p.is_duplicate)
       .map(property => {
         let score = 0;
-        
+
         if (userPreferences.bhks.includes(property.bhk)) score += 30;
         if (userPreferences.locations.includes(property.location)) score += 30;
         if (property.listing_type === userPreferences.listingType) score += 20;
-        
+
         if (userPreferences.avgPrice) {
           const propertyPriceInLakhs = property.price_unit === 'crores' ? property.price * 100 : property.price;
           const priceDiff = Math.abs(propertyPriceInLakhs - userPreferences.avgPrice) / userPreferences.avgPrice;
           if (priceDiff < 0.2) score += 20;
           else if (priceDiff < 0.4) score += 10;
         }
-        
+
         return { ...property, matchScore: score };
       })
       .filter(p => p.matchScore >= 30)
@@ -285,7 +291,7 @@ export default function SmartFeed() {
       // ⚡ Use debounced search query
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           property.building_name?.toLowerCase().includes(searchLower) ||
           property.location?.toLowerCase().includes(searchLower) ||
           property.location_id?.toLowerCase().includes(searchLower) ||
@@ -319,7 +325,7 @@ export default function SmartFeed() {
 
       if (filters.minPrice || filters.maxPrice) {
         const filterUnit = (filters.listingType === 'Sale' || filters.listingType === 'Pre Leased') ? 'crores' : 'lakhs';
-        
+
         let propertyPriceNormalized;
         if (filterUnit === 'crores') {
           propertyPriceNormalized = property.price_unit === "crores" ? property.price : property.price / 100;
@@ -340,26 +346,26 @@ export default function SmartFeed() {
           const dateA = new Date(a.last_refreshed || a.created_date);
           const dateB = new Date(b.last_refreshed || b.created_date);
           return dateB.getTime() - dateA.getTime();
-        
+
         case 'price_low':
           const priceA = a.price_unit === 'crores' ? a.price * 100 : a.price;
           const priceB = b.price_unit === 'crores' ? b.price * 100 : b.price;
           return priceA - priceB;
-        
+
         case 'price_high':
           const priceAH = a.price_unit === 'crores' ? a.price * 100 : a.price;
           const priceBH = b.price_unit === 'crores' ? b.price * 100 : b.price;
           return priceBH - priceAH;
-        
+
         case 'brokertrust':
         default:
           const trustScoreA = a.broker_trust_score || 50;
           const trustScoreB = b.broker_trust_score || 50;
-          
+
           if (trustScoreB !== trustScoreA) {
             return trustScoreB - trustScoreA;
           }
-          
+
           const dateAT = new Date(a.last_refreshed || a.created_date);
           const dateBT = new Date(b.last_refreshed || b.created_date);
           return dateBT.getTime() - dateAT.getTime();
@@ -375,7 +381,7 @@ export default function SmartFeed() {
 
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           requirement.preferred_locations?.some(loc => loc.toLowerCase().includes(searchLower)) ||
           requirement.bhk_preference?.some(bhk => bhk.toLowerCase().includes(searchLower)) ||
           requirement.client_name?.toLowerCase().includes(searchLower) ||
@@ -384,7 +390,7 @@ export default function SmartFeed() {
       }
 
       if (filters.bhk_multi && filters.bhk_multi.length > 0) {
-        const hasMatchingBhk = requirement.bhk_preference?.some(bhk => 
+        const hasMatchingBhk = requirement.bhk_preference?.some(bhk =>
           filters.bhk_multi.includes(bhk)
         );
         if (!hasMatchingBhk) return false;
@@ -412,11 +418,11 @@ export default function SmartFeed() {
       const urgencyOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
       const urgencyA = urgencyOrder[a.urgency] || 0;
       const urgencyB = urgencyOrder[b.urgency] || 0;
-      
+
       if (urgencyB !== urgencyA) {
         return urgencyB - urgencyA;
       }
-      
+
       const dateA = new Date(a.created_date);
       const dateB = new Date(b.created_date);
       return dateB.getTime() - dateA.getTime();
@@ -479,32 +485,26 @@ export default function SmartFeed() {
     }
   };
 
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": createPageUrl("/")
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "SmartFeed",
-        "item": createPageUrl("/smartfeed")
-      }
-    ]
-  };
+  // ✅ Generate JSON-LD for SmartFeed page
+  const webSiteJsonLd = generateWebSiteJsonLd();
+  const organizationJsonLd = generateOrganizationJsonLd();
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: window.location.origin },
+    { name: "SmartFeed", url: window.location.href }
+  ]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <Toaster position="top-center" richColors closeButton />
+
+      {/* ✅ Enhanced SEO with structured data for search */}
       <SEO
-        title="SmartFeed | AI-Curated Mumbai Properties & Requirements | PropAI Live"
-        description="Browse AI-curated properties and requirements in Bandra, Juhu, Andheri & more. Transparent pricing — no bait-and-switch, ever."
-        schema={breadcrumbSchema}
-        canonical={createPageUrl("/smartfeed")}
+        title="SmartFeed - AI-Powered Property Discovery | PropAI Live"
+        description="Discover Mumbai properties with AI-powered SmartFeed. Real-time listings, personalized recommendations, and instant broker connections. Find your perfect property today."
+        schema={[webSiteJsonLd]}
+        organization={organizationJsonLd}
+        breadcrumbs={breadcrumbJsonLd}
+        canonical={window.location.href.split('?')[0]}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
@@ -586,12 +586,12 @@ export default function SmartFeed() {
               </Badge>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             {popularAreas.map((area) => {
               const isSelected = filters.location_multi?.includes(area);
               const isPreferred = user?.preferred_areas?.includes(area);
-              
+
               return (
                 <Button
                   key={area}
@@ -612,7 +612,7 @@ export default function SmartFeed() {
               );
             })}
           </div>
-          
+
           {user?.preferred_areas && user.preferred_areas.length > 0 && (
             <p className="text-xs text-purple-600 mt-2">
               ⭐ Starred areas are from your preferences
@@ -636,7 +636,7 @@ export default function SmartFeed() {
                     🎯 Smart Matching Active
                   </h3>
                   <p className="text-sm text-slate-700 leading-relaxed">
-                    Your feed learns from your {userPreferences.totalViews} views & {userPreferences.totalContacts} contacts. 
+                    Your feed learns from your {userPreferences.totalViews} views & {userPreferences.totalContacts} contacts.
                     Properties matching your preferences are ranked higher automatically.
                   </p>
                   <p className="text-xs text-purple-700 mt-2 font-semibold">
@@ -700,7 +700,7 @@ export default function SmartFeed() {
                   />
                 ))}
               </div>
-              
+
               {personalizedProperties.length > 3 && (
                 <div className="mt-4 text-center">
                   <p className="text-xs text-slate-600">
@@ -756,7 +756,7 @@ export default function SmartFeed() {
               {displayType === "properties" ? "properties" : displayType === "requirements" ? "requirements" : "items"}
             </p>
           </div>
-          
+
           {filters.viewMode === "properties" && (
             <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
               <span className="text-sm text-slate-600 font-semibold whitespace-nowrap">Sort by:</span>
@@ -773,7 +773,7 @@ export default function SmartFeed() {
                 >
                   📅 Latest
                 </Button>
-                
+
                 <div className="flex items-center gap-1">
                   <Button
                     onClick={() => setFilters({ ...filters, sortBy: 'brokertrust' })}
@@ -801,11 +801,11 @@ export default function SmartFeed() {
                           </div>
                           <h4 className="font-bold text-slate-900">How BrokerTrust™ Works</h4>
                         </div>
-                        
+
                         <p className="text-xs text-slate-600 leading-relaxed">
                           We analyze broker performance to help you find reliable listings. This isn't a judgment—it's a quality filter.
                         </p>
-                        
+
                         <div className="space-y-2">
                           <p className="text-xs">
                             <span className="font-semibold text-slate-900 mb-1">Score Factors (0-100):</span>
@@ -816,13 +816,13 @@ export default function SmartFeed() {
                               <li><strong>Availability Confirmation:</strong> Brokers who confirm availability before listing score higher.</li>
                             </ul>
                           </p>
-                          
+
                           <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
                             <p className="text-xs text-amber-800">
                               <strong>Why It Matters:</strong> High-trust listings (85+) are more likely to be accurate, available, and worth your time.
                             </p>
                           </div>
-                          
+
                           <p className="text-xs text-slate-500 italic">
                             Scores update automatically based on broker activity. All brokers start at 50 and can improve over time.
                           </p>
@@ -831,7 +831,7 @@ export default function SmartFeed() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <Button
                   onClick={() => setFilters({ ...filters, sortBy: 'price_low' })}
                   variant={filters.sortBy === 'price_low' ? "default" : "outline"}
@@ -880,7 +880,7 @@ export default function SmartFeed() {
                 </p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="bg-white rounded-[22px] p-6 shadow-sm border-2 border-[#F7F7F7]">
