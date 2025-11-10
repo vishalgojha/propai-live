@@ -55,7 +55,6 @@ export default function SmartFeed() {
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
   const previousCountsRef = useRef({ properties: 0, requirements: 0 });
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
-  const [showPhotoDisclaimer, setShowPhotoDisclaimer] = useState(true); // NEW: Photo disclaimer state
 
   const ITEMS_PER_PAGE = 24;
   const REFRESH_INTERVAL = 10000; // ✅ REDUCED: 10 seconds instead of 30
@@ -494,20 +493,6 @@ export default function SmartFeed() {
     { name: "SmartFeed", url: window.location.href }
   ]);
 
-  // ✅ NEW: FAQ Schema for photo disclaimer
-  const faqSchemaJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [{
-      "@type": "Question",
-      "name": "Why do some PropAI listings not show photos?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "PropAI sources property listings directly from brokers' WhatsApp updates in real-time. Many listings appear within seconds of brokers posting them, before photos are shared. This ensures you see the freshest, most up-to-date inventory rather than outdated listings with stock images. Photos are automatically added as soon as brokers share them."
-      }
-    }]
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
@@ -516,7 +501,7 @@ export default function SmartFeed() {
       <SEO
         title="SmartFeed - AI-Powered Property Discovery | PropAI Live"
         description="Discover Mumbai properties with AI-powered SmartFeed. Real-time listings, personalized recommendations, and instant broker connections. Find your perfect property today."
-        schema={[webSiteJsonLd, faqSchemaJsonLd]}
+        schema={[webSiteJsonLd]}
         organization={organizationJsonLd}
         breadcrumbs={breadcrumbJsonLd}
         canonical={window.location.href.split('?')[0]}
@@ -590,41 +575,6 @@ export default function SmartFeed() {
             )}
           </div>
         </div>
-
-        {/* ✅ NEW: Photo Disclaimer - Collapsible & SEO-Friendly */}
-        {showPhotoDisclaimer && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-6"
-          >
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border-2 border-indigo-200">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1 text-sm">📸 Why Some Listings Don't Show Photos</h3>
-                    <p className="text-xs text-slate-700 leading-relaxed">
-                      PropAI sources listings <strong>directly from brokers' WhatsApp updates in real-time</strong>. Many properties appear within seconds — before photos are shared. This ensures you see the <strong>freshest inventory first</strong>, not outdated listings with stock images. Photos are added automatically as brokers share them. 
-                      <span className="text-indigo-700 font-semibold"> Real-time data &gt; Perfect visuals.</span>
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPhotoDisclaimer(false)}
-                  className="h-6 w-6 hover:bg-indigo-100 flex-shrink-0 text-slate-500 hover:text-slate-700"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         <div className="mb-6 bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
           <div className="flex items-center gap-2 mb-3">
