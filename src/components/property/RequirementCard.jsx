@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -173,6 +174,17 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleViewDetails = (e) => {
+    e.stopPropagation(); // Prevent card click from propagating if nested
+    const baseUrl = "/requirementdetails";
+    
+    if (requirement.slug) {
+      window.location.href = `${baseUrl}?slug=${requirement.slug}`;
+    } else {
+      window.location.href = `${baseUrl}?id=${requirement.id}`;
+    }
+  };
+
   const getUrgencyColor = () => {
     switch(requirement.urgency) {
       case 'High': return 'bg-red-500 text-white border-0';
@@ -209,9 +221,8 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.2 }}
-      className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-cyan-200/50 hover:border-cyan-400 hover:shadow-2xl transition-all duration-300 group"
+      className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-cyan-200/50 hover:border-cyan-400 hover:shadow-2xl transition-all duration-300 cursor-pointer"
+      onClick={handleViewDetails}
     >
       {/* Header Section */}
       <div className="p-4">
