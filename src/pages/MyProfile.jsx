@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -38,7 +39,7 @@ export default function MyProfile() {
     phone: ""
   });
   const [savingProfile, setSavingProfile] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false); // This state will be less relevant for the sticky banner but still used by initial toast.
 
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -74,13 +75,15 @@ export default function MyProfile() {
               phone: broker.phone || ""
             });
             
+            // ✅ ENHANCED: Always show profile edit form if phone or agency is missing
             const isProfileIncomplete = !broker.phone || !broker.agency_name;
             if (isProfileIncomplete) {
               setShowOnboardingBanner(true);
               setEditingProfile(true);
-              toast.info('👋 Welcome! Please complete your profile', {
-                description: 'Add your phone number and agency name to get started',
-                duration: 8000,
+              setActiveTab('overview'); // Force to overview tab
+              toast.info('👋 Please complete your profile to unlock all features', {
+                description: 'Phone number and agency name are required',
+                duration: 10000,
                 className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
               });
             }
@@ -114,13 +117,15 @@ export default function MyProfile() {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
               setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
               
+              // ✅ ENHANCED: Always show profile edit form if incomplete
               const isProfileIncomplete = !matchingBroker.phone || !matchingBroker.agency_name;
               if (isProfileIncomplete) {
                 setShowOnboardingBanner(true);
                 setEditingProfile(true);
-                toast.info('👋 Welcome back! Please complete your profile', {
-                  description: 'Add your phone number and agency name',
-                  duration: 8000,
+                setActiveTab('overview');
+                toast.info('👋 Please complete your profile to unlock all features', {
+                  description: 'Phone number and agency name are required',
+                  duration: 10000,
                   className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
                 });
               }
@@ -612,8 +617,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -624,8 +628,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -636,8 +639,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
             </div>
           )}
 
@@ -787,46 +789,55 @@ export default function MyProfile() {
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-          {showOnboardingBanner && (!brokerProfile.phone || !brokerProfile.agency_name) && (
+          {/* ✅ ENHANCED: Sticky onboarding banner - ALWAYS SHOW if incomplete */}
+          {(!brokerProfile.phone || !brokerProfile.agency_name) && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-blue-400"
+              className="mb-6 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-3xl p-6 shadow-xl border-2 border-red-400 sticky top-20 z-30"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <User className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
+                    <AlertCircle className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">👋 Welcome to PropAI Live!</h3>
-                    <p className="text-blue-100 mb-3 leading-relaxed">
-                      Complete your profile to unlock all features:
+                    <h3 className="text-xl font-bold mb-2">⚠️ Profile Incomplete</h3>
+                    <p className="text-red-100 mb-3 leading-relaxed">
+                      Please add these details to unlock full access:
                     </p>
-                    <div className="space-y-2 text-sm text-blue-100">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        <span><strong className="text-white">Phone Number</strong> - Required for team collaboration and broker network</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        <span><strong className="text-white">Agency Name</strong> - Displayed on your listings</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span><strong className="text-white">Preferred Areas</strong> - Personalize your SmartFeed</span>
-                      </div>
+                    <div className="space-y-2 text-sm text-red-100">
+                      {!brokerProfile.phone && (
+                        <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                          <Phone className="w-4 h-4 flex-shrink-0" />
+                          <span><strong className="text-white">Phone Number</strong> - Required for WhatsApp integration</span>
+                        </div>
+                      )}
+                      {!brokerProfile.agency_name && (
+                        <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                          <Building2 className="w-4 h-4 flex-shrink-0" />
+                          <span><strong className="text-white">Agency Name</strong> - Displayed on your listings</span>
+                        </div>
+                      )}
                     </div>
+                    <Button
+                      onClick={() => {
+                        setActiveTab('overview');
+                        setEditingProfile(true);
+                        // Using a small timeout to ensure the tab is active before scrolling
+                        setTimeout(() => {
+                          const profileDetailsCard = document.getElementById('profile-details-card');
+                          if (profileDetailsCard) {
+                            profileDetailsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }, 100);
+                      }}
+                      className="mt-4 bg-white text-red-600 hover:bg-red-50 font-bold"
+                    >
+                      Complete Profile Now
+                    </Button>
                   </div>
                 </div>
-                <Button
-                  onClick={() => setShowOnboardingBanner(false)}
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20 flex-shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
               </div>
             </motion.div>
           )}
@@ -1012,11 +1023,14 @@ export default function MyProfile() {
                 </Card>
               )}
 
-              <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+              <Card id="profile-details-card" className="p-6 bg-white border-2 border-slate-200 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-purple-600" />
                     Profile Details
+                    {(!brokerProfile.phone || !brokerProfile.agency_name) && (
+                      <Badge className="bg-red-500 text-white animate-pulse">Required</Badge>
+                    )}
                   </h3>
                   <Button
                     onClick={() => {
@@ -1039,35 +1053,40 @@ export default function MyProfile() {
 
                 {editingProfile ? (
                   <div className="space-y-4">
-                    <div>
+                    <div className={!brokerProfile.phone ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Phone Number (Your Contact) {!brokerProfile.phone && <span className="text-red-600">*Required</span>}
+                        Phone Number (Your WhatsApp Contact) {!brokerProfile.phone && <span className="text-red-600 font-bold">*REQUIRED</span>}
                       </label>
                       <Input
                         type="tel"
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                         placeholder="9820056789"
-                        className="text-sm font-mono"
+                        className={`text-sm font-mono ${!brokerProfile.phone ? 'border-red-400' : ''}`}
                       />
                       <p className="text-xs text-slate-500 mt-1">
-                        10-digit mobile number (will be normalized with 91 prefix)
+                        Enter 10-digit mobile number (auto-formatted with +91 prefix)
                       </p>
+                      {!brokerProfile.phone && (
+                        <p className="text-xs text-red-600 mt-2 font-semibold">
+                          ⚠️ You must add a phone number to use team features and receive client contacts
+                        </p>
+                      )}
                     </div>
 
-                    <div>
+                    <div className={!brokerProfile.agency_name ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Agency Name {!brokerProfile.agency_name && <span className="text-red-600">*Required</span>}
+                        Agency Name {!brokerProfile.agency_name && <span className="text-red-600 font-bold">*REQUIRED</span>}
                       </label>
                       <Input
                         type="text"
                         value={profileData.agency_name}
                         onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
                         placeholder="e.g., Bandra Homes, PropCo Mumbai"
-                        className="text-sm"
+                        className={`text-sm ${!brokerProfile.agency_name ? 'border-red-400' : ''}`}
                       />
                       <p className="text-xs text-slate-500 mt-1">
-                        This will be displayed next to your name on listings
+                        This will be displayed next to your name on all property listings
                       </p>
                     </div>
 
@@ -1090,49 +1109,57 @@ export default function MyProfile() {
                     <Button
                       onClick={handleSaveProfile}
                       disabled={savingProfile}
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full"
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-14 text-lg font-bold"
                     >
                       {savingProfile ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Saving Profile...
                         </>
                       ) : (
-                        'Save Profile'
+                        '✅ Save & Complete Profile'
                       )}
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
-                      <Phone className="w-5 h-5 text-purple-600" />
-                      <span className="text-sm text-slate-600">Your Contact:</span>
-                      <span className="text-base font-bold font-mono text-purple-900">
-                        {brokerProfile.phone || <span className="text-red-600 italic font-normal">⚠️ Not set - Update now!</span>}
-                      </span>
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
+                      <Phone className="w-6 h-6 text-purple-600" />
+                      <div className="flex-1">
+                        <span className="text-sm text-slate-600 block mb-1">Your WhatsApp Contact:</span>
+                        <span className="text-xl font-bold font-mono text-purple-900">
+                          {brokerProfile.phone || <span className="text-red-600 italic font-normal text-base">⚠️ Not set - Click Edit Profile</span>}
+                        </span>
+                      </div>
                     </div>
                     
                     {!brokerProfile.phone && (
-                      <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
-                        <p className="text-xs text-amber-800">
-                          <strong>⚠️ Important:</strong> Without a phone number, other brokers cannot add you to their teams. Click "Edit Profile" to add your number.
+                      <div className="bg-red-50 rounded-xl p-4 border-2 border-red-200 animate-pulse">
+                        <p className="text-sm text-red-800 font-semibold">
+                          <AlertCircle className="w-4 h-4 inline mr-2" />
+                          <strong>ACTION REQUIRED:</strong> Add your phone number to receive client inquiries and collaborate with your team.
                         </p>
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-3">
-                      <Building2 className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm text-slate-600">Agency:</span>
-                      <span className="text-sm font-semibold text-slate-900">
-                        {brokerProfile.agency_name || <span className="text-slate-400 italic">Not set</span>}
-                      </span>
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <Building2 className="w-5 h-5 text-purple-600" />
+                      <div className="flex-1">
+                        <span className="text-sm text-slate-600 block mb-1">Agency Name:</span>
+                        <span className="text-base font-semibold text-slate-900">
+                          {brokerProfile.agency_name || <span className="text-red-600 italic font-normal">⚠️ Not set</span>}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600">Email:</span>
-                      <span className="text-sm font-semibold text-slate-900">
-                        {brokerProfile.email || <span className="text-slate-400 italic">Not set</span>}
-                      </span>
+
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <Mail className="w-5 h-5 text-slate-500" />
+                      <div className="flex-1">
+                        <span className="text-sm text-slate-600 block mb-1">Email:</span>
+                        <span className="text-base font-semibold text-slate-900">
+                          {brokerProfile.email || <span className="text-slate-400 italic">Not set</span>}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
