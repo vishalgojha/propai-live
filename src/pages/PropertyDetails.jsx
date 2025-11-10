@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Toaster } from "sonner";
 
-// ✅ FIXED: Import from @/utils instead of relative path
+// ✅ FIXED: Use @/utils alias instead of relative path
 import {
   generatePropertyJsonLd,
   generateOrganizationJsonLd,

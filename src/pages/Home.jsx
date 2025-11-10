@@ -15,11 +15,12 @@ import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 import InlineChatWidget from "../components/InlineChatWidget";
 import { Toaster } from "sonner"; // Assuming Toaster comes from sonner, common in shadcn/ui setups
+// ✅ FIXED: Use @/utils alias instead of relative path
 import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "../utils/jsonLdGenerators"; // Changed from .jsx to regular js/ts import
+} from "@/utils/jsonLdGenerators"; // Changed from .jsx to regular js/ts import
 
 export default function Home() {
   const navigate = useNavigate();
