@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -48,28 +47,42 @@ export default function Buildings() {
     queryKey: ['buildings'],
     queryFn: () => base44.entities.Building.list('-active_listings'),
     initialData: [],
-    staleTime: 10 * 60 * 1000, // ⚡ 10 minutes - buildings don't change frequently
-    cacheTime: 15 * 60 * 1000, // ⚡ 15 minutes in cache
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // ⚡ OPTIMIZATION: Cache properties for building stats
+  // ⚡ FETCH ALL PROPERTIES (not just active) to calculate counts
   const { data: properties = [] } = useQuery({
     queryKey: ['properties-for-buildings'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active" }),
+    queryFn: () => base44.entities.Property.list(),
     initialData: [],
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
+  // ✅ FIXED: Calculate listing counts from properties data
+  const buildingsWithCounts = useMemo(() => {
+    return buildings.map(building => {
+      const buildingProps = properties.filter(p => p.building_id === building.id);
+      const activeProps = buildingProps.filter(p => p.status === 'Active' && !p.is_duplicate);
+      
+      return {
+        ...building,
+        total_listings: buildingProps.length,
+        active_listings: activeProps.length
+      };
+    });
+  }, [buildings, properties]);
+
   const locations = useMemo(() => {
-    return [...new Set(buildings.map(b => b.location).filter(Boolean))];
-  }, [buildings]);
+    return [...new Set(buildingsWithCounts.map(b => b.location).filter(Boolean))];
+  }, [buildingsWithCounts]);
 
   // ⚡ OPTIMIZATION: Memoize filtered buildings
   const filteredBuildings = useMemo(() => {
-    return buildings.filter(building => {
+    return buildingsWithCounts.filter(building => {
       const matchesSearch = !searchQuery ||
         building.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         building.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,7 +93,7 @@ export default function Buildings() {
 
       return matchesSearch && matchesLocation;
     });
-  }, [buildings, searchQuery, locationFilter]);
+  }, [buildingsWithCounts, searchQuery, locationFilter]);
 
   useEffect(() => {
     setBuildingsToShow(BUILDINGS_PER_LOAD);
@@ -147,19 +160,19 @@ export default function Buildings() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Total Buildings</p>
-            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{buildings.length}</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{buildingsWithCounts.length}</p>
           </div>
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Verified</p>
-            <p className="text-2xl font-bold text-green-600">{buildings.filter(b => b.verified).length}</p>
+            <p className="text-2xl font-bold text-green-600">{buildingsWithCounts.filter(b => b.verified).length}</p>
           </div>
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Total Listings</p>
-            <p className="text-2xl font-bold text-purple-600">{buildings.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
+            <p className="text-2xl font-bold text-purple-600">{buildingsWithCounts.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
           </div>
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Active Listings</p>
-            <p className="text-2xl font-bold text-blue-600">{buildings.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
+            <p className="text-2xl font-bold text-blue-600">{buildingsWithCounts.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
           </div>
         </div>
 
