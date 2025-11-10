@@ -25,12 +25,12 @@ import {
 } from "@/components/ui/dialog";
 import { Toaster } from "sonner";
 
-// ✅ FIXED: Add .js extension
+// Import JSON-LD generators directly from src/utils
 import {
   generatePropertyJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators.js";
+} from "../utils/jsonLdGenerators";
 
 
 export default function PropertyDetails() {

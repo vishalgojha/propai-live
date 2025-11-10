@@ -15,12 +15,13 @@ import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 import InlineChatWidget from "../components/InlineChatWidget";
 import { Toaster } from "sonner";
-// ✅ FIXED: Add .js extension
+
+// Import JSON-LD generators directly from src/utils
 import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators.js";
+} from "../utils/jsonLdGenerators";
 
 export default function Home() {
   const navigate = useNavigate();

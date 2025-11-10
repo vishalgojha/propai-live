@@ -19,11 +19,13 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import PropertyCard from "../components/property/PropertyCard";
 import SEO from "../components/SEO";
+
+// Import JSON-LD generators directly from src/utils
 import {
   generateRequirementJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators.js";
+} from "../utils/jsonLdGenerators";
 
 export default function RequirementDetails() {
   const navigate = useNavigate();

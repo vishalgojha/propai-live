@@ -23,12 +23,12 @@ import {
 import { Info } from "lucide-react";
 import { debounce } from "lodash";
 
-// ✅ FIXED: Add .js extension
+// Import JSON-LD generators directly from src/utils
 import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators.js";
+} from "../utils/jsonLdGenerators";
 
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
