@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
  * Smart Property Description Generator
- * NOW WITH BATCH PROCESSING to avoid timeouts
+ * BATCH PROCESSING: Process 25 properties at a time to avoid timeouts
  */
 
 Deno.serve(async (req) => {
@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
-    const { force_regenerate = false, property_ids = null, batch_size = 10 } = await req.json();
+    const { force_regenerate = false, property_ids = null, batch_size = 25 } = await req.json();
 
     // Fetch properties
     const allProperties = await base44.asServiceRole.entities.Property.list();
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ✅ BATCH PROCESSING: Process only first batch_size properties to avoid timeout
+    // ✅ BATCH PROCESSING: Process only batch_size properties to avoid timeout
     const batchToProcess = propertiesToUpdate.slice(0, batch_size);
     const remainingCount = propertiesToUpdate.length - batch_size;
 
