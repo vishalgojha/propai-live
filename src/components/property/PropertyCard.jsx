@@ -196,21 +196,8 @@ export default function PropertyCard({ property, onViewDetails }) {
       // Remove all non-digits
       let cleaned = phone.replace(/\D/g, '');
       
-      // Remove country code variants (+91, 91, 0091, etc.)
-      if (cleaned.startsWith('91') && cleaned.length === 12) {
-        cleaned = cleaned.substring(2); // Remove 91
-      } else if (cleaned.startsWith('0091') && cleaned.length === 14) {
-        cleaned = cleaned.substring(4); // Remove 0091
-      } else if (cleaned.startsWith('961') && cleaned.length >= 10) {
-        // FIX: Handle Lebanese code +961 that was mistakenly used
-        // Extract last 10 digits
-        cleaned = cleaned.slice(-10);
-      }
-      
-      // If too long, take last 10 digits (Indian mobile is 10 digits)
-      if (cleaned.length > 10) {
-        cleaned = cleaned.slice(-10);
-      }
+      // Extract last 10 digits (Indian mobile is 10 digits)
+      cleaned = cleaned.slice(-10);
       
       // Validate: must be exactly 10 digits starting with 6-9
       if (cleaned.length === 10 && cleaned[0] >= '6' && cleaned[0] <= '9') {
@@ -224,34 +211,27 @@ export default function PropertyCard({ property, onViewDetails }) {
     const rawBrokerContact = property.broker_contact;
     const normalizedBrokerContact = normalizeIndianPhone(rawBrokerContact);
     
-    const hasRealBroker = normalizedBrokerContact && 
-                         normalizedBrokerContact !== '919102269622278' && 
-                         normalizedBrokerContact !== '919819471310';
-    
-    const primaryContact = hasRealBroker 
-      ? normalizedBrokerContact
-      : '919102269622278';
-    
-    // Use cached broker_name if available, otherwise use generic name
-    const contactName = hasRealBroker 
-      ? (property.broker_name || 'Broker')
-      : 'PropAI Team';
-    
-    if (!primaryContact) {
-      toast.error('⚠️ Invalid phone number', {
-        description: 'Please update contact info in Admin',
-        duration: 3000
+    // FIX: NEVER use PropAI fallback contact - if no valid broker, show error
+    if (!normalizedBrokerContact) {
+      toast.error('⚠️ No contact available', {
+        description: 'This property has no valid broker contact. Please contact admin.',
+        duration: 5000,
+        className: 'bg-red-600 text-white border-0'
       });
       return;
     }
+    
+    const primaryContact = normalizedBrokerContact;
+    
+    // Use cached broker_name if available, otherwise use generic name
+    const contactName = property.broker_name || 'Broker';
 
     // Track the contact
-    const contactedVia = hasRealBroker ? 'broker' : 'propai_office';
-    await trackPropertyContact(property, contactedVia);
+    await trackPropertyContact(property, 'broker');
     
     const propertyLink = getPropertyUrl();
     
-    const message = `Hi${contactName !== 'Broker' && contactName !== 'PropAI Team' ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
+    const message = `Hi${contactName !== 'Broker' ? ` ${contactName}` : ''}, I'm interested in this property:\n\n` +
       `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
       `💰 ${formatPrice()} | ${property.listing_type}\n` +
       `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
@@ -350,20 +330,15 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  // Determine contact button label with ONLY first name
-  const hasRealBroker = property.broker_contact && 
-                       property.broker_contact !== '9102269622278' && 
-                       property.broker_contact !== '919819471310';
-  
-  // Extract first name only (before first space)
+  // FIX: Only show broker's first name, no fallback to PropAI
   const getFirstName = (fullName) => {
     if (!fullName) return 'Broker';
     return fullName.split(' ')[0];
   };
   
-  const contactButtonLabel = hasRealBroker 
+  const contactButtonLabel = property.broker_name 
     ? getFirstName(property.broker_name)
-    : 'PropAI Team';
+    : 'Broker';
 
   // Check if description is long (more than 120 characters)
   const isDescriptionLong = property.ai_description && property.ai_description.length > 120;
