@@ -22,8 +22,6 @@ import {
 } from "@/components/ui/popover";
 import { Info } from "lucide-react";
 import { debounce } from "lodash";
-
-// Import JSON-LD generators directly from src/utils
 import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
@@ -530,7 +528,7 @@ export default function SmartFeed() {
                       <p className="text-sm text-white/90">
                         {newItemsCount.properties > 0 && `${newItemsCount.properties} new ${newItemsCount.properties === 1 ? 'property' : 'properties'}`}
                         {newItemsCount.properties > 0 && newItemsCount.requirements > 0 && ' • '}
-                        {newItemsCount.requirements > 0 && `${newItemsCount.requirements} new ${newItemsCount.requirements === 1 ? 'requirement' : 'requirements'}`}
+                        {newItemsCount.requirements > 0 && `${newItemsCount.requirements === 1 ? 'requirement' : 'requirements'}`}
                       </p>
                     </div>
                   </div>
