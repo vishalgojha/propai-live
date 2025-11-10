@@ -439,34 +439,35 @@ High-quality listings get 3x more views on SmartFeed. Keep it up!
 
   // UPDATED: Generate seeding intro message
   const generateSeedingIntro = (broker) => {
-    const brokerProperties = properties.filter(p => p.broker_id === broker.id); // Still needed for brokerLocations
-    const brokerLocations = Array.from(new Set(brokerProperties.map(p => p.location).filter(Boolean)));
-    
-    // Using broker's pre-calculated active requirements count
-    const brokerActiveRequirementsCount = broker.active_requirements_count;
-    
-    return `Hey 👋 this is PropAI Live — Mumbai's AI Assistant for Real Estate.
+    return `Hey 👋 I'm PropAI Live — the world's first AI Agent for Real Estate, born right here in Mumbai 😜
 
-We've already organized your listings from our internal database to get you started faster 🚀
+We're building for brokers, not clients — a network where your listings, requirements, and contacts organize themselves ⚡
 
-Here's what PropAI parsed from your records:
-🏠 ${broker.total_listings_count} properties structured
-📍 ${brokerLocations.length} locations mapped
-🤝 ${brokerActiveRequirementsCount} active requirements matched
+📲 Send your listings or requirements to our WhatsApp AI:
+👉 wa.me/9102269622278
+or directly through the WhatsApp AI on Home.
 
-Now you can send updates or new data directly on WhatsApp:
-📲 Official Number: wa.me/9102269622278
 
-How to use:
-1️⃣ Send property listings — PropAI will auto-structure and publish them to your SmartFeed.
-2️⃣ Share client requirements — instantly get matching options.
-3️⃣ Stay ahead — early users get top visibility on SmartFeed 🔥
+💡 What's SmartFeed?
 
-💡 Example:
-> "2BHK Bandra ₹1.8L ff cp, Kapil 9773757759" → PropAI cleans, matches, and posts live in seconds ⚡
+Your personal property dashboard — updated directly from WhatsApp.
+Whatever you send stays linked to your number — your data, your identity, your credit.
 
-If you'd prefer not to receive updates, simply reply STOP anytime to opt out.
-No spam. No groups. Only verified real-estate intelligence ✅`;
+Why it matters:
+✅ No more posting in 10 groups daily.
+✅ No more lost or duplicate listings.
+✅ All your properties and requirements in one place.
+✅ You focus on deal-making — PropAI handles the chaos.
+
+Example:
+
+> "2 BHK Bandra ₹1.8L FF CP Kapil 9773757759"
+→ PropAI structures it, posts it to your SmartFeed, and matches it automatically ⚡
+
+Right now, PropAI is only for brokers as we build a network where your data truly belongs to you.
+
+🎙 Try the voice demo: PropAI Live on ChatGPT - https://chatgpt.com/g/g-690d26698a8c8191bd5fdf09ec0c4c72-propai-live-a-pitch-by-ai
+🌐 Visit: propai.live`;
   };
 
   const copySeedingIntro = (broker) => {
