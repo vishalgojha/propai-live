@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -9,8 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  User, Star, Package, Users, Building2, Award, Target,
-  Phone, Mail, Edit, AlertCircle, X, Loader2, Search
+  User, Shield, Star, Package, TrendingUp, Users, Building2,
+  MapPin, Award, BarChart3, Eye, MessageCircle, Target,
+  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -23,10 +23,6 @@ export default function MyProfile() {
   const [currentUser, setCurrentUser] = useState(null);
   const [brokerProfile, setBrokerProfile] = useState(null);
 
-  const [editingTeam, setEditingTeam] = useState(false);
-  const [teamMemberPhone, setTeamMemberPhone] = useState("");
-  const [addingTeamMember, setAddingTeamMember] = useState(false);
-
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     agency_name: "",
@@ -38,6 +34,10 @@ export default function MyProfile() {
   const [creatingBrokerProfile, setCreatingBrokerProfile] = useState(false);
   const [linkingBroker, setLinkingBroker] = useState(false);
   const [phoneSearchQuery, setPhoneSearchQuery] = useState("");
+
+  const [editingTeam, setEditingTeam] = useState(false);
+  const [teamMemberPhone, setTeamMemberPhone] = useState("");
+  const [addingTeamMember, setAddingTeamMember] = useState(false);
 
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -454,45 +454,45 @@ export default function MyProfile() {
             </h3>
 
             <div className="space-y-4">
-              <div className="border-2 border-blue-300 rounded-xl p-4 bg-blue-50">
+              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Your Name <span className="text-red-600 font-bold">*REQUIRED</span>
+                  Your Name <span className="text-purple-600 font-bold">*REQUIRED</span>
                 </label>
                 <Input
                   type="text"
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                   placeholder="e.g., Ramesh Kumar"
-                  className="text-sm border-blue-400"
+                  className="text-sm border-purple-400"
                 />
               </div>
 
-              <div className="border-2 border-red-300 rounded-xl p-4 bg-red-50">
+              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Phone Number (WhatsApp) <span className="text-red-600 font-bold">*REQUIRED</span>
+                  Phone Number (WhatsApp) <span className="text-purple-600 font-bold">*REQUIRED</span>
                 </label>
                 <Input
                   type="tel"
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   placeholder="9820056789"
-                  className="text-sm font-mono border-red-400"
+                  className="text-sm font-mono border-purple-400"
                 />
-                <p className="text-xs text-red-600 mt-2 font-semibold">
+                <p className="text-xs text-purple-600 mt-2 font-semibold">
                   ⚠️ Required for WhatsApp AI agent and client contacts
                 </p>
               </div>
 
-              <div className="border-2 border-red-300 rounded-xl p-4 bg-red-50">
+              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Agency Name <span className="text-red-600 font-bold">*REQUIRED</span>
+                  Agency Name <span className="text-purple-600 font-bold">*REQUIRED</span>
                 </label>
                 <Input
                   type="text"
                   value={profileData.agency_name}
                   onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
                   placeholder="e.g., Bandra Homes"
-                  className="text-sm border-red-400"
+                  className="text-sm border-purple-400"
                 />
               </div>
 
@@ -536,11 +536,12 @@ export default function MyProfile() {
       <Toaster position="top-center" richColors closeButton />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+        {/* ✅ CHANGED: Red banner to purple gradient */}
         {(!brokerProfile.phone || !brokerProfile.agency_name) && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-3xl p-6 shadow-xl border-2 border-red-400"
+            className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-purple-400"
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
@@ -548,10 +549,10 @@ export default function MyProfile() {
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">⚠️ Profile Incomplete</h3>
-                <p className="text-red-100 mb-3">
+                <p className="text-purple-100 mb-3">
                   Please add these details to unlock full access:
                 </p>
-                <div className="space-y-2 text-sm text-red-100">
+                <div className="space-y-2 text-sm text-purple-100">
                   {!brokerProfile.phone && (
                     <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
                       <Phone className="w-4 h-4" />
@@ -570,7 +571,7 @@ export default function MyProfile() {
                     setActiveTab('overview');
                     setEditingProfile(true);
                   }}
-                  className="mt-4 bg-white text-red-600 hover:bg-red-50 font-bold"
+                  className="mt-4 bg-white text-purple-600 hover:bg-purple-50 font-bold"
                 >
                   Complete Profile Now
                 </Button>
@@ -635,7 +636,7 @@ export default function MyProfile() {
 
             <Card className="p-4 bg-white border-2 border-slate-200">
               <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Award className="w-4 h-4 text-amber-600" />
+                <Star className="w-4 h-4 text-amber-600" />
                 Trust Score
               </p>
               <p className="text-3xl font-bold text-amber-600">{brokerProfile.trust_score || 50}</p>
@@ -706,7 +707,7 @@ export default function MyProfile() {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-slate-700 mb-2 block">Email (Optional)</label>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Email</label>
                 <Input
                   type="email"
                   value={profileData.email}
@@ -731,7 +732,7 @@ export default function MyProfile() {
                 <div>
                   <span className="text-xs text-slate-600 block">Name:</span>
                   <span className="font-semibold text-slate-900">
-                    {brokerProfile.name || <span className="text-red-600 italic">Not set</span>}
+                    {brokerProfile.name || <span className="text-purple-600 italic">Not set</span>}
                   </span>
                 </div>
               </div>
@@ -740,7 +741,7 @@ export default function MyProfile() {
                 <div>
                   <span className="text-xs text-slate-600 block">WhatsApp:</span>
                   <span className="text-lg font-bold font-mono text-purple-900">
-                    {brokerProfile.phone || <span className="text-red-600 italic text-base">Not set</span>}
+                    {brokerProfile.phone || <span className="text-purple-600 italic text-base">Not set</span>}
                   </span>
                 </div>
               </div>
@@ -749,7 +750,7 @@ export default function MyProfile() {
                 <div>
                   <span className="text-xs text-slate-600 block">Agency:</span>
                   <span className="font-semibold text-slate-900">
-                    {brokerProfile.agency_name || <span className="text-red-600 italic">Not set</span>}
+                    {brokerProfile.agency_name || <span className="text-purple-600 italic">Not set</span>}
                   </span>
                 </div>
               </div>
