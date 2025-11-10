@@ -24,11 +24,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Toaster } from "sonner";
+
+// ✅ FIXED: Import from @/utils instead of relative path
 import {
   generatePropertyJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "../utils/jsonLdGenerators";
+} from "@/utils/jsonLdGenerators";
 
 
 export default function PropertyDetails() {

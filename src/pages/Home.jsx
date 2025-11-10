@@ -19,7 +19,7 @@ import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "../utils/jsonLdGenerators"; // Changed from .jsx to regular js/ts import
+} from "@/utils/jsonLdGenerators"; // Changed from .jsx to regular js/ts import
 
 export default function Home() {
   const navigate = useNavigate();
