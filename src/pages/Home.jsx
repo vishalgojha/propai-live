@@ -19,7 +19,7 @@ import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "../utils/jsonLdGenerators";
+} from "../utils/jsonLdGenerators.jsx";
 
 export default function Home() {
   const navigate = useNavigate();

@@ -24,11 +24,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Toaster } from "sonner"; // Added Toaster import
-import {
-  generatePropertyJsonLd,
+import { 
+  generatePropertyJsonLd, 
   generateOrganizationJsonLd,
-  generateBreadcrumbJsonLd
-} from "../utils/jsonLdGenerators";
+  generateBreadcrumbJsonLd 
+} from "../utils/jsonLdGenerators.jsx";
 
 
 export default function PropertyDetails() {
@@ -267,7 +267,7 @@ export default function PropertyDetails() {
   // ✅ Generate JSON-LD structured data
   const propertyJsonLd = property ? generatePropertyJsonLd(property) : null;
   const organizationJsonLd = generateOrganizationJsonLd();
-  const breadcrumbJsonLd = property ? generateBreadcrumbJsonLld([
+  const breadcrumbJsonLd = property ? generateBreadcrumbJsonLd([
     { name: "Home", url: window.location.origin },
     { name: "Properties", url: `${window.location.origin}/smartfeed` },
     { name: property.location, url: `${window.location.origin}/smartfeed?location=${encodeURIComponent(property.location)}` },
