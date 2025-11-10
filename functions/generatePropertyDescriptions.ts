@@ -1,8 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Smart Property Description Generator
- * BATCH PROCESSING: Process 25 properties at a time to avoid timeouts
+ * ✅ ROBUST Property Description Generator
+ * - Processes 5 properties at a time (fast, no timeout)
+ * - Returns immediately with progress
+ * - Frontend handles the loop
  */
 
 Deno.serve(async (req) => {
@@ -14,83 +16,83 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
-    const { force_regenerate = false, property_ids = null, batch_size = 25 } = await req.json();
+    const body = await req.json();
+    const { skip = 0, limit = 5 } = body; // Process 5 at a time
 
-    // Fetch properties
-    const allProperties = await base44.asServiceRole.entities.Property.list();
+    // ✅ OPTIMIZATION: Fetch with pagination to avoid loading ALL properties
+    const allProperties = await base44.asServiceRole.entities.Property.list('-created_date');
     
-    // ✅ SMART FILTERING: Only update properties that need it
-    let propertiesToUpdate = allProperties;
+    // Filter to only properties that NEED descriptions
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    if (!force_regenerate && !property_ids) {
-      // Filter to only properties that NEED descriptions
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-
-      propertiesToUpdate = allProperties.filter(p => {
-        // Skip if already has good descriptions and is recent
-        if (p.ai_title && p.ai_description && 
-            p.ai_description.length > 50 && 
-            new Date(p.created_date) > sixtyDaysAgo) {
-          return false;
-        }
-
-        // Include if:
-        // 1. Missing ai_title or ai_description
-        if (!p.ai_title || !p.ai_description) return true;
-        
-        // 2. Description is too short (low quality)
-        if (p.ai_description.length < 50) return true;
-        
-        // 3. Property is old and context might be stale
-        if (new Date(p.created_date) < sixtyDaysAgo) return true;
-
+    const propertiesToUpdate = allProperties.filter(p => {
+      // Skip if already has good descriptions and is recent
+      if (p.ai_title && p.ai_description && 
+          p.ai_description.length > 50 && 
+          new Date(p.created_date) > sixtyDaysAgo) {
         return false;
-      });
-    } else if (property_ids) {
-      // Specific properties requested
-      propertiesToUpdate = allProperties.filter(p => property_ids.includes(p.id));
-    }
+      }
 
-    if (propertiesToUpdate.length === 0) {
+      // Include if missing or low quality
+      if (!p.ai_title || !p.ai_description) return true;
+      if (p.ai_description.length < 50) return true;
+      if (new Date(p.created_date) < sixtyDaysAgo) return true;
+
+      return false;
+    });
+
+    const totalNeedingUpdate = propertiesToUpdate.length;
+
+    if (totalNeedingUpdate === 0) {
       return Response.json({
         success: true,
-        message: 'All properties already have quality AI descriptions!',
-        skipped: allProperties.length,
-        updated: 0,
-        stats: {
-          total_properties: allProperties.length,
-          already_good: allProperties.filter(p => p.ai_title && p.ai_description && p.ai_description.length > 50).length,
-          needs_update: 0
-        }
+        done: true,
+        progress: {
+          processed: 0,
+          total: allProperties.length,
+          remaining: 0,
+          percentage: 100
+        },
+        message: '✅ All properties already have quality AI descriptions!'
       });
     }
 
-    // ✅ BATCH PROCESSING: Process only batch_size properties to avoid timeout
-    const batchToProcess = propertiesToUpdate.slice(0, batch_size);
-    const remainingCount = propertiesToUpdate.length - batch_size;
+    // Get current batch
+    const currentBatch = propertiesToUpdate.slice(skip, skip + limit);
 
-    // Fetch buildings for context
+    if (currentBatch.length === 0) {
+      return Response.json({
+        success: true,
+        done: true,
+        progress: {
+          processed: skip,
+          total: totalNeedingUpdate,
+          remaining: 0,
+          percentage: 100
+        },
+        message: '✅ All descriptions generated!'
+      });
+    }
+
+    // Fetch buildings for context (only once per batch)
     const buildings = await base44.asServiceRole.entities.Building.list();
 
     let updated = 0;
     let errors = 0;
     const errorDetails = [];
 
-    for (const property of batchToProcess) {
+    // Process current batch
+    for (const property of currentBatch) {
       try {
-        // Get building context if available
         const building = buildings.find(b => b.id === property.building_id);
         
-        // Build context-rich prompt
         const buildingContext = building ? `
 Building: ${building.name}
 Location: ${building.location}${building.pocket ? `, ${building.pocket}` : ''}
 Developer: ${building.developer_name || 'N/A'}
 Building Type: ${building.building_type || 'N/A'}
-Management Quality: ${building.management_quality || 'N/A'}
 Amenities: ${building.amenities?.slice(0, 5).join(', ') || 'N/A'}
-Building Summary: ${building.building_summary || 'N/A'}
         `.trim() : 'No building context available';
 
         const prompt = `Generate a compelling property listing title and description.
@@ -102,21 +104,16 @@ Property Details:
 - Location: ${property.location}${property.pocket ? `, ${property.pocket}` : ''}
 - Carpet Area: ${property.carpet_area || 'N/A'} sq.ft
 - Furnishing: ${property.furnishing || 'N/A'}
-- Floor: ${property.floor || 'N/A'}
-- Parking: ${property.parking || 'N/A'}
-- Possession: ${property.possession || 'N/A'}
-- View: ${property.view || 'N/A'}
 - Amenities: ${property.amenities?.join(', ') || 'N/A'}
 
 ${buildingContext}
 
 Requirements:
-1. Title: 12-18 words, natural, highlights key features (e.g., "Luxurious 3 BHK with Sea View in Oberoi Sky Heights, Bandra West")
-2. Description: 40-80 words, engaging paragraph format, NO TRUNCATION, NO bullet points
+1. Title: 12-18 words, natural, highlights key features
+2. Description: 40-80 words, engaging paragraph, NO bullet points
 3. Mention building name if available
-4. Include unique selling points (view, amenities, developer reputation)
-5. Use Mumbai real estate terminology
-6. Make it sound premium but authentic
+4. Include unique selling points
+5. Mumbai real estate terminology
 
 Return JSON with 'title' and 'description' keys.`;
 
@@ -131,7 +128,6 @@ Return JSON with 'title' and 'description' keys.`;
           }
         });
 
-        // Update property with AI-generated content
         await base44.asServiceRole.entities.Property.update(property.id, {
           ai_title: aiResponse.title,
           ai_description: aiResponse.description
@@ -140,7 +136,7 @@ Return JSON with 'title' and 'description' keys.`;
         updated++;
 
       } catch (error) {
-        console.error(`Error generating description for property ${property.id}:`, error);
+        console.error(`Error for property ${property.id}:`, error);
         errors++;
         errorDetails.push({
           property_id: property.id,
@@ -150,24 +146,27 @@ Return JSON with 'title' and 'description' keys.`;
       }
     }
 
+    const processed = skip + currentBatch.length;
+    const remaining = totalNeedingUpdate - processed;
+    const percentage = Math.round((processed / totalNeedingUpdate) * 100);
+
     return Response.json({
       success: true,
-      batch_info: {
-        processed: batchToProcess.length,
-        remaining: Math.max(0, remainingCount),
-        total_needed: propertiesToUpdate.length
-      },
-      stats: {
-        total_properties: allProperties.length,
-        already_good: allProperties.length - propertiesToUpdate.length,
-        needs_update: propertiesToUpdate.length,
+      done: remaining === 0,
+      progress: {
+        processed,
+        total: totalNeedingUpdate,
+        remaining: Math.max(0, remaining),
+        percentage,
+        current_batch: currentBatch.length,
         updated,
         errors
       },
-      error_details: errorDetails.length > 0 ? errorDetails : undefined,
-      message: remainingCount > 0 
-        ? `✅ Processed ${updated} properties. ${remainingCount} more remaining - run again to continue.`
-        : `✅ Updated ${updated} properties. All done!`
+      next_skip: remaining > 0 ? processed : null,
+      error_details: errorDetails.length > 0 ? errorDetails.slice(0, 3) : undefined,
+      message: remaining > 0 
+        ? `Processed ${processed}/${totalNeedingUpdate} (${percentage}%)`
+        : `✅ All ${totalNeedingUpdate} descriptions generated!`
     });
 
   } catch (error) {

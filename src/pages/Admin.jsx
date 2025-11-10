@@ -24,8 +24,8 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
+  SelectTrigger,
 } from "@/components/ui/select";
 import {
   AlertTriangle, BarChart3, BookOpen, Building2, Car, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
@@ -655,67 +655,51 @@ export default function Admin() {
   };
 
   const generatePropertyDescriptions = async () => {
-    if (!confirm('🤖 Generate AI Descriptions?\n\nThis will process ALL properties needing descriptions.\nRuns 25 at a time automatically until done.\n\nThis may take 5-10 minutes for 350+ properties.\n\nContinue?')) return;
+    if (!confirm('🤖 Generate AI Descriptions?\n\nThis will process properties in small batches.\nYou can stop anytime - progress is saved.\n\nContinue?')) return;
     
     setGeneratingDescriptions(true);
     let toastId = null;
-    let totalProcessed = 0;
-    let totalUpdated = 0;
-    let totalErrors = 0;
-    let batchNumber = 1;
 
     try {
-      let hasMore = true;
+      let skip = 0;
+      let isDone = false;
+      let batchNumber = 1;
+      let totalProcessed = 0;
+      let totalUpdated = 0;
 
-      while (hasMore) {
+      while (!isDone) {
         // Update progress toast
         if (toastId) {
-          toast.loading(`🤖 Processing Batch ${batchNumber}... (${totalProcessed} processed, ${totalUpdated} updated)`, { id: toastId });
+          toast.loading(`🤖 Batch ${batchNumber}... (${totalProcessed} processed, ${totalUpdated} updated)`, { id: toastId });
         } else {
-          toastId = toast.loading(`🤖 Starting batch processing...`, { id: 'desc-gen-auto' });
+          toastId = toast.loading(`🤖 Starting generation...`, { id: 'desc-gen' });
         }
 
-        // Process one batch
+        // Process one micro-batch (5 properties)
         const response = await base44.functions.invoke('generatePropertyDescriptions', { 
-          force_regenerate: false,
-          batch_size: 25
+          skip,
+          limit: 5
         });
 
-        const stats = response.data.stats;
-        const batchInfo = response.data.batch_info;
+        const progress = response.data.progress;
+        totalProcessed = progress.processed;
+        totalUpdated = totalProcessed - progress.errors;
 
-        totalProcessed += batchInfo.processed;
-        totalUpdated += stats.updated;
-        totalErrors += stats.errors;
-
-        // Check if more batches needed
-        if (batchInfo.remaining > 0) {
-          hasMore = true;
-          batchNumber++;
-          // Small delay to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        if (response.data.done) {
+          isDone = true;
         } else {
-          hasMore = false;
+          skip = response.data.next_skip;
+          batchNumber++;
+          // Small delay between batches
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
 
-      // All done - show success toast
+      // All done
       toast.dismiss(toastId);
       toast.success('✅ All Descriptions Generated!', {
-        description: (
-          <div className="space-y-2">
-            <div className="font-semibold">Bulk generation complete!</div>
-            <div className="text-xs opacity-90 space-y-1">
-              <div>• Processed: {totalProcessed} properties</div>
-              <div>• Updated: {totalUpdated} properties</div>
-              <div>• Batches: {batchNumber}</div>
-              {totalErrors > 0 && (
-                <div className="text-red-300">⚠ Errors: {totalErrors}</div>
-              )}
-            </div>
-          </div>
-        ),
-        duration: 8000,
+        description: `Successfully generated ${totalUpdated} descriptions`,
+        duration: 6000,
         className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
       });
 
@@ -723,17 +707,8 @@ export default function Admin() {
 
     } catch (error) {
       toast.dismiss(toastId);
-      toast.error('❌ Description Generation Failed', {
-        description: (
-          <div className="space-y-2">
-            <div className="font-semibold">{error.message || 'Unknown error occurred'}</div>
-            {totalProcessed > 0 && (
-              <div className="text-xs opacity-90">
-                Progress before error: {totalProcessed} processed, {totalUpdated} updated
-              </div>
-            )}
-          </div>
-        ),
+      toast.error('❌ Generation Failed', {
+        description: error.message || 'Unknown error',
         duration: 8000,
         className: 'bg-red-600 text-white border-0'
       });
