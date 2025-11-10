@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +40,6 @@ export default function MyProfile() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [activeTab, setActiveTab] = useState('overview');
-
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
   const popularAreas = [
@@ -64,7 +62,6 @@ export default function MyProfile() {
           setSelectedAreas(user.preferred_areas);
         }
 
-        // ✅ ENHANCED: Better broker matching logic
         if (user.broker_id) {
           const brokers = await base44.entities.Broker.list();
           const broker = brokers.find(b => b.id === user.broker_id);
@@ -77,7 +74,6 @@ export default function MyProfile() {
               phone: broker.phone || ""
             });
             
-            // ✅ NEW: Check if profile is incomplete and auto-open edit form
             const isProfileIncomplete = !broker.phone || !broker.agency_name;
             if (isProfileIncomplete) {
               setShowOnboardingBanner(true);
@@ -90,14 +86,11 @@ export default function MyProfile() {
             }
           }
         } else if (user.email) {
-          // Try to auto-link broker by email or phone
           const brokers = await base44.entities.Broker.list();
           
           const matchingBroker = brokers.find(b => {
-            // Email match
             if (b.email?.toLowerCase() === user.email.toLowerCase()) return true;
             
-            // Phone match - extract last 10 digits
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
             const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
@@ -117,12 +110,10 @@ export default function MyProfile() {
               phone: matchingBroker.phone || ""
             });
             
-            // Auto-link broker to user
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
               setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
               
-              // ✅ NEW: Check if profile is incomplete
               const isProfileIncomplete = !matchingBroker.phone || !matchingBroker.agency_name;
               if (isProfileIncomplete) {
                 setShowOnboardingBanner(true);
@@ -200,7 +191,7 @@ export default function MyProfile() {
       }));
       
       setEditingProfile(false);
-      setShowOnboardingBanner(false); // Dismiss onboarding banner on save
+      setShowOnboardingBanner(false);
       toast.success('✅ Profile Updated!', {
         description: 'Your details have been saved',
         duration: 3000
@@ -621,7 +612,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -632,7 +624,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -643,7 +636,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
             </div>
           )}
 
@@ -793,7 +787,6 @@ export default function MyProfile() {
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-          {/* ✅ NEW: Onboarding Banner */}
           {showOnboardingBanner && (!brokerProfile.phone || !brokerProfile.agency_name) && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
