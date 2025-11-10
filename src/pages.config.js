@@ -21,6 +21,7 @@ import BrokerProfile from './pages/BrokerProfile';
 import AdminLogin from './pages/AdminLogin';
 import AIUsageMonitor from './pages/AIUsageMonitor';
 import RequirementDetails from './pages/RequirementDetails';
+import FAQ from './pages/FAQ';
 import Layout from './Layout.jsx';
 
 
@@ -48,6 +49,7 @@ export const PAGES = {
     "AdminLogin": AdminLogin,
     "AIUsageMonitor": AIUsageMonitor,
     "RequirementDetails": RequirementDetails,
+    "FAQ": FAQ,
 }
 
 export const pagesConfig = {
