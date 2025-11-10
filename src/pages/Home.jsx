@@ -50,7 +50,7 @@ export default function Home() {
           price: "6.50",
           price_unit: "crores",
           listing_type: "Sale",
-          images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
+          images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8MHxwaG90by1wYWdlfHx8fA%3D%3D"],
         },
         {
           id: "2",
@@ -60,7 +60,7 @@ export default function Home() {
           price: "3.20",
           price_unit: "crores",
           listing_type: "Rent",
-          images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
+          images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8MHxwaG90by1wYWdlfHx8fA%3D%3D"],
         },
         {
           id: "3",
@@ -70,7 +70,7 @@ export default function Home() {
           price: "1.80",
           price_unit: "crores",
           listing_type: "Sale",
-          images: ["https://images.unsplash.com/photo-1549887534-1541e932662f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
+          images: ["https://images.unsplash.com/photo-1549887534-1541e932662f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8MHxwaG90by1wYWdlfHx8fA%3D%3D"],
         },
         {
           id: "4",
@@ -146,7 +146,7 @@ export default function Home() {
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
                 size="lg"
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group touch-manipulation"
               >
                 <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Explore SmartFeed
@@ -155,35 +155,43 @@ export default function Home() {
               <Button
                 onClick={() => setShowInlineChat(!showInlineChat)}
                 size="lg"
-                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group"
+                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group touch-manipulation"
               >
                 <Bot className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                Chat with AI Assistant
+                {showInlineChat ? 'Close' : 'Chat with'} AI Assistant
               </Button>
             </div>
 
-            {/* ✅ NEW: WhatsApp AI Connect Button */}
+            {/* WhatsApp AI Connect Button */}
             <div className="flex justify-center mb-8">
               <a
                 href={base44.agents.getWhatsAppConnectURL('chariot_master')}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all touch-manipulation"
               >
                 <MessageCircle className="w-5 h-5" />
                 Connect WhatsApp AI
               </a>
             </div>
 
-            {/* ✅ FIXED: Inline Chat Widget - NO JUMPING */}
-            {showInlineChat && (
-              <div className="mb-12">
-                <InlineChatWidget
-                  isOpen={showInlineChat}
-                  onClose={() => setShowInlineChat(false)}
-                />
-              </div>
-            )}
+            {/* ✅ FIXED: Inline Chat Widget with AnimatePresence */}
+            <AnimatePresence>
+              {showInlineChat && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-12"
+                >
+                  <InlineChatWidget
+                    isOpen={showInlineChat}
+                    onClose={() => setShowInlineChat(false)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
@@ -561,7 +569,7 @@ export default function Home() {
             <Button
               onClick={() => setShowInlineChat(true)}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg touch-manipulation"
             >
               <Bot className="w-5 h-5 mr-2" />
               Chat with AI Assistant
@@ -569,7 +577,7 @@ export default function Home() {
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl"
+              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl touch-manipulation"
             >
               <Search className="w-5 h-5 mr-2" />
               Explore Properties
