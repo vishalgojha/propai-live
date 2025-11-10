@@ -17,12 +17,12 @@ import {
 import {
   BarChart3, TrendingUp, Users, Package, MessageCircle, Eye,
   Star, Zap, Target, Activity, ArrowUp, ArrowDown, Trophy,
-  MapPin, Home, Calendar, Clock
+  MapPin, Home, Calendar, Clock, Building2, AlertCircle, CheckCircle2
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { 
+import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 
@@ -86,11 +86,27 @@ export default function AdminDashboard() {
     initialData: []
   });
 
+  // ✅ NEW: Fetch developers
+  const { data: developers = [] } = useQuery({
+    queryKey: ['developers'],
+    queryFn: () => base44.entities.Developer.list(),
+    initialData: [],
+    enabled: isAuthorized,
+  });
+
+  // ✅ NEW: Fetch buildings
+  const { data: buildings = [] } = useQuery({
+    queryKey: ['buildings'],
+    queryFn: () => base44.entities.Building.list(),
+    initialData: [],
+    enabled: isAuthorized,
+  });
+
   // Calculate date range
   const dateRange = useMemo(() => {
     const now = new Date();
     let startDate;
-    
+
     switch(timeRange) {
       case '7d':
         startDate = subDays(now, 7);
@@ -104,7 +120,7 @@ export default function AdminDashboard() {
       default:
         startDate = subDays(now, 365);
     }
-    
+
     return { startDate, endDate: now };
   }, [timeRange]);
 
@@ -113,25 +129,25 @@ export default function AdminDashboard() {
     const activeProps = properties.filter(p => p.status === 'Active' && !p.is_duplicate);
     const activeBrokers = brokers.filter(b => b.status === 'Active');
     const activeReqs = requirements.filter(r => r.status === 'Active');
-    
-    const filteredInteractions = interactions.filter(i => 
+
+    const filteredInteractions = interactions.filter(i =>
       new Date(i.created_date) >= dateRange.startDate
     );
-    
+
     const totalViews = filteredInteractions.filter(i => i.interaction_type === 'view').length;
-    const totalInquiries = filteredInteractions.filter(i => 
+    const totalInquiries = filteredInteractions.filter(i =>
       i.interaction_type === 'inquiry' || i.interaction_type === 'whatsapp' || i.interaction_type === 'call'
     ).length;
-    
+
     // Previous period comparison
     const previousPeriodStart = subDays(dateRange.startDate, dateRange.endDate.getTime() - dateRange.startDate.getTime());
     const previousInteractions = interactions.filter(i => {
       const date = new Date(i.created_date);
       return date >= previousPeriodStart && date < dateRange.startDate;
     });
-    
+
     const previousViews = previousInteractions.filter(i => i.interaction_type === 'view').length;
-    const viewsGrowth = previousViews > 0 
+    const viewsGrowth = previousViews > 0
       ? Math.round(((totalViews - previousViews) / previousViews) * 100)
       : totalViews > 0 ? 100 : 0;
 
@@ -150,21 +166,21 @@ export default function AdminDashboard() {
   // Daily platform activity
   const dailyPlatformActivity = useMemo(() => {
     const days = eachDayOfInterval({ start: dateRange.startDate, end: dateRange.endDate });
-    
+
     return days.map(day => {
       const dayStr = format(day, 'yyyy-MM-dd');
-      const dayInteractions = interactions.filter(i => 
+      const dayInteractions = interactions.filter(i =>
         format(new Date(i.created_date), 'yyyy-MM-dd') === dayStr
       );
-      
-      const dayProps = properties.filter(p => 
+
+      const dayProps = properties.filter(p =>
         format(new Date(p.created_date), 'yyyy-MM-dd') === dayStr
       );
-      
+
       return {
         date: format(day, 'MMM dd'),
         views: dayInteractions.filter(i => i.interaction_type === 'view').length,
-        inquiries: dayInteractions.filter(i => 
+        inquiries: dayInteractions.filter(i =>
           i.interaction_type === 'inquiry' || i.interaction_type === 'whatsapp' || i.interaction_type === 'call'
         ).length,
         newListings: dayProps.length
@@ -174,19 +190,19 @@ export default function AdminDashboard() {
 
   // Top performing brokers
   const topBrokers = useMemo(() => {
-    const filteredInteractions = interactions.filter(i => 
+    const filteredInteractions = interactions.filter(i =>
       new Date(i.created_date) >= dateRange.startDate
     );
 
     return brokers
       .filter(b => b.status === 'Active')
       .map(broker => {
-        const brokerProps = properties.filter(p => 
+        const brokerProps = properties.filter(p =>
           p.broker_id === broker.id && p.status === 'Active' && !p.is_duplicate
         );
         const brokerInteractions = filteredInteractions.filter(i => i.broker_id === broker.id);
         const views = brokerInteractions.filter(i => i.interaction_type === 'view').length;
-        const inquiries = brokerInteractions.filter(i => 
+        const inquiries = brokerInteractions.filter(i =>
           i.interaction_type === 'inquiry' || i.interaction_type === 'whatsapp' || i.interaction_type === 'call'
         ).length;
 
@@ -207,7 +223,7 @@ export default function AdminDashboard() {
 
   // Top performing properties
   const topProperties = useMemo(() => {
-    const filteredInteractions = interactions.filter(i => 
+    const filteredInteractions = interactions.filter(i =>
       new Date(i.created_date) >= dateRange.startDate
     );
 
@@ -216,7 +232,7 @@ export default function AdminDashboard() {
       .map(property => {
         const propInteractions = filteredInteractions.filter(i => i.property_id === property.id);
         const views = propInteractions.filter(i => i.interaction_type === 'view').length;
-        const inquiries = propInteractions.filter(i => 
+        const inquiries = propInteractions.filter(i =>
           i.interaction_type === 'inquiry' || i.interaction_type === 'whatsapp' || i.interaction_type === 'call'
         ).length;
 
@@ -239,15 +255,15 @@ export default function AdminDashboard() {
   // Location popularity
   const locationStats = useMemo(() => {
     const locationMap = {};
-    
+
     properties.forEach(prop => {
       if (prop.location && prop.status === 'Active' && !prop.is_duplicate) {
         if (!locationMap[prop.location]) {
-          locationMap[prop.location] = { 
-            location: prop.location, 
-            listings: 0, 
+          locationMap[prop.location] = {
+            location: prop.location,
+            listings: 0,
             views: 0,
-            inquiries: 0 
+            inquiries: 0
           };
         }
         locationMap[prop.location].listings++;
@@ -280,11 +296,46 @@ export default function AdminDashboard() {
       'Search': interactions.filter(i => i.source === 'search').length,
       'Featured': interactions.filter(i => i.source === 'featured').length
     };
-    
+
     return Object.entries(sources)
       .filter(([_, count]) => count > 0)
       .map(([name, value]) => ({ name, value }));
   }, [interactions]);
+
+  // ✅ NEW: Developer Analytics
+  const developerMetrics = useMemo(() => {
+    if (developers.length === 0 && buildings.length === 0) return null;
+
+    // Top developers by buildings tracked
+    const developerBuildingCounts = developers.map(dev => ({
+      developer: dev,
+      buildingCount: buildings.filter(b => b.developer_id === dev.id).length,
+      activeListings: buildings
+        .filter(b => b.developer_id === dev.id)
+        .reduce((sum, b) => sum + (b.active_listings || 0), 0)
+    })).filter(d => d.buildingCount > 0)
+      .sort((a, b) => b.buildingCount - a.buildingCount);
+
+    // Market share by tier
+    const tierDistribution = {
+      tier1: developers.filter(d => d.tier === 'Tier 1').length,
+      tier2: developers.filter(d => d.tier === 'Tier 2').length,
+      tier3: developers.filter(d => d.tier === 'Tier 3').length,
+    };
+
+    // Sustainable developers
+    const sustainableDevelopers = developers.filter(d => d.sustainability_focus).length;
+
+    return {
+      totalDevelopers: developers.length,
+      topDevelopers: developerBuildingCounts.slice(0, 5),
+      tierDistribution,
+      sustainableDevelopers,
+      avgReputation: developers.reduce((sum, d) => sum + (d.reputation_score || 0), 0) / developers.length || 0,
+      buildingsLinked: buildings.filter(b => b.developer_id).length,
+      buildingsUnlinked: buildings.filter(b => !b.developer_id && b.developer_name).length
+    };
+  }, [developers, buildings]);
 
   const COLORS = ['#0EA5E9', '#8B5CF6', '#10B981', '#F59E0B'];
 
@@ -304,8 +355,8 @@ export default function AdminDashboard() {
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-6">
-      <div className="max-w-[1600px] mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {/* Header */}
         <div className="mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -313,7 +364,7 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Platform Analytics</h1>
               <p className="text-slate-600">Complete overview of PropAI Live performance</p>
             </div>
-            
+
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -400,6 +451,112 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
+        {/* ✅ NEW: Developer Intelligence Section */}
+        {developerMetrics && (
+          <div className="mb-8 bg-white rounded-3xl p-6 border-2 border-purple-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Building2 className="w-6 h-6 text-purple-600" />
+                Developer Intelligence
+              </h2>
+              <Button
+                onClick={() => navigate(createPageUrl("DeveloperDirectory"))}
+                variant="outline"
+                size="sm"
+                className="border-purple-300 text-purple-700"
+              >
+                View Directory
+              </Button>
+            </div>
+
+            {/* Developer Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              <div className="text-center p-4 bg-purple-50 rounded-2xl">
+                <p className="text-2xl font-bold text-purple-700">{developerMetrics.totalDevelopers}</p>
+                <p className="text-xs text-slate-600 mt-1">Total Developers</p>
+              </div>
+              <div className="text-center p-4 bg-amber-50 rounded-2xl">
+                <p className="text-2xl font-bold text-amber-700">{developerMetrics.tierDistribution.tier1}</p>
+                <p className="text-xs text-slate-600 mt-1">Tier 1 (Mega)</p>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-2xl">
+                <p className="text-2xl font-bold text-blue-700">{developerMetrics.tierDistribution.tier2}</p>
+                <p className="text-xs text-slate-600 mt-1">Tier 2 (Regional)</p>
+              </div>
+              <div className="text-center p-4 bg-emerald-50 rounded-2xl">
+                <p className="text-2xl font-bold text-emerald-700">{developerMetrics.tierDistribution.tier3}</p>
+                <p className="text-xs text-slate-600 mt-1">Tier 3 (Emerging)</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-2xl">
+                <p className="text-2xl font-bold text-green-700">{developerMetrics.sustainableDevelopers}</p>
+                <p className="text-xs text-slate-600 mt-1">Green Certified</p>
+              </div>
+            </div>
+
+            {/* Building Linkage Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-slate-700">Buildings Linked</p>
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <p className="text-3xl font-bold text-green-700">{developerMetrics.buildingsLinked}</p>
+                <div className="mt-2 h-2 bg-green-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-600 rounded-full"
+                    style={{ width: `${(developerMetrics.buildingsLinked / (buildings.length || 1)) * 100}%` }}
+                  />
+                </div>
+              </div>
+              {developerMetrics.buildingsUnlinked > 0 && (
+                <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-slate-700">Needs Linking</p>
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-orange-700">{developerMetrics.buildingsUnlinked}</p>
+                  <Button
+                    onClick={() => navigate(createPageUrl("Admin"))}
+                    size="sm"
+                    className="mt-2 w-full bg-orange-600 text-white text-xs"
+                  >
+                    Run Backfill
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Top Developers Table */}
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
+                Top Developers by Activity
+              </h3>
+              <div className="space-y-2">
+                {developerMetrics.topDevelopers.map((item, idx) => (
+                  <div key={item.developer.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-purple-50 transition-colors cursor-pointer"
+                    onClick={() => navigate(createPageUrl("DeveloperProfile") + `?id=${item.developer.id}`)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <span className="text-sm font-bold text-purple-700">#{idx + 1}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{item.developer.name}</p>
+                        <p className="text-xs text-slate-500">{item.developer.tier} • {item.developer.market_segment}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-purple-700">{item.buildingCount}</p>
+                      <p className="text-xs text-slate-500">{item.activeListings} active listings</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+
         {/* Platform Activity Chart */}
         <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -411,9 +568,9 @@ export default function AdminDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: '12px' }} />
               <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'white',
                   border: '2px solid #e2e8f0',
                   borderRadius: '12px'
                 }}
@@ -464,9 +621,9 @@ export default function AdminDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" stroke="#64748b" style={{ fontSize: '11px' }} />
                 <YAxis dataKey="location" type="category" width={100} stroke="#64748b" style={{ fontSize: '11px' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
                     border: '2px solid #e2e8f0',
                     borderRadius: '12px'
                   }}
@@ -500,7 +657,7 @@ export default function AdminDashboard() {
                   <tr key={prop.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-3 px-4">
                       <div>
-                        <p className="font-semibold text-slate-900 text-sm">{prop.bhk}</p>
+                        <p className="font-semibold text-slate-900 text-sm">{prop.title}</p>
                         <p className="text-xs text-slate-500">{prop.price}</p>
                       </div>
                     </td>
