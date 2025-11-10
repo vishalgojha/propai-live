@@ -35,6 +35,29 @@ export default function AdminBrokers() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      // ✅ CHECK PASSWORD AUTH FIRST
+      const isPasswordAuthed = sessionStorage.getItem('admin_authenticated') === 'true';
+      if (!isPasswordAuthed) {
+        navigate(createPageUrl("AdminLogin"));
+        return;
+      }
+
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        // If authorized, component will render
+      } catch (error) {
+        navigate(createPageUrl("Home"));
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Active");
   const [selectedBroker, setSelectedBroker] = useState(null);

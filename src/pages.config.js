@@ -18,6 +18,7 @@ import BrokerAnalytics from './pages/BrokerAnalytics';
 import AdminDashboard from './pages/AdminDashboard';
 import MyProfile from './pages/MyProfile';
 import BrokerProfile from './pages/BrokerProfile';
+import AdminLogin from './pages/AdminLogin';
 import Layout from './Layout.jsx';
 
 
@@ -42,6 +43,7 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "MyProfile": MyProfile,
     "BrokerProfile": BrokerProfile,
+    "AdminLogin": AdminLogin,
 }
 
 export const pagesConfig = {

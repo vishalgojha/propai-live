@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,13 @@ export default function AdminRequirements() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // ✅ CHECK PASSWORD AUTH FIRST
+      const isPasswordAuthed = sessionStorage.getItem('admin_authenticated') === 'true';
+      if (!isPasswordAuthed) {
+        navigate(createPageUrl("AdminLogin"));
+        return;
+      }
+
       try {
         const user = await base44.auth.me();
         if (!user || user.role !== 'admin') {

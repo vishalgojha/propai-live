@@ -119,6 +119,13 @@ export default function Admin() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // ✅ CHECK PASSWORD AUTH FIRST
+      const isPasswordAuthed = sessionStorage.getItem('admin_authenticated') === 'true';
+      if (!isPasswordAuthed) {
+        navigate(createPageUrl("AdminLogin"));
+        return;
+      }
+
       try {
         const user = await base44.auth.me();
         if (!user || user.role !== 'admin') {
