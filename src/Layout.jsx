@@ -137,10 +137,6 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Only show admin link if user is admin - REMOVED from navigation
-  // Admin access is now via /admin route with password
-  // The previous code block for adding admin links has been removed as per the outline.
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {/* ✅ REMOVED: ChatbotWidget - no floating widget */}

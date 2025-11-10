@@ -36,10 +36,12 @@ export default function MyProfile() {
   const [profileData, setProfileData] = useState({
     agency_name: "",
     email: "",
-    phone: ""
+    phone: "",
+    name: "" // Added name field
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+  const [creatingBrokerProfile, setCreatingBrokerProfile] = useState(false); // New state for broker creation
 
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -54,7 +56,6 @@ export default function MyProfile() {
       try {
         const user = await base44.auth.me();
         if (!user) {
-          // ✅ FIXED: Redirect to login with return URL
           base44.auth.redirectToLogin(window.location.pathname);
           return;
         }
@@ -63,6 +64,9 @@ export default function MyProfile() {
         if (user.preferred_areas) {
           setSelectedAreas(user.preferred_areas);
         }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldCompleteProfile = urlParams.get('complete_profile') === 'true';
 
         if (user.broker_id) {
           const brokers = await base44.entities.Broker.list();
@@ -73,11 +77,12 @@ export default function MyProfile() {
             setProfileData({
               agency_name: broker.agency_name || "",
               email: broker.email || "",
-              phone: broker.phone || ""
+              phone: broker.phone || "",
+              name: broker.name || user.full_name || "" // Initialize name
             });
             
             const isProfileIncomplete = !broker.phone || !broker.agency_name;
-            if (isProfileIncomplete) {
+            if (isProfileIncomplete || shouldCompleteProfile) {
               setShowOnboardingBanner(true);
               setEditingProfile(true);
               setActiveTab('overview');
@@ -88,54 +93,26 @@ export default function MyProfile() {
               });
             }
           }
-        } else if (user.email) {
-          const brokers = await base44.entities.Broker.list();
-          
-          const matchingBroker = brokers.find(b => {
-            if (b.email?.toLowerCase() === user.email.toLowerCase()) return true;
-            
-            const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
-            const userEmailAsPhone = normalizePhone(user.email);
-            const brokerPhone = normalizePhone(b.phone);
-            
-            const phoneMatch = userEmailAsPhone && brokerPhone && 
-                              userEmailAsPhone.length === 10 && 
-                              userEmailAsPhone === brokerPhone;
-            
-            return phoneMatch;
+        } else {
+          // User has no broker profile - prompt to create one
+          setShowOnboardingBanner(true);
+          setEditingProfile(true); // This will control the form visibility in the new render path
+          setActiveTab('overview'); // This is a placeholder, as the new path won't use tabs initially
+          setProfileData({
+            agency_name: "",
+            email: user.email || "",
+            phone: "",
+            name: user.full_name || ""
           });
           
-          if (matchingBroker) {
-            setBrokerProfile(matchingBroker);
-            setProfileData({
-              agency_name: matchingBroker.agency_name || "",
-              email: matchingBroker.email || "",
-              phone: matchingBroker.phone || ""
-            });
-            
-            try {
-              await base44.auth.updateMe({ broker_id: matchingBroker.id });
-              setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
-              
-              const isProfileIncomplete = !matchingBroker.phone || !matchingBroker.agency_name;
-              if (isProfileIncomplete) {
-                setShowOnboardingBanner(true);
-                setEditingProfile(true);
-                setActiveTab('overview');
-                toast.info('👋 Please complete your profile to unlock all features', {
-                  description: 'Phone number and agency name are required',
-                  duration: 10000,
-                  className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
-                });
-              }
-            } catch (error) {
-              console.error('Failed to auto-link broker:', error);
-            }
-          }
+          toast.info('👋 Welcome! Let\'s set up your broker profile', {
+            description: 'Add your phone number and agency name to get started',
+            duration: 10000,
+            className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
+          });
         }
       } catch (error) {
         console.error("Failed to load user:", error);
-        // ✅ FIXED: Redirect to login instead of Home
         base44.auth.redirectToLogin(window.location.pathname);
       } finally {
         setIsLoading(false);
@@ -164,8 +141,68 @@ export default function MyProfile() {
   };
 
   const handleSaveProfile = async () => {
-    if (!brokerProfile) return;
+    // Handle creating new broker profile if none exists
+    if (!brokerProfile) {
+      if (!profileData.phone || !profileData.name || !profileData.agency_name) {
+        toast.error('Name, Phone number, and Agency Name are required', {
+          description: 'Please fill in all required fields'
+        });
+        return;
+      }
+
+      setCreatingBrokerProfile(true);
+      try {
+        let normalizedPhone = profileData.phone.trim();
+        if (normalizedPhone) {
+          normalizedPhone = normalizedPhone.replace(/\D/g, '');
+          if (normalizedPhone.length === 10) {
+            normalizedPhone = '91' + normalizedPhone;
+          }
+        } else {
+          toast.error('Phone number is required');
+          setCreatingBrokerProfile(false);
+          return;
+        }
+
+        const allBrokers = await base44.entities.Broker.list();
+        const nextSequence = allBrokers.length + 1;
+        const customId = `CHR-BRK-${String(nextSequence).padStart(4, '0')}`;
+
+        const newBroker = await base44.entities.Broker.create({
+          custom_id: customId,
+          name: profileData.name.trim(),
+          phone: normalizedPhone,
+          agency_name: profileData.agency_name.trim(),
+          email: profileData.email.trim() || currentUser.email,
+          status: "Active",
+          total_listings_count: 0,
+          active_listings_count: 0,
+          verified: false
+        });
+
+        await base44.auth.updateMe({ broker_id: newBroker.id });
+
+        setBrokerProfile(newBroker);
+        setCurrentUser(prev => ({ ...prev, broker_id: newBroker.id }));
+        setEditingProfile(false);
+        setShowOnboardingBanner(false);
+
+        toast.success('✅ Broker Profile Created!', {
+          description: 'Your profile is now active on PropAI',
+          duration: 4000
+        });
+        navigate(createPageUrl('MyProfile'), { replace: true }); // Reload to proper broker view
+      } catch (error) {
+        toast.error('Failed to create profile', {
+          description: error.message
+        });
+      } finally {
+        setCreatingBrokerProfile(false);
+      }
+      return;
+    }
     
+    // Existing: Update existing broker profile
     setSavingProfile(true);
     try {
       let normalizedPhone = profileData.phone.trim();
@@ -183,6 +220,7 @@ export default function MyProfile() {
       }
       
       await base44.entities.Broker.update(brokerProfile.id, {
+        name: profileData.name.trim() || brokerProfile.name, // Update name
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
         phone: normalizedPhone
@@ -190,6 +228,7 @@ export default function MyProfile() {
       
       setBrokerProfile(prev => ({
         ...prev,
+        name: profileData.name.trim() || prev.name, // Update name in state
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
         phone: normalizedPhone || prev.phone
@@ -588,6 +627,7 @@ export default function MyProfile() {
 
   if (!currentUser) return null;
 
+  // ADMIN VIEW - unchanged
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -617,8 +657,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -629,8 +668,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -641,8 +679,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
             </div>
           )}
 
@@ -784,6 +821,203 @@ export default function MyProfile() {
     );
   }
 
+  // If user has NO broker profile, show profile creation form
+  if (!brokerProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+        <Toaster position="top-center" richColors closeButton />
+
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Onboarding Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-blue-400"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">👋 Welcome to PropAI!</h2>
+                <p className="text-blue-100 leading-relaxed">
+                  Let's set up your broker profile so you can access all features.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Profile Creation Form */}
+          <Card className="p-6 bg-white border-2 border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-600" />
+              Create Your Broker Profile
+            </h3>
+
+            <div className="space-y-4">
+              <div className="border-2 border-blue-300 rounded-xl p-4 bg-blue-50">
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Your Name <span className="text-red-600 font-bold">*REQUIRED</span>
+                </label>
+                <Input
+                  type="text"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  placeholder="e.g., Ramesh Kumar"
+                  className="text-sm border-blue-400"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Your name as it will appear on listings
+                </p>
+              </div>
+
+              <div className="border-2 border-red-300 rounded-xl p-4 bg-red-50">
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Phone Number (WhatsApp Contact) <span className="text-red-600 font-bold">*REQUIRED</span>
+                </label>
+                <Input
+                  type="tel"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  placeholder="9820056789"
+                  className="text-sm font-mono border-red-400"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Enter 10-digit mobile number (auto-formatted with +91 prefix)
+                </p>
+                <p className="text-xs text-red-600 mt-2 font-semibold">
+                  ⚠️ Required to receive client contacts and use team features
+                </p>
+              </div>
+
+              <div className="border-2 border-red-300 rounded-xl p-4 bg-red-50">
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Agency Name <span className="text-red-600 font-bold">*REQUIRED</span>
+                </label>
+                <Input
+                  type="text"
+                  value={profileData.agency_name}
+                  onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
+                  placeholder="e.g., Bandra Homes, PropCo Mumbai"
+                  className="text-sm border-red-400"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  This will be displayed next to your name on all property listings
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Email (Optional)
+                </label>
+                <Input
+                  type="email"
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  placeholder="your.email@example.com"
+                  className="text-sm"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  For contact purposes only
+                </p>
+              </div>
+
+              <Button
+                onClick={handleSaveProfile}
+                disabled={creatingBrokerProfile || !profileData.phone || !profileData.name || !profileData.agency_name}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-14 text-lg font-bold"
+              >
+                {creatingBrokerProfile ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Creating Profile...
+                  </>
+                ) : (
+                  '✅ Create Broker Profile'
+                )}
+              </Button>
+            </div>
+          </Card>
+
+          {/* Area Preferences */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-bold text-slate-900">My Area Preferences (Optional)</h3>
+              </div>
+              <Button
+                onClick={() => setEditingAreas(!editingAreas)}
+                variant="outline"
+                size="sm"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {editingAreas ? 'Cancel' : 'Edit Areas'}
+              </Button>
+            </div>
+
+            {editingAreas ? (
+              <div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Select areas you want to focus on:
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {popularAreas.map((area) => {
+                    const isSelected = selectedAreas.includes(area);
+                    return (
+                      <Button
+                        key={area}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedAreas(selectedAreas.filter(a => a !== area));
+                          } else {
+                            setSelectedAreas([...selectedAreas, area]);
+                          }
+                        }}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className={`rounded-xl ${
+                          isSelected
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                            : "border-purple-200 hover:bg-purple-50"
+                        }`}
+                      >
+                        {area}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  onClick={handleSaveAreas}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                >
+                  Save Preferred Areas
+                </Button>
+              </div>
+            ) : (
+              <div>
+                {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {currentUser.preferred_areas.map((area) => (
+                      <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    No preferred areas set. Click "Edit Areas" to customize your feed.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+    
   const connectionCount = currentUser?.connected_brokers?.length || 0;
     
   if (brokerProfile && brokerMetrics) {
@@ -1040,7 +1274,8 @@ export default function MyProfile() {
                         setProfileData({
                           agency_name: brokerProfile.agency_name || "",
                           email: brokerProfile.email || "",
-                          phone: brokerProfile.phone || ""
+                          phone: brokerProfile.phone || "",
+                          name: brokerProfile.name || currentUser.full_name || ""
                         });
                       }
                     }}
@@ -1054,37 +1289,53 @@ export default function MyProfile() {
 
                 {editingProfile ? (
                   <div className="space-y-4">
-                    <div className={!brokerProfile.phone ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
+                    <div className={!profileData.name ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Phone Number (Your WhatsApp Contact) {!brokerProfile.phone && <span className="text-red-600 font-bold">*REQUIRED</span>}
+                        Your Name {!profileData.name && <span className="text-red-600 font-bold">*REQUIRED</span>}
+                      </label>
+                      <Input
+                        type="text"
+                        value={profileData.name}
+                        onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                        placeholder="Your full name"
+                        className={`text-sm ${!profileData.name ? 'border-red-400' : ''}`}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Your name as it will appear on listings
+                      </p>
+                    </div>
+
+                    <div className={!profileData.phone ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
+                      <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                        Phone Number (Your WhatsApp Contact) {!profileData.phone && <span className="text-red-600 font-bold">*REQUIRED</span>}
                       </label>
                       <Input
                         type="tel"
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                         placeholder="9820056789"
-                        className={`text-sm font-mono ${!brokerProfile.phone ? 'border-red-400' : ''}`}
+                        className={`text-sm font-mono ${!profileData.phone ? 'border-red-400' : ''}`}
                       />
                       <p className="text-xs text-slate-500 mt-1">
                         Enter 10-digit mobile number (auto-formatted with +91 prefix)
                       </p>
-                      {!brokerProfile.phone && (
+                      {!profileData.phone && (
                         <p className="text-xs text-red-600 mt-2 font-semibold">
                           ⚠️ You must add a phone number to use team features and receive client contacts
                         </p>
                       )}
                     </div>
 
-                    <div className={!brokerProfile.agency_name ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
+                    <div className={!profileData.agency_name ? 'border-2 border-red-300 rounded-xl p-4 bg-red-50' : ''}>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Agency Name {!brokerProfile.agency_name && <span className="text-red-600 font-bold">*REQUIRED</span>}
+                        Agency Name {!profileData.agency_name && <span className="text-red-600 font-bold">*REQUIRED</span>}
                       </label>
                       <Input
                         type="text"
                         value={profileData.agency_name}
                         onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
                         placeholder="e.g., Bandra Homes, PropCo Mumbai"
-                        className={`text-sm ${!brokerProfile.agency_name ? 'border-red-400' : ''}`}
+                        className={`text-sm ${!profileData.agency_name ? 'border-red-400' : ''}`}
                       />
                       <p className="text-xs text-slate-500 mt-1">
                         This will be displayed next to your name on all property listings
@@ -1124,6 +1375,15 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <User className="w-5 h-5 text-purple-600" />
+                      <div className="flex-1">
+                        <span className="text-sm text-slate-600 block mb-1">Your Name:</span>
+                        <span className="text-base font-semibold text-slate-900">
+                          {brokerProfile.name || <span className="text-red-600 italic font-normal">⚠️ Not set</span>}
+                        </span>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
                       <Phone className="w-6 h-6 text-purple-600" />
                       <div className="flex-1">
@@ -1631,128 +1891,6 @@ export default function MyProfile() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <Toaster position="top-center" richColors closeButton />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <User className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentUser.full_name || 'User Profile'}</h1>
-          <p className="text-slate-600">{currentUser.email}</p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-bold text-slate-900">My Area Preferences</h3>
-            </div>
-            <Button
-              onClick={() => setEditingAreas(!editingAreas)}
-              variant="outline"
-              size="sm"
-              className="border-purple-300 text-purple-700 hover:bg-purple-50"
-            >
-              {editingAreas ? 'Cancel' : 'Edit Areas'}
-            </Button>
-          </div>
-
-          {editingAreas ? (
-            <div>
-              <p className="text-sm text-slate-600 mb-3">
-                Select areas you're interested in for personalized SmartFeed:
-              </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {popularAreas.map((area) => {
-                  const isSelected = selectedAreas.includes(area);
-                  return (
-                    <Button
-                      key={area}
-                      onClick={() => toggleArea(area)}
-                      variant={isSelected ? "default" : "outline"}
-                      size="sm"
-                      className={`rounded-xl ${
-                        isSelected
-                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-                          : "border-purple-200 hover:bg-purple-50"
-                      }`}
-                    >
-                      {area}
-                    </Button>
-                  );
-                })}
-              </div>
-              <Button
-                onClick={handleSaveAreas}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-              >
-                Save Preferred Areas
-              </Button>
-            </div>
-          ) : (
-            <div>
-              {currentUser.preferred_areas && currentUser.preferred_areas.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {currentUser.preferred_areas.map((area) => (
-                    <Badge key={area} className="bg-purple-100 text-purple-800 border-purple-300">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {area}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">
-                  No preferred areas set. Click "Edit Areas" to personalize your SmartFeed.
-                </p>
-              )}
-            </div>
-          )}
-
-          <p className="text-xs text-purple-600 mt-3">
-            💡 SmartFeed will highlight properties in your preferred areas
-          </p>
-        </div>
-
-        <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Account Information</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <User className="w-4 h-4 text-slate-500" />
-              <span className="text-sm text-slate-600">Name:</span>
-              <span className="text-sm font-semibold text-slate-900">{currentUser.full_name || 'Not set'}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-4 h-4 text-slate-500" />
-              <span className="text-sm text-slate-600">Email:</span>
-              <span className="text-sm font-semibold text-slate-900">{currentUser.email}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Calendar className="w-4 h-4 text-slate-500" />
-              <span className="text-sm text-slate-600">Member since:</span>
-              <span className="text-sm font-semibold text-slate-900">
-                {format(new Date(currentUser.created_date), 'MMMM yyyy')}
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 text-center">
-          <Users className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Explore Mumbai Real Estate</h3>
-          <p className="text-sm text-slate-600 mb-4">
-            Browse AI-powered property listings and get personalized recommendations
-          </p>
-          <Button
-            onClick={() => navigate(createPageUrl("SmartFeed"))}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-          >
-            Browse Properties
-          </Button>
-        </Card>
-      </div>
-    </div>
-  );
+  // This block is now unreachable as the !brokerProfile case is handled above
+  return null;
 }
