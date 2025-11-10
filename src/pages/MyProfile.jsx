@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -32,16 +31,14 @@ export default function MyProfile() {
   const [teamMemberPhone, setTeamMemberPhone] = useState("");
   const [addingTeamMember, setAddingTeamMember] = useState(false);
 
-  // NEW: Profile editing state
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     agency_name: "",
     email: "",
-    phone: "" // Added phone to profileData
+    phone: ""
   });
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Tab navigation state
   const [activeTab, setActiveTab] = useState('overview');
 
   const popularAreas = [
@@ -64,7 +61,6 @@ export default function MyProfile() {
           setSelectedAreas(user.preferred_areas);
         }
 
-        // ✅ ENHANCED: Better broker matching logic
         if (user.broker_id) {
           const brokers = await base44.entities.Broker.list();
           const broker = brokers.find(b => b.id === user.broker_id);
@@ -74,18 +70,15 @@ export default function MyProfile() {
             setProfileData({
               agency_name: broker.agency_name || "",
               email: broker.email || "",
-              phone: broker.phone || "" // Added phone
+              phone: broker.phone || ""
             });
           }
         } else if (user.email) {
-          // Try to auto-link broker by email or phone
           const brokers = await base44.entities.Broker.list();
           
           const matchingBroker = brokers.find(b => {
-            // Email match
             if (b.email?.toLowerCase() === user.email.toLowerCase()) return true;
             
-            // Phone match - extract last 10 digits
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
             const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
@@ -102,10 +95,9 @@ export default function MyProfile() {
             setProfileData({
               agency_name: matchingBroker.agency_name || "",
               email: matchingBroker.email || "",
-              phone: matchingBroker.phone || "" // Added phone
+              phone: matchingBroker.phone || ""
             });
             
-            // Auto-link broker to user
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
               setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
@@ -143,41 +135,36 @@ export default function MyProfile() {
     }
   };
 
-  // ✅ ENHANCED: Save profile with phone update
   const handleSaveProfile = async () => {
     if (!brokerProfile) return;
     
     setSavingProfile(true);
     try {
-      // Normalize phone number if changed
       let normalizedPhone = profileData.phone.trim();
       if (normalizedPhone) {
-        normalizedPhone = normalizedPhone.replace(/\D/g, ''); // Remove non-digits
+        normalizedPhone = normalizedPhone.replace(/\D/g, '');
         if (normalizedPhone.length === 10 && !normalizedPhone.startsWith('91')) {
-          normalizedPhone = '91' + normalizedPhone; // Prepend 91 for 10-digit numbers
+          normalizedPhone = '91' + normalizedPhone;
         } else if (normalizedPhone.length === 12 && normalizedPhone.startsWith('91')) {
-          // Already 91 prefixed 10-digit number, keep as is
+          // Keep as is
         } else if (normalizedPhone.length === 0) {
-          normalizedPhone = null; // If empty after cleanup, set to null
-        } else {
-          // Other lengths, assume it's incorrect or keep as is if API handles it.
-          // More robust validation could be added here.
+          normalizedPhone = null;
         }
       } else {
-        normalizedPhone = null; // If input is empty, set to null
+        normalizedPhone = null;
       }
       
       await base44.entities.Broker.update(brokerProfile.id, {
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
-        phone: normalizedPhone // Use normalizedPhone
+        phone: normalizedPhone
       });
       
       setBrokerProfile(prev => ({
         ...prev,
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
-        phone: normalizedPhone || prev.phone // Update with normalized phone
+        phone: normalizedPhone || prev.phone
       }));
       
       setEditingProfile(false);
@@ -410,7 +397,6 @@ export default function MyProfile() {
   });
 
   const networkConnections = useMemo(() => {
-    // Use connected_brokers instead of network_connections
     if (!brokerProfile || !currentUser?.connected_brokers) return [];
     
     return currentUser.connected_brokers
@@ -432,7 +418,6 @@ export default function MyProfile() {
   }, [brokerProfile, currentUser, allBrokers, allPropertiesNetwork]);
 
   const networkListings = useMemo(() => {
-    // Use connected_brokers instead of network_connections
     if (!currentUser?.connected_brokers) return [];
     
     return allPropertiesNetwork
@@ -453,7 +438,6 @@ export default function MyProfile() {
     
     return myReqs.map(req => {
       const networkMatches = allPropertiesNetwork.filter(prop => {
-        // Use connected_brokers instead of network_connections
         if (!currentUser?.connected_brokers?.includes(prop.broker_id)) return false;
         if (prop.status !== 'Active' || prop.is_duplicate) return false;
         if (prop.listing_type !== req.listing_type) return false;
@@ -575,7 +559,6 @@ export default function MyProfile() {
 
   if (!currentUser) return null;
 
-  // ADMIN VIEW
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -605,7 +588,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -616,7 +600,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -627,7 +612,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
             </div>
           )}
 
@@ -769,8 +755,6 @@ export default function MyProfile() {
     );
   }
 
-  // BROKER VIEW - ENHANCED WITH TABS
-  // Use connected_brokers instead of network_connections
   const connectionCount = currentUser?.connected_brokers?.length || 0;
     
   if (brokerProfile && brokerMetrics) {
@@ -789,7 +773,6 @@ export default function MyProfile() {
                   <h1 className="text-3xl font-bold text-slate-900">{brokerProfile?.name}</h1>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-slate-600">{brokerProfile?.custom_id}</p>
-                    {/* ✅ ADDED: Display phone in header */}
                     {brokerProfile?.phone && (
                       <>
                         <span className="text-slate-400">•</span>
@@ -823,9 +806,7 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Tab Navigation - MOBILE RESPONSIVE WITH SELECT DROPDOWN */}
           <div className="mb-6">
-            {/* Mobile: Dropdown */}
             <div className="block md:hidden mb-3">
               <select
                 value={activeTab}
@@ -839,7 +820,6 @@ export default function MyProfile() {
               </select>
             </div>
 
-            {/* Desktop: Buttons */}
             <div className="hidden md:flex gap-2">
               <Button
                 onClick={() => setActiveTab('overview')}
@@ -879,7 +859,6 @@ export default function MyProfile() {
               </Button>
             </div>
             
-            {/* AI Chat Button */}
             <Button
               onClick={() => window.dispatchEvent(new CustomEvent('openChatWidget'))}
               className="w-full md:w-auto mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg"
@@ -890,7 +869,6 @@ export default function MyProfile() {
             </Button>
           </div>
 
-          {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -966,7 +944,6 @@ export default function MyProfile() {
                 </Card>
               )}
 
-              {/* Profile Details Section - ✅ ENHANCED TO SHOW PHONE PROMINENTLY */}
               <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -977,11 +954,10 @@ export default function MyProfile() {
                     onClick={() => {
                       setEditingProfile(!editingProfile);
                       if (!editingProfile) {
-                        // Reset to current values when opening
                         setProfileData({
                           agency_name: brokerProfile.agency_name || "",
                           email: brokerProfile.email || "",
-                          phone: brokerProfile.phone || "" // Added phone
+                          phone: brokerProfile.phone || ""
                         });
                       }
                     }}
@@ -1060,7 +1036,6 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {/* ✅ PHONE SHOWN FIRST & HIGHLIGHTED */}
                     <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
                       <Phone className="w-5 h-5 text-purple-600" />
                       <span className="text-sm text-slate-600">Your Contact:</span>
@@ -1323,7 +1298,6 @@ export default function MyProfile() {
             </>
           )}
 
-          {/* NETWORK TAB */}
           {activeTab === 'network' && (
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-4">My Network Connections</h2>
@@ -1411,7 +1385,6 @@ export default function MyProfile() {
             </div>
           )}
 
-          {/* LISTINGS TAB */}
           {activeTab === 'listings' && (
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-4">Listings from My Network</h2>
@@ -1466,7 +1439,6 @@ export default function MyProfile() {
             </div>
           )}
 
-          {/* REQUIREMENTS TAB */}
           {activeTab === 'requirements' && (
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-4">My Requirements & Network Matches</h2>
@@ -1563,8 +1535,6 @@ export default function MyProfile() {
     );
   }
 
-  // REGULAR USER
-  // If no brokerProfile or admin role, render the regular user view
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
