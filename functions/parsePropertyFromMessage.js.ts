@@ -13,6 +13,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * - Kapil (+919773757759) is treated as regular broker, NOT admin
  * 
  * CACHES broker_name on property for quick display
+ * 
+ * ✅ CRITICAL FIX: ALWAYS populates broker_contact with extracted phone number
  */
 
 // Location codes for custom IDs
@@ -534,6 +536,7 @@ Return ONLY valid JSON, no markdown`;
     console.log(`✓ Generated ID: ${customId}, Slug: ${slug}`);
 
     // STEP 6: CREATE PROPERTY WITH CACHED BROKER NAME
+    // ✅ CRITICAL FIX: ALWAYS use extracted phone as broker_contact
     let property;
     try {
       const propertyData = {
@@ -560,7 +563,7 @@ Return ONLY valid JSON, no markdown`;
         ai_title: extractedData.ai_title,
         ai_description: extractedData.ai_description,
         broker_id: broker ? broker.id : null,
-        broker_contact: broker ? broker.phone : null,
+        broker_contact: extractedData.broker_phone, // ✅ ALWAYS use extracted phone
         broker_name: brokerName, // ✅ CACHED BROKER NAME
         broker_trust_score: broker ? (broker.trust_score || 50) : null,
         status: "Active",
@@ -568,7 +571,7 @@ Return ONLY valid JSON, no markdown`;
       };
 
       property = await base44.asServiceRole.entities.Property.create(propertyData);
-      console.log(`✓ Created property ${customId} with broker_name: ${brokerName}`);
+      console.log(`✓ Created property ${customId} with broker_contact: ${extractedData.broker_phone}, broker_name: ${brokerName}`);
     } catch (propertyError) {
       return Response.json({ 
         success: false,
@@ -598,7 +601,7 @@ Return ONLY valid JSON, no markdown`;
         data: {
           ...property,
           broker_name: brokerName,
-          broker_phone: broker ? broker.phone : null,
+          broker_phone: extractedData.broker_phone,
           broker_agency: broker ? broker.agency_name : null
         }
       }).catch(err => console.warn('PropAI sync failed:', err.message))
