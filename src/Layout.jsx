@@ -23,7 +23,7 @@ export default function Layout({ children, currentPageName }) {
   // ✅ REMOVED: shouldHideChatbot - now chatbot shows on ALL pages including Home
 
   useEffect(() => {
-    // Set global meta tags - CRITICAL FOR SOCIAL SHARING
+    // Always set meta tags, don't check if they exist first
     const setMetaTag = (name, content, isProperty = false) => {
       const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let tag = document.querySelector(selector);
@@ -41,51 +41,32 @@ export default function Layout({ children, currentPageName }) {
       }
     };
 
-    // Default meta tags - FALLBACK for all pages
+    // Default meta tags
     setMetaTag('viewport', 'width=device-width, initial-scale=1.0');
     setMetaTag('theme-color', '#8B5CF6');
     setMetaTag('author', 'PropAI Live');
     setMetaTag('robots', 'index, follow');
     
-    // Default description (will be overridden by SEO component on specific pages)
-    if (!document.querySelector('meta[name="description"]')) {
-      setMetaTag('description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.');
-    }
+    // ALWAYS set default description
+    setMetaTag('description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.');
     
-    // Open Graph defaults - CRITICAL for social sharing
+    // ALWAYS set Open Graph tags for social sharing
     setMetaTag('og:site_name', 'PropAI Live', true);
     setMetaTag('og:type', 'website', true);
     setMetaTag('og:locale', 'en_IN', true);
-    
-    // Set OG URL to current page
     setMetaTag('og:url', window.location.href, true);
+    setMetaTag('og:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.', true);
+    setMetaTag('og:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.', true);
+    setMetaTag('og:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg', true);
+    setMetaTag('og:image:width', '1200', true);
+    setMetaTag('og:image:height', '630', true);
+    setMetaTag('og:image:alt', 'PropAI Live - AI-powered Mumbai real estate intelligence platform', true);
     
-    // Default OG title (will be overridden by SEO component)
-    if (!document.querySelector('meta[property="og:title"]')) {
-      setMetaTag('og:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.', true);
-    }
-    
-    // Default OG description (will be overridden by SEO component)
-    if (!document.querySelector('meta[property="og:description"]')) {
-      setMetaTag('og:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds.', true);
-    }
-    
-    // Default OG image - YOUR BRANDED SCREENSHOT
-    if (!document.querySelector('meta[property="og:image"]')) {
-      setMetaTag('og:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg', true);
-    }
-    
-    // Twitter Card defaults
+    // ALWAYS set Twitter Card tags
     setMetaTag('twitter:card', 'summary_large_image');
-    if (!document.querySelector('meta[name="twitter:title"]')) {
-      setMetaTag('twitter:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.');
-    }
-    if (!document.querySelector('meta[name="twitter:description"]')) {
-      setMetaTag('twitter:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds.');
-    }
-    if (!document.querySelector('meta[name="twitter:image"]')) {
-      setMetaTag('twitter:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg');
-    }
+    setMetaTag('twitter:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.');
+    setMetaTag('twitter:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.');
+    setMetaTag('twitter:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg');
     
     // Additional SEO tags
     setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
@@ -115,7 +96,7 @@ export default function Layout({ children, currentPageName }) {
       sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
       document.head.appendChild(sitemapLink);
     }
-  }, [location.pathname]); // Re-run when path changes
+  }, [location.pathname]);
 
   useEffect(() => {
     // Check if user is logged in and get user data
