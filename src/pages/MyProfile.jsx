@@ -14,7 +14,7 @@ import {
   Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format } = "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -164,14 +164,48 @@ export default function MyProfile() {
         return;
       }
 
+      // ✅ ENHANCED: Validate phone number format
+      const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        toast.error('❌ Invalid Phone Number', {
+          description: `Must be 10 digits (you entered ${cleanPhone.length} digits)`,
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
+        });
+        return;
+      }
+
+      // ✅ Check if phone starts with valid Indian prefix
+      if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
+        toast.error('❌ Invalid Indian Mobile Number', {
+          description: 'Must start with 6, 7, 8, or 9',
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
+        });
+        return;
+      }
+
       setCreatingBrokerProfile(true);
       try {
-        let normalizedPhone = profileData.phone.trim().replace(/\D/g, '');
-        if (normalizedPhone.length === 10) {
-          normalizedPhone = '91' + normalizedPhone;
+        let normalizedPhone = '91' + cleanPhone;
+
+        // ✅ Check if phone already exists
+        const allBrokers = await base44.entities.Broker.list();
+        const existingBroker = allBrokers.find(b => {
+          const brokerPhoneLast10 = (b.phone || '').replace(/\D/g, '').slice(-10);
+          return brokerPhoneLast10 === cleanPhone;
+        });
+
+        if (existingBroker) {
+          toast.error('❌ Phone Number Already Exists', {
+            description: `This number is already linked to broker: ${existingBroker.name}`,
+            duration: 6000,
+            className: 'bg-orange-600 text-white border-0'
+          });
+          setCreatingBrokerProfile(false);
+          return;
         }
 
-        const allBrokers = await base44.entities.Broker.list();
         const customId = `CHR-BRK-${String(allBrokers.length + 1).padStart(4, '0')}`;
 
         const newBroker = await base44.entities.Broker.create({
@@ -187,13 +221,24 @@ export default function MyProfile() {
         });
 
         await base44.auth.updateMe({ broker_id: newBroker.id });
-        toast.success('✅ Broker Profile Created!');
-        window.location.reload();
-      } catch (error) {
-        toast.error('Failed to create profile', {
-          description: error.message
+        
+        toast.success('✅ Broker Profile Created!', {
+          description: 'Welcome to PropAI Live',
+          duration: 3000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
         });
+        
+        // Small delay to let user see success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (error) {
         console.error('Create profile error:', error);
+        toast.error('❌ Failed to create profile', {
+          description: error.message || 'Please try again or contact support',
+          duration: 6000,
+          className: 'bg-red-600 text-white border-0'
+        });
       } finally {
         setCreatingBrokerProfile(false);
       }
@@ -203,10 +248,29 @@ export default function MyProfile() {
     // ✅ UPDATE EXISTING BROKER PROFILE
     setSavingProfile(true);
     try {
-      let normalizedPhone = profileData.phone.trim().replace(/\D/g, '');
-      if (normalizedPhone.length === 10) {
-        normalizedPhone = '91' + normalizedPhone;
+      // ✅ ENHANCED: Validate phone number format for updates too
+      const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        toast.error('❌ Invalid Phone Number', {
+          description: `Must be 10 digits (you entered ${cleanPhone.length} digits)`,
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
+        });
+        setSavingProfile(false);
+        return;
       }
+
+      if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
+        toast.error('❌ Invalid Indian Mobile Number', {
+          description: 'Must start with 6, 7, 8, or 9',
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
+        });
+        setSavingProfile(false);
+        return;
+      }
+
+      let normalizedPhone = '91' + cleanPhone;
       
       await base44.entities.Broker.update(brokerProfile.id, {
         name: profileData.name.trim() || brokerProfile.name,
@@ -224,12 +288,17 @@ export default function MyProfile() {
       }));
       
       setEditingProfile(false);
-      toast.success('✅ Profile Updated!');
-    } catch (error) {
-      toast.error('Failed to update profile', {
-        description: error.message
+      toast.success('✅ Profile Updated!', {
+        duration: 3000,
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
       });
+    } catch (error) {
       console.error('Update profile error:', error);
+      toast.error('❌ Failed to update profile', {
+        description: error.message || 'Please try again',
+        duration: 5000,
+        className: 'bg-red-600 text-white border-0'
+      });
     } finally {
       setSavingProfile(false);
     }
