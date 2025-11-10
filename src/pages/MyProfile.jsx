@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -39,7 +38,7 @@ export default function MyProfile() {
     phone: ""
   });
   const [savingProfile, setSavingProfile] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false); // This state will be less relevant for the sticky banner but still used by initial toast.
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -75,12 +74,11 @@ export default function MyProfile() {
               phone: broker.phone || ""
             });
             
-            // ✅ ENHANCED: Always show profile edit form if phone or agency is missing
             const isProfileIncomplete = !broker.phone || !broker.agency_name;
             if (isProfileIncomplete) {
               setShowOnboardingBanner(true);
               setEditingProfile(true);
-              setActiveTab('overview'); // Force to overview tab
+              setActiveTab('overview');
               toast.info('👋 Please complete your profile to unlock all features', {
                 description: 'Phone number and agency name are required',
                 duration: 10000,
@@ -117,7 +115,6 @@ export default function MyProfile() {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
               setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
               
-              // ✅ ENHANCED: Always show profile edit form if incomplete
               const isProfileIncomplete = !matchingBroker.phone || !matchingBroker.agency_name;
               if (isProfileIncomplete) {
                 setShowOnboardingBanner(true);
@@ -617,7 +614,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -628,7 +626,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -639,7 +638,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
             </div>
           )}
 
@@ -789,7 +789,6 @@ export default function MyProfile() {
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-          {/* ✅ ENHANCED: Sticky onboarding banner - ALWAYS SHOW if incomplete */}
           {(!brokerProfile.phone || !brokerProfile.agency_name) && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -824,7 +823,6 @@ export default function MyProfile() {
                       onClick={() => {
                         setActiveTab('overview');
                         setEditingProfile(true);
-                        // Using a small timeout to ensure the tab is active before scrolling
                         setTimeout(() => {
                           const profileDetailsCard = document.getElementById('profile-details-card');
                           if (profileDetailsCard) {
