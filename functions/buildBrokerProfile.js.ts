@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -27,9 +26,6 @@ Deno.serve(async (req) => {
       }
     } catch (error) {
       // If me() fails, it could be a service role call (e.g., from an agent)
-      // For service roles, createClientFromRequest should have already validated
-      // the service token. So if auth.me() fails, it implies a service role context
-      // for which we want to allow access to this specific function.
       isAuthorized = true;
     }
 
@@ -39,11 +35,17 @@ Deno.serve(async (req) => {
 
     const { brokerId, buildAllProfiles } = await req.json();
 
-    const brokersToAnalyze = buildAllProfiles
-      ? await base44.asServiceRole.entities.Broker.list()
-      : brokerId
-        ? [await base44.asServiceRole.entities.Broker.filter({ id: brokerId })].flat().filter(Boolean)
-        : [];
+    // ✅ FIXED: Better broker fetching logic
+    let brokersToAnalyze = [];
+    if (buildAllProfiles) {
+      brokersToAnalyze = await base44.asServiceRole.entities.Broker.list();
+    } else if (brokerId) {
+      const allBrokers = await base44.asServiceRole.entities.Broker.list();
+      const broker = allBrokers.find(b => b.id === brokerId);
+      if (broker) {
+        brokersToAnalyze = [broker];
+      }
+    }
 
     if (brokersToAnalyze.length === 0) {
       return Response.json({ error: 'No brokers to analyze' }, { status: 400 });
@@ -51,11 +53,14 @@ Deno.serve(async (req) => {
 
     const results = [];
 
+    // ✅ FETCH ALL DATA ONCE UPFRONT
+    const allProperties = await base44.asServiceRole.entities.Property.list();
+    const allBrokers = await base44.asServiceRole.entities.Broker.list();
+
     for (const broker of brokersToAnalyze) {
       console.log(`📊 Building profile for: ${broker.name} (${broker.custom_id})`);
 
       // 1. Get all properties from this broker
-      const allProperties = await base44.asServiceRole.entities.Property.list();
       const brokerProperties = allProperties.filter(p => p.broker_id === broker.id);
 
       if (brokerProperties.length === 0) {
@@ -74,31 +79,39 @@ Deno.serve(async (req) => {
           // Find other brokers with these phones
           phones.forEach(phone => {
             const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
-            const cobroker = allProperties.find(p => 
-              p.broker_id !== broker.id && 
-              p.broker_contact && 
-              p.broker_contact.replace(/\D/g, '').includes(normalizedPhone)
+            
+            // ✅ FIXED: Look for matching brokers by phone
+            const cobroker = allBrokers.find(b => 
+              b.id !== broker.id && 
+              b.phone && 
+              b.phone.replace(/\D/g, '').includes(normalizedPhone)
             );
             
             if (cobroker) {
-              const key = cobroker.broker_id;
+              const key = cobroker.id;
               if (!teamMembers[key]) {
+                // Count co-listings for this team member
+                const coBrokerListings = allProperties.filter(p => 
+                  p.broker_id === cobroker.id && 
+                  p.status === 'Active' && 
+                  !p.is_duplicate
+                ).length;
+
                 teamMembers[key] = {
-                  broker_id: cobroker.broker_id,
-                  name: cobroker.broker_contact || 'Unknown',
-                  phone: cobroker.broker_contact,
-                  role: 'Partner',
-                  co_listing_count: 0
+                  broker_id: cobroker.id,
+                  name: cobroker.name || 'Unknown',
+                  phone: cobroker.phone || '',
+                  role: cobroker.agency_name || 'Partner',
+                  co_listing_count: coBrokerListings
                 };
               }
-              teamMembers[key].co_listing_count++;
             }
           });
         }
       });
 
       const teamArray = Object.values(teamMembers)
-        .filter(tm => tm.co_listing_count >= 2) // Only include if 2+ co-listings
+        .filter(tm => tm.co_listing_count >= 1) // ✅ FIXED: Include if at least 1 listing
         .sort((a, b) => b.co_listing_count - a.co_listing_count);
 
       // 3. SPECIALIZATIONS: Analyze listing patterns
@@ -130,8 +143,10 @@ Deno.serve(async (req) => {
         }
 
         // Prices
-        const priceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
-        prices.push(priceInLakhs);
+        if (prop.price) {
+          const priceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
+          prices.push(priceInLakhs);
+        }
       });
 
       const primaryLocations = Object.entries(locationCounts)
@@ -151,7 +166,7 @@ Deno.serve(async (req) => {
           : 'Mixed';
 
       const buildingExpertise = Object.entries(buildingCounts)
-        .filter(e => e[1] >= 3) // 3+ listings in same building
+        .filter(e => e[1] >= 3)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(e => e[0]);
@@ -165,6 +180,7 @@ Deno.serve(async (req) => {
       // 4. PERFORMANCE METRICS
       const propertyDates = brokerProperties
         .map(p => new Date(p.created_date))
+        .filter(d => !isNaN(d.getTime()))
         .sort((a, b) => a - b);
 
       const firstListing = propertyDates[0];
@@ -243,12 +259,17 @@ ${teamArray.length > 0 ? teamArray.map(t => `- ${t.name} (${t.co_listing_count} 
 
 Write a compelling, professional profile that highlights their strengths and expertise. Focus on what makes them unique.`;
 
-      const aiSummaryResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        prompt: profilePrompt,
-        add_context_from_internet: false
-      });
-      const aiSummary = aiSummaryResponse.response_text;
-
+      let aiSummary = '';
+      try {
+        const aiSummaryResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: profilePrompt,
+          add_context_from_internet: false
+        });
+        aiSummary = aiSummaryResponse.response_text || '';
+      } catch (error) {
+        console.error(`Failed to generate AI summary for ${broker.name}:`, error);
+        aiSummary = `${broker.name} is an active real estate professional specializing in ${primaryLocations.join(', ') || 'Mumbai properties'}.`;
+      }
 
       // 7. UPDATE BROKER WITH PROFILE DATA
       const profileUpdate = {
@@ -297,6 +318,9 @@ Write a compelling, professional profile that highlights their strengths and exp
 
   } catch (error) {
     console.error('Error building broker profiles:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      error: error.message,
+      stack: error.stack 
+    }, { status: 500 });
   }
 });
