@@ -416,6 +416,24 @@ export default function Layout({ children, currentPageName }) {
                 </li>
                 <li>
                   <Link 
+                    to={createPageUrl("Buildings")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Buildings
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("DeveloperDirectory")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Developers
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     to={createPageUrl("Blogs")} 
                     className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >

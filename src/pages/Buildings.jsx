@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,11 +20,21 @@ export default function Buildings() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [developerFilter, setDeveloperFilter] = useState("all");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
   const [buildingsToShow, setBuildingsToShow] = useState(9);
   const BUILDINGS_PER_LOAD = 9;
+
+  // ✅ NEW: Read developer filter from URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const developerParam = urlParams.get('developer');
+    if (developerParam) {
+      setDeveloperFilter(developerParam);
+    }
+  }, []);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -62,6 +73,16 @@ export default function Buildings() {
     refetchOnWindowFocus: false,
   });
 
+  // ✅ NEW: Fetch developers for filter
+  const { data: developers = [] } = useQuery({
+    queryKey: ['developers'],
+    queryFn: () => base44.entities.Developer.list('-name'),
+    initialData: [],
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   // ✅ FIXED: Calculate listing counts from properties data
   const buildingsWithCounts = useMemo(() => {
     return buildings.map(building => {
@@ -80,7 +101,7 @@ export default function Buildings() {
     return [...new Set(buildingsWithCounts.map(b => b.location).filter(Boolean))];
   }, [buildingsWithCounts]);
 
-  // ⚡ OPTIMIZATION: Memoize filtered buildings
+  // ⚡ OPTIMIZATION: Memoize filtered buildings - NOW WITH DEVELOPER FILTER
   const filteredBuildings = useMemo(() => {
     return buildingsWithCounts.filter(building => {
       const matchesSearch = !searchQuery ||
@@ -91,13 +112,18 @@ export default function Buildings() {
 
       const matchesLocation = locationFilter === "all" || building.location === locationFilter;
 
-      return matchesSearch && matchesLocation;
+      // ✅ NEW: Developer filter matching
+      const matchesDeveloper = developerFilter === "all" || 
+        building.developer_name === developerFilter ||
+        developers.find(d => d.id === building.developer_id)?.name === developerFilter;
+
+      return matchesSearch && matchesLocation && matchesDeveloper;
     });
-  }, [buildingsWithCounts, searchQuery, locationFilter]);
+  }, [buildingsWithCounts, searchQuery, locationFilter, developerFilter, developers]);
 
   useEffect(() => {
     setBuildingsToShow(BUILDINGS_PER_LOAD);
-  }, [searchQuery, locationFilter]);
+  }, [searchQuery, locationFilter, developerFilter]);
 
   const displayedBuildings = useMemo(() => {
     return filteredBuildings.slice(0, buildingsToShow);
@@ -176,9 +202,9 @@ export default function Buildings() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* ✅ ENHANCED: Filters with Developer dropdown */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
@@ -198,7 +224,51 @@ export default function Buildings() {
                 <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
+            <select
+              value={developerFilter}
+              onChange={(e) => setDeveloperFilter(e.target.value)}
+              className="h-11 rounded-xl border border-purple-200 px-4 font-semibold focus:ring-purple-500"
+            >
+              <option value="all">All Developers</option>
+              {developers.map(dev => (
+                <option key={dev.id} value={dev.name}>{dev.name}</option>
+              ))}
+            </select>
           </div>
+          
+          {/* ✅ NEW: Active filter badges */}
+          {(developerFilter !== "all" || locationFilter !== "all") && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-purple-100">
+              <p className="text-xs text-slate-600 font-semibold">Active Filters:</p>
+              {locationFilter !== "all" && (
+                <Badge 
+                  className="bg-purple-100 text-purple-800 border-purple-300 cursor-pointer hover:bg-purple-200"
+                  onClick={() => setLocationFilter("all")}
+                >
+                  Location: {locationFilter} ✕
+                </Badge>
+              )}
+              {developerFilter !== "all" && (
+                <Badge 
+                  className="bg-indigo-100 text-indigo-800 border-indigo-300 cursor-pointer hover:bg-indigo-200"
+                  onClick={() => setDeveloperFilter("all")}
+                >
+                  Developer: {developerFilter} ✕
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setLocationFilter("all");
+                  setDeveloperFilter("all");
+                }}
+                className="text-xs text-slate-600 hover:text-slate-900"
+              >
+                Clear All
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Loading State */}

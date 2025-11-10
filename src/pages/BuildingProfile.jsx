@@ -83,6 +83,17 @@ export default function BuildingProfile() {
     initialData: [],
   });
 
+  // ✅ NEW: Fetch developer data if developer_id exists
+  const { data: developer } = useQuery({
+    queryKey: ['developer', building?.developer_id],
+    queryFn: async () => {
+      if (!building?.developer_id) return null;
+      const developers = await base44.entities.Developer.list();
+      return developers.find(d => d.id === building.developer_id);
+    },
+    enabled: !!building?.developer_id,
+  });
+
   // Calculate building intelligence
   const buildingIntelligence = useMemo(() => {
     if (buildingHistory.length === 0) return null;
@@ -476,6 +487,113 @@ export default function BuildingProfile() {
               </div>
             )}
 
+            {/* ✅ ENHANCED: Developer Info Section with full Developer entity data */}
+            {(developer || building.developer_name) && (
+              <div className="mb-8 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl border-2 border-indigo-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Building2 className="w-5 h-5 text-indigo-600" />
+                      <p className="text-xs text-indigo-700 uppercase tracking-wide font-bold">Developer</p>
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                      {developer?.name || building.developer_name}
+                    </h3>
+                    
+                    {developer && (
+                      <>
+                        {developer.tier && (
+                          <Badge className={`mb-3 ${
+                            developer.tier === 'Tier 1' ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white' :
+                            developer.tier === 'Tier 2' ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white' :
+                            'bg-gradient-to-r from-emerald-500 to-green-500 text-white'
+                          } border-0 font-bold shadow-md`}>
+                            {developer.tier}
+                          </Badge>
+                        )}
+                        
+                        {developer.key_focus_areas && developer.key_focus_areas.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs text-slate-600 mb-2 font-semibold">Specializations:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {developer.key_focus_areas.slice(0, 3).map((area, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs border-indigo-300 text-indigo-700 bg-white">
+                                  {area}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {developer.reputation_score && (
+                          <div className="mb-3">
+                            <p className="text-xs text-slate-600 mb-2 font-semibold">Developer Reputation:</p>
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full transition-all"
+                                    style={{ width: `${developer.reputation_score}%` }}
+                                  />
+                                </div>
+                              </div>
+                              <span className="text-sm font-bold text-indigo-700">{developer.reputation_score}/100</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {developer.delivery_track_record && developer.delivery_track_record !== 'Unknown' && (
+                          <Badge className={`${
+                            developer.delivery_track_record === 'Excellent' ? 'bg-green-100 text-green-800 border-green-300' :
+                            developer.delivery_track_record === 'Good' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                            'bg-yellow-100 text-yellow-800 border-yellow-300'
+                          } font-semibold text-xs`}>
+                            {developer.delivery_track_record} Track Record
+                          </Badge>
+                        )}
+
+                        {developer.notable_projects && developer.notable_projects.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-indigo-200">
+                            <p className="text-xs text-slate-600 mb-2 font-semibold">Notable Projects:</p>
+                            <ul className="space-y-1">
+                              {developer.notable_projects.slice(0, 4).map((project, idx) => (
+                                <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
+                                  <Star className="w-3 h-3 text-indigo-500 mt-1 flex-shrink-0" />
+                                  <span className="line-clamp-1">{project}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {!developer && building.developer_reputation && (
+                      <p className="text-sm text-slate-700 mt-2">{building.developer_reputation}</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    {(developer?.verified || building.verified) && (
+                      <Badge className="bg-green-100 text-green-800 border-green-300 font-semibold text-xs">
+                        <Check className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                    {developer && (
+                      <Button
+                        onClick={() => navigate(createPageUrl("Buildings") + `?developer=${encodeURIComponent(developer.name)}`)}
+                        size="sm"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-xl"
+                      >
+                        View All Buildings
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* NEW: Building Memory - Enhanced with more details */}
             {buildingIntelligence && buildingIntelligence.totalListings > 0 && (
               <div className="mb-8 p-6 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-3xl border-2 border-purple-200 shadow-sm">
@@ -569,24 +687,6 @@ export default function BuildingProfile() {
                 <p className="text-xs text-amber-800 mt-4 italic">
                   📊 AI-calculated from {buildingIntelligence.totalListings} listings • Updated from broker WhatsApp data
                 </p>
-              </div>
-            )}
-
-            {/* Developer Info - Enhanced */}
-            {building.developer_name && (
-              <div className="mb-8 p-4 bg-stone-50 rounded-2xl border border-stone-200">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs text-stone-500 mb-1 uppercase tracking-wide">Developer</p>
-                    <p className="text-lg font-bold text-[#111111]">{building.developer_name}</p>
-                    {building.developer_reputation && (
-                      <p className="text-sm text-stone-600 mt-2">{building.developer_reputation}</p>
-                    )}
-                  </div>
-                  <Badge className="bg-stone-200 text-stone-800 text-xs">
-                    Verified
-                  </Badge>
-                </div>
               </div>
             )}
 
