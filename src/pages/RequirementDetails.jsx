@@ -23,7 +23,7 @@ import {
   generateRequirementJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators";
+} from "@/utils/jsonLdGenerators.js";
 
 export default function RequirementDetails() {
   const navigate = useNavigate();

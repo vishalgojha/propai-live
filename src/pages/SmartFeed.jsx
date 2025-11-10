@@ -22,11 +22,13 @@ import {
 } from "@/components/ui/popover";
 import { Info } from "lucide-react";
 import { debounce } from "lodash";
+
+// ✅ FIXED: Add .js extension
 import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators";
+} from "@/utils/jsonLdGenerators.js";
 
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
@@ -622,7 +624,7 @@ export default function SmartFeed() {
 
         {userPreferences && showAutoMatchBanner && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl p-4 border-2 border-purple-300"
           >

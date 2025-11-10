@@ -25,12 +25,12 @@ import {
 } from "@/components/ui/dialog";
 import { Toaster } from "sonner";
 
-// ✅ FIXED: Use @/utils alias instead of relative path
+// ✅ FIXED: Add .js extension
 import {
   generatePropertyJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators";
+} from "@/utils/jsonLdGenerators.js";
 
 
 export default function PropertyDetails() {
