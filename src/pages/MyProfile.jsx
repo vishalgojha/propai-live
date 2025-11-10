@@ -216,11 +216,7 @@ export default function MyProfile() {
           return;
         }
 
-        const customId = `CHR-BRK-${String(allBrokers.length + 1).padStart(4, '0')}`;
-        console.log('🆔 Generated ID:', customId);
-
         const brokerData = {
-          custom_id: customId,
           name: profileData.name.trim(),
           phone: normalizedPhone,
           agency_name: profileData.agency_name.trim(),
