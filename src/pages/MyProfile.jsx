@@ -38,9 +38,9 @@ export default function MyProfile() {
     phone: ""
   });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
@@ -1041,7 +1041,7 @@ export default function MyProfile() {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Phone Number (Your Contact)
+                        Phone Number (Your Contact) {!brokerProfile.phone && <span className="text-red-600">*Required</span>}
                       </label>
                       <Input
                         type="tel"
@@ -1057,7 +1057,7 @@ export default function MyProfile() {
 
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Agency Name (Optional)
+                        Agency Name {!brokerProfile.agency_name && <span className="text-red-600">*Required</span>}
                       </label>
                       <Input
                         type="text"
@@ -1480,7 +1480,7 @@ export default function MyProfile() {
                           </Badge>
                           <h3 className="font-bold text-slate-900 line-clamp-2 mb-2">
                             {prop.ai_title || `${prop.bhk} in ${prop.location}`}
-                          </h3 >
+                          </h3>
                           <p className="text-sm text-slate-600 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {prop.location}
