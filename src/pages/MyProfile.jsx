@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -581,30 +582,80 @@ export default function MyProfile() {
         )}
 
         <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-              <Users className="w-8 h-8 text-purple-600" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600">
-                <span>{brokerProfile.custom_id}</span>
-                {brokerProfile.phone && (
-                  <>
-                    <span>•</span>
-                    <span className="font-mono text-purple-700">{brokerProfile.phone}</span>
-                  </>
-                )}
-                {brokerProfile.agency_name && (
-                  <>
-                    <span>•</span>
-                    <span className="font-semibold text-purple-700">{brokerProfile.agency_name}</span>
-                  </>
-                )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-purple-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
+                <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600">
+                  <span>{brokerProfile.custom_id}</span>
+                  {brokerProfile.phone && (
+                    <>
+                      <span>•</span>
+                      <span className="font-mono text-purple-700">{brokerProfile.phone}</span>
+                    </>
+                  )}
+                  {brokerProfile.agency_name && (
+                    <>
+                      <span>•</span>
+                      <span className="font-semibold text-purple-700">{brokerProfile.agency_name}</span>
+                    </>
+                  )}
+                  {currentUser.role === 'admin' && (
+                    <>
+                      <span>•</span>
+                      <Badge className="bg-purple-600 text-white">Admin</Badge>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* ✅ NEW: Admin Quick Actions */}
+        {currentUser.role === 'admin' && (
+          <Card className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 border-0 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Admin Shortcuts
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Button
+                onClick={() => navigate(createPageUrl("Admin"))}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Admin Panel
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("AdminDashboard"))}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("BrokerNetwork"))}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Network
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("BrokerProfile") + `?id=${brokerProfile.id}`)}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                My Profile
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {brokerMetrics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
