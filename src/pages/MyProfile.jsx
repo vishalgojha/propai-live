@@ -42,6 +42,19 @@ export default function MyProfile() {
 
   const [activeTab, setActiveTab] = useState('overview');
 
+  // ✅ NEW: Preferred Areas state
+  const [editingAreas, setEditingAreas] = useState(false);
+  const [selectedAreas, setSelectedAreas] = useState([]);
+  const [savingAreas, setSavingAreas] = useState(false);
+
+  // ✅ NEW: Popular Mumbai areas
+  const popularAreas = [
+    "Bandra West", "Bandra East", "Juhu", "Andheri West", "Andheri East",
+    "Khar West", "BKC", "Worli", "Lower Parel", "Powai",
+    "Goregaon West", "Malad West", "Kandivali West", "Borivali West",
+    "Santacruz West", "Versova", "Lokhandwala", "Pali Hill", "Carter Road"
+  ];
+
   // ✅ LOAD USER AND CHECK FOR EXISTING BROKER PROFILE
   useEffect(() => {
     const loadUser = async () => {
@@ -53,6 +66,7 @@ export default function MyProfile() {
         }
         
         setCurrentUser(user);
+        setSelectedAreas(user.preferred_areas || []); // ✅ LOAD PREFERRED AREAS
 
         const urlParams = new URLSearchParams(window.location.search);
         const shouldCompleteProfile = urlParams.get('complete_profile') === 'true';
@@ -211,6 +225,33 @@ export default function MyProfile() {
       toast.error('Failed to update profile');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  // ✅ NEW: Save Preferred Areas
+  const handleSaveAreas = async () => {
+    setSavingAreas(true);
+    try {
+      await base44.auth.updateMe({ preferred_areas: selectedAreas });
+      setCurrentUser(prev => ({ ...prev, preferred_areas: selectedAreas }));
+      setEditingAreas(false);
+      toast.success('✅ Preferred areas saved!', {
+        description: 'SmartFeed will prioritize properties from these areas',
+        duration: 3000
+      });
+    } catch (error) {
+      toast.error('Failed to save areas');
+    } finally {
+      setSavingAreas(false);
+    }
+  };
+
+  // ✅ NEW: Toggle Area Selection
+  const toggleArea = (area) => {
+    if (selectedAreas.includes(area)) {
+      setSelectedAreas(selectedAreas.filter(a => a !== area));
+    } else {
+      setSelectedAreas([...selectedAreas, area]);
     }
   };
 
@@ -537,7 +578,6 @@ export default function MyProfile() {
       <Toaster position="top-center" richColors closeButton />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-        {/* ✅ CHANGED: Red banner to purple gradient */}
         {(!brokerProfile.phone || !brokerProfile.agency_name) && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -694,6 +734,103 @@ export default function MyProfile() {
             </Card>
           </div>
         )}
+
+        {/* ✅ NEW: PREFERRED AREAS CARD */}
+        <Card className="p-6 bg-white border-2 border-purple-200 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-purple-600" />
+              My Preferred Areas ({selectedAreas.length})
+            </h3>
+            <Button
+              onClick={() => {
+                setEditingAreas(!editingAreas);
+                if (!editingAreas) {
+                  setSelectedAreas(currentUser.preferred_areas || []);
+                }
+              }}
+              variant="outline"
+              size="sm"
+              className="border-purple-300 text-purple-700"
+            >
+              {editingAreas ? 'Cancel' : <><Edit className="w-3 h-3 mr-1" /> Edit Areas</>}
+            </Button>
+          </div>
+
+          <p className="text-sm text-slate-600 mb-4">
+            {editingAreas 
+              ? '✨ Select your focus areas. SmartFeed will prioritize properties from these locations.' 
+              : '📍 Your preferred areas for property searches and listings'}
+          </p>
+
+          {editingAreas ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                {popularAreas.map((area) => {
+                  const isSelected = selectedAreas.includes(area);
+                  return (
+                    <Button
+                      key={area}
+                      onClick={() => toggleArea(area)}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      className={`h-auto py-3 text-xs justify-start ${
+                        isSelected
+                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
+                          : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                      }`}
+                    >
+                      {isSelected && <Star className="w-3 h-3 mr-1" fill="currentColor" />}
+                      {area}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                onClick={handleSaveAreas}
+                disabled={savingAreas}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-12 font-bold"
+              >
+                {savingAreas ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  '✅ Save Preferred Areas'
+                )}
+              </Button>
+            </>
+          ) : (
+            <div>
+              {selectedAreas.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {selectedAreas.map((area) => (
+                    <Badge
+                      key={area}
+                      className="bg-purple-100 text-purple-800 border-purple-300 text-sm px-3 py-1.5"
+                    >
+                      <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                      {area}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-purple-50 rounded-xl border-2 border-purple-200">
+                  <MapPin className="w-12 h-12 text-purple-300 mx-auto mb-3" />
+                  <p className="text-sm text-slate-600 mb-3">No preferred areas set yet</p>
+                  <Button
+                    onClick={() => setEditingAreas(true)}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Select Your Areas
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
 
         {/* ✅ PROFILE DETAILS CARD */}
         <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
