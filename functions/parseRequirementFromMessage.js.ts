@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 /**
  * REQUIREMENT PARSER - Extracts client requirements from broker messages
  * Properly identifies broker vs direct client and sets client_name correctly
+ * ✅ FIX: Ensures broker_id is NEVER null (required field)
  */
 
 const ADMIN_NUMBERS = ['919819471310', '9102269622278'];
@@ -40,7 +41,7 @@ ${message}
 
 Return this EXACT JSON structure:
 {
-  "bhk_preference": ["array of strings like '2 BHK', '3 BHK'"],
+  "bhk_preference": ["array of strings like '2 BHK', '3 BHK', 'Office Space', 'Retail Shop'"],
   "budget_min": number or null (in lakhs or crores based on budget_unit),
   "budget_max": number or null,
   "budget_unit": "lakhs or crores",
@@ -142,7 +143,7 @@ Return ONLY valid JSON, no markdown`;
         }
       });
 
-      console.log(`✓ Extracted requirement - broker: ${extractedData.broker?.name || 'none'}`);
+      console.log(`✓ Extracted requirement - broker: ${extractedData.broker?.name || 'none'}, listing_type: ${extractedData.listing_type}`);
       
     } catch (llmError) {
       return Response.json({ 
@@ -157,13 +158,16 @@ Return ONLY valid JSON, no markdown`;
       return Response.json({ 
         success: false,
         error: 'Missing listing_type',
-        stage: 'validation'
+        stage: 'validation',
+        extractedData: extractedData
       }, { status: 400 });
     }
 
-    // STEP 3: HANDLE BROKER
+    // STEP 3: HANDLE BROKER - ✅ ALWAYS ENSURE broker_id IS SET
     let brokerRecord = null;
     let brokerContact = null;
+    
+    const allBrokers = await base44.asServiceRole.entities.Broker.list();
     
     if (extractedData.broker && extractedData.broker.phone) {
       const normalizedPhone = extractedData.broker.phone.replace(/\D/g, '');
@@ -172,7 +176,6 @@ Return ONLY valid JSON, no markdown`;
       );
       
       if (!isAdmin) {
-        const allBrokers = await base44.asServiceRole.entities.Broker.list();
         const phoneLast10 = normalizedPhone.slice(-10);
         
         brokerRecord = allBrokers.find(b => {
@@ -204,6 +207,35 @@ Return ONLY valid JSON, no markdown`;
         brokerContact = extractedData.broker.phone;
       }
     }
+    
+    // ✅ CRITICAL FIX: If no broker found, use/create "PropAI Admin" broker
+    if (!brokerRecord) {
+      brokerRecord = allBrokers.find(b => 
+        b.name === 'PropAI Admin' || b.phone === '9102269622278'
+      );
+      
+      if (!brokerRecord) {
+        const currentBrokerCount = allBrokers.length;
+        const brokerCustomId = `CHR-BRK-${String(currentBrokerCount + 1).padStart(4, '0')}`;
+        
+        brokerRecord = await base44.asServiceRole.entities.Broker.create({
+          custom_id: brokerCustomId,
+          name: 'PropAI Admin',
+          phone: '9102269622278',
+          agency_name: 'PropAI Live',
+          status: "Active",
+          total_listings_count: 0,
+          active_listings_count: 0,
+          verified: true
+        });
+        
+        console.log(`✓ Created PropAI Admin broker ${brokerCustomId}`);
+      } else {
+        console.log(`✓ Using existing PropAI Admin broker ${brokerRecord.custom_id}`);
+      }
+      
+      brokerContact = '9102269622278';
+    }
 
     // STEP 4: GENERATE CUSTOM ID
     const allRequirements = await base44.asServiceRole.entities.Requirement.list();
@@ -232,18 +264,18 @@ Return ONLY valid JSON, no markdown`;
 
     console.log(`✓ Generated ID: ${customId}, Slug: ${slug}`);
 
-    // STEP 6: CREATE REQUIREMENT
+    // STEP 6: CREATE REQUIREMENT - ✅ broker_id is GUARANTEED to be set now
     let requirement;
     try {
       const requirementData = {
         custom_id: customId,
         slug: slug,
-        broker_id: brokerRecord ? brokerRecord.id : null,
+        broker_id: brokerRecord.id, // ✅ NEVER null
         broker_contact: brokerContact,
         bhk_preference: extractedData.bhk_preference || [],
         budget_min: extractedData.budget_min,
         budget_max: extractedData.budget_max,
-        budget_unit: extractedData.budget_unit,
+        budget_unit: extractedData.budget_unit || 'lakhs', // ✅ Default to lakhs
         preferred_locations: extractedData.preferred_locations || [],
         pocket: extractedData.pocket,
         listing_type: extractedData.listing_type,
@@ -256,20 +288,24 @@ Return ONLY valid JSON, no markdown`;
         amenities_required: extractedData.amenities_required || [],
         notes: extractedData.notes,
         source_text: message,
-        client_name: extractedData.client_name || (brokerRecord ? brokerRecord.name : 'Client'),
+        client_name: extractedData.client_name || (brokerRecord.name !== 'PropAI Admin' ? brokerRecord.name : 'Client'),
         client_phone: extractedData.broker?.phone || null,
         client_type: extractedData.is_direct_client ? "Registered User" : "Broker Referral",
         is_direct_client: extractedData.is_direct_client || false,
         status: "Active"
       };
 
+      console.log(`✓ Creating requirement with broker_id: ${brokerRecord.id} (${brokerRecord.name})`);
+      
       requirement = await base44.asServiceRole.entities.Requirement.create(requirementData);
-      console.log(`✓ Created requirement ${customId} - broker: ${brokerRecord?.name || 'none'}`);
+      console.log(`✓ Created requirement ${customId} - broker: ${brokerRecord.name}`);
     } catch (requirementError) {
+      console.error(`❌ Requirement creation error:`, requirementError);
       return Response.json({ 
         success: false,
         error: `Requirement creation failed: ${requirementError.message}`,
-        stage: 'requirement_creation'
+        stage: 'requirement_creation',
+        details: requirementError.toString()
       }, { status: 500 });
     }
 
@@ -279,7 +315,7 @@ Return ONLY valid JSON, no markdown`;
         data_type: 'requirement',
         data: {
           ...requirement,
-          broker_name: brokerRecord ? brokerRecord.name : null,
+          broker_name: brokerRecord.name,
           broker_phone: brokerContact
         }
       }).catch(err => console.warn('PropAI sync failed:', err.message))
@@ -293,13 +329,14 @@ Return ONLY valid JSON, no markdown`;
         id: requirement.id,
         custom_id: requirement.custom_id,
         slug: requirement.slug,
-        broker_custom_id: brokerRecord ? brokerRecord.custom_id : null,
-        broker_name: brokerRecord ? brokerRecord.name : null,
+        broker_custom_id: brokerRecord.custom_id,
+        broker_name: brokerRecord.name,
         client_name: requirement.client_name
       }
     });
 
   } catch (error) {
+    console.error(`❌ Unexpected error:`, error);
     return Response.json({ 
       success: false,
       error: `Unexpected error: ${error.message}`,
