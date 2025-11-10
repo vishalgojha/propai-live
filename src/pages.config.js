@@ -22,6 +22,7 @@ import AdminLogin from './pages/AdminLogin';
 import AIUsageMonitor from './pages/AIUsageMonitor';
 import RequirementDetails from './pages/RequirementDetails';
 import FAQ from './pages/FAQ';
+import DeveloperDirectory from './pages/DeveloperDirectory';
 import Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "AIUsageMonitor": AIUsageMonitor,
     "RequirementDetails": RequirementDetails,
     "FAQ": FAQ,
+    "DeveloperDirectory": DeveloperDirectory,
 }
 
 export const pagesConfig = {
