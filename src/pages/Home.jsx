@@ -175,23 +175,15 @@ export default function Home() {
               </a>
             </div>
 
-            {/* Inline Chat Widget - WITH SMOOTH ANIMATION */}
-            <AnimatePresence mode="wait">
-              {showInlineChat && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: "auto", marginBottom: 48 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <InlineChatWidget
-                    isOpen={showInlineChat}
-                    onClose={() => setShowInlineChat(false)}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* ✅ FIXED: Inline Chat Widget - NO JUMPING */}
+            {showInlineChat && (
+              <div className="mb-12">
+                <InlineChatWidget
+                  isOpen={showInlineChat}
+                  onClose={() => setShowInlineChat(false)}
+                />
+              </div>
+            )}
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
