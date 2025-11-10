@@ -161,7 +161,6 @@ export default function MyProfile() {
           normalizedPhone = null; // If empty after cleanup, set to null
         } else {
           // Other lengths, assume it's incorrect or keep as is if API handles it.
-          // For now, let's just use it as is if it's not a standard 10 or 12 digit.
           // More robust validation could be added here.
         }
       } else {
@@ -606,8 +605,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -618,8 +616,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -630,8 +627,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
             </div>
           )}
 
@@ -793,6 +789,16 @@ export default function MyProfile() {
                   <h1 className="text-3xl font-bold text-slate-900">{brokerProfile?.name}</h1>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-slate-600">{brokerProfile?.custom_id}</p>
+                    {/* ✅ ADDED: Display phone in header */}
+                    {brokerProfile?.phone && (
+                      <>
+                        <span className="text-slate-400">•</span>
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-purple-600" />
+                          <p className="text-sm font-mono text-purple-700">{brokerProfile.phone}</p>
+                        </div>
+                      </>
+                    )}
                     {brokerProfile?.agency_name && (
                       <>
                         <span className="text-slate-400">•</span>
@@ -960,7 +966,7 @@ export default function MyProfile() {
                 </Card>
               )}
 
-              {/* Profile Details Section - ENHANCED */}
+              {/* Profile Details Section - ✅ ENHANCED TO SHOW PHONE PROMINENTLY */}
               <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -989,6 +995,22 @@ export default function MyProfile() {
 
                 {editingProfile ? (
                   <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                        Phone Number (Your Contact)
+                      </label>
+                      <Input
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        placeholder="9820056789"
+                        className="text-sm font-mono"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        10-digit mobile number (will be normalized with 91 prefix)
+                      </p>
+                    </div>
+
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-2 block">
                         Agency Name (Optional)
@@ -1021,22 +1043,6 @@ export default function MyProfile() {
                       </p>
                     </div>
 
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                        Phone Number
-                      </label>
-                      <Input
-                        type="tel"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                        placeholder="9820056789"
-                        className="text-sm"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">
-                        10-digit mobile number (will be normalized with 91 prefix)
-                      </p>
-                    </div>
-
                     <Button
                       onClick={handleSaveProfile}
                       disabled={savingProfile}
@@ -1054,6 +1060,23 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {/* ✅ PHONE SHOWN FIRST & HIGHLIGHTED */}
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                      <Phone className="w-5 h-5 text-purple-600" />
+                      <span className="text-sm text-slate-600">Your Contact:</span>
+                      <span className="text-base font-bold font-mono text-purple-900">
+                        {brokerProfile.phone || <span className="text-red-600 italic font-normal">⚠️ Not set - Update now!</span>}
+                      </span>
+                    </div>
+                    
+                    {!brokerProfile.phone && (
+                      <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                        <p className="text-xs text-amber-800">
+                          <strong>⚠️ Important:</strong> Without a phone number, other brokers cannot add you to their teams. Click "Edit Profile" to add your number.
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-3">
                       <Building2 className="w-4 h-4 text-purple-600" />
                       <span className="text-sm text-slate-600">Agency:</span>
@@ -1067,11 +1090,6 @@ export default function MyProfile() {
                       <span className="text-sm font-semibold text-slate-900">
                         {brokerProfile.email || <span className="text-slate-400 italic">Not set</span>}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600">Phone:</span>
-                      <span className="text-sm font-semibold text-slate-900">{brokerProfile.phone}</span>
                     </div>
                   </div>
                 )}
