@@ -41,6 +41,7 @@ export default function PropertyDetails() {
 
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [showPhotoDisclaimer, setShowPhotoDisclaimer] = React.useState(true);
   // REMOVED: const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
   const { data: property, isLoading } = useQuery({
@@ -338,7 +339,40 @@ export default function PropertyDetails() {
           Back to Properties
         </Button>
 
-        {/* NO HERO IMAGE SECTION - Removed completely */}
+        {/* ✅ NEW: Photo Disclaimer - Only show if property has no images */}
+        {property && (!property.images || property.images.length === 0) && showPhotoDisclaimer && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border-2 border-indigo-200">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 mb-1 text-sm">📸 Why This Listing Has No Photos</h3>
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      This property was just listed—likely within seconds of being posted by the broker. PropAI prioritizes <strong>real-time data over static images</strong> to ensure you see the freshest inventory first. Photos will appear automatically when the broker shares them. 
+                      <a href={createPageUrl("FAQ")} className="text-indigo-700 font-semibold hover:underline ml-1">Learn more →</a>
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowPhotoDisclaimer(false)}
+                  className="h-6 w-6 hover:bg-indigo-100 flex-shrink-0 text-slate-500 hover:text-slate-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Main Content Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-purple-200/50 overflow-hidden mb-8">
