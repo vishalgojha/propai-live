@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Building2, Search, MapPin, Star, ArrowRight
+  Building2, Search, MapPin, Star, ArrowRight, Check
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -241,13 +242,32 @@ export default function Buildings() {
                             Verified
                           </Badge>
                         )}
-                        {!building.verified && (
-                          <Badge className="bg-purple-500/20 text-purple-700 border-purple-500 text-xs">
-                            Auto
-                          </Badge>
-                        )}
                       </div>
                     </div>
+
+                    {/* ✅ ENHANCED: Show building summary if available */}
+                    {building.building_summary && (
+                      <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">
+                        {building.building_summary}
+                      </p>
+                    )}
+
+                    {/* ✅ ENHANCED: Show developer and year */}
+                    {(building.developer_name || building.year_built) && (
+                      <div className="mb-3 pb-3 border-b border-purple-100">
+                        {building.developer_name && (
+                          <p className="text-xs text-purple-700 font-semibold mb-1">
+                            <Building2 className="w-3 h-3 inline mr-1" />
+                            {building.developer_name}
+                          </p>
+                        )}
+                        {building.year_built && (
+                          <p className="text-xs text-slate-500">
+                            Built: {building.year_built}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {(building.building_type || building.management_quality) && (
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -262,6 +282,14 @@ export default function Buildings() {
                             {building.management_quality}
                           </Badge>
                         )}
+                      </div>
+                    )}
+
+                    {/* ✅ ENHANCED: Show amenities count if available */}
+                    {building.amenities && building.amenities.length > 0 && (
+                      <div className="mb-3 text-xs text-slate-600">
+                        <Check className="w-3 h-3 inline mr-1 text-green-600" />
+                        {building.amenities.length} Amenities
                       </div>
                     )}
 
@@ -284,22 +312,15 @@ export default function Buildings() {
                       <div className="text-center">
                         <p className="text-xs text-slate-600 mb-1">Active Listings</p>
                         <p className="text-lg font-bold text-purple-800">
-                          {building.active_listings !== undefined && building.active_listings !== null 
-                            ? building.active_listings 
-                            : 0}
+                          {building.active_listings || 0}
                         </p>
                       </div>
-                      {building.year_built ? (
-                        <div className="text-center">
-                          <p className="text-xs text-slate-600 mb-1">Built</p>
-                          <p className="text-lg font-bold text-purple-800">{building.year_built}</p>
-                        </div>
-                      ) : (building.total_listings !== undefined && building.total_listings !== null) && (
-                        <div className="text-center">
-                          <p className="text-xs text-slate-600 mb-1">Total Listings</p>
-                          <p className="text-lg font-bold text-indigo-800">{building.total_listings || 0}</p>
-                        </div>
-                      )}
+                      <div className="text-center">
+                        <p className="text-xs text-slate-600 mb-1">Total Listings</p>
+                        <p className="text-lg font-bold text-indigo-800">
+                          {building.total_listings || 0}
+                        </p>
+                      </div>
                     </div>
 
                     {(building.avg_rent_2bhk || building.avg_sale_2bhk) && (
@@ -325,7 +346,7 @@ export default function Buildings() {
                     <Button
                       className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl shadow-md"
                     >
-                      View Details
+                      View Full Profile
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
