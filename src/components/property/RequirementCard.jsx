@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 import {
   MapPin, Home, Calendar, User, MessageCircle,
   Clock, Copy, Sparkles, CheckCircle2
@@ -10,6 +11,23 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 export default function RequirementCard({ requirement, allProperties = [] }) {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        setCurrentUser(null);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+    loadUser();
+  }, []);
+
   const formatBudget = () => {
     if (!requirement.budget_min && !requirement.budget_max) {
       return { from: "Any", to: "Flexible" };
@@ -17,12 +35,25 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
 
     const unit = requirement.budget_unit === "crores" ? "Cr" : "L";
     
+    // ✅ FIX: Handle small values (< 1 lakh) - likely data entry errors
+    const formatValue = (val) => {
+      if (!val) return null;
+      if (val < 1 && unit === 'L') {
+        // Convert to thousands for display (e.g., 0.5L = 50K)
+        return `₹${Math.round(val * 100)}K`;
+      }
+      return `₹${val}${unit}`;
+    };
+    
     if (requirement.budget_min && requirement.budget_max) {
-      return { from: `₹${requirement.budget_min}${unit}`, to: `₹${requirement.budget_max}${unit}` };
+      return { 
+        from: formatValue(requirement.budget_min), 
+        to: formatValue(requirement.budget_max) 
+      };
     } else if (requirement.budget_max) {
-      return { from: "Any", to: `₹${requirement.budget_max}${unit}` };
+      return { from: "Any", to: formatValue(requirement.budget_max) };
     } else if (requirement.budget_min) {
-      return { from: `₹${requirement.budget_min}${unit}`, to: "Any" };
+      return { from: formatValue(requirement.budget_min), to: "Any" };
     }
     
     return { from: "Any", to: "Flexible" };
@@ -114,6 +145,34 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  // ✅ NEW: Handle "I have a match" for non-admin users
+  const handleIHaveMatch = (e) => {
+    e.stopPropagation();
+    
+    const phone = requirement.broker_contact;
+    
+    if (!phone) {
+      toast.error('⚠️ Broker contact not available');
+      return;
+    }
+    
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Message to broker about having a match
+    let message = `Hi! I have a property that matches your requirement:\n\n`;
+    
+    message += `🔍 *Your Requirement:*\n`;
+    message += `• ${requirement.bhk_preference?.join(', ') || 'Property'}\n`;
+    message += `• ${requirement.preferred_locations?.join(', ') || 'Mumbai'}\n`;
+    message += `• Budget: ${budget.from} → ${budget.to}\n\n`;
+    
+    message += `I have a matching property available. Can we discuss?\n\n`;
+    
+    message += `📱 Found via PropAI Live\nwww.propai.live`;
+    
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const getUrgencyColor = () => {
     switch(requirement.urgency) {
       case 'High': return 'bg-red-500 text-white border-0';
@@ -144,6 +203,7 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
   };
 
   const budget = formatBudget();
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
     <motion.div
@@ -230,31 +290,35 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
           </div>
         </div>
 
-        {/* AI Matches Badge */}
-        {matchedProperties.length > 0 ? (
-          <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <div>
-                <p className="text-sm font-bold text-purple-900">
-                  {matchedProperties.length} AI {matchedProperties.length === 1 ? 'Match' : 'Matches'} Found
-                </p>
-                <p className="text-xs text-purple-700">Ready to share via WhatsApp</p>
+        {/* AI Matches Badge - Only for Admin */}
+        {isAdmin && (
+          <>
+            {matchedProperties.length > 0 ? (
+              <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <div>
+                    <p className="text-sm font-bold text-purple-900">
+                      {matchedProperties.length} AI {matchedProperties.length === 1 ? 'Match' : 'Matches'} Found
+                    </p>
+                    <p className="text-xs text-purple-700">Ready to share via WhatsApp</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-slate-400" />
-              <div>
-                <p className="text-sm font-bold text-slate-600">
-                  No Matches Yet
-                </p>
-                <p className="text-xs text-slate-500">Waiting for matching properties</p>
+            ) : (
+              <div className="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-600">
+                      No Matches Yet
+                    </p>
+                    <p className="text-xs text-slate-500">Waiting for matching properties</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
 
         {/* Looking For - Compact BHK badges */}
@@ -271,24 +335,36 @@ export default function RequirementCard({ requirement, allProperties = [] }) {
           </div>
         )}
 
-        {/* WhatsApp Contact Button - Disabled if no matches */}
-        <Button
-          onClick={handleWhatsApp}
-          disabled={matchedProperties.length === 0}
-          className={`w-full font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md ${
-            matchedProperties.length === 0
-              ? 'bg-slate-300 cursor-not-allowed text-slate-500'
-              : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-          }`}
-        >
-          <MessageCircle className="w-4 h-4" />
-          <span>
-            {matchedProperties.length === 0 
-              ? 'No Matches to Share' 
-              : `Share ${matchedProperties.length} ${matchedProperties.length === 1 ? 'Match' : 'Matches'}`
-            }
-          </span>
-        </Button>
+        {/* ✅ CONDITIONAL BUTTON: Admin vs Non-Admin */}
+        {isAdmin ? (
+          // Admin sees "Share Matches" button (existing behavior)
+          <Button
+            onClick={handleWhatsApp}
+            disabled={matchedProperties.length === 0}
+            className={`w-full font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md ${
+              matchedProperties.length === 0
+                ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+            }`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>
+              {matchedProperties.length === 0 
+                ? 'No Matches to Share' 
+                : `Share ${matchedProperties.length} ${matchedProperties.length === 1 ? 'Match' : 'Matches'}`
+              }
+            </span>
+          </Button>
+        ) : (
+          // Non-admin sees "I Have a Match" button
+          <Button
+            onClick={handleIHaveMatch}
+            className="w-full font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>I Have a Match</span>
+          </Button>
+        )}
 
         {/* Footer */}
         <div className="mt-3 pt-3 border-t border-cyan-100 flex items-center justify-between text-xs text-slate-500">
