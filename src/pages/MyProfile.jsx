@@ -186,17 +186,27 @@ export default function MyProfile() {
       }
 
       setCreatingBrokerProfile(true);
+      
       try {
+        console.log('🔵 Starting broker profile creation...');
+        console.log('📱 Phone:', cleanPhone);
+        console.log('👤 Name:', profileData.name.trim());
+        console.log('🏢 Agency:', profileData.agency_name.trim());
+        
         let normalizedPhone = '91' + cleanPhone;
 
         // ✅ Check if phone already exists
+        console.log('🔍 Checking for existing brokers...');
         const allBrokers = await base44.entities.Broker.list();
+        console.log(`✅ Found ${allBrokers.length} existing brokers`);
+        
         const existingBroker = allBrokers.find(b => {
           const brokerPhoneLast10 = (b.phone || '').replace(/\D/g, '').slice(-10);
           return brokerPhoneLast10 === cleanPhone;
         });
 
         if (existingBroker) {
+          console.log('⚠️ Phone number already exists:', existingBroker.name);
           toast.error('❌ Phone Number Already Exists', {
             description: `This number is already linked to broker: ${existingBroker.name}`,
             duration: 6000,
@@ -207,8 +217,9 @@ export default function MyProfile() {
         }
 
         const customId = `CHR-BRK-${String(allBrokers.length + 1).padStart(4, '0')}`;
+        console.log('🆔 Generated ID:', customId);
 
-        const newBroker = await base44.entities.Broker.create({
+        const brokerData = {
           custom_id: customId,
           name: profileData.name.trim(),
           phone: normalizedPhone,
@@ -218,9 +229,16 @@ export default function MyProfile() {
           total_listings_count: 0,
           active_listings_count: 0,
           verified: false
-        });
+        };
+        
+        console.log('📝 Creating broker with data:', brokerData);
 
+        const newBroker = await base44.entities.Broker.create(brokerData);
+        console.log('✅ Broker created successfully:', newBroker.id);
+
+        console.log('🔗 Linking broker to user account...');
         await base44.auth.updateMe({ broker_id: newBroker.id });
+        console.log('✅ User linked to broker');
         
         toast.success('✅ Broker Profile Created!', {
           description: 'Welcome to PropAI Live',
@@ -228,15 +246,46 @@ export default function MyProfile() {
           className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
         });
         
-        // Small delay to let user see success message
+        console.log('🔄 Reloading page...');
         setTimeout(() => {
           window.location.reload();
         }, 1000);
+        
       } catch (error) {
-        console.error('Create profile error:', error);
-        toast.error('❌ Failed to create profile', {
-          description: error.message || 'Please try again or contact support',
-          duration: 6000,
+        console.error('❌ CREATE PROFILE ERROR:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack
+        });
+        
+        // ✅ ENHANCED: Extract actual error message from different error formats
+        let errorMessage = 'Unknown error occurred';
+        let errorDescription = 'Please check browser console (F12) for details';
+        
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        // Check for specific error patterns
+        if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+          errorDescription = 'Phone number or email already exists';
+        } else if (errorMessage.includes('required')) {
+          errorDescription = 'Missing required fields';
+        } else if (errorMessage.includes('validation')) {
+          errorDescription = 'Data validation failed';
+        } else if (errorMessage.includes('permission') || errorMessage.includes('authorized')) {
+          errorDescription = 'Permission denied';
+        }
+        
+        toast.error(`❌ ${errorMessage}`, {
+          description: errorDescription,
+          duration: 10000,
           className: 'bg-red-600 text-white border-0'
         });
       } finally {
@@ -248,6 +297,12 @@ export default function MyProfile() {
     // ✅ UPDATE EXISTING BROKER PROFILE
     setSavingProfile(true);
     try {
+      console.log('🔵 Starting broker profile update for ID:', brokerProfile.id);
+      console.log('📱 Original Phone:', brokerProfile.phone);
+      console.log('📱 New Phone:', profileData.phone);
+      console.log('👤 Original Name:', brokerProfile.name);
+      console.log('👤 New Name:', profileData.name);
+      
       // ✅ ENHANCED: Validate phone number format for updates too
       const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
       if (cleanPhone.length !== 10) {
@@ -271,13 +326,18 @@ export default function MyProfile() {
       }
 
       let normalizedPhone = '91' + cleanPhone;
-      
-      await base44.entities.Broker.update(brokerProfile.id, {
+
+      const updateData = {
         name: profileData.name.trim() || brokerProfile.name,
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
         phone: normalizedPhone || brokerProfile.phone
-      });
+      };
+
+      console.log('📝 Updating broker with data:', updateData);
+      
+      await base44.entities.Broker.update(brokerProfile.id, updateData);
+      console.log('✅ Broker updated successfully');
       
       setBrokerProfile(prev => ({
         ...prev,
@@ -293,10 +353,40 @@ export default function MyProfile() {
         className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
       });
     } catch (error) {
-      console.error('Update profile error:', error);
-      toast.error('❌ Failed to update profile', {
-        description: error.message || 'Please try again',
-        duration: 5000,
+      console.error('❌ UPDATE PROFILE ERROR:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      
+      // ✅ ENHANCED: Extract actual error message from different error formats for update
+      let errorMessage = 'Unknown error occurred';
+      let errorDescription = 'Please check browser console (F12) for details';
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check for specific error patterns
+      if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+        errorDescription = 'Phone number or email already exists';
+      } else if (errorMessage.includes('required')) {
+        errorDescription = 'Missing required fields';
+      } else if (errorMessage.includes('validation')) {
+        errorDescription = 'Data validation failed';
+      } else if (errorMessage.includes('permission') || errorMessage.includes('authorized')) {
+        errorDescription = 'Permission denied';
+      }
+      
+      toast.error(`❌ ${errorMessage}`, {
+        description: errorDescription,
+        duration: 8000,
         className: 'bg-red-600 text-white border-0'
       });
     } finally {
