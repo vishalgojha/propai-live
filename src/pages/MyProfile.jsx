@@ -149,6 +149,7 @@ export default function MyProfile() {
       }
     } catch (error) {
       toast.error('Search failed', { description: error.message });
+      console.error('Search broker by phone error:', error);
     } finally {
       setLinkingBroker(false);
     }
@@ -189,7 +190,10 @@ export default function MyProfile() {
         toast.success('✅ Broker Profile Created!');
         window.location.reload();
       } catch (error) {
-        toast.error('Failed to create profile');
+        toast.error('Failed to create profile', {
+          description: error.message
+        });
+        console.error('Create profile error:', error);
       } finally {
         setCreatingBrokerProfile(false);
       }
@@ -222,7 +226,10 @@ export default function MyProfile() {
       setEditingProfile(false);
       toast.success('✅ Profile Updated!');
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error('Failed to update profile', {
+        description: error.message
+      });
+      console.error('Update profile error:', error);
     } finally {
       setSavingProfile(false);
     }
@@ -240,7 +247,10 @@ export default function MyProfile() {
         duration: 3000
       });
     } catch (error) {
-      toast.error('Failed to save areas');
+      toast.error('Failed to save areas', {
+        description: error.message
+      });
+      console.error('Save areas error:', error);
     } finally {
       setSavingAreas(false);
     }
@@ -257,7 +267,10 @@ export default function MyProfile() {
 
   // ✅ TEAM MEMBER MANAGEMENT
   const handleAddTeamMember = async () => {
-    if (!teamMemberPhone.trim() || !brokerProfile) return;
+    if (!teamMemberPhone.trim() || !brokerProfile) {
+      toast.error('Please enter a phone number');
+      return;
+    }
     
     setAddingTeamMember(true);
     try {
@@ -265,29 +278,31 @@ export default function MyProfile() {
       const normalized = normalizePhone(teamMemberPhone);
       
       if (normalized.length !== 10) {
-        toast.error('Invalid Phone');
+        toast.error('Invalid Phone - must be 10 digits');
         setAddingTeamMember(false);
         return;
       }
       
       const brokers = await base44.entities.Broker.list();
-      const teamMemberBroker = brokers.find(b => normalizePhone(b.phone) === normalized);
+      const teamMemberBroker = brokers.find(b => normalizePhone(b.phone || '') === normalized);
       
       if (!teamMemberBroker) {
-        toast.error('❌ Broker Not Found');
+        toast.error('❌ Broker Not Found', {
+          description: 'No broker with this phone number exists'
+        });
         setAddingTeamMember(false);
         return;
       }
       
       if (teamMemberBroker.id === brokerProfile.id) {
-        toast.error('Cannot add yourself');
+        toast.error('Cannot add yourself to your team');
         setAddingTeamMember(false);
         return;
       }
       
       const currentTeam = brokerProfile.team_members || [];
       if (currentTeam.some(m => m.broker_id === teamMemberBroker.id)) {
-        toast.error(`${teamMemberBroker.name} is already in team`);
+        toast.error(`${teamMemberBroker.name} is already in your team`);
         setAddingTeamMember(false);
         return;
       }
@@ -326,7 +341,10 @@ export default function MyProfile() {
       setTeamMemberPhone('');
       setEditingTeam(false);
     } catch (error) {
-      toast.error('Failed to add team member');
+      toast.error('Failed to add team member', {
+        description: error.message
+      });
+      console.error('Add team member error:', error);
     } finally {
       setAddingTeamMember(false);
     }
@@ -354,7 +372,10 @@ export default function MyProfile() {
       
       toast.success('Team member removed');
     } catch (error) {
-      toast.error('Failed to remove team member');
+      toast.error('Failed to remove team member', {
+        description: error.message
+      });
+      console.error('Remove team member error:', error);
     }
   };
 
@@ -832,7 +853,7 @@ export default function MyProfile() {
           )}
         </Card>
 
-        {/* ✅ PROFILE DETAILS CARD */}
+        {/* ✅ FIXED: PROFILE DETAILS CARD */}
         <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -841,8 +862,8 @@ export default function MyProfile() {
             </h3>
             <Button
               onClick={() => {
-                setEditingProfile(!editingProfile);
-                if (!editingProfile) {
+                if (editingProfile) {
+                  // ✅ FIX: Reset to original data when canceling
                   setProfileData({
                     agency_name: brokerProfile.agency_name || "",
                     email: brokerProfile.email || "",
@@ -850,6 +871,7 @@ export default function MyProfile() {
                     name: brokerProfile.name || currentUser.full_name || ""
                   });
                 }
+                setEditingProfile(!editingProfile);
               }}
               variant="outline"
               size="sm"
@@ -910,7 +932,14 @@ export default function MyProfile() {
                 disabled={savingProfile}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-12 font-bold"
               >
-                {savingProfile ? 'Saving...' : '✅ Save Profile'}
+                {savingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  '✅ Save Profile'
+                )}
               </Button>
             </div>
           ) : (
@@ -955,7 +984,7 @@ export default function MyProfile() {
           )}
         </Card>
 
-        {/* ✅ TEAM MEMBERS CARD */}
+        {/* ✅ FIXED: TEAM MEMBERS CARD */}
         <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -963,7 +992,13 @@ export default function MyProfile() {
               My Team ({enrichedTeamMembers.length})
             </h3>
             <Button
-              onClick={() => setEditingTeam(!editingTeam)}
+              onClick={() => {
+                if (editingTeam) {
+                  // ✅ FIX: Clear phone input when canceling
+                  setTeamMemberPhone('');
+                }
+                setEditingTeam(!editingTeam);
+              }}
               variant="outline"
               size="sm"
               className="border-blue-300 text-blue-700"
@@ -972,16 +1007,23 @@ export default function MyProfile() {
             </Button>
           </div>
 
+          {/* ✅ FIX: Always render the input when editingTeam is true */}
           {editingTeam && (
             <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm font-semibold text-blue-900 mb-3">Add Team Member by Phone</p>
+              <p className="text-xs text-slate-600 mb-3">Enter the WhatsApp number of another broker to add them to your team</p>
               <div className="flex gap-2">
                 <Input
                   type="tel"
                   value={teamMemberPhone}
                   onChange={(e) => setTeamMemberPhone(e.target.value)}
                   placeholder="9820056789"
-                  className="flex-1"
+                  className="flex-1 font-mono"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && teamMemberPhone.trim()) {
+                      handleAddTeamMember();
+                    }
+                  }}
                 />
                 <Button
                   onClick={handleAddTeamMember}
@@ -989,9 +1031,17 @@ export default function MyProfile() {
                   className="bg-blue-600 text-white"
                   size="sm"
                 >
-                  {addingTeamMember ? 'Adding...' : 'Add'}
+                  {addingTeamMember ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add'
+                  )}
                 </Button>
               </div>
+              <p className="text-xs text-blue-600 mt-2">💡 The broker must already exist in PropAI system</p>
             </div>
           )}
 
@@ -1030,7 +1080,17 @@ export default function MyProfile() {
           ) : (
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-600">No team members yet</p>
+              <p className="text-sm text-slate-600 mb-2">No team members yet</p>
+              {!editingTeam && (
+                <Button
+                  onClick={() => setEditingTeam(true)}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Add First Member
+                </Button>
+              )}
             </div>
           )}
         </Card>
