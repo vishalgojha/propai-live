@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
   Users, Building2, MapPin, Star, Package, TrendingUp, Eye,
   MessageCircle, UserPlus, UserCheck, Search, Network,
-  Phone, Mail, Sparkles, Award, DollarSign, ShieldCheck, Target // Added Target icon
+  Phone, Mail, Sparkles, Award, DollarSign, ShieldCheck, Target
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -129,25 +129,21 @@ export default function BrokerNetwork() {
 
   // Calculate network intelligence
   const networkData = useMemo(() => {
-    // If currentUser is null, we can still show brokers, but networkScore will be 0 and isConnected will be false.
-    // The previous check `if (!currentUser || !currentUserBroker)` would return an empty array if not logged in.
-    // Now, it should proceed, but handle null currentUser/currentUserBroker gracefully for calculations.
     const currentBrokerId = currentUserBroker?.id;
 
     return brokers.map(broker => {
-      if (broker.id === currentBrokerId) return null; // Don't show self if logged in
+      if (broker.id === currentBrokerId) return null;
 
       let score = 0;
       const insights = [];
       const isConnected = currentUser?.connected_brokers?.includes(broker.id) || false;
 
-      // ✅ CALCULATE COUNTS
       const brokerProperties = properties.filter(p => p.broker_id === broker.id);
       const activeProperties = brokerProperties.filter(p => p.status === 'Active' && !p.is_duplicate);
       const brokerRequirements = requirements.filter(r => r.broker_id === broker.id);
       const activeRequirements = brokerRequirements.filter(r => r.status === 'Active');
 
-      // Team relationship check (40 points) - only if current user is logged in and has a broker profile
+      // Team relationship check (40 points)
       if (currentUserBroker) {
         const isTeamMember = currentUserBroker.team_members?.some(m => m.broker_id === broker.id);
         const isTeamLeader = broker.team_members?.some(m => m.broker_id === currentUserBroker.id);
@@ -254,7 +250,7 @@ export default function BrokerNetwork() {
             color: 'bg-violet-100 text-violet-700 border-violet-300'
           });
         }
-      } // End of currentUserBroker specific insights
+      }
 
       // High trust score (10 points) - applies even if not logged in
       if (broker.trust_score >= 85) {
@@ -273,14 +269,14 @@ export default function BrokerNetwork() {
         networkScore: Math.min(100, score),
         connectionInsights: insights,
         isConnected,
-        sharedAreas: [], // These were used for calculations above, not directly displayed now.
-        sharedBuildings: 0, // Same here.
+        sharedAreas: [],
+        sharedBuildings: 0,
         // ✅ ADD CALCULATED COUNTS
         active_listings_count: activeProperties.length,
         active_requirements_count: activeRequirements.length,
       };
     }).filter(Boolean); // Remove null (self)
-  }, [brokers, properties, requirements, currentUser, currentUserBroker]); // Added requirements to dependencies
+  }, [brokers, properties, requirements, currentUser, currentUserBroker]);
 
   // Filter and sort network
   const filteredNetwork = useMemo(() => {
@@ -303,8 +299,6 @@ export default function BrokerNetwork() {
 
   const connectedCount = currentUser?.connected_brokers?.length || 0;
   const strongConnections = filteredNetwork.filter(b => b.networkScore >= 50).length;
-
-  // ✅ REMOVED: Login required screen - page is now public
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -441,7 +435,7 @@ export default function BrokerNetwork() {
                       {broker.custom_id && (
                         <p className="text-xs text-slate-500 font-mono truncate">{broker.custom_id}</p>
                       )}
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
                         {broker.trust_score && (
                           <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs px-1.5 py-0">
                             <Star className="w-2.5 h-2.5 mr-0.5" fill="currentColor" />
@@ -451,11 +445,18 @@ export default function BrokerNetwork() {
                         <Badge variant="outline" className="text-xs px-1.5 py-0">
                           {broker.total_listings_count || 0} listings
                         </Badge>
+                        {/* ✅ NEW: Show team size badge */}
+                        {broker.team_members && broker.team_members.length > 0 && (
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs px-1.5 py-0">
+                            <Users className="w-2.5 h-2.5 mr-0.5" />
+                            Team of {broker.team_members.length + 1}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Connection Insights - INTELLIGENT REASONS */}
+                  {/* Connection Insights */}
                   {broker.connectionInsights && broker.connectionInsights.length > 0 && (
                     <div className="mb-3 space-y-1.5">
                       {broker.connectionInsights.slice(0, 3).map((insight, idx) => (
@@ -514,8 +515,29 @@ export default function BrokerNetwork() {
                     )}
                   </div>
 
+                  {/* ✅ NEW: Show Team Members (if they have a team) */}
+                  {broker.team_members && broker.team_members.length > 0 && (
+                    <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        Team Members ({broker.team_members.length})
+                      </p>
+                      <div className="space-y-1">
+                        {broker.team_members.slice(0, 3).map((member, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs">
+                            <span className="font-medium text-slate-900 truncate">{member.name || 'Team Member'}</span>
+                            <span className="text-slate-600 font-mono text-xs">{member.co_listing_count || 0} listings</span>
+                          </div>
+                        ))}
+                        {broker.team_members.length > 3 && (
+                          <p className="text-xs text-blue-600 font-semibold">+{broker.team_members.length - 3} more</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Contact Info - Show if connected */}
-                  {broker.isConnected && currentUser ? ( // Only show if connected AND user is logged in
+                  {broker.isConnected && currentUser ? (
                     <div className="mb-3 p-3 bg-green-50 rounded-lg border border-green-200 space-y-1">
                       <p className="text-xs font-semibold text-green-700 mb-1.5">🔓 Unlocked Contact</p>
                       {broker.phone && (
@@ -559,7 +581,7 @@ export default function BrokerNetwork() {
                     </div>
                   )}
 
-                  {/* Actions - SMART CONNECT BUTTON */}
+                  {/* Actions */}
                   <div className="grid grid-cols-2 gap-2 pt-3 border-t border-purple-200">
                     <Button
                       onClick={() => handleConnect(broker.id)}
