@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Send, Loader2, Sparkles, User, Bot, Info, AlertCircle
+  X, Send, Loader2, Sparkles, User, Bot, Info, AlertCircle, RotateCcw, StopCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +33,6 @@ export default function InlineChatWidget({ isOpen, onClose }) {
     "✨ Sprinkling some AI magic...",
   ];
 
-  // ✅ FIXED: Smooth scroll without jumping
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -41,7 +40,6 @@ export default function InlineChatWidget({ isOpen, onClose }) {
   };
 
   useEffect(() => {
-    // Only scroll when new messages arrive, not on every render
     if (messages.length > 0) {
       const timer = setTimeout(() => scrollToBottom(), 100);
       return () => clearTimeout(timer);
@@ -64,7 +62,6 @@ export default function InlineChatWidget({ isOpen, onClose }) {
     if (!conversation) return;
 
     const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
-      // ✅ FIXED: Filter out empty/invalid messages
       const validMessages = (data.messages || []).filter(msg => 
         msg && msg.content && msg.content.trim().length > 0
       );
@@ -97,6 +94,32 @@ export default function InlineChatWidget({ isOpen, onClose }) {
     } finally {
       setIsInitializing(false);
     }
+  };
+
+  // ✅ NEW: Reset conversation
+  const handleResetConversation = async () => {
+    setIsLoading(false);
+    setFunnyStatus("");
+    setMessages([]);
+    setInput("");
+    setConversation(null);
+    
+    toast.success('Chat reset! Starting fresh... ✨', {
+      duration: 2000
+    });
+    
+    await initializeConversation();
+  };
+
+  // ✅ NEW: Stop processing
+  const handleStopProcessing = () => {
+    setIsLoading(false);
+    setFunnyStatus("");
+    
+    toast.info('Processing stopped', {
+      description: 'You can start a new message',
+      duration: 2000
+    });
   };
 
   const getRandomStatus = () => {
@@ -185,14 +208,45 @@ export default function InlineChatWidget({ isOpen, onClose }) {
               </div>
             </div>
           </div>
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white hover:bg-white/20 touch-manipulation"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          
+          {/* ✅ NEW: Header Actions */}
+          <div className="flex items-center gap-2">
+            {/* Stop button - only show when loading */}
+            {isLoading && (
+              <Button
+                onClick={handleStopProcessing}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-white hover:bg-white/20 touch-manipulation"
+                title="Stop processing"
+              >
+                <StopCircle className="w-4 h-4" />
+              </Button>
+            )}
+            
+            {/* Reset button - only show when there are messages */}
+            {messages.length > 0 && !isInitializing && (
+              <Button
+                onClick={handleResetConversation}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-white hover:bg-white/20 touch-manipulation"
+                title="Reset conversation"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            )}
+            
+            {/* Close button */}
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white hover:bg-white/20 touch-manipulation"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Usage Guidelines */}
@@ -207,6 +261,7 @@ export default function InlineChatWidget({ isOpen, onClose }) {
                     <li>• ⏳ Wait for AI to respond before sending next message</li>
                     <li>• 💡 Be clear and specific for best results</li>
                     <li>• 📞 Include valid broker phone number (10 digits) for parsing</li>
+                    <li>• 🔄 Use reset button if conversation gets stuck</li>
                   </ul>
                 </div>
                 <Button
@@ -222,7 +277,7 @@ export default function InlineChatWidget({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Messages - FIXED CONTAINER */}
+        {/* Messages Container */}
         <div 
           ref={chatContainerRef}
           className="h-[400px] overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-purple-50/30 to-white"
@@ -247,7 +302,6 @@ export default function InlineChatWidget({ isOpen, onClose }) {
           )}
 
           {!isInitializing && messages.map((message, idx) => {
-            // ✅ SAFETY CHECK: Skip if message is invalid
             if (!message || !message.content || message.content.trim().length === 0) {
               return null;
             }
@@ -368,15 +422,29 @@ export default function InlineChatWidget({ isOpen, onClose }) {
               )}
             </Button>
           </div>
+          
+          {/* ✅ NEW: Status messages with action buttons */}
           {isInitializing && (
             <p className="text-xs text-slate-500 mt-2 text-center">
               ⏳ Initializing chat...
             </p>
           )}
+          
           {isLoading && (
-            <p className="text-xs text-purple-600 mt-2 text-center font-semibold">
-              🤖 AI is thinking...
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-purple-600 font-semibold">
+                🤖 AI is thinking...
+              </p>
+              <Button
+                onClick={handleStopProcessing}
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <StopCircle className="w-3 h-3 mr-1" />
+                Stop
+              </Button>
+            </div>
           )}
         </div>
       </Card>
