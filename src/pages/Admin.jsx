@@ -655,22 +655,68 @@ export default function Admin() {
   };
 
   const generatePropertyDescriptions = async () => {
-    if (!confirm('🤖 Generate AI Descriptions?')) return;
+    if (!confirm('🤖 Generate AI Descriptions?\n\nThis will process 10 properties at a time to avoid timeouts.\nRun multiple times if needed.')) return;
     setGeneratingDescriptions(true);
     toast.loading('🤖 AI Description Generator running...', { id: 'desc-gen' });
 
     try {
-      const response = await base44.functions.invoke('generatePropertyDescriptions', { regenerateAll: false });
+      const response = await base44.functions.invoke('generatePropertyDescriptions', { 
+        force_regenerate: false,
+        batch_size: 10
+      });
       toast.dismiss('desc-gen');
 
-      toast.success('✅ Descriptions Generated!', {
-        duration: 6000
-      });
+      const stats = response.data.stats;
+      const batchInfo = response.data.batch_info;
+
+      if (batchInfo && batchInfo.remaining > 0) {
+        // More properties to process
+        toast.success('✅ Batch Complete!', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">Generated {stats.updated} descriptions</div>
+              <div className="text-xs opacity-90 space-y-1">
+                <div>• Processed: {batchInfo.processed}/{batchInfo.total_needed}</div>
+                <div>• Remaining: {batchInfo.remaining} properties</div>
+                {stats.errors > 0 && (
+                  <div className="text-red-300">⚠ Errors: {stats.errors}</div>
+                )}
+              </div>
+              <div className="text-xs mt-2 pt-2 border-t border-white/20">
+                Click "Generate Descriptions" again to continue
+              </div>
+            </div>
+          ),
+          duration: 8000,
+          className: 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0'
+        });
+      } else {
+        // All done
+        toast.success('✅ All Descriptions Generated!', {
+          description: (
+            <div className="space-y-2">
+              <div className="font-semibold">Property descriptions complete</div>
+              <div className="text-xs opacity-90 space-y-1">
+                <div>• Total updated: {stats.updated}</div>
+                <div>• Already good: {stats.already_good}</div>
+                {stats.errors > 0 && (
+                  <div className="text-red-300">⚠ Errors: {stats.errors}</div>
+                )}
+              </div>
+            </div>
+          ),
+          duration: 6000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     } catch (error) {
       toast.dismiss('desc-gen');
       toast.error('❌ Description Generation Failed', {
-        description: error.message
+        description: error.message || 'Function timeout or error occurred. Try reducing batch size.',
+        duration: 8000,
+        className: 'bg-red-600 text-white border-0'
       });
     } finally {
       setGeneratingDescriptions(false);

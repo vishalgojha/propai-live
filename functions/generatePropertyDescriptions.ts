@@ -2,10 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
  * Smart Property Description Generator
- * NOW ONLY UPDATES:
- * 1. Properties missing ai_title/ai_description
- * 2. Properties with low-quality descriptions (<50 chars)
- * 3. Properties older than 60 days (stale context)
+ * NOW WITH BATCH PROCESSING to avoid timeouts
  */
 
 Deno.serve(async (req) => {
@@ -17,7 +14,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
-    const { force_regenerate = false, property_ids = null } = await req.json();
+    const { force_regenerate = false, property_ids = null, batch_size = 10 } = await req.json();
 
     // Fetch properties
     const allProperties = await base44.asServiceRole.entities.Property.list();
@@ -60,9 +57,18 @@ Deno.serve(async (req) => {
         success: true,
         message: 'All properties already have quality AI descriptions!',
         skipped: allProperties.length,
-        updated: 0
+        updated: 0,
+        stats: {
+          total_properties: allProperties.length,
+          already_good: allProperties.filter(p => p.ai_title && p.ai_description && p.ai_description.length > 50).length,
+          needs_update: 0
+        }
       });
     }
+
+    // ✅ BATCH PROCESSING: Process only first batch_size properties to avoid timeout
+    const batchToProcess = propertiesToUpdate.slice(0, batch_size);
+    const remainingCount = propertiesToUpdate.length - batch_size;
 
     // Fetch buildings for context
     const buildings = await base44.asServiceRole.entities.Building.list();
@@ -71,7 +77,7 @@ Deno.serve(async (req) => {
     let errors = 0;
     const errorDetails = [];
 
-    for (const property of propertiesToUpdate) {
+    for (const property of batchToProcess) {
       try {
         // Get building context if available
         const building = buildings.find(b => b.id === property.building_id);
@@ -146,12 +152,22 @@ Return JSON with 'title' and 'description' keys.`;
 
     return Response.json({
       success: true,
-      total_properties: allProperties.length,
-      needed_update: propertiesToUpdate.length,
-      updated,
-      errors,
+      batch_info: {
+        processed: batchToProcess.length,
+        remaining: Math.max(0, remainingCount),
+        total_needed: propertiesToUpdate.length
+      },
+      stats: {
+        total_properties: allProperties.length,
+        already_good: allProperties.length - propertiesToUpdate.length,
+        needs_update: propertiesToUpdate.length,
+        updated,
+        errors
+      },
       error_details: errorDetails.length > 0 ? errorDetails : undefined,
-      message: `✅ Updated ${updated} properties. ${allProperties.length - propertiesToUpdate.length} already had quality descriptions.`
+      message: remainingCount > 0 
+        ? `✅ Processed ${updated} properties. ${remainingCount} more remaining - run again to continue.`
+        : `✅ Updated ${updated} properties. All done!`
     });
 
   } catch (error) {
