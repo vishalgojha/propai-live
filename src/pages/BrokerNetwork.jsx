@@ -26,7 +26,7 @@ export default function BrokerNetwork() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserBroker, setCurrentUserBroker] = useState(null);
 
-  // Load current user and their broker profile
+  // Load current user and their broker profile - NO REDIRECT IF NOT LOGGED IN
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -40,7 +40,9 @@ export default function BrokerNetwork() {
           setCurrentUserBroker(userBroker);
         }
       } catch (error) {
-        console.error('Failed to load user:', error);
+        // ✅ FIXED: Don't redirect, just set user to null - page is public
+        setCurrentUser(null);
+        setCurrentUserBroker(null);
       }
     };
     loadUser();
@@ -111,8 +113,15 @@ export default function BrokerNetwork() {
 
   const handleConnect = (brokerId) => {
     if (!currentUser) {
-      toast.error('Please login to connect with brokers');
-      navigate(createPageUrl("Home"));
+      // ✅ FIXED: Prompt login instead of navigating away
+      toast.info('Login required to connect with brokers', {
+        description: 'Click login to unlock contact details',
+        duration: 4000,
+        action: {
+          label: 'Login',
+          onClick: () => base44.auth.redirectToLogin(window.location.pathname)
+        }
+      });
       return;
     }
     connectMutation.mutate(brokerId);
@@ -120,10 +129,13 @@ export default function BrokerNetwork() {
 
   // Calculate network intelligence
   const networkData = useMemo(() => {
-    if (!currentUser || !currentUserBroker) return brokers.map(b => ({ ...b, networkScore: 0, isConnected: false }));
+    // If currentUser is null, we can still show brokers, but networkScore will be 0 and isConnected will be false.
+    // The previous check `if (!currentUser || !currentUserBroker)` would return an empty array if not logged in.
+    // Now, it should proceed, but handle null currentUser/currentUserBroker gracefully for calculations.
+    const currentBrokerId = currentUserBroker?.id;
 
     return brokers.map(broker => {
-      if (broker.id === currentUserBroker.id) return null; // Don't show self
+      if (broker.id === currentBrokerId) return null; // Don't show self if logged in
 
       let score = 0;
       const insights = [];
@@ -135,114 +147,116 @@ export default function BrokerNetwork() {
       const brokerRequirements = requirements.filter(r => r.broker_id === broker.id);
       const activeRequirements = brokerRequirements.filter(r => r.status === 'Active');
 
-      // Team relationship check (40 points)
-      const isTeamMember = currentUserBroker.team_members?.some(m => m.broker_id === broker.id);
-      const isTeamLeader = broker.team_members?.some(m => m.broker_id === currentUserBroker.id);
-      const sameTeamLeader = currentUserBroker.reports_to && currentUserBroker.reports_to === broker.reports_to;
-      
-      if (isTeamMember) {
-        score += 40;
-        insights.push({
-          type: 'team',
-          icon: '👥',
-          label: 'Your Team Member',
-          description: `${broker.name} is in your team`,
-          color: 'bg-blue-100 text-blue-700 border-blue-300'
-        });
-      } else if (isTeamLeader) {
-        score += 40;
-        insights.push({
-          type: 'team',
-          icon: '⭐',
-          label: 'Your Team Leader',
-          description: `${broker.name} leads your team`,
-          color: 'bg-indigo-100 text-indigo-700 border-indigo-300'
-        });
-      } else if (sameTeamLeader) {
-        score += 35;
-        insights.push({
-          type: 'team',
-          icon: '🤝',
-          label: 'Same Team',
-          description: 'You work under the same team leader',
-          color: 'bg-purple-100 text-purple-700 border-purple-300'
-        });
-      }
-
-      // Calculate price range complementarity (30 points)
-      const myProps = properties.filter(p => p.broker_id === currentUserBroker.id && p.status === 'Active' && !p.is_duplicate);
-      const theirProps = properties.filter(p => p.broker_id === broker.id && p.status === 'Active' && !p.is_duplicate);
-
-      if (myProps.length > 0 && theirProps.length > 0) {
-        const myPrices = myProps.map(p => p.price_unit === 'crores' ? p.price * 100 : p.price);
-        const theirPrices = theirProps.map(p => p.price_unit === 'crores' ? p.price * 100 : p.price);
-
-        const myAvg = myPrices.reduce((a, b) => a + b, 0) / myPrices.length;
-        const theirAvg = theirPrices.reduce((a, b) => a + b, 0) / theirPrices.length;
-
-        const priceDiff = Math.abs(myAvg - theirAvg);
-        const percentDiff = priceDiff / Math.max(myAvg, theirAvg);
-
-        // Complementary if price ranges differ by 30%+ (different market segments)
-        if (percentDiff > 0.3) {
-          score += 30;
-          const higherBroker = theirAvg > myAvg ? broker.name : 'You';
-          const lowerBroker = theirAvg > myAvg ? 'You' : broker.name;
-          
+      // Team relationship check (40 points) - only if current user is logged in and has a broker profile
+      if (currentUserBroker) {
+        const isTeamMember = currentUserBroker.team_members?.some(m => m.broker_id === broker.id);
+        const isTeamLeader = broker.team_members?.some(m => m.broker_id === currentUserBroker.id);
+        const sameTeamLeader = currentUserBroker.reports_to && currentUserBroker.reports_to === broker.reports_to;
+        
+        if (isTeamMember) {
+          score += 40;
           insights.push({
-            type: 'price',
-            icon: '💰',
-            label: 'Complementary Price Range',
-            description: `${higherBroker} handle${higherBroker === 'You' ? '' : 's'} premium segment, ${lowerBroker} handle${lowerBroker === 'You' ? '' : 's'} mid-range`,
-            color: 'bg-emerald-100 text-emerald-700 border-emerald-300'
+            type: 'team',
+            icon: '👥',
+            label: 'Your Team Member',
+            description: `${broker.name} is in your team`,
+            color: 'bg-blue-100 text-blue-700 border-blue-300'
           });
-        } 
-        // Similar price range (15 points - potential competition but also collaboration)
-        else if (percentDiff < 0.15) {
-          score += 15;
+        } else if (isTeamLeader) {
+          score += 40;
           insights.push({
-            type: 'price',
-            icon: '🎯',
-            label: 'Similar Price Range',
-            description: 'You both serve the same market segment',
-            color: 'bg-amber-100 text-amber-700 border-amber-300'
+            type: 'team',
+            icon: '⭐',
+            label: 'Your Team Leader',
+            description: `${broker.name} leads your team`,
+            color: 'bg-indigo-100 text-indigo-700 border-indigo-300'
+          });
+        } else if (sameTeamLeader) {
+          score += 35;
+          insights.push({
+            type: 'team',
+            icon: '🤝',
+            label: 'Same Team',
+            description: 'You work under the same team leader',
+            color: 'bg-purple-100 text-purple-700 border-purple-300'
           });
         }
-      }
 
-      // Shared locations (20 points)
-      const myAreas = currentUserBroker.specializations?.primary_locations || currentUserBroker.areas_covered || [];
-      const theirAreas = broker.specializations?.primary_locations || broker.areas_covered || [];
-      const sharedAreas = myAreas.filter(area => theirAreas.includes(area));
+        // Calculate price range complementarity (30 points)
+        const myProps = properties.filter(p => p.broker_id === currentUserBroker.id && p.status === 'Active' && !p.is_duplicate);
+        const theirProps = properties.filter(p => p.broker_id === broker.id && p.status === 'Active' && !p.is_duplicate);
 
-      if (sharedAreas.length > 0) {
-        score += Math.min(20, sharedAreas.length * 7);
-        insights.push({
-          type: 'location',
-          icon: '📍',
-          label: `${sharedAreas.length} Shared Area${sharedAreas.length > 1 ? 's' : ''}`,
-          description: sharedAreas.slice(0, 2).join(', ') + (sharedAreas.length > 2 ? '...' : ''),
-          color: 'bg-cyan-100 text-cyan-700 border-cyan-300'
-        });
-      }
+        if (myProps.length > 0 && theirProps.length > 0) {
+          const myPrices = myProps.map(p => p.price_unit === 'crores' ? p.price * 100 : p.price);
+          const theirPrices = theirProps.map(p => p.price_unit === 'crores' ? p.price * 100 : p.price);
 
-      // Shared buildings (15 points)
-      const myBuildings = [...new Set(myProps.map(p => p.building_id).filter(Boolean))];
-      const theirBuildings = [...new Set(theirProps.map(p => p.building_id).filter(Boolean))];
-      const sharedBuildings = myBuildings.filter(b => theirBuildings.includes(b));
+          const myAvg = myPrices.reduce((a, b) => a + b, 0) / myPrices.length;
+          const theirAvg = theirPrices.reduce((a, b) => a + b, 0) / theirPrices.length;
 
-      if (sharedBuildings.length > 0) {
-        score += Math.min(15, sharedBuildings.length * 5);
-        insights.push({
-          type: 'building',
-          icon: '🏢',
-          label: `${sharedBuildings.length} Shared Building${sharedBuildings.length > 1 ? 's' : ''}`,
-          description: 'You list properties in the same buildings',
-          color: 'bg-violet-100 text-violet-700 border-violet-300'
-        });
-      }
+          const priceDiff = Math.abs(myAvg - theirAvg);
+          const percentDiff = priceDiff / Math.max(myAvg, theirAvg);
 
-      // High trust score (10 points)
+          // Complementary if price ranges differ by 30%+ (different market segments)
+          if (percentDiff > 0.3) {
+            score += 30;
+            const higherBroker = theirAvg > myAvg ? broker.name : 'You';
+            const lowerBroker = theirAvg > myAvg ? 'You' : broker.name;
+            
+            insights.push({
+              type: 'price',
+              icon: '💰',
+              label: 'Complementary Price Range',
+              description: `${higherBroker} handle${higherBroker === 'You' ? '' : 's'} premium segment, ${lowerBroker} handle${lowerBroker === 'You' ? '' : 's'} mid-range`,
+              color: 'bg-emerald-100 text-emerald-700 border-emerald-300'
+            });
+          } 
+          // Similar price range (15 points - potential competition but also collaboration)
+          else if (percentDiff < 0.15) {
+            score += 15;
+            insights.push({
+              type: 'price',
+              icon: '🎯',
+              label: 'Similar Price Range',
+              description: 'You both serve the same market segment',
+              color: 'bg-amber-100 text-amber-700 border-amber-300'
+            });
+          }
+        }
+
+        // Shared locations (20 points)
+        const myAreas = currentUserBroker.specializations?.primary_locations || currentUserBroker.areas_covered || [];
+        const theirAreas = broker.specializations?.primary_locations || broker.areas_covered || [];
+        const sharedAreas = myAreas.filter(area => theirAreas.includes(area));
+
+        if (sharedAreas.length > 0) {
+          score += Math.min(20, sharedAreas.length * 7);
+          insights.push({
+            type: 'location',
+            icon: '📍',
+            label: `${sharedAreas.length} Shared Area${sharedAreas.length > 1 ? 's' : ''}`,
+            description: sharedAreas.slice(0, 2).join(', ') + (sharedAreas.length > 2 ? '...' : ''),
+            color: 'bg-cyan-100 text-cyan-700 border-cyan-300'
+          });
+        }
+
+        // Shared buildings (15 points)
+        const myBuildings = [...new Set(myProps.map(p => p.building_id).filter(Boolean))];
+        const theirBuildings = [...new Set(theirProps.map(p => p.building_id).filter(Boolean))];
+        const sharedBuildings = myBuildings.filter(b => theirBuildings.includes(b));
+
+        if (sharedBuildings.length > 0) {
+          score += Math.min(15, sharedBuildings.length * 5);
+          insights.push({
+            type: 'building',
+            icon: '🏢',
+            label: `${sharedBuildings.length} Shared Building${sharedBuildings.length > 1 ? 's' : ''}`,
+            description: 'You list properties in the same buildings',
+            color: 'bg-violet-100 text-violet-700 border-violet-300'
+          });
+        }
+      } // End of currentUserBroker specific insights
+
+      // High trust score (10 points) - applies even if not logged in
       if (broker.trust_score >= 85) {
         score += 10;
         insights.push({
@@ -259,8 +273,8 @@ export default function BrokerNetwork() {
         networkScore: Math.min(100, score),
         connectionInsights: insights,
         isConnected,
-        sharedAreas,
-        sharedBuildings: sharedBuildings.length,
+        sharedAreas: [], // These were used for calculations above, not directly displayed now.
+        sharedBuildings: 0, // Same here.
         // ✅ ADD CALCULATED COUNTS
         active_listings_count: activeProperties.length,
         active_requirements_count: activeRequirements.length,
@@ -290,20 +304,7 @@ export default function BrokerNetwork() {
   const connectedCount = currentUser?.connected_brokers?.length || 0;
   const strongConnections = filteredNetwork.filter(b => b.networkScore >= 50).length;
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Login Required</h2>
-          <p className="text-slate-600 mb-4">Please login to access the broker network</p>
-          <Button onClick={() => navigate(createPageUrl("Home"))}>
-            Go to Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // ✅ REMOVED: Login required screen - page is now public
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -325,7 +326,8 @@ export default function BrokerNetwork() {
                 <p className="text-sm text-slate-600 font-light">Connect, collaborate, and grow together</p>
               </div>
             </div>
-            {connectedCount > 0 && (
+            {/* ✅ FIXED: Only show connection count if user is logged in */}
+            {currentUser && connectedCount > 0 && (
               <Badge className="bg-green-100 text-green-700 border-green-300 text-lg px-4 py-2">
                 <UserCheck className="w-5 h-5 mr-2" />
                 {connectedCount} Connection{connectedCount > 1 ? 's' : ''}
@@ -333,6 +335,31 @@ export default function BrokerNetwork() {
             )}
           </div>
         </div>
+
+        {/* ✅ NEW: Login prompt banner for non-logged-in users */}
+        {!currentUser && (
+          <div className="mb-6 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl p-5 border-2 border-purple-300">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <UserPlus className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 mb-1">🔓 Login to Connect</h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    Browse brokers publicly, but login to unlock contact details and build your network.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => base44.auth.redirectToLogin(window.location.pathname)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold"
+              >
+                Login
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -360,7 +387,7 @@ export default function BrokerNetwork() {
               <p className="text-xs text-slate-600 font-semibold">Your Connections</p>
             </div>
             <p className="text-3xl font-bold text-blue-600">{connectedCount}</p>
-            <p className="text-xs text-slate-500 mt-1">Unlocked contacts</p>
+            <p className="text-xs text-slate-500 mt-1">{currentUser ? 'Unlocked contacts' : 'Login to connect'}</p>
           </Card>
         </div>
 
@@ -488,7 +515,7 @@ export default function BrokerNetwork() {
                   </div>
 
                   {/* Contact Info - Show if connected */}
-                  {broker.isConnected ? (
+                  {broker.isConnected && currentUser ? ( // Only show if connected AND user is logged in
                     <div className="mb-3 p-3 bg-green-50 rounded-lg border border-green-200 space-y-1">
                       <p className="text-xs font-semibold text-green-700 mb-1.5">🔓 Unlocked Contact</p>
                       {broker.phone && (

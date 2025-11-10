@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -53,7 +54,8 @@ export default function MyProfile() {
       try {
         const user = await base44.auth.me();
         if (!user) {
-          navigate(createPageUrl("Home"));
+          // ✅ FIXED: Redirect to login with return URL
+          base44.auth.redirectToLogin(window.location.pathname);
           return;
         }
         
@@ -133,7 +135,8 @@ export default function MyProfile() {
         }
       } catch (error) {
         console.error("Failed to load user:", error);
-        navigate(createPageUrl("Home"));
+        // ✅ FIXED: Redirect to login instead of Home
+        base44.auth.redirectToLogin(window.location.pathname);
       } finally {
         setIsLoading(false);
       }
