@@ -189,8 +189,8 @@ export default function SmartFeed() {
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
-    staleTime: 30 * 1000, // ✅ REDUCED: 30 seconds instead of 5 minutes
-    cacheTime: 60 * 1000, // ✅ REDUCED: 1 minute instead of 10 minutes
+    staleTime: 0, // ✅ CHANGED
+    cacheTime: 30 * 1000, // ✅ CHANGED
     refetchInterval: REFRESH_INTERVAL,
     refetchOnWindowFocus: true, // ✅ ENABLED: Refresh when user returns to tab
   });
@@ -200,8 +200,8 @@ export default function SmartFeed() {
     queryKey: ['requirements'],
     queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
-    staleTime: 30 * 1000, // ✅ REDUCED: 30 seconds
-    cacheTime: 60 * 1000, // ✅ REDUCED: 1 minute
+    staleTime: 0, // ✅ CHANGED
+    cacheTime: 30 * 1000, // ✅ CHANGED
     refetchInterval: REFRESH_INTERVAL,
     refetchOnWindowFocus: true, // ✅ ENABLED
   });
@@ -534,7 +534,7 @@ export default function SmartFeed() {
                   </div>
                   <Button
                     onClick={handleRefresh}
-                    className="bg-white text-green-600 hover:bg-white/90 font-bold"
+                    className="bg-white text-green-600 hover:bg-white/90 font-bold touch-manipulation"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     View Now
@@ -567,7 +567,7 @@ export default function SmartFeed() {
                 onClick={() => navigate(createPageUrl("MyProfile"))}
                 variant="outline"
                 size="sm"
-                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50 touch-manipulation"
               >
                 <Settings className="w-4 h-4 mr-2" />
                 My Areas
@@ -598,7 +598,7 @@ export default function SmartFeed() {
                   onClick={() => handleAreaQuickFilter(area)}
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
-                  className={`rounded-xl ${
+                  className={`rounded-xl touch-manipulation ${
                     isSelected
                       ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
                       : isPreferred
@@ -648,7 +648,7 @@ export default function SmartFeed() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowAutoMatchBanner(false)}
-                className="h-8 w-8 hover:bg-purple-200 flex-shrink-0"
+                className="h-8 w-8 hover:bg-purple-200 flex-shrink-0 touch-manipulation"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -682,7 +682,7 @@ export default function SmartFeed() {
                     setUserPreferences(null);
                     toast.success('Preferences cleared');
                   }}
-                  className="text-xs"
+                  className="text-xs touch-manipulation"
                 >
                   Clear History
                 </Button>
@@ -718,7 +718,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "properties" })}
               variant={filters.viewMode === "properties" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl ${filters.viewMode === "properties" ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "text-slate-600"}`}
+              className={`rounded-xl touch-manipulation ${filters.viewMode === "properties" ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "text-slate-600"}`}
             >
               🏠 Properties ({filteredProperties.length})
             </Button>
@@ -726,7 +726,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "requirements" })}
               variant={filters.viewMode === "requirements" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl ${filters.viewMode === "requirements" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : "text-slate-600"}`}
+              className={`rounded-xl touch-manipulation ${filters.viewMode === "requirements" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : "text-slate-600"}`}
             >
               🔍 Requirements ({filteredRequirements.length})
             </Button>
@@ -734,7 +734,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "both" })}
               variant={filters.viewMode === "both" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl ${filters.viewMode === "both" ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white" : "text-slate-600"}`}
+              className={`rounded-xl touch-manipulation ${filters.viewMode === "both" ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white" : "text-slate-600"}`}
             >
               ✨ Both
             </Button>
@@ -765,7 +765,7 @@ export default function SmartFeed() {
                   onClick={() => setFilters({ ...filters, sortBy: 'latest' })}
                   variant={filters.sortBy === 'latest' ? "default" : "outline"}
                   size="sm"
-                  className={`rounded-xl ${
+                  className={`rounded-xl touch-manipulation ${
                     filters.sortBy === 'latest'
                       ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
                       : "border-purple-200 hover:bg-purple-50 text-slate-700"
@@ -779,7 +779,7 @@ export default function SmartFeed() {
                     onClick={() => setFilters({ ...filters, sortBy: 'brokertrust' })}
                     variant={filters.sortBy === 'brokertrust' ? "default" : "outline"}
                     size="sm"
-                    className={`rounded-xl ${
+                    className={`rounded-xl touch-manipulation ${
                       filters.sortBy === 'brokertrust'
                         ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
                         : "border-purple-200 hover:bg-purple-50 text-slate-700"
@@ -789,7 +789,7 @@ export default function SmartFeed() {
                   </Button>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-5 h-5 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors">
+                      <button className="w-5 h-5 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors touch-manipulation">
                         <Info className="w-3 h-3 text-purple-600" />
                       </button>
                     </PopoverTrigger>
@@ -836,7 +836,7 @@ export default function SmartFeed() {
                   onClick={() => setFilters({ ...filters, sortBy: 'price_low' })}
                   variant={filters.sortBy === 'price_low' ? "default" : "outline"}
                   size="sm"
-                  className={`rounded-xl ${
+                  className={`rounded-xl touch-manipulation ${
                     filters.sortBy === 'price_low'
                       ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
                       : "border-purple-200 hover:bg-purple-50 text-slate-700"
@@ -848,7 +848,7 @@ export default function SmartFeed() {
                   onClick={() => setFilters({ ...filters, sortBy: 'price_high' })}
                   variant={filters.sortBy === 'price_high' ? "default" : "outline"}
                   size="sm"
-                  className={`rounded-xl ${
+                  className={`rounded-xl touch-manipulation ${
                     filters.sortBy === 'price_high'
                       ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
                       : "border-purple-200 hover:bg-purple-50 text-slate-700"
@@ -871,21 +871,32 @@ export default function SmartFeed() {
         )}
 
         {(isLoading || requirementsLoading) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-[22px] p-6 shadow-sm border-2 border-[#F7F7F7]">
-                <Skeleton className="h-48 w-full mb-4 rounded-2xl" />
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2 mb-4" />
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <Skeleton className="h-12" />
-                  <Skeleton className="h-12" />
-                  <Skeleton className="h-12" />
-                </div>
-                <Skeleton className="h-12 w-full" />
+          <>
+            <div className="mb-6 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-xl border border-purple-300">
+                <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-semibold text-purple-900">
+                  Loading properties... (typically 100-200 active listings)
+                </p>
               </div>
-            ))}
-          </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-[22px] p-6 shadow-sm border-2 border-[#F7F7F7]">
+                  <Skeleton className="h-48 w-full mb-4 rounded-2xl" />
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-4" />
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <Skeleton className="h-12" />
+                    <Skeleton className="h-12" />
+                    <Skeleton className="h-12" />
+                  </div>
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
@@ -937,7 +948,7 @@ export default function SmartFeed() {
                 <Button
                   onClick={loadMore}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all touch-manipulation"
                 >
                   <ChevronDown className="w-5 h-5 mr-2" />
                   Load More {displayType === "properties" ? "Properties" : displayType === "requirements" ? "Requirements" : "Items"}
