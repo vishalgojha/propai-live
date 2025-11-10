@@ -252,13 +252,25 @@ export default function DeveloperDirectory() {
             
             {/* ✅ NEW: Comparison Mode Toggle */}
             {comparisonDevelopers.length > 0 && (
-              <Button
-                onClick={() => setShowComparison(!showComparison)}
-                className={`rounded-xl ${showComparison ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "bg-purple-50 text-purple-700 border-2 border-purple-300"}`}
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Compare ({comparisonDevelopers.length})
-              </Button>
+              <>
+                <Button
+                  onClick={() => setShowComparison(!showComparison)}
+                  className={`rounded-xl ${showComparison ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "bg-purple-50 text-purple-700 border-2 border-purple-300"}`}
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Compare ({comparisonDevelopers.length})
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowComparison(false);
+                    setComparisonDevelopers([]);
+                  }}
+                  variant="outline"
+                  className="rounded-xl border-slate-300"
+                >
+                  View Directory
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -407,11 +419,11 @@ export default function DeveloperDirectory() {
                   key={dev.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border ${
+                  className={`group bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border ${
                     isInComparison ? 'border-purple-500 border-2' : 'border-purple-200/50 hover:border-purple-400'
                   } cursor-pointer relative`} // Updated class name and added relative
                 >
-                  {/* ✅ NEW: Comparison checkbox */}
+                  {/* ✅ Comparison checkbox */}
                   <div className="absolute top-4 right-4 z-10">
                     <input
                       type="checkbox"
@@ -424,8 +436,8 @@ export default function DeveloperDirectory() {
                     />
                   </div>
 
-                  {/* Wrapped the entire card content, except the checkbox, in a div with the onClick */}
-                  <div onClick={() => navigate(createPageUrl("Buildings") + `?developer=${encodeURIComponent(dev.name)}`)}>
+                  {/* ✅ ENHANCED: Click goes to Developer Profile */}
+                  <div onClick={() => navigate(createPageUrl("DeveloperProfile") + `?id=${dev.id}`)}>
                     {/* Header with Tier Badge */}
                     <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 border-b border-purple-100">
                       <div className="flex items-start justify-between mb-3">
@@ -439,7 +451,7 @@ export default function DeveloperDirectory() {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{dev.name}</h3>
+                      <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-purple-700 transition-colors">{dev.name}</h3>
                       {dev.known_variants && dev.known_variants.length > 0 && (
                         <p className="text-xs text-slate-500 italic">
                           Also known as: {dev.known_variants[0]}
@@ -493,7 +505,7 @@ export default function DeveloperDirectory() {
                           <ul className="space-y-1">
                             {dev.notable_projects.slice(0, 3).map((project, idx) => (
                               <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
-                                <Sparkles className="w-3 h-3 text-purple-500 mt-1 flex-shrink-0" />
+                                <Sparkles className="w-3 h-3 mr-1 text-purple-500 mt-1 flex-shrink-0" />
                                 <span className="line-clamp-1">{project}</span>
                               </li>
                             ))}
@@ -524,10 +536,10 @@ export default function DeveloperDirectory() {
                       )}
                     </div>
 
-                    {/* Footer */}
+                    {/* Footer - ENHANCED */}
                     <div className="px-6 pb-6">
                       <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl">
-                        View Buildings ({devBuildings.length})
+                        View Profile & Buildings ({devBuildings.length})
                       </Button>
                     </div>
                   </div> {/* End of onClick wrapper div */}
