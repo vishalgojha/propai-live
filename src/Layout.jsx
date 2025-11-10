@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -20,7 +19,10 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
-  // ✅ REMOVED: shouldHideChatbot - now chatbot shows on ALL pages including Home
+  // ✅ FIXED: Close mobile menu when navigating
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     // Always set meta tags, don't check if they exist first
@@ -42,7 +44,7 @@ export default function Layout({ children, currentPageName }) {
     };
 
     // Default meta tags
-    setMetaTag('viewport', 'width=device-width, initial-scale=1.0');
+    setMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); // ✅ FIXED: Better touch handling
     setMetaTag('theme-color', '#8B5CF6');
     setMetaTag('author', 'PropAI Live');
     setMetaTag('robots', 'index, follow');
@@ -139,14 +141,12 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      {/* ✅ REMOVED: ChatbotWidget - no floating widget */}
-
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
+            <Link to={createPageUrl("Home")} className="flex items-center gap-2 group touch-manipulation">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
                 <Zap className="w-6 h-6 text-white fill-white" />
               </div>
@@ -161,7 +161,7 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold touch-manipulation ${
                       isActive
                         ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
                         : "text-slate-700 hover:bg-purple-50"
@@ -179,7 +179,7 @@ export default function Layout({ children, currentPageName }) {
                   {user ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="ml-2 gap-2 rounded-2xl hover:bg-purple-50">
+                        <Button variant="ghost" className="ml-2 gap-2 rounded-2xl hover:bg-purple-50 touch-manipulation">
                           <User className="w-4 h-4" />
                           <span className="text-sm font-semibold">{user.full_name || user.email}</span>
                         </Button>
@@ -207,7 +207,7 @@ export default function Layout({ children, currentPageName }) {
                   ) : (
                     <Button
                       onClick={handleLogin}
-                      className="ml-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-md"
+                      className="ml-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-md touch-manipulation"
                     >
                       <User className="w-4 h-4 mr-2" />
                       Login
@@ -221,7 +221,7 @@ export default function Layout({ children, currentPageName }) {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden touch-manipulation min-h-[44px] min-w-[44px]"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
@@ -233,7 +233,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
+        {/* Mobile Menu Dropdown - FIXED TOUCH */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-purple-100 bg-white/95 backdrop-blur-xl">
             <nav className="px-4 py-4 space-y-2">
@@ -243,11 +243,10 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.name}
                     to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-semibold ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-semibold touch-manipulation min-h-[44px] ${
                       isActive
                         ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
-                        : "text-slate-700 hover:bg-purple-50"
+                        : "text-slate-700 active:bg-purple-100"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -274,7 +273,7 @@ export default function Layout({ children, currentPageName }) {
                           setMobileMenuOpen(false);
                         }}
                         variant="outline"
-                        className="w-full justify-start gap-2"
+                        className="w-full justify-start gap-2 touch-manipulation min-h-[44px]"
                       >
                         <User className="w-4 h-4" />
                         My Profile
@@ -285,7 +284,7 @@ export default function Layout({ children, currentPageName }) {
                           setMobileMenuOpen(false);
                         }}
                         variant="outline"
-                        className="w-full justify-start gap-2 mt-2"
+                        className="w-full justify-start gap-2 mt-2 touch-manipulation min-h-[44px]"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
@@ -297,7 +296,7 @@ export default function Layout({ children, currentPageName }) {
                         handleLogin();
                         setMobileMenuOpen(false);
                       }}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl"
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl touch-manipulation min-h-[44px]"
                     >
                       <User className="w-4 h-4 mr-2" />
                       Login
@@ -343,7 +342,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     SmartFeed
@@ -352,7 +351,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Residential"} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Residential
@@ -361,7 +360,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Commercial"} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Commercial
@@ -370,7 +369,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?listingType=Rent"} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Rent
@@ -379,7 +378,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?listingType=Sale"} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Buy
@@ -388,7 +387,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("Blogs")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Blog & Guides
@@ -397,7 +396,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("BrokerNetwork")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Broker Network
@@ -413,7 +412,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("Home") + "#how-it-works"} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     How It Works
@@ -422,7 +421,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("Buildings")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Building Directory
@@ -431,7 +430,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("AdminDashboard")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Analytics
@@ -440,7 +439,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     SmartFeed Explained
@@ -449,7 +448,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("Blogs") + "?category=Expat%20Series"} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     <span>Expat Corner</span>
@@ -466,7 +465,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("PrivacyPolicy")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Privacy Policy
@@ -475,7 +474,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("TermsOfService")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Terms of Service
@@ -484,7 +483,7 @@ export default function Layout({ children, currentPageName }) {
                 <li>
                   <Link 
                     to={createPageUrl("Disclaimer")} 
-                    className="hover:text-purple-600 transition-colors flex items-center group"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Disclaimer
@@ -503,13 +502,13 @@ export default function Layout({ children, currentPageName }) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                  <a href="tel:+919819471310" className="hover:text-purple-600 transition-colors">
+                  <a href="tel:+919819471310" className="hover:text-purple-600 transition-colors touch-manipulation">
                     +91 98194 71310
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                  <a href="mailto:hello@propai.live" className="hover:text-purple-600 transition-colors">
+                  <a href="mailto:hello@propai.live" className="hover:text-purple-600 transition-colors touch-manipulation">
                     hello@propai.live
                   </a>
                 </li>
@@ -521,7 +520,7 @@ export default function Layout({ children, currentPageName }) {
                   href="https://instagram.com/propailive" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group"
+                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group touch-manipulation"
                 >
                   <Instagram className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors" />
                 </a>
@@ -529,7 +528,7 @@ export default function Layout({ children, currentPageName }) {
                   href="https://linkedin.com/company/propai-live" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group"
+                  className="w-10 h-10 bg-purple-50 hover:bg-purple-100 rounded-xl flex items-center justify-center transition-all group touch-manipulation"
                 >
                   <Linkedin className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors" />
                 </a>
@@ -555,6 +554,15 @@ export default function Layout({ children, currentPageName }) {
       </footer>
 
       <style jsx>{`
+        /* ✅ FIXED: Better touch handling */
+        .touch-manipulation {
+          -webkit-tap-highlight-color: transparent;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          user-select: none;
+          cursor: pointer;
+        }
+        
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
