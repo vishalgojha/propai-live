@@ -1,20 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * ULTRA-FAST PROPERTY PARSER WITH DEDUPLICATION
+ * ULTRA-FAST PROPERTY PARSER WITH TEAM DETECTION
  * Target: 1-2 seconds per property
  * 
- * NEW: Enhanced broker extraction with better pattern recognition
- * FIXED: More aggressive broker name detection from messages
+ * NEW: Automatically detects co-brokers and creates team relationships
+ * ENHANCED: Extracts primary + secondary brokers from listings
  * 
- * BROKER LOGIC:
- * - ALWAYS extracts broker from message content (name + phone)
- * - Creates broker record UNLESS phone matches admin numbers (Vishal/Office)
- * - Kapil (+919773757759) is treated as regular broker, NOT admin
- * 
- * CACHES broker_name on property for quick display
- * 
- * ✅ CRITICAL FIX: ALWAYS populates broker_contact with extracted phone number
+ * TEAM LOGIC:
+ * - Primary broker = first name/phone found (gets assigned to property)
+ * - Secondary broker(s) = additional names/phones (become team members)
+ * - Automatically links them in team_members array
+ * - Updates co_listing_count for team members
  */
 
 // Location codes for custom IDs
@@ -55,17 +52,17 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // STEP 1: SINGLE LLM CALL - Extract + Generate Content
+    // STEP 1: ENHANCED LLM CALL - Extract Property + Multiple Brokers
     let extractedData;
     try {
-      const extractionPrompt = `Extract property listing AND generate marketing content from this broker message.
+      const extractionPrompt = `Extract property listing with ALL brokers mentioned (team detection).
 
 Message:
 """
 ${message}
 """
 
-Return this EXACT JSON structure with ALL fields:
+Return this EXACT JSON structure:
 {
   "bhk": "string (e.g., '2 BHK', '3 BHK', 'Office Space')",
   "property_category": "Residential or Commercial",
@@ -83,112 +80,74 @@ Return this EXACT JSON structure with ALL fields:
   "listing_type": "Sale|Rent|Lease",
   "amenities": ["array of strings"] or null,
   "description": "string or null (original broker description)",
-  "broker_name": "string (broker's name from message)",
-  "broker_phone": "string (phone with country code, e.g., '919820094416')",
-  "broker_agency": "string or null",
+  "brokers": [
+    {
+      "name": "string (broker's name)",
+      "phone": "string (phone with 91 prefix)",
+      "agency": "string or null",
+      "role": "primary or secondary"
+    }
+  ],
   "ai_title": "string (10-15 word descriptive title)",
-  "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words minimum - MUST be full paragraph)"
+  "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words)"
 }
 
-**CRITICAL for broker_name extraction - READ CAREFULLY:**
+**CRITICAL - MULTIPLE BROKER DETECTION:**
 
-You MUST extract the broker's name from the message. Look for these patterns:
+Look for ALL names and phone numbers in the message. If you find 2+ brokers:
+- FIRST broker found = "primary" role (main contact)
+- ADDITIONAL brokers = "secondary" role (team members)
 
-1. **Name + Phone patterns:**
-   - "Ramesh 9820056789"
-   - "Contact Priya 98200xxxxx"
-   - "Kapil 9773757759"
-   - "From Maz 9820..."
-   - "Call Aditya on 9820..."
+**Common Co-Broker Patterns:**
 
-2. **Signature patterns:**
-   - End of message: "Thanks, Ramesh"
-   - "Regards, Priya Sharma"
-   - "- Kapil"
-   - "Best, Aditya Kumar"
+1. **Two names with phones:**
+   - "Contact Ramesh 9820056789 or Priya 9820094416"
+   - "Ramesh 9820056789 / Priya 9820094416"
+   
+2. **Names separated by 'and':**
+   - "Listed by Ramesh and Priya"
+   - "Contact: Ramesh & Priya Kumar"
+   
+3. **Multiple signatures:**
+   - "Thanks, Ramesh (9820056789) & Priya (9820094416)"
+   - "Regards, Ramesh - Priya"
+   
+4. **Agency + Multiple contacts:**
+   - "Lacasaa Real Estate - Ramesh 98200... / Priya 98201..."
+   - "From: Ramesh & Priya | Lacasaa"
 
-3. **Agency + Name:**
-   - "Lacasaa Real Estate - Ramesh"
-   - "From: Priya (Lacasaa)"
-   - "Maz | Lacasaa Real Estate"
-
-4. **WhatsApp contact names:**
-   - If message has sender info like "Kapil Chariot", "Ramesh Kumar", etc.
-   - Extract JUST the first name or full name if available
-
-5. **Common variations:**
-   - Names at start: "Ramesh here, I have 2BHK..."
-   - Names in middle: "...please contact Priya for viewing..."
-   - Names at end: "...call me - Kapil"
-
-**EXTRACTION RULES:**
-- Extract FULL NAME if present (e.g., "Ramesh Kumar", "Priya Sharma")
-- If only first name, extract that (e.g., "Ramesh", "Priya", "Kapil")
-- If name appears with agency, extract BOTH separately
-- Agency goes in broker_agency field (e.g., "Lacasaa Real Estate")
-- Name goes in broker_name field (e.g., "Ramesh", "Priya Sharma")
-- Phone MUST have 91 country code prefix
+**Extraction Rules:**
+- Extract EVERY unique name + phone combination
+- If only one name but multiple phones → create entry for each phone with same name
+- If multiple names but one phone → only primary broker
+- Mark the FIRST broker as "primary", rest as "secondary"
+- Always include 91 country code prefix
+- Agency name should be same for all brokers if mentioned once
 
 **EXAMPLES:**
 
-Message: "2bhk ff 80L Bandra West, Ramesh 9820056789"
-→ broker_name: "Ramesh", broker_phone: "919820056789"
+Message: "2bhk Bandra, contact Ramesh 9820056789 or Priya 9820094416"
+→ brokers: [
+  {"name": "Ramesh", "phone": "919820056789", "agency": null, "role": "primary"},
+  {"name": "Priya", "phone": "919820094416", "agency": null, "role": "secondary"}
+]
 
-Message: "3bhk available, contact Priya Sharma 98200xxxxx"
-→ broker_name: "Priya Sharma", broker_phone: "9198200xxxxx"
+Message: "3bhk available. Lacasaa Real Estate - Ramesh 98200xxx / Priya 98201xxx"
+→ brokers: [
+  {"name": "Ramesh", "phone": "9198200xxx", "agency": "Lacasaa Real Estate", "role": "primary"},
+  {"name": "Priya", "phone": "9198201xxx", "agency": "Lacasaa Real Estate", "role": "secondary"}
+]
 
 Message: "Office space BKC. Call Kapil 9773757759"
-→ broker_name: "Kapil", broker_phone: "919773757759"
+→ brokers: [
+  {"name": "Kapil", "phone": "919773757759", "agency": null, "role": "primary"}
+]
 
-Message: "2bhk rent Juhu. Thanks, Maz - Lacasaa Real Estate"
-→ broker_name: "Maz", broker_agency: "Lacasaa Real Estate"
+**IF NO BROKERS FOUND:**
+- Return empty brokers array: []
+- We'll handle this as admin listing
 
-**IF NO NAME FOUND:**
-- If you cannot find ANY broker name, use "Unknown Broker"
-- Still extract phone number if present
-- This should be RARE - try very hard to find the name
-
-**CRITICAL for ai_title:**
-- Create 10-15 word descriptive title that's natural and informative
-- Format: "{Furnishing} {BHK} in {Building Name/Pocket}, {Location}"
-- Examples:
-  * "Fully Furnished 2 BHK in Oberoi Sky Heights, Bandra West"
-  * "Spacious 3 BHK Apartment in Juhu with Sea View"
-  * "Premium Office Space in BKC with Parking"
-- ALWAYS include building name if available
-- Use proper capitalization and grammar
-- NO abbreviations (write "2 BHK" not "2bhk")
-- Make it search-friendly and matchable
-- NO special characters or punctuation except commas
-
-**CRITICAL for ai_description - READ CAREFULLY:**
-- MUST write EXACTLY 4-5 complete sentences
-- MINIMUM 60 words, TARGET 70-80 words
-- Full paragraph format - NO bullet points, NO line breaks
-- Plain, factual tone - state what exists, don't sell it
-- Structure: 
-  * Sentence 1: Location + size + configuration
-  * Sentence 2: Furnishing + floor + view (if available)
-  * Sentence 3: Parking + possession details
-  * Sentence 4: Key amenities
-  * Sentence 5: Additional selling points (if available)
-- NO fancy marketing words like: premium, luxury, stunning, exquisite, world-class, magnificent
-- Use simple direct language
-- NEVER truncate or use "..." - write COMPLETE sentences
-
-**GOOD EXAMPLE (80 words, 4 sentences):**
-"Fully furnished 2 BHK apartment in Oberoi Sky Heights, Bandra West with 1000 sq ft carpet area. Located on the 18th floor offering clear city views with modern interiors and quality fittings. Two covered parking spots included with immediate possession available. Building amenities include gymnasium, swimming pool, landscaped gardens, children's play area, and 24/7 security with CCTV surveillance."
-
-**BAD EXAMPLE (too short, incomplete):**
-"2 BHK in Oberoi Sky Heights. Fully furnished with parking. Good amenities available."
-
-**CRITICAL RULES:**
-- NEVER write less than 60 words
-- ALWAYS write 4-5 complete sentences
-- NO abbreviations (write "square feet" not "sq ft" in description)
-- NO bullet points or dashes
-- Write ONE continuous paragraph
-- Even if original message is short, CREATE A FULL DESCRIPTION from the available data
+**For ai_title and ai_description:** Same rules as before - descriptive title, 4-5 sentences, 60-80 words, no marketing fluff.
 
 Return ONLY valid JSON, no markdown`;
 
@@ -213,49 +172,25 @@ Return ONLY valid JSON, no markdown`;
             listing_type: { type: "string" },
             amenities: { type: ["array", "null"], items: { type: "string" } },
             description: { type: ["string", "null"] },
-            broker_name: { type: "string" },
-            broker_phone: { type: "string" },
-            broker_agency: { type: ["string", "null"] },
+            brokers: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  phone: { type: "string" },
+                  agency: { type: ["string", "null"] },
+                  role: { type: "string" }
+                }
+              }
+            },
             ai_title: { type: "string" },
             ai_description: { type: "string" }
           }
         }
       });
 
-      // ✅ FALLBACK: If broker_name is generic or missing, try regex extraction
-      if (!extractedData.broker_name || 
-          extractedData.broker_name === 'Unknown Broker' ||
-          extractedData.broker_name.toLowerCase().includes('broker')) {
-        
-        console.log('⚠️ Generic broker name detected, trying regex extraction...');
-        
-        // Pattern 1: Name before phone (most common)
-        const namePhonePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*(?::|-)?\s*(\+?91)?[\s-]?([6-9]\d{9})/i;
-        const match1 = message.match(namePhonePattern);
-        
-        if (match1) {
-          extractedData.broker_name = match1[1].trim();
-          console.log(`✓ Extracted name via regex: ${extractedData.broker_name}`);
-        } else {
-          // Pattern 2: Thanks/Regards signature
-          const signaturePattern = /(?:Thanks|Regards|Best|Cheers|From|Contact),?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i;
-          const match2 = message.match(signaturePattern);
-          
-          if (match2) {
-            extractedData.broker_name = match2[1].trim();
-            console.log(`✓ Extracted name from signature: ${extractedData.broker_name}`);
-          } else {
-            // Pattern 3: Dash signature at end
-            const dashPattern = /-\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*$/i;
-            const match3 = message.match(dashPattern);
-            
-            if (match3) {
-              extractedData.broker_name = match3[1].trim();
-              console.log(`✓ Extracted name from dash: ${extractedData.broker_name}`);
-            }
-          }
-        }
-      }
+      console.log(`✓ Extracted ${extractedData.brokers?.length || 0} broker(s) from message`);
       
     } catch (llmError) {
       return Response.json({ 
@@ -266,7 +201,7 @@ Return ONLY valid JSON, no markdown`;
     }
 
     // STEP 2: VALIDATE REQUIRED FIELDS
-    const required = ['bhk', 'price', 'location', 'listing_type', 'broker_name', 'broker_phone'];
+    const required = ['bhk', 'price', 'location', 'listing_type'];
     const missing = required.filter(field => !extractedData[field]);
     
     if (missing.length > 0) {
@@ -278,34 +213,25 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 400 });
     }
 
-    // STEP 2.5: CHECK FOR DUPLICATES BEFORE CREATING
+    // STEP 2.5: CHECK FOR DUPLICATES
     console.log('🔍 Checking for duplicates...');
     const allProperties = await base44.asServiceRole.entities.Property.filter({
       status: 'Active'
     });
 
-    // Check if this property already exists
     const isDuplicate = allProperties.find(existing => {
-      // Same building match
       const sameBuilding = extractedData.building_name && existing.building_name &&
         extractedData.building_name.toLowerCase().trim() === existing.building_name.toLowerCase().trim();
-      
-      // Same location
       const sameLocation = existing.location === extractedData.location;
-      
-      // Same BHK
       const sameBhk = existing.bhk === extractedData.bhk;
       
-      // Similar price (±10%)
       const existingPriceInLakhs = existing.price_unit === 'crores' ? existing.price * 100 : existing.price;
       const newPriceInLakhs = extractedData.price_unit === 'crores' ? extractedData.price * 100 : extractedData.price;
       const priceDiff = Math.abs(existingPriceInLakhs - newPriceInLakhs) / existingPriceInLakhs;
       const similarPrice = priceDiff <= 0.10;
       
-      // Same floor (if both have floor info)
       const sameFloor = (!extractedData.floor || !existing.floor) || existing.floor === extractedData.floor;
       
-      // Similar area (if both have area info) - ±5%
       let similarArea = true;
       if (extractedData.carpet_area && existing.carpet_area) {
         const areaDiff = Math.abs(extractedData.carpet_area - existing.carpet_area) / existing.carpet_area;
@@ -330,100 +256,154 @@ Return ONLY valid JSON, no markdown`;
           price: `₹${isDuplicate.price}${isDuplicate.price_unit === 'crores' ? ' Cr' : 'L'}`,
           created_date: isDuplicate.created_date
         }
-      }, { status: 409 }); // 409 Conflict
+      }, { status: 409 });
     }
 
     console.log('✅ No duplicate found, proceeding with creation');
 
-    // STEP 3: HANDLE BROKER - ALWAYS from message content
-    let broker = null;
-    let brokerName = extractedData.broker_name; // Cache the name for property
+    // STEP 3: HANDLE MULTIPLE BROKERS & TEAM RELATIONSHIPS
+    let primaryBroker = null;
+    let primaryBrokerName = 'PropAI Team';
+    let primaryBrokerPhone = null;
+    const allBrokers = await base44.asServiceRole.entities.Broker.list();
     
     try {
-      const normalizedPhone = extractedData.broker_phone.replace(/\D/g, '');
-      
-      // Check if this is an admin number (Vishal or Office)
-      const isAdminNumber = ADMIN_NUMBERS.some(adminNum => 
-        normalizedPhone.includes(adminNum.slice(-10))
-      );
-      
-      if (isAdminNumber) {
-        console.log('⚠️ Admin number detected - not creating broker record');
-        brokerName = 'PropAI Team'; // Override name for admin listings
+      if (!extractedData.brokers || extractedData.brokers.length === 0) {
+        console.log('⚠️ No brokers extracted - admin listing');
       } else {
-        // For ALL other numbers (including Kapil), create/find broker
-        const allBrokers = await base44.asServiceRole.entities.Broker.list();
-        const normalizedName = extractedData.broker_name.toLowerCase().trim();
-        
-        // Try to find existing broker by phone
-        broker = allBrokers.find(b => 
-          b.phone && b.phone.replace(/\D/g, '').includes(normalizedPhone.slice(-10))
-        );
+        // Filter out admin numbers
+        const validBrokers = extractedData.brokers.filter(b => {
+          const normalizedPhone = b.phone.replace(/\D/g, '');
+          const isAdmin = ADMIN_NUMBERS.some(adminNum => 
+            normalizedPhone.includes(adminNum.slice(-10))
+          );
+          return !isAdmin;
+        });
 
-        // If not found by phone, try by name
-        if (!broker) {
-          broker = allBrokers.find(b => {
-            const brokerNameNorm = b.name.toLowerCase().trim();
-            if (brokerNameNorm === normalizedName) return true;
-            if (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm)) return true;
-            
-            if (extractedData.broker_agency && b.agency_name) {
-              const agencyMatch = b.agency_name.toLowerCase() === extractedData.broker_agency.toLowerCase();
-              if (agencyMatch && (brokerNameNorm.includes(normalizedName) || normalizedName.includes(brokerNameNorm))) {
-                return true;
-              }
-            }
-            return false;
-          });
-        }
-
-        // Create new broker if not found
-        if (!broker) {
-          const brokerCount = allBrokers.length + 1;
-          const brokerCustomId = `CHR-BRK-${String(brokerCount).padStart(4, '0')}`;
-          
-          broker = await base44.asServiceRole.entities.Broker.create({
-            custom_id: brokerCustomId,
-            name: extractedData.broker_name,
-            phone: extractedData.broker_phone,
-            agency_name: extractedData.broker_agency,
-            areas_covered: extractedData.location ? [extractedData.location] : [],
-            status: "Active",
-            total_listings_count: 1,
-            active_listings_count: 1,
-            last_activity: new Date().toISOString()
-          });
-          console.log(`✓ Created new broker ${brokerCustomId}: ${extractedData.broker_name}`);
+        if (validBrokers.length === 0) {
+          console.log('⚠️ All brokers are admin numbers - admin listing');
         } else {
-          // Update existing broker
-          const updatedAreasSet = new Set(broker.areas_covered || []);
-          if (extractedData.location) updatedAreasSet.add(extractedData.location);
+          // Get or create all brokers
+          const brokerRecords = [];
           
-          await base44.asServiceRole.entities.Broker.update(broker.id, {
-            total_listings_count: (broker.total_listings_count || 0) + 1,
-            active_listings_count: (broker.active_listings_count || 0) + 1,
-            last_activity: new Date().toISOString(),
-            areas_covered: Array.from(updatedAreasSet)
-          });
-          console.log(`✓ Linked to existing broker ${broker.custom_id}: ${broker.name}`);
-        }
-        
-        // Use the broker's actual name from database (in case it was normalized)
-        if (broker) {
-          brokerName = broker.name;
+          for (const brokerData of validBrokers) {
+            const normalizedPhone = brokerData.phone.replace(/\D/g, '');
+            
+            // Try to find existing broker
+            let broker = allBrokers.find(b => 
+              b.phone && b.phone.replace(/\D/g, '').includes(normalizedPhone.slice(-10))
+            );
+
+            if (!broker) {
+              // Create new broker
+              const brokerCount = allBrokers.length + brokerRecords.length + 1;
+              const brokerCustomId = `CHR-BRK-${String(brokerCount).padStart(4, '0')}`;
+              
+              broker = await base44.asServiceRole.entities.Broker.create({
+                custom_id: brokerCustomId,
+                name: brokerData.name,
+                phone: brokerData.phone,
+                agency_name: brokerData.agency,
+                areas_covered: extractedData.location ? [extractedData.location] : [],
+                status: "Active",
+                total_listings_count: 1,
+                active_listings_count: 1,
+                last_activity: new Date().toISOString()
+              });
+              console.log(`✓ Created new broker ${brokerCustomId}: ${brokerData.name}`);
+            } else {
+              // Update existing broker
+              const updatedAreasSet = new Set(broker.areas_covered || []);
+              if (extractedData.location) updatedAreasSet.add(extractedData.location);
+              
+              await base44.asServiceRole.entities.Broker.update(broker.id, {
+                total_listings_count: (broker.total_listings_count || 0) + 1,
+                active_listings_count: (broker.active_listings_count || 0) + 1,
+                last_activity: new Date().toISOString(),
+                areas_covered: Array.from(updatedAreasSet)
+              });
+              console.log(`✓ Updated existing broker ${broker.custom_id}: ${broker.name}`);
+            }
+            
+            brokerRecords.push({
+              broker: broker,
+              role: brokerData.role,
+              originalData: brokerData
+            });
+          }
+
+          // Set primary broker (first one)
+          if (brokerRecords.length > 0) {
+            const primaryRecord = brokerRecords.find(b => b.role === 'primary') || brokerRecords[0];
+            primaryBroker = primaryRecord.broker;
+            primaryBrokerName = primaryBroker.name;
+            primaryBrokerPhone = primaryRecord.originalData.phone;
+            
+            console.log(`✓ Primary broker: ${primaryBrokerName} (${primaryBroker.custom_id})`);
+          }
+
+          // Link secondary brokers as team members
+          if (brokerRecords.length > 1) {
+            const secondaryBrokers = brokerRecords.filter(b => b.role === 'secondary');
+            
+            for (const secondaryRecord of secondaryBrokers) {
+              const secondaryBroker = secondaryRecord.broker;
+              
+              // Update primary broker's team_members
+              const currentTeamMembers = primaryBroker.team_members || [];
+              const alreadyInTeam = currentTeamMembers.some(m => m.broker_id === secondaryBroker.id);
+              
+              if (!alreadyInTeam) {
+                currentTeamMembers.push({
+                  broker_id: secondaryBroker.id,
+                  name: secondaryBroker.name,
+                  phone: secondaryBroker.phone,
+                  role: secondaryBroker.agency_name || 'Team Member',
+                  co_listing_count: 1
+                });
+                
+                await base44.asServiceRole.entities.Broker.update(primaryBroker.id, {
+                  team_members: currentTeamMembers,
+                  team_leader_of: [...(primaryBroker.team_leader_of || []), secondaryBroker.id]
+                });
+                
+                console.log(`✓ Linked ${secondaryBroker.name} as team member of ${primaryBrokerName}`);
+              } else {
+                // Increment co-listing count
+                const updatedTeamMembers = currentTeamMembers.map(m => 
+                  m.broker_id === secondaryBroker.id 
+                    ? { ...m, co_listing_count: (m.co_listing_count || 0) + 1 }
+                    : m
+                );
+                
+                await base44.asServiceRole.entities.Broker.update(primaryBroker.id, {
+                  team_members: updatedTeamMembers
+                });
+                
+                console.log(`✓ Incremented co-listing count for ${secondaryBroker.name}`);
+              }
+              
+              // Update secondary broker's reports_to
+              await base44.asServiceRole.entities.Broker.update(secondaryBroker.id, {
+                reports_to: primaryBroker.id
+              });
+            }
+            
+            console.log(`✅ Team created: ${primaryBrokerName} + ${secondaryBrokers.length} member(s)`);
+          }
         }
       }
     } catch (brokerError) {
+      console.error('Broker/team creation error:', brokerError);
       return Response.json({ 
         success: false,
-        error: `Broker creation failed: ${brokerError.message}`,
-        stage: 'broker'
+        error: `Broker/team creation failed: ${brokerError.message}`,
+        stage: 'broker_team'
       }, { status: 500 });
     }
 
-    // STEP 4: HANDLE BUILDING WITH FUZZY MATCHING
+    // STEP 4: HANDLE BUILDING
     let buildingId = null;
-    let createdNewBuilding = false;
     
     if (extractedData.building_name) {
       try {
@@ -489,7 +469,6 @@ Return ONLY valid JSON, no markdown`;
             verified: false
           });
           buildingId = newBuilding.id;
-          createdNewBuilding = true;
           console.log(`✓ Created new building ${buildingCustomId}`);
         }
       } catch (buildingError) {
@@ -497,12 +476,11 @@ Return ONLY valid JSON, no markdown`;
       }
     }
 
-    // STEP 5: INLINE ID GENERATION
+    // STEP 5: GENERATE CUSTOM ID & SLUG
     const locationCode = LOCATION_CODES[extractedData.location.toLowerCase()] || 'MUM';
     const nextSequence = allProperties.length + 1;
     const customId = `CHT-${locationCode}-${String(nextSequence).padStart(4, '0')}`;
 
-    // Generate slug
     let slugParts = [];
     if (extractedData.bhk) {
       slugParts.push(extractedData.bhk.toLowerCase().replace(/\s+/g, ''));
@@ -535,8 +513,7 @@ Return ONLY valid JSON, no markdown`;
 
     console.log(`✓ Generated ID: ${customId}, Slug: ${slug}`);
 
-    // STEP 6: CREATE PROPERTY WITH CACHED BROKER NAME
-    // ✅ CRITICAL FIX: ALWAYS use extracted phone as broker_contact
+    // STEP 6: CREATE PROPERTY
     let property;
     try {
       const propertyData = {
@@ -562,16 +539,16 @@ Return ONLY valid JSON, no markdown`;
         source_text: message,
         ai_title: extractedData.ai_title,
         ai_description: extractedData.ai_description,
-        broker_id: broker ? broker.id : null,
-        broker_contact: extractedData.broker_phone, // ✅ ALWAYS use extracted phone
-        broker_name: brokerName, // ✅ CACHED BROKER NAME
-        broker_trust_score: broker ? (broker.trust_score || 50) : null,
+        broker_id: primaryBroker ? primaryBroker.id : null,
+        broker_contact: primaryBrokerPhone || null,
+        broker_name: primaryBrokerName,
+        broker_trust_score: primaryBroker ? (primaryBroker.trust_score || 50) : null,
         status: "Active",
         assigned_agent_name: "Vishal"
       };
 
       property = await base44.asServiceRole.entities.Property.create(propertyData);
-      console.log(`✓ Created property ${customId} with broker_contact: ${extractedData.broker_phone}, broker_name: ${brokerName}`);
+      console.log(`✓ Created property ${customId} with primary broker: ${primaryBrokerName}`);
     } catch (propertyError) {
       return Response.json({ 
         success: false,
@@ -580,7 +557,7 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 500 });
     }
 
-    // STEP 7: BACKGROUND TASKS (non-blocking)
+    // STEP 7: BACKGROUND TASKS
     Promise.all([
       buildingId ? 
         base44.asServiceRole.functions.invoke('buildingIntelligence', { 
@@ -590,9 +567,9 @@ Return ONLY valid JSON, no markdown`;
         }).catch(err => console.warn('Building intelligence failed:', err.message))
         : Promise.resolve(),
       
-      broker ?
+      primaryBroker ?
         base44.asServiceRole.functions.invoke('buildBrokerProfile', { 
-          broker_id: broker.id 
+          broker_id: primaryBroker.id 
         }).catch(err => console.warn('Broker profiling failed:', err.message))
         : Promise.resolve(),
       
@@ -600,9 +577,9 @@ Return ONLY valid JSON, no markdown`;
         data_type: 'property',
         data: {
           ...property,
-          broker_name: brokerName,
-          broker_phone: extractedData.broker_phone,
-          broker_agency: broker ? broker.agency_name : null
+          broker_name: primaryBrokerName,
+          broker_phone: primaryBrokerPhone,
+          broker_agency: primaryBroker ? primaryBroker.agency_name : null
         }
       }).catch(err => console.warn('PropAI sync failed:', err.message))
     ]).catch(err => console.warn('Background tasks failed:', err.message));
@@ -616,10 +593,11 @@ Return ONLY valid JSON, no markdown`;
         custom_id: property.custom_id,
         slug: property.slug,
         ai_title: property.ai_title,
-        broker_custom_id: broker ? broker.custom_id : null,
-        broker_name: brokerName,
+        broker_custom_id: primaryBroker ? primaryBroker.custom_id : null,
+        broker_name: primaryBrokerName,
+        team_size: extractedData.brokers ? extractedData.brokers.length : 0,
         building_custom_id: buildingId ? 
-          (allBuildings.find(b => b.id === buildingId)?.custom_id) : null
+          (await base44.asServiceRole.entities.Building.filter({ id: buildingId }))[0]?.custom_id : null
       }
     });
 
