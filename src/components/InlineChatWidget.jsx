@@ -59,6 +59,7 @@ export default function InlineChatWidget({ isOpen, onClose }) {
 
     const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
       setMessages(data.messages || []);
+      setIsLoading(false); // ✅ FIXED: Stop loading when new message arrives
     });
 
     return () => {
@@ -114,20 +115,12 @@ export default function InlineChatWidget({ isOpen, onClose }) {
       clearInterval(statusInterval);
       setFunnyStatus("");
 
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'assistant') {
-        const content = lastMessage.content;
-        if (content.includes('✅') || content.includes('Listed')) {
-          toast.success('🎉 Property Listed!', {
-            description: 'Your property is now live on SmartFeed',
-            duration: 3000,
-            className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
-          });
-        }
-      }
+      // ✅ REMOVED: setIsLoading(false) - now handled by subscription
+
     } catch (error) {
       clearInterval(statusInterval);
       setFunnyStatus("");
+      setIsLoading(false); // ✅ Only stop loading on error
 
       const errorMessage = {
         role: "assistant",
@@ -142,8 +135,6 @@ export default function InlineChatWidget({ isOpen, onClose }) {
         description: 'Check the chat for details',
         duration: 5000
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -190,7 +181,7 @@ export default function InlineChatWidget({ isOpen, onClose }) {
               onClick={onClose}
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-white hover:bg-white/20"
+              className="h-8 w-8 text-white hover:bg-white/20 touch-manipulation"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -214,7 +205,7 @@ export default function InlineChatWidget({ isOpen, onClose }) {
                     onClick={() => setShowGuidelines(false)}
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-amber-600 hover:bg-amber-100"
+                    className="h-6 w-6 text-amber-600 hover:bg-amber-100 touch-manipulation"
                   >
                     <X className="w-3 h-3" />
                   </Button>
@@ -228,6 +219,18 @@ export default function InlineChatWidget({ isOpen, onClose }) {
             {isInitializing && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+              </div>
+            )}
+
+            {!isInitializing && messages.length === 0 && (
+              <div className="text-center py-8">
+                <Bot className="w-12 h-12 text-purple-300 mx-auto mb-3" />
+                <p className="text-sm text-slate-600 mb-4">
+                  👋 Hi! I'm your PropAI assistant. How can I help you today?
+                </p>
+                <p className="text-xs text-slate-500">
+                  Try asking about properties, listing a new property, or market trends
+                </p>
               </div>
             )}
 
@@ -298,7 +301,7 @@ export default function InlineChatWidget({ isOpen, onClose }) {
                     }}
                     variant="outline"
                     size="sm"
-                    className="text-xs h-auto py-2 hover:bg-purple-50 hover:border-purple-300"
+                    className="text-xs h-auto py-2 hover:bg-purple-50 hover:border-purple-300 touch-manipulation"
                   >
                     {action.label}
                   </Button>
@@ -307,31 +310,47 @@ export default function InlineChatWidget({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* Input */}
+          {/* Input - FIXED SEND BUTTON */}
           <div className="p-4 border-t border-purple-200 bg-white">
             <div className="flex gap-2">
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder="Type a message or paste WhatsApp text..."
                 disabled={isLoading || isInitializing}
-                className="flex-1 resize-none border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm max-h-24"
+                className="flex-1 resize-none border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm max-h-24 disabled:opacity-50 disabled:cursor-not-allowed"
                 rows={2}
               />
               <Button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading || isInitializing}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-10 px-4"
+                disabled={!input.trim() || isLoading || isInitializing || !conversation}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto px-4 py-2 touch-manipulation min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5" />
                 )}
               </Button>
             </div>
+            {/* ✅ NEW: Helper text when disabled */}
+            {isInitializing && (
+              <p className="text-xs text-slate-500 mt-2 text-center">
+                ⏳ Initializing chat...
+              </p>
+            )}
+            {isLoading && (
+              <p className="text-xs text-purple-600 mt-2 text-center font-semibold">
+                🤖 AI is thinking...
+              </p>
+            )}
           </div>
         </Card>
       </motion.div>
