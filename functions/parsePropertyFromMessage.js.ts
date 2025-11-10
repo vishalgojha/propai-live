@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -266,6 +267,7 @@ Return ONLY valid JSON, no markdown`;
     let primaryBrokerName = 'PropAI Team';
     let primaryBrokerPhone = null;
     const allBrokers = await base44.asServiceRole.entities.Broker.list();
+    const createdBrokersInThisRun = []; // TRACK NEWLY CREATED BROKERS IN THIS EXECUTION
     
     try {
       if (!extractedData.brokers || extractedData.brokers.length === 0) {
@@ -288,16 +290,28 @@ Return ONLY valid JSON, no markdown`;
           
           for (const brokerData of validBrokers) {
             const normalizedPhone = brokerData.phone.replace(/\D/g, '');
+            const phoneLast10 = normalizedPhone.slice(-10); // Get last 10 digits for comparison
             
-            // Try to find existing broker
-            let broker = allBrokers.find(b => 
-              b.phone && b.phone.replace(/\D/g, '').includes(normalizedPhone.slice(-10))
-            );
+            // Try to find existing broker in all previously fetched brokers AND those created in this run
+            let broker = [...allBrokers, ...createdBrokersInThisRun].find(b => {
+              if (!b.phone) return false;
+              const brokerPhoneLast10 = b.phone.replace(/\D/g, '').slice(-10);
+              return brokerPhoneLast10 === phoneLast10; // EXACT match on last 10 digits
+            });
 
             if (!broker) {
-              // Create new broker
-              const brokerCount = allBrokers.length + brokerRecords.length + 1;
-              const brokerCustomId = `CHR-BRK-${String(brokerCount).padStart(4, '0')}`;
+              // If no phone match, try by name similarity
+              const normalizedName = brokerData.name.toLowerCase().trim();
+              broker = [...allBrokers, ...createdBrokersInThisRun].find(b => {
+                const brokerNameNorm = b.name.toLowerCase().trim();
+                return brokerNameNorm === normalizedName; // Exact name match
+              });
+            }
+
+            if (!broker) {
+              // Create new broker if not found by phone or name
+              const currentBrokerCount = allBrokers.length + createdBrokersInThisRun.length;
+              const brokerCustomId = `CHR-BRK-${String(currentBrokerCount + 1).padStart(4, '0')}`;
               
               broker = await base44.asServiceRole.entities.Broker.create({
                 custom_id: brokerCustomId,
@@ -310,6 +324,8 @@ Return ONLY valid JSON, no markdown`;
                 active_listings_count: 1,
                 last_activity: new Date().toISOString()
               });
+              
+              createdBrokersInThisRun.push(broker); // Add to tracking array for subsequent lookups in this run
               console.log(`✓ Created new broker ${brokerCustomId}: ${brokerData.name}`);
             } else {
               // Update existing broker
