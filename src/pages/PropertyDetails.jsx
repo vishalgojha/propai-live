@@ -24,13 +24,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Toaster } from "sonner";
-
-// Import JSON-LD generators directly from src/utils
 import {
   generatePropertyJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators";
+} from "../components/utils/jsonLdHelpers";
 
 
 export default function PropertyDetails() {

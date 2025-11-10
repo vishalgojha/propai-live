@@ -28,7 +28,7 @@ import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
   generateBreadcrumbJsonLd
-} from "@/utils/jsonLdGenerators";
+} from "../components/utils/jsonLdHelpers";
 
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
