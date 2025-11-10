@@ -14,7 +14,7 @@ import {
   Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } = "date-fns";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
