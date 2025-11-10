@@ -28,31 +28,80 @@ Deno.serve(async (req) => {
       // Remove all non-digits
       let cleaned = phone.replace(/\D/g, '');
       
-      // Remove country code variants (+91, 91, 0091, etc.)
-      if (cleaned.startsWith('91') && cleaned.length === 12) {
-        cleaned = cleaned.substring(2); // Remove 91
-      } else if (cleaned.startsWith('0091') && cleaned.length === 14) {
-        cleaned = cleaned.substring(4); // Remove 0091
-      } else if (cleaned.startsWith('961') && cleaned.length >= 10) {
-        // FIX: Handle Lebanese code +961 that was mistakenly used
-        cleaned = cleaned.slice(-10);
-      } else if (cleaned.startsWith('0') && cleaned.length === 11) {
-        cleaned = cleaned.substring(1); // Remove leading 0
-      }
+      // ✅ FIXED: Better handling of country codes
       
-      // If too long, take last 10 digits
-      if (cleaned.length > 10) {
-        cleaned = cleaned.slice(-10);
-      }
-      
-      // Validate: must be exactly 10 digits starting with 6-9
+      // Case 1: Already 10 digits starting with 6-9 (valid Indian mobile)
       if (cleaned.length === 10 && cleaned[0] >= '6' && cleaned[0] <= '9') {
-        const normalized = cleaned; // Store without country code
         return {
-          normalized,
-          changed: original !== normalized,
-          reason: original !== normalized ? 'fixed country code' : 'already correct'
+          normalized: cleaned,
+          changed: original !== cleaned,
+          reason: original !== cleaned ? 'removed formatting' : 'already correct'
         };
+      }
+      
+      // Case 2: 12 digits starting with 91 (Indian country code)
+      if (cleaned.length === 12 && cleaned.startsWith('91')) {
+        const without91 = cleaned.substring(2);
+        if (without91[0] >= '6' && without91[0] <= '9') {
+          return {
+            normalized: without91,
+            changed: true,
+            reason: 'removed +91 prefix'
+          };
+        }
+      }
+      
+      // Case 3: 14 digits starting with 0091
+      if (cleaned.length === 14 && cleaned.startsWith('0091')) {
+        const without0091 = cleaned.substring(4);
+        if (without0091.length === 10 && without0091[0] >= '6' && without0091[0] <= '9') {
+          return {
+            normalized: without0091,
+            changed: true,
+            reason: 'removed 0091 prefix'
+          };
+        }
+      }
+      
+      // Case 4: 11 digits starting with 0 (trunk prefix)
+      if (cleaned.length === 11 && cleaned.startsWith('0')) {
+        const without0 = cleaned.substring(1);
+        if (without0[0] >= '6' && without0[0] <= '9') {
+          return {
+            normalized: without0,
+            changed: true,
+            reason: 'removed trunk 0'
+          };
+        }
+      }
+      
+      // ✅ FIXED: Case 5: Wrong country code like +961 (Lebanon) used instead of +91
+      // Only strip if it results in a valid 10-digit number
+      if (cleaned.length > 10) {
+        // Try removing leading digits until we get 10 digits
+        const last10 = cleaned.slice(-10);
+        if (last10[0] >= '6' && last10[0] <= '9') {
+          // Check if this looks like a wrong country code situation
+          // E.g., 9619155175 (10 digits starting with 961) vs 9619155175XX (12+ digits)
+          if (cleaned.length >= 12) {
+            // Likely has a country code prefix
+            return {
+              normalized: last10,
+              changed: true,
+              reason: 'extracted 10 digits from longer number with country code'
+            };
+          } else if (cleaned.length === 11) {
+            // Could be 961 prefix used wrong OR a trunk 0
+            // Check if first digit is 0 (trunk) or if starts with common wrong codes
+            if (cleaned.startsWith('961') || cleaned.startsWith('971')) {
+              return {
+                normalized: last10,
+                changed: true,
+                reason: 'fixed wrong country code (+961→+91)'
+              };
+            }
+          }
+        }
       }
       
       return { normalized: null, changed: false, reason: 'invalid format' };
