@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +42,8 @@ export default function MyProfile() {
 
   const [activeTab, setActiveTab] = useState('overview');
 
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
     "BKC", "Worli", "Lower Parel", "Powai",
@@ -61,6 +64,7 @@ export default function MyProfile() {
           setSelectedAreas(user.preferred_areas);
         }
 
+        // ✅ ENHANCED: Better broker matching logic
         if (user.broker_id) {
           const brokers = await base44.entities.Broker.list();
           const broker = brokers.find(b => b.id === user.broker_id);
@@ -72,13 +76,28 @@ export default function MyProfile() {
               email: broker.email || "",
               phone: broker.phone || ""
             });
+            
+            // ✅ NEW: Check if profile is incomplete and auto-open edit form
+            const isProfileIncomplete = !broker.phone || !broker.agency_name;
+            if (isProfileIncomplete) {
+              setShowOnboardingBanner(true);
+              setEditingProfile(true);
+              toast.info('👋 Welcome! Please complete your profile', {
+                description: 'Add your phone number and agency name to get started',
+                duration: 8000,
+                className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
+              });
+            }
           }
         } else if (user.email) {
+          // Try to auto-link broker by email or phone
           const brokers = await base44.entities.Broker.list();
           
           const matchingBroker = brokers.find(b => {
+            // Email match
             if (b.email?.toLowerCase() === user.email.toLowerCase()) return true;
             
+            // Phone match - extract last 10 digits
             const normalizePhone = (phone) => phone?.replace(/\D/g, '').slice(-10);
             const userEmailAsPhone = normalizePhone(user.email);
             const brokerPhone = normalizePhone(b.phone);
@@ -98,9 +117,22 @@ export default function MyProfile() {
               phone: matchingBroker.phone || ""
             });
             
+            // Auto-link broker to user
             try {
               await base44.auth.updateMe({ broker_id: matchingBroker.id });
               setCurrentUser(prev => ({ ...prev, broker_id: matchingBroker.id }));
+              
+              // ✅ NEW: Check if profile is incomplete
+              const isProfileIncomplete = !matchingBroker.phone || !matchingBroker.agency_name;
+              if (isProfileIncomplete) {
+                setShowOnboardingBanner(true);
+                setEditingProfile(true);
+                toast.info('👋 Welcome back! Please complete your profile', {
+                  description: 'Add your phone number and agency name',
+                  duration: 8000,
+                  className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
+                });
+              }
             } catch (error) {
               console.error('Failed to auto-link broker:', error);
             }
@@ -168,6 +200,7 @@ export default function MyProfile() {
       }));
       
       setEditingProfile(false);
+      setShowOnboardingBanner(false); // Dismiss onboarding banner on save
       toast.success('✅ Profile Updated!', {
         description: 'Your details have been saved',
         duration: 3000
@@ -588,8 +621,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -600,8 +632,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -612,8 +643,7 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </div>
-              </Card>
+                </Card>
             </div>
           )}
 
@@ -763,6 +793,51 @@ export default function MyProfile() {
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+          {/* ✅ NEW: Onboarding Banner */}
+          {showOnboardingBanner && (!brokerProfile.phone || !brokerProfile.agency_name) && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-blue-400"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">👋 Welcome to PropAI Live!</h3>
+                    <p className="text-blue-100 mb-3 leading-relaxed">
+                      Complete your profile to unlock all features:
+                    </p>
+                    <div className="space-y-2 text-sm text-blue-100">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4" />
+                        <span><strong className="text-white">Phone Number</strong> - Required for team collaboration and broker network</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        <span><strong className="text-white">Agency Name</strong> - Displayed on your listings</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span><strong className="text-white">Preferred Areas</strong> - Personalize your SmartFeed</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowOnboardingBanner(false)}
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/20 flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
           <div className="mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
