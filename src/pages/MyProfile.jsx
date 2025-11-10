@@ -37,11 +37,11 @@ export default function MyProfile() {
     agency_name: "",
     email: "",
     phone: "",
-    name: "" // Added name field
+    name: ""
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
-  const [creatingBrokerProfile, setCreatingBrokerProfile] = useState(false); // New state for broker creation
+  const [creatingBrokerProfile, setCreatingBrokerProfile] = useState(false);
 
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -78,7 +78,7 @@ export default function MyProfile() {
               agency_name: broker.agency_name || "",
               email: broker.email || "",
               phone: broker.phone || "",
-              name: broker.name || user.full_name || "" // Initialize name
+              name: broker.name || user.full_name || ""
             });
             
             const isProfileIncomplete = !broker.phone || !broker.agency_name;
@@ -94,10 +94,9 @@ export default function MyProfile() {
             }
           }
         } else {
-          // User has no broker profile - prompt to create one
           setShowOnboardingBanner(true);
-          setEditingProfile(true); // This will control the form visibility in the new render path
-          setActiveTab('overview'); // This is a placeholder, as the new path won't use tabs initially
+          setEditingProfile(true);
+          setActiveTab('overview');
           setProfileData({
             agency_name: "",
             email: user.email || "",
@@ -141,7 +140,6 @@ export default function MyProfile() {
   };
 
   const handleSaveProfile = async () => {
-    // Handle creating new broker profile if none exists
     if (!brokerProfile) {
       if (!profileData.phone || !profileData.name || !profileData.agency_name) {
         toast.error('Name, Phone number, and Agency Name are required', {
@@ -191,7 +189,7 @@ export default function MyProfile() {
           description: 'Your profile is now active on PropAI',
           duration: 4000
         });
-        navigate(createPageUrl('MyProfile'), { replace: true }); // Reload to proper broker view
+        window.location.reload();
       } catch (error) {
         toast.error('Failed to create profile', {
           description: error.message
@@ -202,7 +200,6 @@ export default function MyProfile() {
       return;
     }
     
-    // Existing: Update existing broker profile
     setSavingProfile(true);
     try {
       let normalizedPhone = profileData.phone.trim();
@@ -220,7 +217,7 @@ export default function MyProfile() {
       }
       
       await base44.entities.Broker.update(brokerProfile.id, {
-        name: profileData.name.trim() || brokerProfile.name, // Update name
+        name: profileData.name.trim() || brokerProfile.name,
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
         phone: normalizedPhone
@@ -228,7 +225,7 @@ export default function MyProfile() {
       
       setBrokerProfile(prev => ({
         ...prev,
-        name: profileData.name.trim() || prev.name, // Update name in state
+        name: profileData.name.trim() || prev.name,
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
         phone: normalizedPhone || prev.phone
@@ -627,7 +624,6 @@ export default function MyProfile() {
 
   if (!currentUser) return null;
 
-  // ADMIN VIEW - unchanged
   if (currentUser.role === 'admin' && !brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -657,7 +653,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeProperties}</p>
                     <p className="text-sm text-slate-600">Active Properties</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -668,7 +665,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.activeBrokers}</p>
                     <p className="text-sm text-slate-600">Active Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
 
               <Card className="p-5 bg-white border-2 border-slate-200">
                 <div className="flex items-center gap-3 mb-3">
@@ -679,7 +677,8 @@ export default function MyProfile() {
                     <p className="text-2xl font-bold text-slate-900">{adminMetrics.highTrustBrokers}</p>
                     <p className="text-sm text-slate-600">High Trust Brokers</p>
                   </div>
-                </Card>
+                </div>
+              </Card>
             </div>
           )}
 
@@ -821,14 +820,12 @@ export default function MyProfile() {
     );
   }
 
-  // If user has NO broker profile, show profile creation form
   if (!brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Onboarding Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -847,7 +844,6 @@ export default function MyProfile() {
             </div>
           </motion.div>
 
-          {/* Profile Creation Form */}
           <Card className="p-6 bg-white border-2 border-slate-200">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-purple-600" />
@@ -939,7 +935,6 @@ export default function MyProfile() {
             </div>
           </Card>
 
-          {/* Area Preferences */}
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mt-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -967,13 +962,7 @@ export default function MyProfile() {
                     return (
                       <Button
                         key={area}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedAreas(selectedAreas.filter(a => a !== area));
-                          } else {
-                            setSelectedAreas([...selectedAreas, area]);
-                          }
-                        }}
+                        onClick={() => toggleArea(area)}
                         variant={isSelected ? "default" : "outline"}
                         size="sm"
                         className={`rounded-xl ${
@@ -1020,12 +1009,11 @@ export default function MyProfile() {
     
   const connectionCount = currentUser?.connected_brokers?.length || 0;
     
-  if (brokerProfile && brokerMetrics) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-        <Toaster position="top-center" richColors closeButton />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <Toaster position="top-center" richColors closeButton />
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
           {(!brokerProfile.phone || !brokerProfile.agency_name) && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -1321,7 +1309,7 @@ export default function MyProfile() {
                       </p>
                       {!profileData.phone && (
                         <p className="text-xs text-red-600 mt-2 font-semibold">
-                          ⚠️ You must add a phone number to use team features and receive client contacts
+                          ⚠️ You must add a phone number to use team features and receive client inquiries and collaborate with your team.
                         </p>
                       )}
                     </div>
@@ -1888,9 +1876,6 @@ export default function MyProfile() {
           )}
         </div>
       </div>
-    );
-  }
-
-  // This block is now unreachable as the !brokerProfile case is handled above
-  return null;
+    </div>
+  );
 }
