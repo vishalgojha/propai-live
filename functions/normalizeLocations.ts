@@ -141,6 +141,7 @@ Deno.serve(async (req) => {
     let buildingsUpdated = 0;
     let requirementsUpdated = 0;
     let errors = 0;
+    const errorDetails = []; // ✅ NEW: Track error details
 
     // Update properties
     for (const property of properties) {
@@ -148,13 +149,26 @@ Deno.serve(async (req) => {
         const normalized = LOCATION_MAPPING[property.location.toLowerCase()];
         if (normalized && normalized !== property.location) {
           try {
+            // ✅ FIXED: Safer update - only location field
             await base44.asServiceRole.entities.Property.update(property.id, {
               location: normalized
             });
             propertiesUpdated++;
           } catch (error) {
-            console.error(`Failed to update property ${property.id}:`, error);
+            console.error(`Failed to update property ${property.id}:`, error.message);
             errors++;
+            
+            // ✅ NEW: Store error details
+            if (errorDetails.length < 20) {
+              errorDetails.push({
+                type: 'property',
+                id: property.id,
+                custom_id: property.custom_id,
+                old_location: property.location,
+                new_location: normalized,
+                error: error.message
+              });
+            }
           }
         }
       }
@@ -166,13 +180,27 @@ Deno.serve(async (req) => {
         const normalized = LOCATION_MAPPING[building.location.toLowerCase()];
         if (normalized && normalized !== building.location) {
           try {
+            // ✅ FIXED: Safer update - only location field
             await base44.asServiceRole.entities.Building.update(building.id, {
               location: normalized
             });
             buildingsUpdated++;
           } catch (error) {
-            console.error(`Failed to update building ${building.id}:`, error);
+            console.error(`Failed to update building ${building.id}:`, error.message);
             errors++;
+            
+            // ✅ NEW: Store error details
+            if (errorDetails.length < 20) {
+              errorDetails.push({
+                type: 'building',
+                id: building.id,
+                custom_id: building.custom_id,
+                name: building.name,
+                old_location: building.location,
+                new_location: normalized,
+                error: error.message
+              });
+            }
           }
         }
       }
@@ -193,13 +221,27 @@ Deno.serve(async (req) => {
         
         if (hasChanges) {
           try {
+            // ✅ FIXED: Safer update - only preferred_locations field
             await base44.asServiceRole.entities.Requirement.update(requirement.id, {
               preferred_locations: normalizedLocations
             });
             requirementsUpdated++;
           } catch (error) {
-            console.error(`Failed to update requirement ${requirement.id}:`, error);
+            console.error(`Failed to update requirement ${requirement.id}:`, error.message);
             errors++;
+            
+            // ✅ NEW: Store error details
+            if (errorDetails.length < 20) {
+              errorDetails.push({
+                type: 'requirement',
+                id: requirement.id,
+                custom_id: requirement.custom_id,
+                client_name: requirement.client_name,
+                old_locations: requirement.preferred_locations,
+                new_locations: normalizedLocations,
+                error: error.message
+              });
+            }
           }
         }
       }
@@ -211,9 +253,13 @@ Deno.serve(async (req) => {
     summary.errors = errors;
 
     return Response.json({
-      success: true,
+      success: errors < (propertiesUpdated + buildingsUpdated + requirementsUpdated), // ✅ Success if more updates than errors
       mode: 'live',
-      summary
+      summary,
+      error_details: errorDetails.length > 0 ? errorDetails : undefined, // ✅ NEW: Show error details
+      message: errors === 0 
+        ? `✅ Successfully normalized all locations`
+        : `⚠️ Normalized with ${errors} error(s) - check error_details for specifics`
     });
 
   } catch (error) {
