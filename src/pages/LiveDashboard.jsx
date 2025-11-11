@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import { toast, Toaster } from "sonner";
+import RealtimeActivityFeed from "../components/admin/RealtimeActivityFeed";
 
 export default function LiveDashboard() {
   const navigate = useNavigate();
@@ -218,55 +220,6 @@ export default function LiveDashboard() {
 
     return Object.entries(types).map(([name, value]) => ({ name, value }));
   }, [properties]);
-
-  // Recent activity feed
-  const recentActivity = useMemo(() => {
-    const activities = [];
-
-    // Recent properties
-    properties.slice(0, 5).forEach(p => {
-      activities.push({
-        id: `prop-${p.id}`,
-        type: 'property',
-        icon: Home,
-        color: 'text-blue-600 bg-blue-100',
-        title: 'New Property',
-        description: `${p.bhk} in ${p.location}`,
-        time: new Date(p.created_date),
-        meta: `₹${p.price}${p.price_unit === 'crores' ? 'Cr' : 'L'}`,
-      });
-    });
-
-    // Recent requirements
-    requirements.slice(0, 3).forEach(r => {
-      activities.push({
-        id: `req-${r.id}`,
-        type: 'requirement',
-        icon: Target,
-        color: 'text-purple-600 bg-purple-100',
-        title: 'New Requirement',
-        description: `${r.bhk_preference?.join(', ') || 'Any'} in ${r.preferred_locations?.[0] || 'Mumbai'}`,
-        time: new Date(r.created_date),
-        meta: r.urgency || 'Medium',
-      });
-    });
-
-    // Recent interactions
-    interactions.slice(0, 3).forEach(i => {
-      activities.push({
-        id: `int-${i.id}`,
-        type: 'interaction',
-        icon: MessageCircle,
-        color: 'text-green-600 bg-green-100',
-        title: i.interaction_type === 'whatsapp' ? 'WhatsApp Contact' : 'Property View',
-        description: `Property interaction`,
-        time: new Date(i.created_date),
-        meta: i.interaction_type,
-      });
-    });
-
-    return activities.sort((a, b) => b.time - a.time).slice(0, 10);
-  }, [properties, requirements, interactions]);
 
   const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
 
@@ -579,42 +532,9 @@ export default function LiveDashboard() {
             </ResponsiveContainer>
           </Card>
 
-          {/* Recent Activity Feed */}
+          {/* Real-Time Activity Feed Component */}
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-600" />
-              Live Activity Feed
-            </h3>
-            <div className="space-y-3 max-h-[250px] overflow-y-auto">
-              <AnimatePresence>
-                {recentActivity.map((activity, idx) => (
-                  <motion.div
-                    key={activity.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${activity.color}`}>
-                      <activity.icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{activity.title}</p>
-                      <p className="text-xs text-slate-600 truncate">{activity.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-slate-400">
-                          {format(activity.time, "MMM dd, HH:mm")}
-                        </p>
-                        <Badge variant="outline" className="text-xs px-1.5 py-0">
-                          {activity.meta}
-                        </Badge>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+            <RealtimeActivityFeed />
           </Card>
         </div>
 
