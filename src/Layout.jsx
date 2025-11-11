@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -106,27 +107,9 @@ export default function Layout({ children, currentPageName }) {
     addDnsPrefetch('https://qtrypzzcjebvfcihiynt.supabase.co');
     addDnsPrefetch('https://api.base44.com');
     
-    // RSS Feed
-    let rssLink = document.querySelector('link[type="application/rss+xml"]');
-    if (!rssLink) {
-      rssLink = document.createElement('link');
-      rssLink.setAttribute('rel', 'alternate');
-      rssLink.setAttribute('type', 'application/rss+xml');
-      rssLink.setAttribute('title', 'PropAI Live Insights RSS Feed');
-      rssLink.setAttribute('href', `${window.location.origin}/api/rssFeed`);
-      document.head.appendChild(rssLink);
-    }
+    // ✅ REMOVED: RSS and Sitemap links (not needed in head, will be accessible via direct URLs)
+    // These are backend functions that should be accessed directly via their function URLs
     
-    // Sitemap
-    let sitemapLink = document.querySelector('link[rel="sitemap"]');
-    if (!sitemapLink) {
-      sitemapLink = document.createElement('link');
-      sitemapLink.setAttribute('rel', 'sitemap');
-      sitemapLink.setAttribute('type', 'application/xml');
-      sitemapLink.setAttribute('title', 'Sitemap');
-      sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
-      document.head.appendChild(sitemapLink);
-    }
   }, []);
 
   useEffect(() => {
