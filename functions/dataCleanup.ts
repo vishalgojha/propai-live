@@ -1,122 +1,315 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * ✅ ROBUST Data Cleanup - Micro-batch processing
- * Processes 10 properties at a time to avoid timeouts
+ * COMPREHENSIVE DATA CLEANUP FUNCTION
+ * 
+ * Fixes common data quality issues:
+ * 1. Missing custom_ids
+ * 2. Missing slugs
+ * 3. Incorrect price units
+ * 4. Unnormalized locations
+ * 5. Unnormalized BHK values
+ * 6. Unnormalized parking values
+ * 7. Missing broker_name cache
+ * 8. Missing broker_contact cache
+ * 
+ * Modes:
+ * - dry_run: Analyze and report issues without making changes
+ * - fix: Actually fix the issues
  */
+
+// Location codes for custom IDs
+const LOCATION_CODES = {
+  'bandra west': 'BND', 'bandra east': 'BND', 'bandra': 'BND',
+  'khar west': 'KHR', 'khar east': 'KHR', 'khar': 'KHR',
+  'santacruz west': 'SNT', 'santacruz east': 'SNT', 'santacruz': 'SNT',
+  'juhu': 'JUH', 'pali hill': 'PNL', 'carter road': 'CTR',
+  'andheri west': 'AND', 'andheri east': 'AND', 'andheri': 'AND',
+  'versova': 'VRS', 'worli': 'WRL', 'lower parel': 'LPR',
+  'dadar': 'DDR', 'mahim': 'MHM', 'prabhadevi': 'PRB',
+  'bandra kurla complex': 'BKC', 'bkc': 'BKC', 'powai': 'POW',
+  'goregaon': 'GOR', 'malad': 'MLD', 'borivali': 'BOR',
+  'kandivali': 'KND', 'chembur': 'CHM', 'mumbai': 'MUM'
+};
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
+    // Check authorization
     const user = await base44.auth.me();
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ 
+        success: false,
+        error: 'Unauthorized' 
+      }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { mode = 'dry_run', skip = 0, limit = 10 } = body;
+    const { mode = 'dry_run' } = await req.json();
 
-    // Fetch properties with pagination
-    const properties = await base44.asServiceRole.entities.Property.list('-created_date');
-    
-    // Get current batch
-    const currentBatch = properties.slice(skip, skip + limit);
-    
-    if (currentBatch.length === 0) {
-      return Response.json({
-        success: true,
-        done: true,
-        mode,
-        progress: {
-          processed: skip,
-          total: properties.length,
-          remaining: 0
-        },
-        message: '✅ Data cleanup complete!'
-      });
-    }
+    console.log(`🔍 Running data cleanup in ${mode} mode...`);
+
+    // Fetch all data
+    const properties = await base44.asServiceRole.entities.Property.list();
+    const brokers = await base44.asServiceRole.entities.Broker.list();
 
     const issues = {
       missing_custom_id: 0,
-      missing_building_id: 0,
-      missing_broker_id: 0,
-      invalid_price: 0,
-      invalid_bhk: 0
+      missing_slug: 0,
+      incorrect_price_unit: 0,
+      unnormalized_location: 0,
+      unnormalized_bhk: 0,
+      unnormalized_parking: 0,
+      missing_broker_name: 0,
+      missing_broker_contact: 0,
     };
 
     const fixes = [];
 
-    for (const property of currentBatch) {
-      const propertyFixes = {};
-
-      // Check custom_id
+    // ISSUE 1: Missing custom_id
+    for (const property of properties) {
       if (!property.custom_id) {
         issues.missing_custom_id++;
+        
         if (mode === 'fix') {
-          propertyFixes.custom_id = `CHR-PROP-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
-        }
-      }
-
-      // Check building_id
-      if (!property.building_id && property.building_name) {
-        issues.missing_building_id++;
-      }
-
-      // Check broker_id
-      if (!property.broker_id) {
-        issues.missing_broker_id++;
-      }
-
-      // Check price
-      if (!property.price || property.price <= 0) {
-        issues.invalid_price++;
-      }
-
-      // Check BHK
-      if (!property.bhk || property.bhk.trim() === '') {
-        issues.invalid_bhk++;
-      }
-
-      // Apply fixes if in fix mode
-      if (mode === 'fix' && Object.keys(propertyFixes).length > 0) {
-        try {
-          await base44.asServiceRole.entities.Property.update(property.id, propertyFixes);
-          fixes.push({ property_id: property.id, fixes: propertyFixes });
-        } catch (error) {
-          console.error(`Failed to fix property ${property.id}:`, error);
+          const locationCode = LOCATION_CODES[property.location?.toLowerCase()] || 'MUM';
+          const idHash = property.id.slice(-8);
+          const sequence = parseInt(idHash, 16) % 10000;
+          const customId = `CHT-${locationCode}-${String(sequence).padStart(4, '0')}`;
+          
+          fixes.push({
+            type: 'custom_id',
+            property_id: property.id,
+            update: { custom_id: customId }
+          });
         }
       }
     }
 
-    const processed = skip + currentBatch.length;
-    const remaining = properties.length - processed;
-    const percentage = Math.round((processed / properties.length) * 100);
+    // ISSUE 2: Missing slug
+    for (const property of properties) {
+      if (!property.slug) {
+        issues.missing_slug++;
+        
+        if (mode === 'fix') {
+          let slugParts = [];
+          if (property.bhk) slugParts.push(property.bhk.toLowerCase().replace(/\s+/g, ''));
+          if (property.building_name) {
+            slugParts.push(property.building_name
+              .toLowerCase()
+              .replace(/[^a-z0-9\s]/g, '')
+              .replace(/\s+/g, '-')
+              .substring(0, 30));
+          }
+          if (property.location) {
+            slugParts.push(property.location
+              .toLowerCase()
+              .replace(/[^a-z0-9\s]/g, '')
+              .replace(/\s+/g, '-'));
+          }
+          
+          let slug = slugParts.join('-').substring(0, 60).replace(/-+$/, '');
+          
+          // Check for duplicates
+          const existingWithSlug = properties.find(p => p.slug === slug && p.id !== property.id);
+          if (existingWithSlug) {
+            const idHash = property.id.slice(-4);
+            slug = `${slug}-${idHash}`;
+          }
+          
+          fixes.push({
+            type: 'slug',
+            property_id: property.id,
+            update: { slug }
+          });
+        }
+      }
+    }
+
+    // ISSUE 3: Incorrect price units (e.g., Rent in crores instead of lakhs)
+    for (const property of properties) {
+      let needsFixing = false;
+      let newPriceUnit = property.price_unit;
+      let newPrice = property.price;
+
+      // For Rent/Lease: Should be in lakhs
+      if ((property.listing_type === 'Rent' || property.listing_type === 'Lease') && property.price_unit === 'crores') {
+        needsFixing = true;
+        newPriceUnit = 'lakhs';
+        newPrice = property.price * 100; // Convert crores to lakhs
+      }
+
+      // For Sale/Pre Leased: Should be in crores (if >= 1 crore)
+      if ((property.listing_type === 'Sale' || property.listing_type === 'Pre Leased') && property.price_unit === 'lakhs' && property.price >= 100) {
+        needsFixing = true;
+        newPriceUnit = 'crores';
+        newPrice = property.price / 100; // Convert lakhs to crores
+      }
+
+      if (needsFixing) {
+        issues.incorrect_price_unit++;
+        
+        if (mode === 'fix') {
+          fixes.push({
+            type: 'price_unit',
+            property_id: property.id,
+            update: { 
+              price: newPrice,
+              price_unit: newPriceUnit 
+            }
+          });
+        }
+      }
+    }
+
+    // ISSUE 4: Unnormalized locations
+    const locationMapping = {
+      'bandra': 'Bandra West',
+      'khar': 'Khar West',
+      'santacruz': 'Santacruz West',
+      'andheri': 'Andheri West',
+    };
+
+    for (const property of properties) {
+      const normalizedLocation = locationMapping[property.location?.toLowerCase()];
+      if (normalizedLocation && property.location !== normalizedLocation) {
+        issues.unnormalized_location++;
+        
+        if (mode === 'fix') {
+          fixes.push({
+            type: 'location',
+            property_id: property.id,
+            update: { location: normalizedLocation }
+          });
+        }
+      }
+    }
+
+    // ISSUE 5: Unnormalized BHK values
+    for (const property of properties) {
+      if (property.bhk) {
+        const normalized = property.bhk
+          .replace(/bhk/gi, 'BHK')
+          .replace(/\s*bhk\s*/gi, ' BHK ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (normalized !== property.bhk) {
+          issues.unnormalized_bhk++;
+          
+          if (mode === 'fix') {
+            fixes.push({
+              type: 'bhk',
+              property_id: property.id,
+              update: { bhk: normalized }
+            });
+          }
+        }
+      }
+    }
+
+    // ISSUE 6: Unnormalized parking values
+    for (const property of properties) {
+      if (property.parking) {
+        const parking = property.parking.trim();
+        let normalized = parking;
+
+        // Normalize common patterns
+        if (/^\d+\s*cp$/i.test(parking)) {
+          const num = parking.match(/\d+/)[0];
+          normalized = `${num} Covered`;
+        } else if (/^\d+\s*op$/i.test(parking)) {
+          const num = parking.match(/\d+/)[0];
+          normalized = `${num} Open`;
+        } else if (/^no\s*parking$/i.test(parking)) {
+          normalized = 'No Parking';
+        }
+
+        if (normalized !== property.parking) {
+          issues.unnormalized_parking++;
+          
+          if (mode === 'fix') {
+            fixes.push({
+              type: 'parking',
+              property_id: property.id,
+              update: { parking: normalized }
+            });
+          }
+        }
+      }
+    }
+
+    // ISSUE 7 & 8: Missing broker_name and broker_contact cache
+    for (const property of properties) {
+      if (property.broker_id) {
+        const broker = brokers.find(b => b.id === property.broker_id);
+        
+        if (broker) {
+          if (!property.broker_name && broker.name) {
+            issues.missing_broker_name++;
+            
+            if (mode === 'fix') {
+              fixes.push({
+                type: 'broker_name',
+                property_id: property.id,
+                update: { broker_name: broker.name }
+              });
+            }
+          }
+
+          if (!property.broker_contact && broker.phone) {
+            issues.missing_broker_contact++;
+            
+            if (mode === 'fix') {
+              fixes.push({
+                type: 'broker_contact',
+                property_id: property.id,
+                update: { broker_contact: broker.phone }
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Apply fixes if in fix mode
+    let fixed = 0;
+    let errors = 0;
+
+    if (mode === 'fix' && fixes.length > 0) {
+      console.log(`🔧 Applying ${fixes.length} fixes...`);
+      
+      for (const fix of fixes) {
+        try {
+          await base44.asServiceRole.entities.Property.update(fix.property_id, fix.update);
+          fixed++;
+        } catch (error) {
+          console.error(`Failed to fix ${fix.property_id}:`, error.message);
+          errors++;
+        }
+      }
+      
+      console.log(`✅ Fixed ${fixed} issues (${errors} errors)`);
+    }
 
     return Response.json({
       success: true,
-      done: remaining === 0,
       mode,
-      progress: {
-        processed,
-        total: properties.length,
-        remaining: Math.max(0, remaining),
-        percentage,
-        current_batch: currentBatch.length
-      },
       issues,
-      fixes: mode === 'fix' ? fixes : undefined,
-      next_skip: remaining > 0 ? processed : null,
-      message: remaining > 0 
-        ? `Scanned ${processed}/${properties.length} (${percentage}%)`
-        : `✅ Cleanup complete!`
+      total_issues: Object.values(issues).reduce((sum, count) => sum + count, 0),
+      fixes_applied: mode === 'fix' ? fixed : 0,
+      errors: mode === 'fix' ? errors : 0,
+      summary: mode === 'dry_run' 
+        ? `Found ${Object.values(issues).reduce((sum, count) => sum + count, 0)} issues`
+        : `Fixed ${fixed} issues (${errors} errors)`
     });
 
   } catch (error) {
     console.error('Data cleanup error:', error);
     return Response.json({ 
+      success: false,
       error: error.message,
-      stack: error.stack 
+      stack: error.stack
     }, { status: 500 });
   }
 });
