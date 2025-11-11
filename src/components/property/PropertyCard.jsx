@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Phone
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Phone, X
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -51,6 +52,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [showAdminInfo, setShowAdminInfo] = useState(false); // ✅ NEW: Toggle admin info
   const [currentUser, setCurrentUser] = useState(user || null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [developer, setDeveloper] = useState(null);
@@ -593,24 +595,48 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
             </div>
           </div>
 
-          {/* ✅ ADMIN-ONLY: Broker Details & Quick Check WhatsApp */}
+          {/* ✅ ADMIN-ONLY: Collapsible Broker Info */}
           {isAdmin && property.broker_name && property.broker_contact && (
-            <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-amber-700 font-semibold mb-1">Broker (Admin View)</p>
-                  <p className="text-xs text-slate-900 font-bold truncate">{property.broker_name}</p>
-                  <p className="text-xs text-slate-600 font-mono">{property.broker_contact}</p>
-                </div>
+            <div className="mb-3">
+              {!showAdminInfo ? (
                 <Button
-                  onClick={handleAdminWhatsApp}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAdminInfo(true);
+                  }}
                   size="sm"
-                  className="bg-amber-600 hover:bg-amber-700 text-white h-8 px-3 text-xs flex-shrink-0 touch-manipulation"
+                  variant="outline"
+                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 h-8 text-xs touch-manipulation"
                 >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  Check
+                  <Phone className="w-3 h-3 mr-2" />
+                  Show Broker Info
                 </Button>
-              </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs text-amber-700 font-semibold">Broker (Admin View)</p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAdminInfo(false);
+                      }}
+                      className="text-amber-700 hover:text-amber-900 touch-manipulation"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-900 font-bold truncate mb-1">{property.broker_name}</p>
+                  <p className="text-xs text-slate-600 font-mono mb-2">{property.broker_contact}</p>
+                  <Button
+                    onClick={handleAdminWhatsApp}
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700 text-white h-8 px-3 text-xs w-full touch-manipulation"
+                  >
+                    <MessageCircle className="w-3 h-3 mr-1" />
+                    Quick Check
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
