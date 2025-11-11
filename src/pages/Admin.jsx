@@ -36,6 +36,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import AIDebugConsole from "../components/admin/AIDebugConsole";
+import PriceValidationTool from "../components/admin/PriceValidationTool";
 
 // Simple debounce utility function
 function debounce(func, delay) {
@@ -2020,13 +2022,25 @@ Return ONLY the JSON, nothing else.`;
                     <span>Requirements ({stats.requirements.active})</span>
                   </div>
                 </SelectItem>
+                <SelectItem value="ai-debug">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>AI Debug Console</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="price-validation">
+                  <div className="flex items-center gap-2">
+                    <AlertCircleIcon className="w-4 h-4" />
+                    <span>Price Validation</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA - FIXED */}
+      {/* MAIN CONTENT AREA */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <AnimatePresence mode="wait">
           {/* Overview Tab */}
@@ -2083,7 +2097,7 @@ Return ONLY the JSON, nothing else.`;
                         value={propSearchQuery}
                         onChange={(e) => {
                           setPropSearchQuery(e.target.value);
-                          // setCurrentPage(1); // Removed: Handled by debouncedPropSearchFn
+                          // Removed: Handled by debouncedPropSearchFn
                         }}
                         className="pl-10"
                       />
@@ -2723,6 +2737,30 @@ Return ONLY the JSON, nothing else.`;
                   })
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {/* NEW: AI Debug Console Tab */}
+          {activeTab === "ai-debug" && (
+            <motion.div
+              key="ai-debug"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <AIDebugConsole properties={properties} />
+            </motion.div>
+          )}
+
+          {/* NEW: Price Validation Tab */}
+          {activeTab === "price-validation" && (
+            <motion.div
+              key="price-validation"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <PriceValidationTool properties={properties} />
             </motion.div>
           )}
         </AnimatePresence>
