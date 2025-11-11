@@ -10,15 +10,69 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * @returns {object} { success: boolean, image_url?: string, error?: string }
  */
 Deno.serve(async (req) => {
+  console.log('🚀 ========== FUNCTION INVOKED ==========');
+  console.log('📍 Method:', req.method);
+  console.log('📍 URL:', req.url);
+  console.log('📍 Headers:', Object.fromEntries(req.headers.entries()));
+  
   let base44;
   
   try {
-    base44 = createClientFromRequest(req);
+    // Read raw body first
+    const rawBody = await req.text();
+    console.log('📦 Raw request body:', rawBody);
+    
+    // Parse it
+    let requestBody;
+    try {
+      requestBody = JSON.parse(rawBody);
+      console.log('✅ Parsed request body:', JSON.stringify(requestBody, null, 2));
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError.message);
+      return Response.json({ 
+        success: false, 
+        error: 'Invalid JSON in request body: ' + parseError.message,
+        received: rawBody
+      }, { status: 400 });
+    }
+
+    const { property_id } = requestBody;
+    console.log('🔑 Extracted property_id:', property_id);
+    console.log('🔑 Type of property_id:', typeof property_id);
+    
+    if (!property_id || property_id === 'null' || property_id === 'undefined') {
+      console.log('❌ Invalid property_id:', property_id);
+      return Response.json({ 
+        success: false, 
+        error: 'property_id is required and cannot be null/undefined',
+        received: { property_id, type: typeof property_id }
+      }, { status: 400 });
+    }
+
+    // Create a new Request object with the raw body for SDK initialization
+    const bodyForSDK = new Request(req.url, {
+      method: req.method,
+      headers: req.headers,
+      body: rawBody
+    });
+    
+    console.log('🔐 Initializing Base44 SDK...');
+    base44 = createClientFromRequest(bodyForSDK);
     
     console.log('🔐 Authenticating user...');
     
     // Authenticate user
-    const user = await base44.auth.me();
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (authError) {
+      console.error('❌ Authentication error:', authError.message);
+      return Response.json({ 
+        success: false, 
+        error: 'Authentication failed: ' + authError.message 
+      }, { status: 401 });
+    }
+    
     if (!user) {
       console.log('❌ No user authenticated');
       return Response.json({ 
@@ -28,37 +82,17 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ User authenticated:', user.email);
+    console.log('👤 User role:', user.role);
 
-    // Parse request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-    } catch (parseError) {
-      console.error('❌ Failed to parse request body:', parseError);
-      return Response.json({ 
-        success: false, 
-        error: 'Invalid request body - must be valid JSON' 
-      }, { status: 400 });
-    }
-
-    const { property_id } = requestBody;
-    
-    if (!property_id) {
-      console.log('❌ No property_id provided');
-      return Response.json({ 
-        success: false, 
-        error: 'property_id is required' 
-      }, { status: 400 });
-    }
-
-    console.log('🔍 Looking for property:', property_id);
+    console.log('🔍 Fetching property with ID:', property_id);
 
     // Fetch property to validate it exists
     let properties;
     try {
       properties = await base44.asServiceRole.entities.Property.list();
+      console.log('📊 Total properties in database:', properties.length);
     } catch (dbError) {
-      console.error('❌ Failed to fetch properties:', dbError);
+      console.error('❌ Failed to fetch properties:', dbError.message);
       return Response.json({ 
         success: false, 
         error: 'Failed to fetch property data: ' + dbError.message 
@@ -68,14 +102,22 @@ Deno.serve(async (req) => {
     const property = properties.find(p => p.id === property_id);
     
     if (!property) {
-      console.log('❌ Property not found');
+      console.log('❌ Property not found with ID:', property_id);
+      console.log('🔍 Available property IDs (first 5):', properties.slice(0, 5).map(p => p.id));
       return Response.json({ 
         success: false, 
-        error: 'Property not found' 
+        error: 'Property not found',
+        property_id: property_id
       }, { status: 404 });
     }
 
-    console.log('✅ Property found:', property.ai_title || property.bhk);
+    console.log('✅ Property found!');
+    console.log('📋 Property details:', {
+      id: property.id,
+      title: property.ai_title || property.bhk,
+      location: property.location,
+      building_name: property.building_name
+    });
 
     // Get the base URL for the app
     const appUrl = req.headers.get('origin') || 'https://propai.live';
@@ -102,7 +144,6 @@ Deno.serve(async (req) => {
     const fullUrl = `${endpoint}?token=${browserlessApiKey}`;
     
     console.log('📸 Calling Browserless BrowserQL API...');
-    console.log('📍 Endpoint:', endpoint);
 
     // Prepare GraphQL request body
     const graphqlBody = {
@@ -121,7 +162,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log('📦 Request body:', JSON.stringify(graphqlBody, null, 2));
+    console.log('📦 GraphQL variables:', JSON.stringify(graphqlBody.variables));
 
     // Call Browserless BrowserQL API
     let screenshotResponse;
@@ -134,19 +175,18 @@ Deno.serve(async (req) => {
         body: JSON.stringify(graphqlBody)
       });
     } catch (fetchError) {
-      console.error('❌ Fetch error:', fetchError);
+      console.error('❌ Fetch error:', fetchError.message);
       return Response.json({ 
         success: false, 
         error: 'Failed to connect to Browserless: ' + fetchError.message 
       }, { status: 500 });
     }
 
-    console.log('📥 Response status:', screenshotResponse.status);
-    console.log('📥 Response headers:', Object.fromEntries(screenshotResponse.headers.entries()));
+    console.log('📥 Browserless response status:', screenshotResponse.status);
 
     if (!screenshotResponse.ok) {
       const errorText = await screenshotResponse.text();
-      console.error('❌ Browserless API error response:', errorText);
+      console.error('❌ Browserless API error:', errorText);
       return Response.json({ 
         success: false, 
         error: `Browserless API error (${screenshotResponse.status}): ${errorText}` 
@@ -156,17 +196,18 @@ Deno.serve(async (req) => {
     let responseData;
     try {
       const responseText = await screenshotResponse.text();
-      console.log('📦 Raw response (first 500 chars):', responseText.substring(0, 500));
+      console.log('📦 Browserless response length:', responseText.length);
+      console.log('📦 Response preview:', responseText.substring(0, 200));
       responseData = JSON.parse(responseText);
     } catch (jsonError) {
-      console.error('❌ Failed to parse JSON response:', jsonError);
+      console.error('❌ Failed to parse Browserless JSON:', jsonError.message);
       return Response.json({ 
         success: false, 
         error: 'Invalid JSON response from Browserless: ' + jsonError.message 
       }, { status: 500 });
     }
     
-    console.log('📦 Response data keys:', Object.keys(responseData));
+    console.log('📦 Response structure:', JSON.stringify(Object.keys(responseData)));
     
     // Check for GraphQL errors
     if (responseData.errors) {
@@ -177,20 +218,21 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    console.log('✅ Screenshot captured successfully');
-
     // Extract base64 image from response
     const base64Image = responseData.data?.screenshot?.base64;
     
     if (!base64Image) {
-      console.error('❌ No screenshot data. Full response:', JSON.stringify(responseData, null, 2));
+      console.error('❌ No screenshot.base64 in response');
+      console.error('📦 Full response:', JSON.stringify(responseData, null, 2));
       return Response.json({ 
         success: false, 
-        error: 'No screenshot data returned from Browserless' 
+        error: 'No screenshot data returned from Browserless',
+        response_structure: responseData
       }, { status: 500 });
     }
 
-    console.log('🖼️ Base64 image length:', base64Image.length);
+    console.log('✅ Screenshot captured!');
+    console.log('🖼️ Base64 length:', base64Image.length);
 
     // Convert base64 to buffer
     let bytes;
@@ -200,8 +242,9 @@ Deno.serve(async (req) => {
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
+      console.log('✅ Base64 decoded. Bytes:', bytes.length);
     } catch (decodeError) {
-      console.error('❌ Failed to decode base64:', decodeError);
+      console.error('❌ Failed to decode base64:', decodeError.message);
       return Response.json({ 
         success: false, 
         error: 'Failed to decode base64 image: ' + decodeError.message 
@@ -210,7 +253,6 @@ Deno.serve(async (req) => {
     
     // Create a Blob from the buffer
     const imageBlob = new Blob([bytes], { type: 'image/png' });
-    
     console.log('📦 Blob created. Size:', imageBlob.size, 'bytes');
     
     // Create a File object for upload
@@ -225,8 +267,10 @@ Deno.serve(async (req) => {
       uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({
         file: imageFile
       });
+      console.log('✅ Upload successful!');
+      console.log('📦 Upload result:', JSON.stringify(uploadResult, null, 2));
     } catch (uploadError) {
-      console.error('❌ Upload failed:', uploadError);
+      console.error('❌ Upload failed:', uploadError.message);
       return Response.json({ 
         success: false, 
         error: 'Failed to upload image to storage: ' + uploadError.message 
@@ -234,31 +278,39 @@ Deno.serve(async (req) => {
     }
 
     if (!uploadResult.file_url) {
-      console.error('❌ No file_url in upload result:', uploadResult);
+      console.error('❌ No file_url in upload result');
       return Response.json({ 
         success: false, 
-        error: 'Failed to upload image to storage - no URL returned' 
+        error: 'Failed to upload image to storage - no URL returned',
+        upload_result: uploadResult
       }, { status: 500 });
     }
 
-    console.log('✅ Image uploaded successfully:', uploadResult.file_url);
+    console.log('🎉 SUCCESS! Image URL:', uploadResult.file_url);
 
     // Return success with image URL
-    return Response.json({
+    const successResponse = {
       success: true,
       image_url: uploadResult.file_url,
       property_id: property_id,
       generated_at: new Date().toISOString()
-    });
+    };
+    
+    console.log('📤 Returning success response:', JSON.stringify(successResponse, null, 2));
+
+    return Response.json(successResponse);
 
   } catch (error) {
-    console.error('❌ Unexpected error:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('❌ ========== UNEXPECTED ERROR ==========');
+    console.error('❌ Error name:', error.name);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    
     return Response.json({ 
       success: false, 
       error: error.message,
-      stack: error.stack,
-      name: error.name
+      error_name: error.name,
+      stack: error.stack
     }, { status: 500 });
   }
 });
