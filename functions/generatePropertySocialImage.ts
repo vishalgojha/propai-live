@@ -64,8 +64,10 @@ Deno.serve(async (req) => {
     const endpoint = "https://production-sfo.browserless.io/chromium/bql";
     
     console.log('📸 Calling Browserless BrowserQL API...');
+    console.log('🔑 Using API key:', browserlessApiKey.substring(0, 10) + '...');
 
     // Call Browserless BrowserQL API with GraphQL mutation
+    // Following the exact pattern from the working example
     const screenshotResponse = await fetch(`${endpoint}?token=${browserlessApiKey}`, {
       method: 'POST',
       headers: {
@@ -73,24 +75,22 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         query: `
-          mutation Screenshot($url: String!, $width: Int!, $height: Int!) {
-            goto(url: $url, waitUntil: networkidle) {
+          mutation Screenshot($url: String!) {
+            goto(url: $url, waitUntil: load) {
               status
             }
-            viewport(width: $width, height: $height, deviceScaleFactor: 2)
-            wait(duration: 2000)
-            screenshot(type: png, fullPage: false) {
+            screenshot(type: png, options: { fullPage: false, clip: { x: 0, y: 0, width: 1200, height: 630 } }) {
               base64
             }
           }
         `,
         variables: {
-          url: pageUrl,
-          width: 1200,
-          height: 630
+          url: pageUrl
         }
       })
     });
+
+    console.log('📥 Response status:', screenshotResponse.status);
 
     if (!screenshotResponse.ok) {
       const errorText = await screenshotResponse.text();
@@ -102,10 +102,11 @@ Deno.serve(async (req) => {
     }
 
     const responseData = await screenshotResponse.json();
+    console.log('📦 Response data keys:', Object.keys(responseData));
     
     // Check for GraphQL errors
     if (responseData.errors) {
-      console.error('❌ GraphQL errors:', responseData.errors);
+      console.error('❌ GraphQL errors:', JSON.stringify(responseData.errors));
       return Response.json({ 
         success: false, 
         error: `GraphQL error: ${JSON.stringify(responseData.errors)}` 
@@ -118,18 +119,26 @@ Deno.serve(async (req) => {
     const base64Image = responseData.data?.screenshot?.base64;
     
     if (!base64Image) {
-      console.error('❌ No screenshot data in response');
+      console.error('❌ No screenshot data in response:', JSON.stringify(responseData));
       return Response.json({ 
         success: false, 
         error: 'No screenshot data returned from Browserless' 
       }, { status: 500 });
     }
 
+    console.log('🖼️ Base64 image length:', base64Image.length);
+
     // Convert base64 to buffer
-    const imageBuffer = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
+    const binaryString = atob(base64Image);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
     
     // Create a Blob from the buffer
-    const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
+    const imageBlob = new Blob([bytes], { type: 'image/png' });
+    
+    console.log('📦 Blob size:', imageBlob.size, 'bytes');
     
     // Create a File object for upload
     const fileName = `social-${property_id}-${Date.now()}.png`;
