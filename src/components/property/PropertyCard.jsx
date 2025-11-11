@@ -6,7 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Image as ImageIcon
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -18,7 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// Helper function to create page URLs.
 const createPageUrl = (pageName) => {
   switch (pageName) {
     case "PropertyDetails":
@@ -39,9 +38,7 @@ export default function PropertyCard({ property, onViewDetails }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [developer, setDeveloper] = useState(null);
-  const [isGeneratingSocialImage, setIsGeneratingSocialImage] = useState(false);
 
-  // Load current user
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -54,7 +51,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     loadUser();
   }, []);
 
-  // Fetch developer if building has developer_id
   useEffect(() => {
     const loadDeveloper = async () => {
       if (!property?.building_id) {
@@ -82,7 +78,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     loadDeveloper();
   }, [property?.building_id]);
 
-  // Refresh mutation
   const refreshMutation = useMutation({
     mutationFn: async (propertyId) => {
       const now = new Date().toISOString();
@@ -106,7 +101,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     }
   });
 
-  // Check if user can refresh this property
   const canRefresh = () => {
     if (!currentUser) return false;
     
@@ -121,7 +115,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     return false;
   };
 
-  // Check if property can be refreshed (24 hour cooldown)
   const canRefreshNow = () => {
     if (!property.last_refreshed) return true;
     
@@ -153,48 +146,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     setIsRefreshing(false);
   };
 
-  // NEW: Generate Social Image
-  const handleGenerateSocialImage = async (e) => {
-    e.stopPropagation();
-    
-    setIsGeneratingSocialImage(true);
-    const loadingToast = toast.loading('📸 Generating social image...', {
-      description: 'This may take 5-10 seconds'
-    });
-
-    try {
-      const response = await base44.functions.invoke('generatePropertySocialImage', {
-        property_id: property.id
-      });
-
-      if (response.data.success) {
-        toast.dismiss(loadingToast);
-        
-        // Copy URL to clipboard
-        await navigator.clipboard.writeText(response.data.image_url);
-        
-        toast.success('✅ Social Image Generated!', {
-          description: 'Image URL copied to clipboard',
-          duration: 5000,
-          action: {
-            label: 'View',
-            onClick: () => window.open(response.data.image_url, '_blank')
-          }
-        });
-      } else {
-        throw new Error(response.data.error || 'Failed to generate image');
-      }
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error('❌ Generation Failed', {
-        description: error.message
-      });
-    } finally {
-      setIsGeneratingSocialImage(false);
-    }
-  };
-
-  // Track property contact when WhatsApp is clicked
   const trackPropertyContact = async (property, contactedVia) => {
     try {
       const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
@@ -415,7 +366,6 @@ export default function PropertyCard({ property, onViewDetails }) {
         className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
-        {/* Main Content Section */}
         <div className="p-4">
           {/* Badges, Share and Admin Actions at top */}
           <div className="flex items-start justify-between mb-3">
@@ -439,25 +389,10 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
             
             <div className="flex items-center gap-1">
-              {/* NEW: Generate Social Image Button - Admin Only */}
-              {isAdmin && (
-                <button
-                  onClick={handleGenerateSocialImage}
-                  disabled={isGeneratingSocialImage}
-                  className={`flex items-center text-xs p-1.5 rounded-lg transition-colors ${
-                    isGeneratingSocialImage
-                      ? 'text-purple-400 cursor-wait'
-                      : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
-                  }`}
-                  title="Generate social share image"
-                >
-                  <ImageIcon className={`w-3.5 h-3.5 ${isGeneratingSocialImage ? 'animate-pulse' : ''}`} />
-                </button>
-              )}
-              
               <button
                 onClick={handleShare}
-                className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
+                className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors touch-manipulation"
+                title="Share property"
               >
                 <Share2 className="w-3.5 h-3.5" />
               </button>
@@ -466,7 +401,7 @@ export default function PropertyCard({ property, onViewDetails }) {
                 <button
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className={`flex items-center text-xs p-1.5 rounded-lg transition-colors ${
+                  className={`flex items-center text-xs p-1.5 rounded-lg transition-colors touch-manipulation ${
                     canRefreshNow()
                       ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
                       : 'text-slate-400 cursor-not-allowed'
@@ -483,11 +418,10 @@ export default function PropertyCard({ property, onViewDetails }) {
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          {/* Building Name Chip with Developer Info */}
           {property.building_name && property.building_id && (
             <button
               onClick={(e) => handleBuildingClick(e, property.building_id)}
-              className="flex items-center gap-1.5 mb-3 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-xl border border-indigo-200 hover:border-indigo-300 transition-all group/building"
+              className="flex items-center gap-1.5 mb-3 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-xl border border-indigo-200 hover:border-indigo-300 transition-all group/building touch-manipulation"
             >
               <Building2 className="w-3.5 h-3.5 text-indigo-600 group-hover/building:scale-110 transition-transform" />
               <div className="flex flex-col items-start">
@@ -503,7 +437,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </button>
           )}
 
-          {/* Location with Pocket */}
           <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-3">
             <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
             <span className="truncate">
@@ -519,7 +452,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </span>
           </div>
 
-          {/* PRICE */}
           <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
             <div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
@@ -533,7 +465,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             )}
           </div>
 
-          {/* AI DESCRIPTION */}
           {property.ai_description && (
             <div className="mb-4">
               <p className="text-sm text-slate-600 leading-relaxed">
@@ -545,7 +476,7 @@ export default function PropertyCard({ property, onViewDetails }) {
                     e.stopPropagation();
                     setDescriptionExpanded(!descriptionExpanded);
                   }}
-                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold mt-1 flex items-center gap-1"
+                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold mt-1 flex items-center gap-1 touch-manipulation"
                 >
                   {descriptionExpanded ? (
                     <>
@@ -563,7 +494,6 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           )}
 
-          {/* AMENITIES */}
           {property.amenities && property.amenities.length > 0 && (
             <div className="mb-3 flex items-center gap-1.5 flex-wrap">
               <Sparkles className="w-3.5 h-3.5 text-purple-500" />
@@ -595,10 +525,9 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* WhatsApp Contact Button */}
           <Button
             onClick={handleWhatsAppContact}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md"
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md touch-manipulation"
           >
             <MessageCircle className="w-4 h-4" />
             <span>WhatsApp {contactButtonLabel}</span>
@@ -642,28 +571,28 @@ export default function PropertyCard({ property, onViewDetails }) {
           <div className="space-y-3">
             <Button
               onClick={shareToWhatsApp}
-              className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white justify-start"
+              className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white justify-start touch-manipulation"
             >
               <MessageCircle className="w-5 h-5 mr-3" />
               Share on WhatsApp
             </Button>
             <Button
               onClick={shareToFacebook}
-              className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white justify-start"
+              className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white justify-start touch-manipulation"
             >
               <Facebook className="w-5 h-5 mr-3" />
               Share on Facebook
             </Button>
             <Button
               onClick={shareToLinkedIn}
-              className="w-full bg-[#0A66C2] hover:bg-[#094D92] text-white justify-start"
+              className="w-full bg-[#0A66C2] hover:bg-[#094D92] text-white justify-start touch-manipulation"
             >
               <Linkedin className="w-5 h-5 mr-3" />
               Share on LinkedIn
             </Button>
             <Button
               onClick={shareToTwitter}
-              className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA] text-white justify-start"
+              className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA] text-white justify-start touch-manipulation"
             >
               <Twitter className="w-5 h-5 mr-3" />
               Share on Twitter
@@ -671,7 +600,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             <Button
               onClick={copyShareLink}
               variant="outline"
-              className="w-full justify-start"
+              className="w-full justify-start touch-manipulation"
             >
               <LinkIcon className="w-5 h-5 mr-3" />
               {copied ? "✅ Link Copied!" : "Copy Link"}
@@ -679,8 +608,13 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
           
           <div className="bg-stone-50 rounded-lg p-3 mt-2">
-            <p className="text-xs text-stone-500 mb-1">Share link:</p>
-            <p className="text-xs text-stone-700 font-mono break-all">{getShareUrl()}</p>
+            <p className="text-xs text-stone-500 mb-1">When you share this link, social platforms will automatically create a preview card with:</p>
+            <ul className="text-xs text-stone-700 list-disc list-inside space-y-1 mt-2">
+              <li>Property photo (if available)</li>
+              <li>Title and description</li>
+              <li>Price and location</li>
+            </ul>
+            <p className="text-xs text-stone-700 font-mono break-all mt-3 pt-3 border-t">{getShareUrl()}</p>
           </div>
         </DialogContent>
       </Dialog>
