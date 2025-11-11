@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 /**
  * Generate Property Social Image
  * 
- * Uses Browserless.io BrowserQL (GraphQL API) to take a screenshot of the SocialListing page
+ * Uses Browserless.io REST API to take a screenshot of the SocialListing page
  * Returns the uploaded image URL for use in Open Graph meta tags
  * 
  * @param {string} property_id - Property ID to generate image for
@@ -97,8 +97,6 @@ Deno.serve(async (req) => {
     console.log('✅ Property found:', property.ai_title || property.bhk);
 
     const appUrl = req.headers.get('origin') || 'https://propai.live';
-    
-    // ✅ NO TOKEN NEEDED - Page is now public
     const pageUrl = `${appUrl}/sociallisting?id=${property_id}`;
 
     console.log('🔍 Target URL:', pageUrl);
@@ -114,40 +112,43 @@ Deno.serve(async (req) => {
 
     console.log('🔑 API key found');
 
-    const endpoint = "https://production-sfo.browserless.io/chromium/bql";
-    const fullUrl = `${endpoint}?token=${browserlessApiKey}`;
+    // ✅ SWITCH TO REST API - Much simpler and more reliable
+    const endpoint = `https://production-sfo.browserless.io/screenshot?token=${browserlessApiKey}`;
     
-    console.log('📸 Calling Browserless BrowserQL...');
+    console.log('📸 Calling Browserless REST API...');
+    console.log('🌐 Endpoint:', endpoint);
 
-    const graphqlBody = {
-      query: `
-        mutation Screenshot($url: String!) {
-          goto(url: $url, waitUntil: networkidle, timeout: 30000) {
-            status
-          }
-          screenshot(type: png, fullPage: false, clip: { x: 0, y: 0, width: 1200, height: 630 }) {
-            base64
-          }
+    const screenshotBody = {
+      url: pageUrl,
+      options: {
+        fullPage: false,
+        type: 'png',
+        clip: {
+          x: 0,
+          y: 0,
+          width: 1200,
+          height: 630
         }
-      `,
-      variables: {
-        url: pageUrl
+      },
+      gotoOptions: {
+        waitUntil: 'networkidle2',
+        timeout: 30000
       }
     };
 
-    console.log('📦 GraphQL query:', JSON.stringify(graphqlBody.variables));
+    console.log('📦 Request body:', JSON.stringify(screenshotBody, null, 2));
 
     let screenshotResponse;
     try {
-      console.log('🌐 Fetching from:', endpoint);
-      screenshotResponse = await fetch(fullUrl, {
+      screenshotResponse = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(graphqlBody)
+        body: JSON.stringify(screenshotBody)
       });
       console.log('📥 Got response, status:', screenshotResponse.status);
+      console.log('📥 Response headers:', Object.fromEntries(screenshotResponse.headers.entries()));
     } catch (fetchError) {
       console.error('❌ Fetch error:', fetchError.message);
       console.error('Stack:', fetchError.stack);
@@ -166,63 +167,21 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    let responseData;
-    try {
-      const responseText = await screenshotResponse.text();
-      console.log('📦 Response length:', responseText.length);
-      console.log('📦 Response preview:', responseText.substring(0, 200));
-      responseData = JSON.parse(responseText);
-      console.log('✅ JSON parsed successfully');
-    } catch (jsonError) {
-      console.error('❌ JSON parse error:', jsonError.message);
-      return Response.json({ 
-        success: false, 
-        error: 'Invalid JSON from Browserless: ' + jsonError.message 
-      }, { status: 500 });
-    }
+    console.log('✅ Screenshot response received');
     
-    if (responseData.errors) {
-      console.error('❌ GraphQL errors:', JSON.stringify(responseData.errors, null, 2));
+    // REST API returns raw image bytes
+    const imageBytes = await screenshotResponse.arrayBuffer();
+    console.log('✅ Image bytes received, length:', imageBytes.byteLength);
+
+    if (imageBytes.byteLength === 0) {
+      console.error('❌ Empty image data');
       return Response.json({ 
         success: false, 
-        error: `GraphQL error: ${JSON.stringify(responseData.errors)}` 
+        error: 'Empty screenshot data returned'
       }, { status: 500 });
     }
 
-    console.log('📦 Response data keys:', Object.keys(responseData));
-    console.log('📦 Response.data keys:', responseData.data ? Object.keys(responseData.data) : 'null');
-
-    const base64Image = responseData.data?.screenshot?.base64;
-    
-    if (!base64Image) {
-      console.error('❌ No base64 in response');
-      console.error('Full response:', JSON.stringify(responseData, null, 2));
-      return Response.json({ 
-        success: false, 
-        error: 'No screenshot data returned',
-        response: responseData
-      }, { status: 500 });
-    }
-
-    console.log('✅ Screenshot captured! Length:', base64Image.length);
-
-    let bytes;
-    try {
-      const binaryString = atob(base64Image);
-      bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      console.log('✅ Base64 decoded, bytes:', bytes.length);
-    } catch (decodeError) {
-      console.error('❌ Base64 decode failed:', decodeError.message);
-      return Response.json({ 
-        success: false, 
-        error: 'Base64 decode failed: ' + decodeError.message 
-      }, { status: 500 });
-    }
-    
-    const imageBlob = new Blob([bytes], { type: 'image/png' });
+    const imageBlob = new Blob([imageBytes], { type: 'image/png' });
     console.log('📦 Blob size:', imageBlob.size);
     
     const fileName = `social-${property_id}-${Date.now()}.png`;
