@@ -24,8 +24,6 @@ import RequirementDetails from './pages/RequirementDetails';
 import FAQ from './pages/FAQ';
 import DeveloperDirectory from './pages/DeveloperDirectory';
 import DeveloperProfile from './pages/DeveloperProfile';
-import SocialListing from './pages/SocialListing';
-import SocialSharePreview from './pages/SocialSharePreview';
 import Layout from './Layout.jsx';
 
 
@@ -56,8 +54,6 @@ export const PAGES = {
     "FAQ": FAQ,
     "DeveloperDirectory": DeveloperDirectory,
     "DeveloperProfile": DeveloperProfile,
-    "SocialListing": SocialListing,
-    "SocialSharePreview": SocialSharePreview,
 }
 
 export const pagesConfig = {
