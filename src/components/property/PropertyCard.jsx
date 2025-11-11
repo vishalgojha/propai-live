@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { usePropertyAIEnrichment } from "../hooks/usePropertyAIEnrichment";
 
 const createPageUrl = (pageName) => {
   switch (pageName) {
@@ -29,9 +30,13 @@ const createPageUrl = (pageName) => {
   }
 };
 
-export default function PropertyCard({ property, onViewDetails }) {
+export default function PropertyCard({ property: initialProperty, onViewDetails }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // ✅ AUTO-ENRICH: Generate AI title/description on-demand
+  const { property, isEnriching } = usePropertyAIEnrichment(initialProperty);
+  
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
@@ -416,6 +421,7 @@ export default function PropertyCard({ property, onViewDetails }) {
 
           <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-purple-700 transition-colors">
             {property.ai_title || `${property.bhk} in ${property.location}`}
+            {isEnriching && <Sparkles className="w-3 h-3 inline ml-1 text-purple-400 animate-pulse" />}
           </h3>
 
           {property.building_name && property.building_id && (
