@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
       fixed: 0,
       already_correct: 0,
       examples: [],
-      errors: 0
+      errors: 0,
+      error_details: [] // ✅ NEW: Track error details
     };
 
     const updates = [];
@@ -156,12 +157,24 @@ Deno.serve(async (req) => {
           // Actually update in live mode
           if (mode === 'live') {
             try {
+              // ✅ FIXED: Safer update with error handling
               await base44.asServiceRole.entities.Broker.update(broker.id, {
                 phone: normalized
               });
             } catch (error) {
-              console.error(`Failed to update broker ${broker.id}:`, error);
+              console.error(`Failed to update broker ${broker.id} (${broker.name}):`, error.message);
               results.errors++;
+              
+              // ✅ NEW: Store error details for debugging
+              if (results.error_details.length < 20) {
+                results.error_details.push({
+                  broker_id: broker.id,
+                  broker_name: broker.name,
+                  old_phone: broker.phone,
+                  new_phone: normalized,
+                  error: error.message
+                });
+              }
             }
           }
         } else {
@@ -169,7 +182,7 @@ Deno.serve(async (req) => {
         }
       } else {
         results.invalid_phones++;
-        if (results.examples.length < 5) {
+        if (results.examples.length < 5 && mode === 'dry_run') {
           results.examples.push({
             name: broker.name,
             old: broker.phone,
@@ -181,20 +194,24 @@ Deno.serve(async (req) => {
     }
 
     return Response.json({
-      success: true,
+      success: results.errors < results.fixed, // ✅ Success if more fixes than errors
       mode,
       summary: results,
       updates: mode === 'dry_run' ? updates : undefined,
+      error_details: mode === 'live' && results.error_details.length > 0 ? results.error_details : undefined, // ✅ Show errors
       message: mode === 'dry_run' 
         ? `Found ${results.fixed} broker phone numbers that need fixing. Run with mode: 'live' to update.`
-        : `Successfully normalized ${results.fixed} broker phone numbers.`
+        : results.errors === 0
+          ? `✅ Successfully normalized ${results.fixed} broker phone numbers.`
+          : `⚠️ Normalized ${results.fixed - results.errors} of ${results.fixed} broker phone numbers (${results.errors} errors)`
     });
 
   } catch (error) {
     console.error('Broker phone normalization error:', error);
     return Response.json({
       success: false,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     }, { status: 500 });
   }
 });
