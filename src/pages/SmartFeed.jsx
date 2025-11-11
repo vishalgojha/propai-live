@@ -760,6 +760,7 @@ export default function SmartFeed() {
                   <PropertyCard
                     key={property.id}
                     property={property}
+                    user={user}
                     onViewDetails={(prop) => {
                       trackPropertyView(prop);
                       setSelectedProperty(prop);
@@ -975,6 +976,7 @@ export default function SmartFeed() {
                     <PropertyCard
                       key={`prop-${item.id}`}
                       property={item}
+                      user={user}
                       onViewDetails={(prop) => {
                         trackPropertyView(prop);
                         setSelectedProperty(prop);
@@ -1000,6 +1002,7 @@ export default function SmartFeed() {
                     <PropertyCard
                       key={item.id}
                       property={item}
+                      user={user}
                       onViewDetails={(prop) => {
                         trackPropertyView(prop);
                         setSelectedProperty(prop);

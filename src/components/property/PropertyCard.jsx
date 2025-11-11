@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Phone
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -33,7 +32,7 @@ const createPageUrl = (pageName) => {
   }
 };
 
-export default function PropertyCard({ property: initialProperty, onViewDetails }) {
+export default function PropertyCard({ property: initialProperty, onViewDetails, user }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
@@ -52,21 +51,23 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(user || null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [developer, setDeveloper] = useState(null);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {
-        setCurrentUser(null);
-      }
-    };
-    loadUser();
-  }, []);
+    if (!user) {
+      const loadUser = async () => {
+        try {
+          const u = await base44.auth.me();
+          setCurrentUser(u);
+        } catch (error) {
+          setCurrentUser(null);
+        }
+      };
+      loadUser();
+    }
+  }, [user]);
 
   useEffect(() => {
     const loadDeveloper = async () => {
@@ -192,14 +193,12 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
   };
 
   const formatPrice = () => {
-    // ✅ FIXED: Better price formatting with proper rounding and validation
     const priceNum = parseFloat(property.price);
     
     if (isNaN(priceNum) || priceNum === 0) {
       return "Price on Request";
     }
 
-    // Convert everything to lakhs for consistent calculation
     let priceInLakhs;
     if (property.price_unit === "crores") {
       priceInLakhs = priceNum * 100;
@@ -207,16 +206,12 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
       priceInLakhs = priceNum;
     }
 
-    // Format based on magnitude
     if (priceInLakhs >= 100) {
-      // Display in crores (100+ lakhs)
       const crores = (priceInLakhs / 100).toFixed(2);
       return `₹${crores} Cr`;
     } else if (priceInLakhs >= 1) {
-      // Display in lakhs (1-99 lakhs)
       return `₹${priceInLakhs.toFixed(2)} L`;
     } else {
-      // Display in thousands (<1 lakh)
       const thousands = (priceInLakhs * 100).toFixed(0);
       return `₹${thousands}K`;
     }
@@ -272,6 +267,49 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
       `Thank you!`;
     
     window.open(`https://wa.me/${primaryContact}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  // ✅ NEW: Admin-only WhatsApp to check availability
+  const handleAdminWhatsApp = async (e) => {
+    e.stopPropagation();
+    
+    const normalizeIndianPhone = (phone) => {
+      if (!phone) return null;
+      let cleaned = phone.replace(/\D/g, '');
+      cleaned = cleaned.slice(-10);
+      if (cleaned.length === 10 && cleaned[0] >= '6' && cleaned[0] <= '9') {
+        return '91' + cleaned;
+      }
+      return null;
+    };
+    
+    const normalizedBrokerContact = normalizeIndianPhone(property.broker_contact);
+    
+    if (!normalizedBrokerContact) {
+      toast.error('⚠️ No contact available', {
+        description: 'This property has no valid broker contact.',
+        duration: 3000,
+        className: 'bg-red-600 text-white border-0'
+      });
+      return;
+    }
+    
+    const contactName = property.broker_name || 'there';
+    const propertyLink = getPropertyUrl();
+    
+    const message = `Hi ${contactName}, PropAI Team here.\n\n` +
+      `Quick check on this property:\n\n` +
+      `🏠 ${property.ai_title || `${property.bhk} in ${property.location}`}\n` +
+      `💰 ${formatPrice()} | ${property.listing_type}\n` +
+      `📍 ${property.building_name ? `${property.building_name}, ` : ''}${property.location}\n` +
+      `${property.custom_id ? `🔖 ID: ${property.custom_id}\n` : ''}` +
+      `\n📱 Link: ${propertyLink}\n\n` +
+      `Please confirm:\n` +
+      `✅ Is this property still available?\n` +
+      `📸 Can you share latest photos?\n\n` +
+      `Thanks!`;
+    
+    window.open(`https://wa.me/${normalizedBrokerContact}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleCardClick = () => {
@@ -554,6 +592,27 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
               <p className="text-xs font-bold text-slate-900 truncate">{property.furnishing || 'N/A'}</p>
             </div>
           </div>
+
+          {/* ✅ ADMIN-ONLY: Broker Details & Quick Check WhatsApp */}
+          {isAdmin && property.broker_name && property.broker_contact && (
+            <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-amber-700 font-semibold mb-1">Broker (Admin View)</p>
+                  <p className="text-xs text-slate-900 font-bold truncate">{property.broker_name}</p>
+                  <p className="text-xs text-slate-600 font-mono">{property.broker_contact}</p>
+                </div>
+                <Button
+                  onClick={handleAdminWhatsApp}
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white h-8 px-3 text-xs flex-shrink-0 touch-manipulation"
+                >
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  Check
+                </Button>
+              </div>
+            </div>
+          )}
 
           <Button
             onClick={handleWhatsAppContact}
