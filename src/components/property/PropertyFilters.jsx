@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,8 +55,9 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200">
-      <div className="space-y-4">
+    // ✅ FIXED: Sticky positioning with proper z-index
+    <div className="sticky top-[64px] z-30 bg-white/95 backdrop-blur-xl rounded-2xl p-4 md:p-6 mb-6 border border-purple-200 shadow-md">
+      <div className="space-y-3 md:space-y-4">
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -65,7 +65,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             placeholder="Search by location, building, or keywords..."
             value={filters.search || ""}
             onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
-            className="pl-11 border-purple-200 focus-visible:ring-purple-500 h-12 rounded-2xl"
+            className="pl-11 border-purple-200 focus-visible:ring-purple-500 h-11 md:h-12 rounded-2xl"
           />
           {/* ⚡ OPTIMIZATION INDICATOR: Show debouncing hint */}
           {filters.search && (
@@ -75,25 +75,24 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
           )}
         </div>
 
-        {/* Multi-Select Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* BHK Multi-Select */}
+        {/* ✅ FIXED: Compact Combo Filter Bar - Type & Area together */}
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          {/* Type Multi-Select (was BHK) */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between border-purple-200 hover:bg-purple-50 h-12 rounded-2xl font-semibold"
+                size="sm"
+                className="border-purple-200 hover:bg-purple-50 h-10 md:h-11 rounded-xl font-semibold touch-manipulation"
               >
-                <span className="flex items-center gap-2">
-                  <Home className="w-4 h-4 text-purple-600" />
-                  BHK {filters.bhk_multi && filters.bhk_multi.length > 0 && `(${filters.bhk_multi.length})`}
-                </span>
-                <Sliders className="w-4 h-4 text-slate-400" />
+                <Home className="w-4 h-4 text-purple-600 mr-2" />
+                Type {filters.bhk_multi && filters.bhk_multi.length > 0 && `(${filters.bhk_multi.length})`}
+                <Sliders className="w-3 h-3 text-slate-400 ml-2" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80" align="start">
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm mb-3">Select BHK Types</h4>
+                <h4 className="font-semibold text-sm mb-3">Select Property Type</h4>
                 <div className="flex flex-wrap gap-2">
                   {uniqueBhks.map((bhk) => {
                     const isSelected = filters.bhk_multi?.includes(bhk);
@@ -103,7 +102,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                         onClick={() => toggleBhk(bhk)}
                         variant={isSelected ? "default" : "outline"}
                         size="sm"
-                        className={`rounded-xl ${
+                        className={`rounded-xl touch-manipulation ${
                           isSelected
                             ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
                             : "border-purple-200 hover:bg-purple-50"
@@ -118,23 +117,22 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             </PopoverContent>
           </Popover>
 
-          {/* Location Multi-Select */}
+          {/* Area Multi-Select (was Location) */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between border-purple-200 hover:bg-purple-50 h-12 rounded-2xl font-semibold"
+                size="sm"
+                className="border-purple-200 hover:bg-purple-50 h-10 md:h-11 rounded-xl font-semibold touch-manipulation"
               >
-                <span className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-purple-600" />
-                  Location {filters.location_multi && filters.location_multi.length > 0 && `(${filters.location_multi.length})`}
-                </span>
-                <Sliders className="w-4 h-4 text-slate-400" />
+                <MapPin className="w-4 h-4 text-purple-600 mr-2" />
+                Area {filters.location_multi && filters.location_multi.length > 0 && `(${filters.location_multi.length})`}
+                <Sliders className="w-3 h-3 text-slate-400 ml-2" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 max-h-96 overflow-y-auto" align="start">
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm mb-3">Select Locations</h4>
+                <h4 className="font-semibold text-sm mb-3">Select Areas</h4>
                 <div className="flex flex-wrap gap-2">
                   {uniqueLocations.map((location) => {
                     const isSelected = filters.location_multi?.includes(location);
@@ -144,7 +142,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                         onClick={() => toggleLocation(location)}
                         variant={isSelected ? "default" : "outline"}
                         size="sm"
-                        className={`rounded-xl ${
+                        className={`rounded-xl touch-manipulation ${
                           isSelected
                             ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
                             : "border-purple-200 hover:bg-purple-50"
@@ -158,14 +156,13 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               </div>
             </PopoverContent>
           </Popover>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          {/* Listing Type Dropdown */}
           <Select
             value={filters.listingType || "all"}
             onValueChange={(value) => onFilterChange({ ...filters, listingType: value })}
           >
-            <SelectTrigger className="border-purple-200 h-12 rounded-2xl font-semibold">
+            <SelectTrigger className="border-purple-200 h-10 md:h-11 rounded-xl font-semibold w-auto min-w-[120px]">
               <SelectValue placeholder="Listing Type" />
             </SelectTrigger>
             <SelectContent>
@@ -177,11 +174,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             </SelectContent>
           </Select>
 
+          {/* Category Dropdown */}
           <Select
             value={filters.propertyCategory || "all"}
             onValueChange={(value) => onFilterChange({ ...filters, propertyCategory: value })}
           >
-            <SelectTrigger className="border-purple-200 h-12 rounded-2xl font-semibold">
+            <SelectTrigger className="border-purple-200 h-10 md:h-11 rounded-xl font-semibold w-auto min-w-[140px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -191,11 +189,12 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
             </SelectContent>
           </Select>
 
+          {/* Furnishing Dropdown */}
           <Select
             value={filters.furnishing || "all"}
             onValueChange={(value) => onFilterChange({ ...filters, furnishing: value })}
           >
-            <SelectTrigger className="border-purple-200 h-12 rounded-2xl font-semibold">
+            <SelectTrigger className="border-purple-200 h-10 md:h-11 rounded-xl font-semibold w-auto min-w-[140px]">
               <SelectValue placeholder="Furnishing" />
             </SelectTrigger>
             <SelectContent>
@@ -203,16 +202,18 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               <SelectItem value="Unfurnished">Unfurnished</SelectItem>
               <SelectItem value="Semi-Furnished">Semi-Furnished</SelectItem>
               <SelectItem value="Fully Furnished">Fully Furnished</SelectItem>
-              <SelectItem value="Bare Shell">Bare Shell</SelectItem> {/* Added from previous implementation */}
-              <SelectItem value="Warm Shell">Warm Shell</SelectItem> {/* Added from previous implementation */}
+              <SelectItem value="Bare Shell">Bare Shell</SelectItem>
+              <SelectItem value="Warm Shell">Warm Shell</SelectItem>
             </SelectContent>
           </Select>
 
+          {/* Budget Popover */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="border-purple-200 hover:bg-purple-50 h-12 rounded-2xl font-semibold"
+                size="sm"
+                className="border-purple-200 hover:bg-purple-50 h-10 md:h-11 rounded-xl font-semibold touch-manipulation"
               >
                 💰 Budget
               </Button>
@@ -246,48 +247,48 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
 
         {/* Active Filters Display */}
         {hasActiveFilters && (
-          <div className="flex items-center gap-2 flex-wrap pt-2">
-            <span className="text-xs text-slate-600 font-semibold">Active filters:</span>
+          <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-purple-100">
+            <span className="text-xs text-slate-600 font-semibold">Active:</span>
             {filters.listingType && filters.listingType !== "all" && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
                 {filters.listingType}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => onFilterChange({ ...filters, listingType: "all" })} />
               </Badge>
             )}
             {filters.bhk_multi && filters.bhk_multi.map(bhk => (
-              <Badge key={bhk} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
+              <Badge key={bhk} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
                 {bhk}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => toggleBhk(bhk)} />
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => toggleBhk(bhk)} />
               </Badge>
             ))}
             {filters.location_multi && filters.location_multi.map(loc => (
-              <Badge key={loc} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
+              <Badge key={loc} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
                 {loc}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => toggleLocation(loc)} />
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => toggleLocation(loc)} />
               </Badge>
             ))}
             {(filters.minPrice || filters.maxPrice) && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
-                ₹{filters.minPrice || "0"}{filters.listingType === 'Sale' || filters.listingType === 'Pre Leased' ? 'Cr' : 'Lakhs'} - ₹{filters.maxPrice || "∞"}{filters.listingType === 'Sale' || filters.listingType === 'Pre Leased' ? 'Cr' : 'Lakhs'}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => onFilterChange({ ...filters, minPrice: "", maxPrice: "" })} />
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
+                ₹{filters.minPrice || "0"}{filters.listingType === 'Sale' || filters.listingType === 'Pre Leased' ? 'Cr' : 'L'} - ₹{filters.maxPrice || "∞"}{filters.listingType === 'Sale' || filters.listingType === 'Pre Leased' ? 'Cr' : 'L'}
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => onFilterChange({ ...filters, minPrice: "", maxPrice: "" })} />
               </Badge>
             )}
             {filters.furnishing && filters.furnishing !== "all" && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
                 {filters.furnishing}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => onFilterChange({ ...filters, furnishing: "all" })} />
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => onFilterChange({ ...filters, furnishing: "all" })} />
               </Badge>
             )}
             {filters.propertyCategory && filters.propertyCategory !== "all" && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
                 {filters.propertyCategory}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => onFilterChange({ ...filters, propertyCategory: "all" })} />
               </Badge>
             )}
             {filters.search && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1">
-                Search: "{filters.search}"
-                <X className="w-3 h-3 cursor-pointer" onClick={() => onFilterChange({ ...filters, search: "" })} />
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold gap-1 text-xs">
+                Search: "{filters.search.substring(0, 20)}{filters.search.length > 20 ? '...' : ''}"
+                <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => onFilterChange({ ...filters, search: "" })} />
               </Badge>
             )}
 
@@ -295,7 +296,7 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
               onClick={onClearFilters}
               variant="ghost"
               size="sm"
-              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 h-7 px-2 touch-manipulation"
             >
               <X className="w-3 h-3 mr-1" />
               Clear All
