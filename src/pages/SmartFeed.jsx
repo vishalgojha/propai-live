@@ -57,7 +57,7 @@ export default function SmartFeed() {
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
   const ITEMS_PER_PAGE = 24;
-  const REFRESH_INTERVAL = 10000; // ✅ REDUCED: 10 seconds instead of 30
+  const REFRESH_INTERVAL = 10000;
 
   const navigate = useNavigate();
 
@@ -90,62 +90,93 @@ export default function SmartFeed() {
     loadUser();
   }, []);
 
-  useEffect(() => {
-    const loadPreferences = () => {
-      try {
-        const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
-        const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
+  // Extracted function to calculate and set user preferences
+  const calculateAndSetUserPreferences = useCallback(() => {
+    try {
+      const viewHistory = JSON.parse(localStorage.getItem('propai_view_history') || '[]');
+      const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
 
-        if (viewHistory.length > 0 || contactHistory.length > 0) {
-          const allProperties = [...viewHistory, ...contactHistory];
-          const bhkCounts = {};
-          const locationCounts = {};
-          const listingTypeCounts = {};
-          const priceRanges = [];
+      if (viewHistory.length > 0 || contactHistory.length > 0) {
+        const allProperties = [...viewHistory, ...contactHistory];
+        const bhkCounts = {};
+        const locationCounts = {};
+        const listingTypeCounts = {};
+        const priceRanges = [];
 
-          allProperties.forEach(prop => {
-            if (prop.bhk) bhkCounts[prop.bhk] = (bhkCounts[prop.bhk] || 0) + 1;
-            if (prop.location) locationCounts[prop.location] = (locationCounts[prop.location] || 0) + 1;
-            if (prop.listing_type) listingTypeCounts[prop.listing_type] = (listingTypeCounts[prop.listing_type] || 0) + 1;
-            if (prop.price) {
-              const priceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
-              priceRanges.push(priceInLakhs);
-            }
-          });
+        allProperties.forEach(prop => {
+          if (prop.bhk) bhkCounts[prop.bhk] = (bhkCounts[prop.bhk] || 0) + 1;
+          if (prop.location) locationCounts[prop.location] = (locationCounts[prop.location] || 0) + 1;
+          if (prop.listing_type) listingTypeCounts[prop.listing_type] = (listingTypeCounts[prop.listing_type] || 0) + 1;
+          if (prop.price) {
+            const priceInLakhs = prop.price_unit === 'crores' ? prop.price * 100 : prop.price;
+            priceRanges.push(priceInLakhs);
+          }
+        });
 
-          const topBhks = Object.entries(bhkCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 2)
-            .map(e => e[0]);
+        const topBhks = Object.entries(bhkCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 2)
+          .map(e => e[0]);
 
-          const topLocations = Object.entries(locationCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(e => e[0]);
+        const topLocations = Object.entries(locationCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(e => e[0]);
 
-          const topListingType = Object.entries(listingTypeCounts)
-            .sort((a, b) => b[1] - a[1])[0]?.[0];
+        const topListingType = Object.entries(listingTypeCounts)
+          .sort((a, b) => b[1] - a[1])[0]?.[0];
 
-          const avgPrice = priceRanges.length > 0
-            ? Math.round(priceRanges.reduce((a, b) => a + b, 0) / priceRanges.length)
-            : null;
+        const avgPrice = priceRanges.length > 0
+          ? Math.round(priceRanges.reduce((a, b) => a + b, 0) / priceRanges.length)
+          : null;
 
-          setUserPreferences({
-            bhks: topBhks,
-            locations: topLocations,
-            listingType: topListingType,
-            avgPrice: avgPrice,
-            totalViews: viewHistory.length,
-            totalContacts: contactHistory.length
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load user preferences:', error);
+        setUserPreferences({
+          bhks: topBhks,
+          locations: topLocations,
+          listingType: topListingType,
+          avgPrice: avgPrice,
+          totalViews: viewHistory.length,
+          totalContacts: contactHistory.length
+        });
+      } else {
+        setUserPreferences(null); // Clear preferences if no history
       }
-    };
-
-    loadPreferences();
+    } catch (error) {
+      console.error('Failed to calculate and set user preferences:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    // Initial load of user preferences on component mount
+    calculateAndSetUserPreferences();
+  }, [calculateAndSetUserPreferences]);
+
+  // ✅ NEW: Inject sample history for testing auto-match
+  const injectSampleHistory = () => {
+    const sampleHistory = [
+      { id: '1', bhk: '2 BHK', location: 'Bandra West', price: 220, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
+      { id: '2', bhk: '2 BHK', location: 'Khar West', price: 180, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
+      { id: '3', bhk: '3 BHK', location: 'Bandra West', price: 350, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
+      { id: '4', bhk: '2 BHK', location: 'Juhu', price: 200, price_unit: 'lakhs', listing_type: 'Rent', timestamp: new Date().toISOString() },
+      { id: '5', bhk: '3 BHK', location: 'Bandra West', price: 280, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
+    ];
+
+    const sampleContacts = [
+      { id: '1', bhk: '2 BHK', location: 'Bandra West', price: 220, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
+      { id: '3', bhk: '3 BHK', location: 'Bandra West', price: 350, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
+    ];
+
+    localStorage.setItem('propai_view_history', JSON.stringify(sampleHistory));
+    localStorage.setItem('propai_contact_history', JSON.stringify(sampleContacts));
+
+    // After injecting, recalculate and set preferences
+    calculateAndSetUserPreferences();
+
+    toast.success('🎯 Sample History Injected!', {
+      description: 'Auto-match now active. Scroll down to see "For You" section.',
+      duration: 5000
+    });
+  };
 
   const trackPropertyView = (property) => {
     try {
@@ -162,6 +193,9 @@ export default function SmartFeed() {
 
       const recentViews = viewHistory.slice(-50);
       localStorage.setItem('propai_view_history', JSON.stringify(recentViews));
+      
+      // ✅ FIXED: Reload preferences after tracking view
+      calculateAndSetUserPreferences();
     } catch (error) {
       console.error('Failed to track view:', error);
     }
@@ -509,6 +543,39 @@ export default function SmartFeed() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
 
+        {/* ✅ NEW: Auto-Match Testing Panel (Admin Only) */}
+        {user?.role === 'admin' && !userPreferences && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-4 border-2 border-amber-300">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 mb-1">🧪 Auto-Match Testing Mode</h3>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      No viewing history detected. Want to test the auto-match feature with sample data?
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={injectSampleHistory}
+                  size="sm"
+                  className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold touch-manipulation"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Test Auto-Match
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         <AnimatePresence>
           {showNewItemsBanner && (
             <motion.div
@@ -528,7 +595,7 @@ export default function SmartFeed() {
                       <p className="text-sm text-white/90">
                         {newItemsCount.properties > 0 && `${newItemsCount.properties} new ${newItemsCount.properties === 1 ? 'property' : 'properties'}`}
                         {newItemsCount.properties > 0 && newItemsCount.requirements > 0 && ' • '}
-                        {newItemsCount.requirements > 0 && `${newItemsCount.requirements === 1 ? 'requirement' : 'requirements'}`}
+                        {newItemsCount.requirements > 0 && `${newItemsCount.requirements} ${newItemsCount.requirements === 1 ? 'requirement' : 'requirements'}`}
                       </p>
                     </div>
                   </div>
