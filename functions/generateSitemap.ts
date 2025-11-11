@@ -6,22 +6,25 @@ Deno.serve(async (req) => {
     const baseUrl = 'https://propai.live';
 
     // Fetch dynamic content
-    const [blogs, properties, buildings] = await Promise.all([
+    const [blogs, properties, buildings, developers] = await Promise.all([
       base44.asServiceRole.entities.Blog.filter({ status: "Published" }, '-created_date'),
       base44.asServiceRole.entities.Property.filter({ status: "Active" }, '-created_date', 1000),
-      base44.asServiceRole.entities.Building.filter({ verified: true }, '-created_date', 500)
+      base44.asServiceRole.entities.Building.list('-updated_date', 500),
+      base44.asServiceRole.entities.Developer.list('-updated_date', 200)
     ]);
 
     // Static pages with priority and change frequency
     const staticPages = [
-      { url: '/', priority: '1.0', changefreq: 'daily' },
-      { url: '/smartfeed', priority: '0.9', changefreq: 'daily' },
-      { url: '/buildings', priority: '0.8', changefreq: 'weekly' },
-      { url: '/insights', priority: '0.8', changefreq: 'weekly' },
-      { url: '/network', priority: '0.6', changefreq: 'monthly' },
-      { url: '/privacy-policy', priority: '0.3', changefreq: 'yearly' },
-      { url: '/terms-of-service', priority: '0.3', changefreq: 'yearly' },
-      { url: '/disclaimer', priority: '0.3', changefreq: 'yearly' }
+      { url: '/', priority: '1.0', changefreq: 'daily', lastmod: new Date() },
+      { url: '/smartfeed', priority: '0.9', changefreq: 'daily', lastmod: new Date() },
+      { url: '/buildings', priority: '0.8', changefreq: 'weekly', lastmod: new Date() },
+      { url: '/blogs', priority: '0.8', changefreq: 'weekly', lastmod: new Date() },
+      { url: '/developerdirectory', priority: '0.7', changefreq: 'monthly', lastmod: new Date() },
+      { url: '/brokernetwork', priority: '0.6', changefreq: 'monthly', lastmod: new Date() },
+      { url: '/faq', priority: '0.5', changefreq: 'monthly', lastmod: new Date() },
+      { url: '/privacypolicy', priority: '0.3', changefreq: 'yearly', lastmod: new Date() },
+      { url: '/termsofservice', priority: '0.3', changefreq: 'yearly', lastmod: new Date() },
+      { url: '/disclaimer', priority: '0.3', changefreq: 'yearly', lastmod: new Date() }
     ];
 
     // Build sitemap URLs
@@ -31,56 +34,66 @@ Deno.serve(async (req) => {
     staticPages.forEach(page => {
       urls += `  <url>
     <loc>${baseUrl}${page.url}</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <lastmod>${page.lastmod.toISOString().split('T')[0]}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
   </url>\n`;
     });
 
-    // Add blog posts
+    // Add blog posts (use correct URL format)
     blogs.forEach(blog => {
+      if (!blog.slug) return;
       const lastmod = blog.updated_date || blog.created_date;
       urls += `  <url>
-    <loc>${baseUrl}/insights/${blog.slug}</loc>
+    <loc>${baseUrl}/blogpost?slug=${encodeURIComponent(blog.slug)}</loc>
     <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>\n`;
     });
 
-    // Add properties (only with slugs)
+    // Add properties (use correct URL format with query params)
     properties
       .filter(p => p.slug && !p.is_duplicate)
       .slice(0, 500) // Limit to 500 most recent
       .forEach(property => {
         urls += `  <url>
-    <loc>${baseUrl}/property/${property.slug}</loc>
+    <loc>${baseUrl}/propertydetails?slug=${encodeURIComponent(property.slug)}</loc>
     <lastmod>${new Date(property.updated_date || property.created_date).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>\n`;
       });
 
-    // Add buildings (only verified with slugs)
+    // Add buildings (use correct URL format)
     buildings
-      .filter(b => b.slug)
+      .filter(b => b.id)
+      .slice(0, 300)
       .forEach(building => {
         urls += `  <url>
-    <loc>${baseUrl}/building/${building.slug}</loc>
+    <loc>${baseUrl}/buildingprofile?id=${building.id}</loc>
     <lastmod>${new Date(building.last_intelligence_update || building.updated_date || building.created_date).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>\n`;
       });
 
+    // Add developers (use correct URL format)
+    developers
+      .filter(d => d.slug)
+      .forEach(developer => {
+        urls += `  <url>
+    <loc>${baseUrl}/developerprofile?slug=${encodeURIComponent(developer.slug)}</loc>
+    <lastmod>${new Date(developer.updated_date || developer.created_date).toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>\n`;
+      });
+
     // Generate sitemap XML
     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls}</urlset>`;
 
     return new Response(sitemapXml, {
