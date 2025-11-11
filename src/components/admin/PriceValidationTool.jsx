@@ -11,12 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, AlertTriangle, CheckCircle2, RefreshCw, Zap } from "lucide-react";
+import { DollarSign, AlertTriangle, CheckCircle2, RefreshCw, Zap, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PriceValidationTool({ properties }) {
+  const queryClient = useQueryClient();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [filterIssueType, setFilterIssueType] = useState("all");
 
   // ✅ PRICE VALIDATION LOGIC
@@ -131,11 +134,78 @@ export default function PriceValidationTool({ properties }) {
       toast.success("✅ Price Fixed!", {
         description: `Updated to ₹${item.suggestedFix.price} ${item.suggestedFix.unit}`
       });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     } catch (error) {
       toast.error("Failed to fix price", {
         description: error.message
       });
     }
+  };
+
+  const deleteProperty = async (propertyId, customId) => {
+    if (!confirm(`Delete ${customId}?\n\nThis action cannot be undone.`)) return;
+
+    try {
+      await base44.entities.Property.delete(propertyId);
+      toast.success("🗑️ Property Deleted", {
+        description: `${customId} removed from database`
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    } catch (error) {
+      toast.error("Failed to delete", {
+        description: error.message
+      });
+    }
+  };
+
+  const deleteAllIssues = async () => {
+    const confirmMessage = `🚨 DELETE ALL ${filteredIssues.length} PROPERTIES WITH PRICE ISSUES?\n\n` +
+      `This will PERMANENTLY delete:\n` +
+      `• ${severityCounts.critical} critical issues\n` +
+      `• ${severityCounts.high} high priority issues\n` +
+      `• ${severityCounts.medium} medium issues\n\n` +
+      `⚠️ THIS CANNOT BE UNDONE!\n\n` +
+      `Type "DELETE ALL" to confirm:`;
+
+    const userInput = prompt(confirmMessage);
+    
+    if (userInput !== "DELETE ALL") {
+      toast.info("Deletion cancelled");
+      return;
+    }
+
+    setIsDeleting(true);
+    let deleted = 0;
+    let errors = 0;
+
+    toast.loading(`Deleting ${filteredIssues.length} properties...`, { id: "bulk-delete" });
+
+    for (const item of filteredIssues) {
+      try {
+        await base44.entities.Property.delete(item.property.id);
+        deleted++;
+      } catch (error) {
+        console.error(`Failed to delete ${item.property.id}:`, error);
+        errors++;
+      }
+
+      // Show progress every 10 properties
+      if (deleted % 10 === 0) {
+        toast.loading(`Deleted ${deleted}/${filteredIssues.length}...`, { id: "bulk-delete" });
+      }
+    }
+
+    toast.dismiss("bulk-delete");
+    toast.success("✅ Bulk Delete Complete!", {
+      description: `Deleted ${deleted} properties (${errors} errors)`,
+      className: 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-0',
+      duration: 6000
+    });
+    
+    queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+    queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
+    
+    setIsDeleting(false);
   };
 
   const runBulkAnalysis = async () => {
@@ -189,6 +259,8 @@ export default function PriceValidationTool({ properties }) {
       description: `Fixed ${fixed} prices (${errors} errors)`,
       duration: 5000
     });
+    
+    queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
     setIsFixing(false);
   };
 
@@ -206,23 +278,46 @@ export default function PriceValidationTool({ properties }) {
               <p className="text-sm text-slate-600">Detect and fix pricing data issues</p>
             </div>
           </div>
-          <Button
-            onClick={runBulkAnalysis}
-            disabled={isAnalyzing}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
-          >
-            {isAnalyzing ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4 mr-2" />
-                Run Analysis
-              </>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={runBulkAnalysis}
+              disabled={isAnalyzing}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isAnalyzing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Run Analysis
+                </>
+              )}
+            </Button>
+            
+            {/* ✅ NEW: Delete All Button */}
+            {filteredIssues.length > 0 && (
+              <Button
+                onClick={deleteAllIssues}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete All Issues
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -244,6 +339,24 @@ export default function PriceValidationTool({ properties }) {
             <p className="text-sm text-slate-600">Medium</p>
           </div>
         </div>
+
+        {/* ✅ WARNING BANNER */}
+        {priceIssues.length > 0 && (
+          <div className="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-red-900 mb-1">
+                  ⚠️ Danger Zone: Delete All Issues
+                </p>
+                <p className="text-xs text-red-800 leading-relaxed">
+                  The "Delete All Issues" button will permanently remove ALL properties with pricing problems. 
+                  This is useful for cleaning up bad parsing results. Type "DELETE ALL" to confirm.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Filters and Actions */}
@@ -352,6 +465,16 @@ export default function PriceValidationTool({ properties }) {
                     className="whitespace-nowrap"
                   >
                     View Property
+                  </Button>
+                  {/* ✅ NEW: Delete Individual Property */}
+                  <Button
+                    onClick={() => deleteProperty(item.property.id, item.property.custom_id)}
+                    size="sm"
+                    variant="outline"
+                    className="whitespace-nowrap text-red-600 hover:bg-red-50 border-red-300"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
                   </Button>
                 </div>
               </div>
