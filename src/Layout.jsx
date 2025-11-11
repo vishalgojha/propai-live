@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -26,7 +25,62 @@ export default function Layout({ children, currentPageName }) {
   }, [location.pathname]);
 
   useEffect(() => {
-    // ✅ PERFORMANCE: Add preconnect hints for third-party origins
+    // ✅ CRITICAL: Set meta tags ONCE on mount, pages can override via SEO component
+    const setMetaTag = (name, content, isProperty = false) => {
+      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+      let tag = document.querySelector(selector);
+      if (!tag) {
+        tag = document.createElement('meta');
+        if (isProperty) {
+          tag.setAttribute('property', name);
+        } else {
+          tag.setAttribute('name', name);
+        }
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    // Basic meta tags
+    setMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    setMetaTag('theme-color', '#8B5CF6');
+    setMetaTag('author', 'PropAI Live');
+    setMetaTag('robots', 'index, follow');
+    
+    // Default SEO (pages can override via SEO component)
+    const defaultTitle = 'PropAI Live | WhatsApp → Organized Properties. Instantly.';
+    const defaultDescription = 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.';
+    const defaultImage = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/propai-social-share.png';
+    
+    // Only set if not already set by page
+    if (!document.querySelector('meta[property="og:title"]')) {
+      setMetaTag('description', defaultDescription);
+      setMetaTag('og:title', defaultTitle, true);
+      setMetaTag('og:description', defaultDescription, true);
+      setMetaTag('og:image', defaultImage, true);
+      setMetaTag('og:image:width', '1200', true);
+      setMetaTag('og:image:height', '630', true);
+      setMetaTag('og:image:alt', 'PropAI Live - AI-powered Mumbai real estate intelligence platform', true);
+      setMetaTag('twitter:card', 'summary_large_image');
+      setMetaTag('twitter:title', defaultTitle);
+      setMetaTag('twitter:description', defaultDescription);
+      setMetaTag('twitter:image', defaultImage);
+    }
+    
+    // Always set these
+    setMetaTag('og:site_name', 'PropAI Live', true);
+    setMetaTag('og:type', 'website', true);
+    setMetaTag('og:locale', 'en_IN', true);
+    setMetaTag('og:url', window.location.href, true);
+    
+    // Additional SEO tags
+    setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
+    setMetaTag('geo.region', 'IN-MH');
+    setMetaTag('geo.placename', 'Mumbai');
+    setMetaTag('geo.position', '19.0760;72.8777');
+    setMetaTag('ICBM', '19.0760, 72.8777');
+    
+    // Preconnect hints
     const addPreconnect = (href, crossorigin = false) => {
       if (!document.querySelector(`link[rel="preconnect"][href="${href}"]`)) {
         const link = document.createElement('link');
@@ -37,86 +91,9 @@ export default function Layout({ children, currentPageName }) {
       }
     };
 
-    // Preconnect to Supabase storage (for images)
     addPreconnect('https://qtrypzzcjebvfcihiynt.supabase.co', true);
-    // Preconnect to Base44 API
     addPreconnect('https://api.base44.com', true);
 
-    // Always set meta tags, don't check if they exist first
-    const setMetaTag = (name, content, isProperty = false) => {
-      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
-      let tag = document.querySelector(selector);
-      if (tag) {
-        tag.setAttribute('content', content);
-      } else {
-        tag = document.createElement('meta');
-        if (isProperty) {
-          tag.setAttribute('property', name);
-        } else {
-          tag.setAttribute('name', name);
-        }
-        tag.setAttribute('content', content);
-        document.head.appendChild(tag);
-      }
-    };
-
-    // Default meta tags
-    setMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); // ✅ FIXED: Better touch handling
-    setMetaTag('theme-color', '#8B5CF6');
-    setMetaTag('author', 'PropAI Live');
-    setMetaTag('robots', 'index, follow');
-    
-    // ALWAYS set default description
-    setMetaTag('description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.');
-    
-    // ALWAYS set Open Graph tags for social sharing
-    setMetaTag('og:site_name', 'PropAI Live', true);
-    setMetaTag('og:type', 'website', true);
-    setMetaTag('og:locale', 'en_IN', true);
-    setMetaTag('og:url', window.location.href, true);
-    setMetaTag('og:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.', true);
-    setMetaTag('og:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.', true);
-    setMetaTag('og:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg', true);
-    setMetaTag('og:image:width', '1200', true);
-    setMetaTag('og:image:height', '630', true);
-    setMetaTag('og:image:alt', 'PropAI Live - AI-powered Mumbai real estate intelligence platform', true);
-    
-    // ALWAYS set Twitter Card tags
-    setMetaTag('twitter:card', 'summary_large_image');
-    setMetaTag('twitter:title', 'PropAI Live | WhatsApp → Organized Properties. Instantly.');
-    setMetaTag('twitter:description', 'Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence.');
-    setMetaTag('twitter:image', 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690cfb8070b3f94428fee21c/b779b3c9f_Screenshot_2025-11-08-06-49-19-86_40deb401b9ffe8e1df2f1cc5ba480b122.jpg');
-    
-    // Additional SEO tags
-    setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
-    setMetaTag('geo.region', 'IN-MH');
-    setMetaTag('geo.placename', 'Mumbai');
-    setMetaTag('geo.position', '19.0760;72.8777');
-    setMetaTag('ICBM', '19.0760, 72.8777');
-    
-    // Add RSS Feed auto-discovery
-    let rssLink = document.querySelector('link[type="application/rss+xml"]');
-    if (!rssLink) {
-      rssLink = document.createElement('link');
-      rssLink.setAttribute('rel', 'alternate');
-      rssLink.setAttribute('type', 'application/rss+xml');
-      rssLink.setAttribute('title', 'PropAI Live Insights RSS Feed');
-      rssLink.setAttribute('href', `${window.location.origin}/api/rssFeed`);
-      document.head.appendChild(rssLink);
-    }
-    
-    // Add sitemap reference
-    let sitemapLink = document.querySelector('link[rel="sitemap"]');
-    if (!sitemapLink) {
-      sitemapLink = document.createElement('link');
-      sitemapLink.setAttribute('rel', 'sitemap');
-      sitemapLink.setAttribute('type', 'application/xml');
-      sitemapLink.setAttribute('title', 'Sitemap');
-      sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
-      document.head.appendChild(sitemapLink);
-    }
-
-    // ✅ PERFORMANCE: Add dns-prefetch as fallback for older browsers
     const addDnsPrefetch = (href) => {
       if (!document.querySelector(`link[rel="dns-prefetch"][href="${href}"]`)) {
         const link = document.createElement('link');
@@ -128,7 +105,29 @@ export default function Layout({ children, currentPageName }) {
     
     addDnsPrefetch('https://qtrypzzcjebvfcihiynt.supabase.co');
     addDnsPrefetch('https://api.base44.com');
-  }, [location.pathname]);
+    
+    // RSS Feed
+    let rssLink = document.querySelector('link[type="application/rss+xml"]');
+    if (!rssLink) {
+      rssLink = document.createElement('link');
+      rssLink.setAttribute('rel', 'alternate');
+      rssLink.setAttribute('type', 'application/rss+xml');
+      rssLink.setAttribute('title', 'PropAI Live Insights RSS Feed');
+      rssLink.setAttribute('href', `${window.location.origin}/api/rssFeed`);
+      document.head.appendChild(rssLink);
+    }
+    
+    // Sitemap
+    let sitemapLink = document.querySelector('link[rel="sitemap"]');
+    if (!sitemapLink) {
+      sitemapLink = document.createElement('link');
+      sitemapLink.setAttribute('rel', 'sitemap');
+      sitemapLink.setAttribute('type', 'application/xml');
+      sitemapLink.setAttribute('title', 'Sitemap');
+      sitemapLink.setAttribute('href', `${window.location.origin}/api/sitemap.xml`);
+      document.head.appendChild(sitemapLink);
+    }
+  }, []);
 
   useEffect(() => {
     // Check if user is logged in and get user data
@@ -263,7 +262,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown - FIXED TOUCH */}
+        {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-purple-100 bg-white/95 backdrop-blur-xl">
             <nav className="px-4 py-4 space-y-2">
