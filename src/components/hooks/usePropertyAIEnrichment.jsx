@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { getFeatureWithOverride } from '../../config/features';
+import { getFeatureWithOverride } from '@/config/features';
 
 /**
  * Hook to automatically enrich properties with AI-generated titles and descriptions
