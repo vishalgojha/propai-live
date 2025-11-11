@@ -1,17 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * ENHANCED LOCATION NORMALIZATION V2
+ * ENHANCED LOCATION NORMALIZATION V3 - Mumbai Canonical Map
  * 
- * Aggressively standardizes messy location names:
- * - Removes extra details ("9th road Khar West, off..." → "Khar West")
- * - Fixes case issues ("ANDHERI WEST" → "Andheri West")
+ * Comprehensive normalization using broker-tested locality mappings:
+ * - Handles all broker-mangled variations ("bndr w", "bandra wrst", etc.)
+ * - Maps street names to parent areas ("Pali Hill" → "Bandra West")
  * - Extracts main location from compound strings
- * - Handles variations like "Bandra - Pali Hill" → "Bandra West"
+ * - Case-insensitive with aggressive cleaning
  * 
  * Updates:
  * - Properties
- * - Buildings
+ * - Buildings  
  * - Requirements (preferred_locations)
  * 
  * Modes:
@@ -19,53 +19,126 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * - live: Apply normalization
  */
 
-// Canonical location names (what we want in the database)
-const CANONICAL_LOCATIONS = {
-  'andheri west': 'Andheri West',
-  'andheri east': 'Andheri East',
-  'bandra west': 'Bandra West',
-  'bandra east': 'Bandra East',
-  'khar west': 'Khar West',
-  'khar east': 'Khar East',
-  'santacruz west': 'Santacruz West',
-  'santacruz east': 'Santacruz East',
-  'versova': 'Versova',
-  'juhu': 'Juhu',
-  'worli': 'Worli',
-  'lower parel': 'Lower Parel',
-  'prabhadevi': 'Prabhadevi',
-  'dadar': 'Dadar',
-  'dadar west': 'Dadar West',
-  'dadar east': 'Dadar East',
-  'mahim': 'Mahim',
-  'bkc': 'BKC',
-  'bandra kurla complex': 'BKC',
-  'powai': 'Powai',
-  'goregaon west': 'Goregaon West',
-  'goregaon east': 'Goregaon East',
-  'goregaon': 'Goregaon West',
-  'malad west': 'Malad West',
-  'malad east': 'Malad East',
-  'malad': 'Malad West',
-  'borivali west': 'Borivali West',
-  'borivali east': 'Borivali East',
-  'borivali': 'Borivali West',
-  'kandivali west': 'Kandivali West',
-  'kandivali east': 'Kandivali East',
-  'kandivali': 'Kandivali West',
-  'chembur': 'Chembur',
-  'vile parle west': 'Vile Parle West',
-  'vile parle east': 'Vile Parle East',
-  'vile parle': 'Vile Parle West',
-  'mumbai': 'Mumbai',
-  'pali hill': 'Bandra West', // Pali Hill is in Bandra West
-  'carter road': 'Bandra West', // Carter Road is in Bandra West
-  'linking road': 'Bandra West', // Linking Road spans Bandra/Khar
-  'amboli': 'Andheri West', // Amboli is in Andheri West
+// ✅ COMPREHENSIVE CANONICAL LOCALITY MAP - Mumbai v1
+const CANONICAL_LOCALITY_MAP = {
+  "bandra w": "Bandra West",
+  "bandra west": "Bandra West",
+  "bandra wrst": "Bandra West",
+  "bndr w": "Bandra West",
+  "bndr": "Bandra West",
+  "bandra": "Bandra West",
+  "bandra (w)": "Bandra West",
+  "bandra-west": "Bandra West",
+  "bandra e": "Bandra East",
+  "bandra east": "Bandra East",
+  "bandra (e)": "Bandra East",
+  "bkc": "Bandra Kurla Complex",
+  "kurla cplx": "Bandra Kurla Complex",
+  "bandra kurla complex": "Bandra Kurla Complex",
+  "andheri w": "Andheri West",
+  "andheri west": "Andheri West",
+  "andheri wst": "Andheri West",
+  "andheri (w)": "Andheri West",
+  "andheri": "Andheri West",
+  "andheri-west": "Andheri West",
+  "andheri e": "Andheri East",
+  "andheri east": "Andheri East",
+  "andheri (e)": "Andheri East",
+  "andheri-east": "Andheri East",
+  "lokhandwala": "Lokhandwala Complex",
+  "lokhandwala complex": "Lokhandwala Complex",
+  "versova": "Versova",
+  "juhu": "Juhu",
+  "santacruz w": "Santacruz West",
+  "santacruz west": "Santacruz West",
+  "santacruz (w)": "Santacruz West",
+  "santacruz": "Santacruz West",
+  "santacruz e": "Santacruz East",
+  "santacruz east": "Santacruz East",
+  "santacruz (e)": "Santacruz East",
+  "khar w": "Khar West",
+  "khar west": "Khar West",
+  "khar": "Khar West",
+  "khar (w)": "Khar West",
+  "khar e": "Khar East",
+  "khar east": "Khar East",
+  "worli": "Worli",
+  "lower parel": "Lower Parel",
+  "upper worli": "Worli",
+  "mah": "Mahalaxmi",
+  "mahalaxmi": "Mahalaxmi",
+  "parel": "Parel",
+  "parel east": "Parel",
+  "parel west": "Parel",
+  "dadar w": "Dadar West",
+  "dadar west": "Dadar West",
+  "dadar (w)": "Dadar West",
+  "dadar e": "Dadar East",
+  "dadar east": "Dadar East",
+  "dadar (e)": "Dadar East",
+  "dadar": "Dadar West",
+  "matunga": "Matunga",
+  "shivaji park": "Dadar West",
+  "bpt colony": "Worli",
+  "prabhadevi": "Prabhadevi",
+  "powai": "Powai",
+  "vikhroli": "Vikhroli",
+  "vikhroli west": "Vikhroli West",
+  "vikhroli east": "Vikhroli East",
+  "ghatkopar": "Ghatkopar",
+  "ghatkopar west": "Ghatkopar West",
+  "ghatkopar east": "Ghatkopar East",
+  "mulund": "Mulund",
+  "mulund west": "Mulund West",
+  "mulund east": "Mulund East",
+  "thane w": "Thane West",
+  "thane west": "Thane West",
+  "thane": "Thane",
+  "thane east": "Thane East",
+  "chembur": "Chembur",
+  "wadala": "Wadala",
+  "wadala east": "Wadala East",
+  "wadala west": "Wadala West",
+  "sion": "Sion",
+  "colaba": "Colaba",
+  "cuffe parade": "Cuffe Parade",
+  "churchgate": "Churchgate",
+  "marine drive": "Marine Drive",
+  "walkeshwar": "Walkeshwar",
+  "malabar hill": "Malabar Hill",
+  "altamount road": "Altamount Road",
+  "tardeo": "Tardeo",
+  "grant road": "Grant Road",
+  "girgaon": "Girgaon",
+  "charni road": "Charni Road",
+  "byculla": "Byculla",
+  "kamathipura": "Kamathipura",
+  "mazgaon": "Mazgaon",
+  "mumbai central": "Mumbai Central",
+  "sewri": "Sewri",
+  "vile parle": "Vile Parle West",
+  "vile parle west": "Vile Parle West",
+  "vile parle east": "Vile Parle East",
+  "goregaon": "Goregaon West",
+  "goregaon west": "Goregaon West",
+  "goregaon east": "Goregaon East",
+  "malad": "Malad West",
+  "malad west": "Malad West",
+  "malad east": "Malad East",
+  "borivali": "Borivali West",
+  "borivali west": "Borivali West",
+  "borivali (w)": "Borivali West",
+  "borivali east": "Borivali East",
+  "borivali (e)": "Borivali East",
+  "kandivali": "Kandivali West",
+  "kandivali west": "Kandivali West",
+  "kandivali east": "Kadivali East",
+  "mahim": "Mahim",
 };
 
-// Known sub-localities and their parent areas
+// ✅ STREET-LEVEL MAPPINGS - Bandra/Khar/Worli/Andheri Zones
 const SUB_LOCALITIES = {
+  // Bandra West streets
   'pali hill': 'Bandra West',
   'carter road': 'Bandra West',
   'linking road': 'Bandra West',
@@ -73,22 +146,65 @@ const SUB_LOCALITIES = {
   '15th road': 'Bandra West',
   '16th road': 'Bandra West',
   'perry cross road': 'Bandra West',
+  'waterfield road': 'Bandra West',
+  'turner road': 'Bandra West',
+  'chapel road': 'Bandra West',
+  'pali naka': 'Bandra West',
+  'bandstand': 'Bandra West',
+  'mount mary': 'Bandra West',
+  
+  // Khar West streets
+  '9th road': 'Khar West',
+  '11th road': 'Khar West',
+  '14th road': 'Khar West',
+  'off linking road': 'Khar West',
+  'khar danda': 'Khar West',
+  
+  // Andheri West streets
   'amboli': 'Andheri West',
   'azad nagar': 'Andheri West',
   'aram nagar': 'Andheri West',
   'yari road': 'Andheri West',
   '7 bungalows': 'Andheri West',
   '7bunglow': 'Andheri West',
-  'lokhandwala': 'Andheri West',
-  'akurli': 'Kandivali East',
-  'ambedkar road': 'Dadar',
+  'lokhandwala': 'Lokhandwala Complex',
+  
+  // Andheri East
   'anand nagar': 'Andheri East',
+  
+  // Worli
+  'annie besant road': 'Worli',
+  'worli sea face': 'Worli',
+  'worli naka': 'Worli',
+  'lotus': 'Worli',
+  'bpt colony': 'Worli',
+  
+  // Lower Parel
+  'elphinstone road': 'Lower Parel',
+  'phoenix mills': 'Lower Parel',
+  'senapati bapat marg': 'Lower Parel',
+  
+  // Dadar
+  'shivaji park': 'Dadar West',
+  'hindmata': 'Dadar East',
+  
+  // Mahim
+  'mahim causeway': 'Mahim',
+  'sitladevi': 'Mahim',
+  
+  // Santacruz East
   'kalina': 'Santacruz East',
-  'bkc kalina': 'BKC',
+  'bkc kalina': 'Bandra Kurla Complex',
+  
+  // Kandivali
+  'akurli': 'Kandivali East',
+  
+  // Dadar
+  'ambedkar road': 'Dadar',
 };
 
 /**
- * Smart location normalizer that handles messy inputs
+ * Smart location normalizer with comprehensive Mumbai locality map
  */
 function normalizeLocation(rawLocation) {
   if (!rawLocation) return null;
@@ -100,12 +216,12 @@ function normalizeLocation(rawLocation) {
     .replace(/[,;]/g, ' ') // Replace commas/semicolons with space
     .toLowerCase();
   
-  // Step 2: Check for exact match in canonical list
-  if (CANONICAL_LOCATIONS[cleaned]) {
-    return CANONICAL_LOCATIONS[cleaned];
+  // Step 2: Check comprehensive canonical map (EXACT MATCH)
+  if (CANONICAL_LOCALITY_MAP[cleaned]) {
+    return CANONICAL_LOCALITY_MAP[cleaned];
   }
   
-  // Step 3: Check for sub-locality matches
+  // Step 3: Check street-level mappings
   for (const [subLocality, mainArea] of Object.entries(SUB_LOCALITIES)) {
     if (cleaned.includes(subLocality)) {
       return mainArea;
@@ -114,29 +230,13 @@ function normalizeLocation(rawLocation) {
   
   // Step 4: Extract main area from compound strings
   // e.g., "9th road Khar West, off Linking Road" → "Khar West"
-  for (const [key, value] of Object.entries(CANONICAL_LOCATIONS)) {
+  for (const [key, value] of Object.entries(CANONICAL_LOCALITY_MAP)) {
     if (cleaned.includes(key)) {
       return value;
     }
   }
   
-  // Step 5: Handle common variations
-  // "bandra" alone → "Bandra West" (most listings are West)
-  if (cleaned === 'bandra' || cleaned === 'bandra-west' || cleaned === 'bandra (w)') {
-    return 'Bandra West';
-  }
-  if (cleaned === 'andheri' || cleaned === 'andheri-west' || cleaned === 'andheri (w)') {
-    return 'Andheri West';
-  }
-  if (cleaned === 'khar' || cleaned === 'khar-west' || cleaned === 'khar (w)') {
-    return 'Khar West';
-  }
-  if (cleaned === 'santacruz' || cleaned === 'santacruz-west' || cleaned === 'santacruz (w)') {
-    return 'Santacruz West';
-  }
-  
-  // Step 6: If no match found, return capitalized version
-  // This preserves unique locations but fixes case
+  // Step 5: Fallback - fix capitalization for unrecognized locations
   return rawLocation
     .trim()
     .split(' ')
@@ -158,7 +258,7 @@ Deno.serve(async (req) => {
 
     const { mode = 'dry_run' } = await req.json();
 
-    console.log(`🗺️ Running ENHANCED location normalization in ${mode} mode...`);
+    console.log(`🗺️ Running ENHANCED location normalization (Mumbai v1) in ${mode} mode...`);
 
     // Fetch entities
     const properties = await base44.asServiceRole.entities.Property.list();
@@ -182,7 +282,7 @@ Deno.serve(async (req) => {
         if (normalized && normalized !== property.location) {
           propertiesToUpdate++;
           
-          if (examples.length < 10) {
+          if (examples.length < 15) {
             examples.push({
               entity: 'property',
               old: property.location,
@@ -201,7 +301,7 @@ Deno.serve(async (req) => {
         if (normalized && normalized !== building.location) {
           buildingsToUpdate++;
           
-          if (examples.length < 10) {
+          if (examples.length < 15) {
             examples.push({
               entity: 'building',
               old: building.location,

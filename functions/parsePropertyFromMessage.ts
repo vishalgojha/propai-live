@@ -2,55 +2,122 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * ULTRA-FAST PROPERTY PARSER WITH TEAM DETECTION + LOCATION NORMALIZATION
+ * ULTRA-FAST PROPERTY PARSER WITH TEAM DETECTION + SMART LOCATION NORMALIZATION
  * Target: 1-2 seconds per property
  * 
- * NEW: Smart location normalization at parse time
+ * NEW: Comprehensive Mumbai locality map (broker-mangled names → canonical)
  * ENHANCED: Automatically detects co-brokers and creates team relationships
  * FIXED: Proper Rent vs Lease classification + Price normalization
  */
 
-// ✅ SMART LOCATION NORMALIZER (matches normalizeLocations.js)
-const CANONICAL_LOCATIONS = {
-  'andheri west': 'Andheri West',
-  'andheri east': 'Andheri East',
-  'bandra west': 'Bandra West',
-  'bandra east': 'Bandra East',
-  'khar west': 'Khar West',
-  'khar east': 'Khar East',
-  'santacruz west': 'Santacruz West',
-  'santacruz east': 'Santacruz East',
-  'versova': 'Versova',
-  'juhu': 'Juhu',
-  'worli': 'Worli',
-  'lower parel': 'Lower Parel',
-  'prabhadevi': 'Prabhadevi',
-  'dadar': 'Dadar',
-  'dadar west': 'Dadar West',
-  'dadar east': 'Dadar East',
-  'mahim': 'Mahim',
-  'bkc': 'BKC',
-  'bandra kurla complex': 'BKC',
-  'powai': 'Powai',
-  'goregaon west': 'Goregaon West',
-  'goregaon east': 'Goregaon East',
-  'goregaon': 'Goregaon West',
-  'malad west': 'Malad West',
-  'malad east': 'Malad East',
-  'malad': 'Malad West',
-  'borivali west': 'Borivali West',
-  'borivali east': 'Borivali East',
-  'borivali': 'Borivali West',
-  'kandivali west': 'Kandivali West',
-  'kandivali east': 'Kandivali East',
-  'kandivali': 'Kandivali West',
-  'chembur': 'Chembur',
-  'vile parle west': 'Vile Parle West',
-  'vile parle east': 'Vile Parle East',
-  'vile parle': 'Vile Parle West',
-  'mumbai': 'Mumbai',
+// ✅ COMPREHENSIVE CANONICAL LOCALITY MAP - Mumbai v1
+const CANONICAL_LOCALITY_MAP = {
+  "bandra w": "Bandra West",
+  "bandra west": "Bandra West",
+  "bandra wrst": "Bandra West",
+  "bndr w": "Bandra West",
+  "bndr": "Bandra West",
+  "bandra": "Bandra West",
+  "bandra e": "Bandra East",
+  "bandra east": "Bandra East",
+  "bkc": "Bandra Kurla Complex",
+  "kurla cplx": "Bandra Kurla Complex",
+  "bandra kurla complex": "Bandra Kurla Complex",
+  "andheri w": "Andheri West",
+  "andheri west": "Andheri West",
+  "andheri wst": "Andheri West",
+  "andheri (w)": "Andheri West",
+  "andheri": "Andheri West",
+  "andheri e": "Andheri East",
+  "andheri east": "Andheri East",
+  "andheri (e)": "Andheri East",
+  "lokhandwala": "Lokhandwala Complex",
+  "lokhandwala complex": "Lokhandwala Complex",
+  "versova": "Versova",
+  "juhu": "Juhu",
+  "santacruz w": "Santacruz West",
+  "santacruz west": "Santacruz West",
+  "santacruz e": "Santacruz East",
+  "santacruz east": "Santacruz East",
+  "santacruz": "Santacruz West",
+  "khar w": "Khar West",
+  "khar west": "Khar West",
+  "khar": "Khar West",
+  "khar e": "Khar East",
+  "khar east": "Khar East",
+  "worli": "Worli",
+  "lower parel": "Lower Parel",
+  "upper worli": "Worli",
+  "mah": "Mahalaxmi",
+  "mahalaxmi": "Mahalaxmi",
+  "parel": "Parel",
+  "parel east": "Parel",
+  "parel west": "Parel",
+  "dadar w": "Dadar West",
+  "dadar west": "Dadar West",
+  "dadar e": "Dadar East",
+  "dadar east": "Dadar East",
+  "dadar": "Dadar West",
+  "matunga": "Matunga",
+  "shivaji park": "Dadar West",
+  "bpt colony": "Worli",
+  "prabhadevi": "Prabhadevi",
+  "powai": "Powai",
+  "vikhroli": "Vikhroli",
+  "vikhroli west": "Vikhroli West",
+  "vikhroli east": "Vikhroli East",
+  "ghatkopar": "Ghatkopar",
+  "ghatkopar west": "Ghatkopar West",
+  "ghatkopar east": "Ghatkopar East",
+  "mulund": "Mulund",
+  "mulund west": "Mulund West",
+  "mulund east": "Mulund East",
+  "thane w": "Thane West",
+  "thane west": "Thane West",
+  "thane": "Thane",
+  "thane east": "Thane East",
+  "chembur": "Chembur",
+  "wadala": "Wadala",
+  "wadala east": "Wadala East",
+  "wadala west": "Wadala West",
+  "sion": "Sion",
+  "colaba": "Colaba",
+  "cuffe parade": "Cuffe Parade",
+  "churchgate": "Churchgate",
+  "marine drive": "Marine Drive",
+  "walkeshwar": "Walkeshwar",
+  "malabar hill": "Malabar Hill",
+  "altamount road": "Altamount Road",
+  "tardeo": "Tardeo",
+  "grant road": "Grant Road",
+  "girgaon": "Girgaon",
+  "charni road": "Charni Road",
+  "byculla": "Byculla",
+  "kamathipura": "Kamathipura",
+  "mazgaon": "Mazgaon",
+  "mumbai central": "Mumbai Central",
+  "sewri": "Sewri",
+  "vile parle": "Vile Parle West",
+  "vile parle west": "Vile Parle West",
+  "vile parle east": "Vile Parle East",
+  "goregaon": "Goregaon West",
+  "goregaon west": "Goregaon West",
+  "goregaon east": "Goregaon East",
+  "malad": "Malad West",
+  "malad west": "Malad West",
+  "malad east": "Malad East",
+  "borivali": "Borivali West",
+  "borivali west": "Borivali West",
+  "borivali (w)": "Borivali West",
+  "borivali east": "Borivali East",
+  "borivali (e)": "Borivali East",
+  "kandivali": "Kandivali West",
+  "kandivali west": "Kandivali West",
+  "kandivali east": "Kandivali East",
+  "mahim": "Mahim",
 };
 
+// ✅ STREET-LEVEL MAPPINGS - Bandra/Khar/Worli Zones
 const SUB_LOCALITIES = {
   'pali hill': 'Bandra West',
   'carter road': 'Bandra West',
@@ -59,65 +126,72 @@ const SUB_LOCALITIES = {
   '15th road': 'Bandra West',
   '16th road': 'Bandra West',
   'perry cross road': 'Bandra West',
+  'waterfield road': 'Bandra West',
+  'turner road': 'Bandra West',
+  'chapel road': 'Bandra West',
   'amboli': 'Andheri West',
   'azad nagar': 'Andheri West',
   'aram nagar': 'Andheri West',
   'yari road': 'Andheri West',
   '7 bungalows': 'Andheri West',
   '7bunglow': 'Andheri West',
-  'lokhandwala': 'Andheri West',
+  'lokhandwala': 'Lokhandwala Complex',
   'akurli': 'Kandivali East',
   'ambedkar road': 'Dadar',
   'anand nagar': 'Andheri East',
   'kalina': 'Santacruz East',
-  'bkc kalina': 'BKC',
+  'bkc kalina': 'Bandra Kurla Complex',
   '9th road': 'Khar West',
+  '11th road': 'Khar West',
+  '14th road': 'Khar West',
   'off linking road': 'Khar West',
+  'khar danda': 'Khar West',
+  'pali naka': 'Bandra West',
+  'bandstand': 'Bandra West',
+  'mount mary': 'Bandra West',
+  'annie besant road': 'Worli',
+  'worli sea face': 'Worli',
+  'worli naka': 'Worli',
+  'lotus': 'Worli',
+  'elphinstone road': 'Lower Parel',
+  'phoenix mills': 'Lower Parel',
+  'senapati bapat marg': 'Lower Parel',
+  'shivaji park': 'Dadar West',
+  'hindmata': 'Dadar East',
+  'mahim causeway': 'Mahim',
+  'sitladevi': 'Mahim',
 };
 
-function normalizeLocation(rawLocation: string | null): string | null {
+function normalizeLocation(rawLocation) {
   if (!rawLocation) return null;
   
+  // Clean the input
   let cleaned = rawLocation
     .trim()
     .replace(/\s+/g, ' ')
     .replace(/[,;]/g, ' ')
     .toLowerCase();
   
-  // Check canonical locations
-  if (CANONICAL_LOCATIONS[cleaned as keyof typeof CANONICAL_LOCATIONS]) {
-    return CANONICAL_LOCATIONS[cleaned as keyof typeof CANONICAL_LOCATIONS];
+  // ✅ STEP 1: Check comprehensive canonical map
+  if (CANONICAL_LOCALITY_MAP[cleaned]) {
+    return CANONICAL_LOCALITY_MAP[cleaned];
   }
   
-  // Check sub-localities
+  // ✅ STEP 2: Check street-level mappings
   for (const [subLocality, mainArea] of Object.entries(SUB_LOCALITIES)) {
     if (cleaned.includes(subLocality)) {
       return mainArea;
     }
   }
   
-  // Extract from compound strings
-  for (const [key, value] of Object.entries(CANONICAL_LOCATIONS)) {
+  // ✅ STEP 3: Extract from compound strings
+  for (const [key, value] of Object.entries(CANONICAL_LOCALITY_MAP)) {
     if (cleaned.includes(key)) {
       return value;
     }
   }
   
-  // Common variations
-  if (cleaned === 'bandra' || cleaned === 'bandra-west' || cleaned === 'bandra (w)') {
-    return 'Bandra West';
-  }
-  if (cleaned === 'andheri' || cleaned === 'andheri-west' || cleaned === 'andheri (w)') {
-    return 'Andheri West';
-  }
-  if (cleaned === 'khar' || cleaned === 'khar-west' || cleaned === 'khar (w)') {
-    return 'Khar West';
-  }
-  if (cleaned === 'santacruz' || cleaned === 'santacruz-west' || cleaned === 'santacruz (w)') {
-    return 'Santacruz West';
-  }
-  
-  // Fallback: capitalize properly
+  // ✅ STEP 4: Fallback - capitalize properly
   return rawLocation
     .trim()
     .split(' ')
@@ -128,15 +202,26 @@ function normalizeLocation(rawLocation: string | null): string | null {
 // Location codes for custom IDs
 const LOCATION_CODES = {
   'bandra west': 'BND', 'bandra east': 'BND', 'bandra': 'BND',
+  'bandra kurla complex': 'BKC',
   'khar west': 'KHR', 'khar east': 'KHR', 'khar': 'KHR',
   'santacruz west': 'SNT', 'santacruz east': 'SNT', 'santacruz': 'SNT',
   'juhu': 'JUH', 'pali hill': 'PNL', 'carter road': 'CTR',
   'andheri west': 'AND', 'andheri east': 'AND', 'andheri': 'AND',
+  'lokhandwala complex': 'LKD',
   'versova': 'VRS', 'worli': 'WRL', 'lower parel': 'LPR',
-  'dadar': 'DDR', 'mahim': 'MHM', 'prabhadevi': 'PRB',
-  'bandra kurla complex': 'BKC', 'bkc': 'BKC', 'powai': 'POW',
-  'goregaon': 'GOR', 'malad': 'MLD', 'borivali': 'BOR',
-  'kandivali': 'KND', 'chembur': 'CHM', 'mumbai': 'MUM'
+  'dadar': 'DDR', 'dadar west': 'DDR', 'dadar east': 'DDR',
+  'mahim': 'MHM', 'prabhadevi': 'PRB', 'mahalaxmi': 'MAH',
+  'bkc': 'BKC', 'powai': 'POW',
+  'goregaon': 'GOR', 'goregaon west': 'GOR', 'goregaon east': 'GOR',
+  'malad': 'MLD', 'malad west': 'MLD', 'malad east': 'MLD',
+  'borivali': 'BOR', 'borivali west': 'BOR', 'borivali east': 'BOR',
+  'kandivali': 'KND', 'kandivali west': 'KND', 'kandivali east': 'KND',
+  'chembur': 'CHM', 'mumbai': 'MUM',
+  'thane': 'THN', 'thane west': 'THN', 'thane east': 'THN',
+  'vile parle': 'VLP', 'vile parle west': 'VLP', 'vile parle east': 'VLP',
+  'ghatkopar': 'GHT', 'mulund': 'MUL', 'vikhroli': 'VIK',
+  'colaba': 'CLB', 'cuffe parade': 'CUF', 'marine drive': 'MAR',
+  'malabar hill': 'MLB', 'altamount road': 'ALT', 'parel': 'PRL'
 };
 
 // Admin numbers that should NOT get broker records
@@ -207,9 +292,9 @@ Return this EXACT JSON structure:
 
 Extract ONLY the main area name, not compound strings:
 - ❌ "9th road Khar West, off Linking Road" → ✅ "Khar West"
-- ❌ "AMBOLI ANDHERI WEST" → ✅ "Andheri West"
+- ❌ "AMBOLI ANDHERI WEST" → ✅ "Andheri West"  
 - ❌ "Bandra - Pali Hill" → ✅ "Bandra West"
-- ❌ "BKC Kalina, Santacruz East" → ✅ "BKC"
+- ❌ "BKC Kalina, Santacruz East" → ✅ "Bandra Kurla Complex"
 - ❌ "Aram nagar 01 yari rd Andheri West" → ✅ "Andheri West"
 
 Use "pocket" field for micro-areas:
@@ -220,7 +305,7 @@ Use "pocket" field for micro-areas:
 **LISTING TYPE CLASSIFICATION:**
 
 1. **RENT** - Residential monthly rentals
-2. **SALE** - Property purchase
+2. **SALE** - Property purchase  
 3. **LEASE** - Commercial long-term contracts ONLY
 
 **MULTIPLE BROKER DETECTION:**
@@ -267,7 +352,7 @@ Return ONLY valid JSON, no markdown`;
         }
       });
 
-      // IMMEDIATELY NORMALIZE LOCATION AFTER EXTRACTION
+      // ✅ IMMEDIATELY NORMALIZE LOCATION AFTER EXTRACTION
       if (extractedData.location) {
         const rawLocation = extractedData.location;
         extractedData.location = normalizeLocation(rawLocation);
@@ -300,40 +385,30 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 400 });
     }
 
-    // STEP 2.1: PRICE NORMALIZATION - Convert to K, Lakhs, Crores format
+    // STEP 2.1: ✅ PRICE NORMALIZATION
     let normalizedPrice = extractedData.price;
     let normalizedPriceUnit = extractedData.price_unit;
 
     if (extractedData.listing_type === 'Rent' || extractedData.listing_type === 'Lease') {
-      // For Rent/Lease: Convert to lakhs if needed
       if (normalizedPriceUnit === 'crores') {
-        normalizedPrice = normalizedPrice * 100; // Convert crores to lakhs
+        normalizedPrice = normalizedPrice * 100;
         normalizedPriceUnit = 'lakhs';
       }
-      
-      // If less than 1 lakh (100K), keep in lakhs with decimals
-      // No conversion to 'K' format - lakhs is standard
     } else if (extractedData.listing_type === 'Sale') {
-      // For Sale: Convert to crores if >= 1 crore
       if (normalizedPriceUnit === 'lakhs' && normalizedPrice >= 100) {
-        normalizedPrice = normalizedPrice / 100; // Convert lakhs to crores
+        normalizedPrice = normalizedPrice / 100;
         normalizedPriceUnit = 'crores';
       }
     }
 
     console.log(`✓ Price normalized: ₹${normalizedPrice}${normalizedPriceUnit === 'crores' ? ' Cr' : 'L'}`);
 
-    // STEP 2.2: VALIDATE LISTING TYPE - Final check
+    // STEP 2.2: ✅ VALIDATE LISTING TYPE
     if (extractedData.property_category === 'Residential') {
-      // Residential monthly rentals should NEVER be "Lease"
       if (extractedData.listing_type === 'Lease') {
         console.warn(`⚠️ Correcting Residential "Lease" → "Rent"`);
         extractedData.listing_type = 'Rent';
       }
-    } else if (extractedData.property_category === 'Commercial') {
-      // Commercial properties can be Rent or Lease
-      // If broker said "rent" but it's commercial, we'll respect it
-      // Only force Lease if explicitly long-term contract mentioned in description
     }
 
     // STEP 2.5: CHECK FOR DUPLICATES
@@ -389,13 +464,12 @@ Return ONLY valid JSON, no markdown`;
     let primaryBrokerName = 'PropAI Team';
     let primaryBrokerPhone = null;
     const allBrokers = await base44.asServiceRole.entities.Broker.list();
-    const createdBrokersInThisRun = []; // TRACK NEWLY CREATED BROKERS IN THIS EXECUTION
+    const createdBrokersInThisRun = [];
     
     try {
       if (!extractedData.brokers || extractedData.brokers.length === 0) {
         console.log('⚠️ No brokers extracted - admin listing');
       } else {
-        // Filter out admin numbers
         const validBrokers = extractedData.brokers.filter(b => {
           const normalizedPhone = b.phone.replace(/\D/g, '');
           const isAdmin = ADMIN_NUMBERS.some(adminNum => 
@@ -407,31 +481,27 @@ Return ONLY valid JSON, no markdown`;
         if (validBrokers.length === 0) {
           console.log('⚠️ All brokers are admin numbers - admin listing');
         } else {
-          // Get or create all brokers
           const brokerRecords = [];
           
           for (const brokerData of validBrokers) {
             const normalizedPhone = brokerData.phone.replace(/\D/g, '');
-            const phoneLast10 = normalizedPhone.slice(-10); // Get last 10 digits for comparison
+            const phoneLast10 = normalizedPhone.slice(-10);
             
-            // Try to find existing broker in all previously fetched brokers AND those created in this run
             let broker = [...allBrokers, ...createdBrokersInThisRun].find(b => {
               if (!b.phone) return false;
               const brokerPhoneLast10 = b.phone.replace(/\D/g, '').slice(-10);
-              return brokerPhoneLast10 === phoneLast10; // EXACT match on last 10 digits
+              return brokerPhoneLast10 === phoneLast10;
             });
 
             if (!broker) {
-              // If no phone match, try by name similarity
               const normalizedName = brokerData.name.toLowerCase().trim();
               broker = [...allBrokers, ...createdBrokersInThisRun].find(b => {
                 const brokerNameNorm = b.name.toLowerCase().trim();
-                return brokerNameNorm === normalizedName; // Exact name match
+                return brokerNameNorm === normalizedName;
               });
             }
 
             if (!broker) {
-              // Create new broker if not found by phone or name
               const currentBrokerCount = allBrokers.length + createdBrokersInThisRun.length;
               const brokerCustomId = `CHR-BRK-${String(currentBrokerCount + 1).padStart(4, '0')}`;
               
@@ -447,10 +517,9 @@ Return ONLY valid JSON, no markdown`;
                 last_activity: new Date().toISOString()
               });
               
-              createdBrokersInThisRun.push(broker); // Add to tracking array for subsequent lookups in this run
+              createdBrokersInThisRun.push(broker);
               console.log(`✓ Created new broker ${brokerCustomId}: ${brokerData.name}`);
             } else {
-              // Update existing broker
               const updatedAreasSet = new Set(broker.areas_covered || []);
               if (extractedData.location) updatedAreasSet.add(extractedData.location);
               
@@ -470,7 +539,6 @@ Return ONLY valid JSON, no markdown`;
             });
           }
 
-          // Set primary broker (first one)
           if (brokerRecords.length > 0) {
             const primaryRecord = brokerRecords.find(b => b.role === 'primary') || brokerRecords[0];
             primaryBroker = primaryRecord.broker;
@@ -480,14 +548,12 @@ Return ONLY valid JSON, no markdown`;
             console.log(`✓ Primary broker: ${primaryBrokerName} (${primaryBroker.custom_id})`);
           }
 
-          // Link secondary brokers as team members
           if (brokerRecords.length > 1) {
             const secondaryBrokers = brokerRecords.filter(b => b.role === 'secondary');
             
             for (const secondaryRecord of secondaryBrokers) {
               const secondaryBroker = secondaryRecord.broker;
               
-              // Update primary broker's team_members
               const currentTeamMembers = primaryBroker.team_members || [];
               const alreadyInTeam = currentTeamMembers.some(m => m.broker_id === secondaryBroker.id);
               
@@ -507,7 +573,6 @@ Return ONLY valid JSON, no markdown`;
                 
                 console.log(`✓ Linked ${secondaryBroker.name} as team member of ${primaryBrokerName}`);
               } else {
-                // Increment co-listing count
                 const updatedTeamMembers = currentTeamMembers.map(m => 
                   m.broker_id === secondaryBroker.id 
                     ? { ...m, co_listing_count: (m.co_listing_count || 0) + 1 }
@@ -521,7 +586,6 @@ Return ONLY valid JSON, no markdown`;
                 console.log(`✓ Incremented co-listing count for ${secondaryBroker.name}`);
               }
               
-              // Update secondary broker's reports_to
               await base44.asServiceRole.entities.Broker.update(secondaryBroker.id, {
                 reports_to: primaryBroker.id
               });
@@ -600,7 +664,7 @@ Return ONLY valid JSON, no markdown`;
             custom_id: buildingCustomId,
             name: extractedData.building_name,
             known_variants: [extractedData.building_name],
-            location: extractedData.location, // USES NORMALIZED LOCATION
+            location: extractedData.location,
             pocket: extractedData.pocket,
             total_listings: 1,
             active_listings: 1,
@@ -615,7 +679,7 @@ Return ONLY valid JSON, no markdown`;
     }
 
     // STEP 5: GENERATE CUSTOM ID & SLUG
-    const locationCode = LOCATION_CODES[extractedData.location.toLowerCase() as keyof typeof LOCATION_CODES] || 'MUM';
+    const locationCode = LOCATION_CODES[extractedData.location.toLowerCase()] || 'MUM';
     const nextSequence = allProperties.length + 1;
     const customId = `CHT-${locationCode}-${String(nextSequence).padStart(4, '0')}`;
 
@@ -659,22 +723,22 @@ Return ONLY valid JSON, no markdown`;
         slug: slug,
         bhk: extractedData.bhk,
         property_category: extractedData.property_category || "Residential",
-        price: normalizedPrice, // USE NORMALIZED PRICE
-        price_unit: normalizedPriceUnit, // USE NORMALIZED UNIT
+        price: normalizedPrice,
+        price_unit: normalizedPriceUnit,
         carpet_area: extractedData.carpet_area,
         built_up_area: extractedData.built_up_area,
         floor: extractedData.floor,
         furnishing: extractedData.furnishing,
         parking: extractedData.parking,
         possession: extractedData.possession,
-        location: extractedData.location, // USES NORMALIZED LOCATION
+        location: extractedData.location,
         pocket: extractedData.pocket,
         building_name: extractedData.building_name,
         building_id: buildingId,
-        listing_type: extractedData.listing_type, // VALIDATED LISTING TYPE
+        listing_type: extractedData.listing_type,
         amenities: extractedData.amenities || [],
         description: extractedData.description,
-        source_text: message, // STORE RAW MESSAGE FOR AUDITING
+        source_text: message,
         ai_title: extractedData.ai_title,
         ai_description: extractedData.ai_description,
         broker_id: primaryBroker ? primaryBroker.id : null,
@@ -731,9 +795,9 @@ Return ONLY valid JSON, no markdown`;
         custom_id: property.custom_id,
         slug: property.slug,
         ai_title: property.ai_title,
-        listing_type: property.listing_type, // SHOW VALIDATED TYPE
-        price: `₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}`, // SHOW NORMALIZED PRICE
-        location: property.location, // SHOWS NORMALIZED LOCATION
+        listing_type: property.listing_type,
+        price: `₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}`,
+        location: property.location,
         broker_custom_id: primaryBroker ? primaryBroker.custom_id : null,
         broker_name: primaryBrokerName,
         team_size: extractedData.brokers ? extractedData.brokers.length : 0,
@@ -753,7 +817,7 @@ Return ONLY valid JSON, no markdown`;
 });
 
 // Helper: String similarity
-function calculateSimilarity(str1: string, str2: string): number {
+function calculateSimilarity(str1, str2) {
   const longer = str1.length > str2.length ? str1 : str2;
   const shorter = str1.length > str2.length ? str2 : str1;
   
@@ -763,29 +827,26 @@ function calculateSimilarity(str1: string, str2: string): number {
   return (longer.length - editDistance) / longer.length;
 }
 
-function levenshteinDistance(str1: string, str2: string): number {
-  const matrix: number[][] = [];
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
 
-  // increment along the first column of each row
   for (let i = 0; i <= str2.length; i++) {
     matrix[i] = [i];
   }
 
-  // increment each column in the first row
   for (let j = 0; j <= str1.length; j++) {
     matrix[0][j] = j;
   }
 
-  // Fill in the rest of the matrix
   for (let i = 1; i <= str2.length; i++) {
     for (let j = 1; j <= str1.length; j++) {
       if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
         matrix[i][j] = matrix[i - 1][j - 1];
       } else {
         matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
         );
       }
     }
