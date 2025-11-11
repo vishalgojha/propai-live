@@ -2,19 +2,128 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * ULTRA-FAST PROPERTY PARSER WITH TEAM DETECTION
+ * ULTRA-FAST PROPERTY PARSER WITH TEAM DETECTION + LOCATION NORMALIZATION
  * Target: 1-2 seconds per property
  * 
- * NEW: Automatically detects co-brokers and creates team relationships
- * ENHANCED: Extracts primary + secondary brokers from listings
+ * NEW: Smart location normalization at parse time
+ * ENHANCED: Automatically detects co-brokers and creates team relationships
  * FIXED: Proper Rent vs Lease classification + Price normalization
- * 
- * TEAM LOGIC:
- * - Primary broker = first name/phone found (gets assigned to property)
- * - Secondary broker(s) = additional names/phones (become team members)
- * - Automatically links them in team_members array
- * - Updates co_listing_count for team members
  */
+
+// ✅ SMART LOCATION NORMALIZER (matches normalizeLocations.js)
+const CANONICAL_LOCATIONS = {
+  'andheri west': 'Andheri West',
+  'andheri east': 'Andheri East',
+  'bandra west': 'Bandra West',
+  'bandra east': 'Bandra East',
+  'khar west': 'Khar West',
+  'khar east': 'Khar East',
+  'santacruz west': 'Santacruz West',
+  'santacruz east': 'Santacruz East',
+  'versova': 'Versova',
+  'juhu': 'Juhu',
+  'worli': 'Worli',
+  'lower parel': 'Lower Parel',
+  'prabhadevi': 'Prabhadevi',
+  'dadar': 'Dadar',
+  'dadar west': 'Dadar West',
+  'dadar east': 'Dadar East',
+  'mahim': 'Mahim',
+  'bkc': 'BKC',
+  'bandra kurla complex': 'BKC',
+  'powai': 'Powai',
+  'goregaon west': 'Goregaon West',
+  'goregaon east': 'Goregaon East',
+  'goregaon': 'Goregaon West',
+  'malad west': 'Malad West',
+  'malad east': 'Malad East',
+  'malad': 'Malad West',
+  'borivali west': 'Borivali West',
+  'borivali east': 'Borivali East',
+  'borivali': 'Borivali West',
+  'kandivali west': 'Kandivali West',
+  'kandivali east': 'Kandivali East',
+  'kandivali': 'Kandivali West',
+  'chembur': 'Chembur',
+  'vile parle west': 'Vile Parle West',
+  'vile parle east': 'Vile Parle East',
+  'vile parle': 'Vile Parle West',
+  'mumbai': 'Mumbai',
+};
+
+const SUB_LOCALITIES = {
+  'pali hill': 'Bandra West',
+  'carter road': 'Bandra West',
+  'linking road': 'Bandra West',
+  'hill road': 'Bandra West',
+  '15th road': 'Bandra West',
+  '16th road': 'Bandra West',
+  'perry cross road': 'Bandra West',
+  'amboli': 'Andheri West',
+  'azad nagar': 'Andheri West',
+  'aram nagar': 'Andheri West',
+  'yari road': 'Andheri West',
+  '7 bungalows': 'Andheri West',
+  '7bunglow': 'Andheri West',
+  'lokhandwala': 'Andheri West',
+  'akurli': 'Kandivali East',
+  'ambedkar road': 'Dadar',
+  'anand nagar': 'Andheri East',
+  'kalina': 'Santacruz East',
+  'bkc kalina': 'BKC',
+  '9th road': 'Khar West',
+  'off linking road': 'Khar West',
+};
+
+function normalizeLocation(rawLocation: string | null): string | null {
+  if (!rawLocation) return null;
+  
+  let cleaned = rawLocation
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[,;]/g, ' ')
+    .toLowerCase();
+  
+  // Check canonical locations
+  if (CANONICAL_LOCATIONS[cleaned as keyof typeof CANONICAL_LOCATIONS]) {
+    return CANONICAL_LOCATIONS[cleaned as keyof typeof CANONICAL_LOCATIONS];
+  }
+  
+  // Check sub-localities
+  for (const [subLocality, mainArea] of Object.entries(SUB_LOCALITIES)) {
+    if (cleaned.includes(subLocality)) {
+      return mainArea;
+    }
+  }
+  
+  // Extract from compound strings
+  for (const [key, value] of Object.entries(CANONICAL_LOCATIONS)) {
+    if (cleaned.includes(key)) {
+      return value;
+    }
+  }
+  
+  // Common variations
+  if (cleaned === 'bandra' || cleaned === 'bandra-west' || cleaned === 'bandra (w)') {
+    return 'Bandra West';
+  }
+  if (cleaned === 'andheri' || cleaned === 'andheri-west' || cleaned === 'andheri (w)') {
+    return 'Andheri West';
+  }
+  if (cleaned === 'khar' || cleaned === 'khar-west' || cleaned === 'khar (w)') {
+    return 'Khar West';
+  }
+  if (cleaned === 'santacruz' || cleaned === 'santacruz-west' || cleaned === 'santacruz (w)') {
+    return 'Santacruz West';
+  }
+  
+  // Fallback: capitalize properly
+  return rawLocation
+    .trim()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 // Location codes for custom IDs
 const LOCATION_CODES = {
@@ -76,8 +185,8 @@ Return this EXACT JSON structure:
   "furnishing": "Unfurnished|Semi-Furnished|Fully Furnished|Bare Shell|Warm Shell|Not Applicable or null",
   "parking": "string or null",
   "possession": "string or null",
-  "location": "string (e.g., 'Bandra West', 'BKC')",
-  "pocket": "string or null (micro-area)",
+  "location": "string (CLEAN MAIN AREA ONLY - e.g., 'Bandra West', 'BKC', 'Andheri West')",
+  "pocket": "string or null (micro-area/street if mentioned)",
   "building_name": "string or null",
   "listing_type": "Sale|Rent|Lease",
   "amenities": ["array of strings"] or null,
@@ -94,99 +203,28 @@ Return this EXACT JSON structure:
   "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words)"
 }
 
-**CRITICAL - LISTING TYPE CLASSIFICATION:**
+**CRITICAL - LOCATION EXTRACTION:**
 
-Use this decision tree:
+Extract ONLY the main area name, not compound strings:
+- ❌ "9th road Khar West, off Linking Road" → ✅ "Khar West"
+- ❌ "AMBOLI ANDHERI WEST" → ✅ "Andheri West"
+- ❌ "Bandra - Pali Hill" → ✅ "Bandra West"
+- ❌ "BKC Kalina, Santacruz East" → ✅ "BKC"
+- ❌ "Aram nagar 01 yari rd Andheri West" → ✅ "Andheri West"
+
+Use "pocket" field for micro-areas:
+- "9th road Khar West" → location: "Khar West", pocket: "9th road"
+- "Amboli Andheri West" → location: "Andheri West", pocket: "Amboli"
+- "Pali Hill Bandra West" → location: "Bandra West", pocket: "Pali Hill"
+
+**LISTING TYPE CLASSIFICATION:**
 
 1. **RENT** - Residential monthly rentals
-   - 1-4 BHK apartments, flats, homes
-   - Price typically: ₹50K - ₹5L per month
-   - Keywords: "rent", "rental", "monthly", "residential"
-   - Example: "2 BHK for rent ₹1.5L/month"
-
 2. **SALE** - Property purchase
-   - Any property for sale/purchase
-   - Price typically: ₹50L - ₹50Cr+
-   - Keywords: "sale", "buy", "purchase", "investment"
-   - Example: "3 BHK for sale ₹3.5 Cr"
-
 3. **LEASE** - Commercial long-term contracts ONLY
-   - Office spaces, retail shops, warehouses
-   - Contract duration: 3-9 years typically
-   - Keywords: "office", "commercial", "retail", "lease agreement"
-   - Example: "Office space lease 3 years ₹4L/month"
 
-**WRONG vs RIGHT:**
-❌ WRONG: "2 BHK apartment ₹1.5L monthly" → Lease
-✅ RIGHT: "2 BHK apartment ₹1.5L monthly" → Rent
-
-❌ WRONG: "3 BHK flat ₹2L rent" → Lease  
-✅ RIGHT: "3 BHK flat ₹2L rent" → Rent
-
-❌ WRONG: "Office space ₹4L/month" → Rent
-✅ RIGHT: "Office space ₹4L/month" → Lease
-
-**RULE OF THUMB:**
-- Residential + Monthly = RENT (not Lease!)
-- Commercial + Long-term = LEASE
-- Any property + One-time payment = SALE
-
-**CRITICAL - MULTIPLE BROKER DETECTION:**
-
-Look for ALL names and phone numbers in the message. If you find 2+ brokers:
-- FIRST broker found = "primary" role (main contact)
-- ADDITIONAL brokers = "secondary" role (team members)
-
-**Common Co-Broker Patterns:**
-
-1. **Two names with phones:**
-   - "Contact Ramesh 9820056789 or Priya 9820094416"
-   - "Ramesh 9820056789 / Priya 9820094416"
-   
-2. **Names separated by 'and':**
-   - "Listed by Ramesh and Priya"
-   - "Contact: Ramesh & Priya Kumar"
-   
-3. **Multiple signatures:**
-   - "Thanks, Ramesh (9820056789) & Priya (9820094416)"
-   - "Regards, Ramesh - Priya"
-   
-4. **Agency + Multiple contacts:**
-   - "Lacasaa Real Estate - Ramesh 98200... / Priya 98201..."
-   - "From: Ramesh & Priya | Lacasaa"
-
-**Extraction Rules:**
-- Extract EVERY unique name + phone combination
-- If only one name but multiple phones → create entry for each phone with same name
-- If multiple names but one phone → only primary broker
-- Mark the FIRST broker as "primary", rest as "secondary"
-- Always include 91 country code prefix
-- Agency name should be same for all brokers if mentioned once
-
-**EXAMPLES:**
-
-Message: "2bhk Bandra, contact Ramesh 9820056789 or Priya 9820094416"
-→ brokers: [
-  {"name": "Ramesh", "phone": "919820056789", "agency": null, "role": "primary"},
-  {"name": "Priya", "phone": "919820094416", "agency": null, "role": "secondary"}
-]
-
-Message: "3bhk available. Lacasaa Real Estate - Ramesh 98200xxx / Priya 98201xxx"
-→ brokers: [
-  {"name": "Ramesh", "phone": "9198200xxx", "agency": "Lacasaa Real Estate", "role": "primary"},
-  {"name": "Priya", "phone": "9198201xxx", "agency": "Lacasaa Real Estate", "role": "secondary"}
-]
-
-Message: "Office space BKC. Call Kapil 9773757759"
-→ brokers: [
-  {"name": "Kapil", "phone": "919773757759", "agency": null, "role": "primary"}
-]
-
-**IF NO BROKERS FOUND:**
-- Return empty brokers array: []
-- We'll handle this as admin listing
-
-**For ai_title and ai_description:** Same rules as before - descriptive title, 4-5 sentences, 60-80 words, no marketing fluff.
+**MULTIPLE BROKER DETECTION:**
+Look for ALL names and phone numbers. First = primary, rest = secondary.
 
 Return ONLY valid JSON, no markdown`;
 
@@ -229,7 +267,17 @@ Return ONLY valid JSON, no markdown`;
         }
       });
 
-      console.log(`✓ Extracted ${extractedData.brokers?.length || 0} broker(s) from message`);
+      // IMMEDIATELY NORMALIZE LOCATION AFTER EXTRACTION
+      if (extractedData.location) {
+        const rawLocation = extractedData.location;
+        extractedData.location = normalizeLocation(rawLocation);
+        
+        if (rawLocation !== extractedData.location) {
+          console.log(`✓ Normalized location: "${rawLocation}" → "${extractedData.location}"`);
+        }
+      }
+
+      console.log(`✓ Extracted ${extractedData.brokers?.length || 0} broker(s), location: ${extractedData.location}`);
       
     } catch (llmError) {
       return Response.json({ 
@@ -252,7 +300,7 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 400 });
     }
 
-    // STEP 2.1: ✅ PRICE NORMALIZATION - Convert to K, Lakhs, Crores format
+    // STEP 2.1: PRICE NORMALIZATION - Convert to K, Lakhs, Crores format
     let normalizedPrice = extractedData.price;
     let normalizedPriceUnit = extractedData.price_unit;
 
@@ -275,7 +323,7 @@ Return ONLY valid JSON, no markdown`;
 
     console.log(`✓ Price normalized: ₹${normalizedPrice}${normalizedPriceUnit === 'crores' ? ' Cr' : 'L'}`);
 
-    // STEP 2.2: ✅ VALIDATE LISTING TYPE - Final check
+    // STEP 2.2: VALIDATE LISTING TYPE - Final check
     if (extractedData.property_category === 'Residential') {
       // Residential monthly rentals should NEVER be "Lease"
       if (extractedData.listing_type === 'Lease') {
@@ -552,7 +600,7 @@ Return ONLY valid JSON, no markdown`;
             custom_id: buildingCustomId,
             name: extractedData.building_name,
             known_variants: [extractedData.building_name],
-            location: extractedData.location,
+            location: extractedData.location, // USES NORMALIZED LOCATION
             pocket: extractedData.pocket,
             total_listings: 1,
             active_listings: 1,
@@ -567,7 +615,7 @@ Return ONLY valid JSON, no markdown`;
     }
 
     // STEP 5: GENERATE CUSTOM ID & SLUG
-    const locationCode = LOCATION_CODES[extractedData.location.toLowerCase()] || 'MUM';
+    const locationCode = LOCATION_CODES[extractedData.location.toLowerCase() as keyof typeof LOCATION_CODES] || 'MUM';
     const nextSequence = allProperties.length + 1;
     const customId = `CHT-${locationCode}-${String(nextSequence).padStart(4, '0')}`;
 
@@ -611,22 +659,22 @@ Return ONLY valid JSON, no markdown`;
         slug: slug,
         bhk: extractedData.bhk,
         property_category: extractedData.property_category || "Residential",
-        price: normalizedPrice, // ✅ USE NORMALIZED PRICE
-        price_unit: normalizedPriceUnit, // ✅ USE NORMALIZED UNIT
+        price: normalizedPrice, // USE NORMALIZED PRICE
+        price_unit: normalizedPriceUnit, // USE NORMALIZED UNIT
         carpet_area: extractedData.carpet_area,
         built_up_area: extractedData.built_up_area,
         floor: extractedData.floor,
         furnishing: extractedData.furnishing,
         parking: extractedData.parking,
         possession: extractedData.possession,
-        location: extractedData.location,
+        location: extractedData.location, // USES NORMALIZED LOCATION
         pocket: extractedData.pocket,
         building_name: extractedData.building_name,
         building_id: buildingId,
-        listing_type: extractedData.listing_type, // ✅ VALIDATED LISTING TYPE
+        listing_type: extractedData.listing_type, // VALIDATED LISTING TYPE
         amenities: extractedData.amenities || [],
         description: extractedData.description,
-        source_text: message, // ✅ STORE RAW MESSAGE FOR AUDITING
+        source_text: message, // STORE RAW MESSAGE FOR AUDITING
         ai_title: extractedData.ai_title,
         ai_description: extractedData.ai_description,
         broker_id: primaryBroker ? primaryBroker.id : null,
@@ -638,7 +686,7 @@ Return ONLY valid JSON, no markdown`;
       };
 
       property = await base44.asServiceRole.entities.Property.create(propertyData);
-      console.log(`✓ Created property ${customId} with primary broker: ${primaryBrokerName}`);
+      console.log(`✓ Created property ${customId} with normalized location: ${extractedData.location}`);
     } catch (propertyError) {
       return Response.json({ 
         success: false,
@@ -674,7 +722,7 @@ Return ONLY valid JSON, no markdown`;
       }).catch(err => console.warn('PropAI sync failed:', err.message))
     ]).catch(err => console.warn('Background tasks failed:', err.message));
 
-    console.log(`✅ Property parsed successfully`);
+    console.log(`✅ Property parsed successfully with clean location: ${extractedData.location}`);
 
     return Response.json({
       success: true,
@@ -683,8 +731,9 @@ Return ONLY valid JSON, no markdown`;
         custom_id: property.custom_id,
         slug: property.slug,
         ai_title: property.ai_title,
-        listing_type: property.listing_type, // ✅ SHOW VALIDATED TYPE
-        price: `₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}`, // ✅ SHOW NORMALIZED PRICE
+        listing_type: property.listing_type, // SHOW VALIDATED TYPE
+        price: `₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}`, // SHOW NORMALIZED PRICE
+        location: property.location, // SHOWS NORMALIZED LOCATION
         broker_custom_id: primaryBroker ? primaryBroker.custom_id : null,
         broker_name: primaryBrokerName,
         team_size: extractedData.brokers ? extractedData.brokers.length : 0,
@@ -704,7 +753,7 @@ Return ONLY valid JSON, no markdown`;
 });
 
 // Helper: String similarity
-function calculateSimilarity(str1, str2) {
+function calculateSimilarity(str1: string, str2: string): number {
   const longer = str1.length > str2.length ? str1 : str2;
   const shorter = str1.length > str2.length ? str2 : str1;
   
@@ -714,26 +763,29 @@ function calculateSimilarity(str1, str2) {
   return (longer.length - editDistance) / longer.length;
 }
 
-function levenshteinDistance(str1, str2) {
-  const matrix = [];
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix: number[][] = [];
 
+  // increment along the first column of each row
   for (let i = 0; i <= str2.length; i++) {
     matrix[i] = [i];
   }
 
+  // increment each column in the first row
   for (let j = 0; j <= str1.length; j++) {
     matrix[0][j] = j;
   }
 
+  // Fill in the rest of the matrix
   for (let i = 1; i <= str2.length; i++) {
     for (let j = 1; j <= str1.length; j++) {
       if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
         matrix[i][j] = matrix[i - 1][j - 1];
       } else {
         matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
         );
       }
     }
