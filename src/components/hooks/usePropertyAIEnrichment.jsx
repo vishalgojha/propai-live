@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getFeatureWithOverride } from '../../config/features';
 
 /**
  * Hook to automatically enrich properties with AI-generated titles and descriptions
  * Runs on-demand when properties are displayed (no heavy backend backfill needed)
+ * 
+ * Features:
+ * - Feature flag support (client-side vs backend)
+ * - Parity logging for monitoring
+ * - Session caching to prevent re-enrichment
  */
 export function usePropertyAIEnrichment(property) {
   const [enrichedProperty, setEnrichedProperty] = useState(property);
@@ -21,7 +27,7 @@ export function usePropertyAIEnrichment(property) {
       return;
     }
 
-    // Only enrich once per property
+    // Only enrich once per property per session
     const enrichmentKey = `enriched-${property.id}`;
     if (sessionStorage.getItem(enrichmentKey)) {
       setEnrichedProperty(property);
@@ -29,11 +35,21 @@ export function usePropertyAIEnrichment(property) {
     }
 
     const enrichProperty = async () => {
+      const startTime = performance.now();
+      
       try {
         setIsEnriching(true);
 
-        // Generate AI content
-        const prompt = `Generate a property listing title and description for this Mumbai property:
+        // Check feature flag
+        const useClientAI = getFeatureWithOverride('useClientAI');
+        const enableParityLogging = getFeatureWithOverride('enableParityLogging');
+
+        let aiTitle = property.ai_title;
+        let aiDescription = property.ai_description;
+
+        if (useClientAI) {
+          // ✅ CLIENT-SIDE AI GENERATION
+          const prompt = `Generate a property listing title and description for this Mumbai property:
 
 **Property Details:**
 - BHK: ${property.bhk}
@@ -64,25 +80,55 @@ export function usePropertyAIEnrichment(property) {
 
 Return ONLY the JSON, no other text.`;
 
-        const response = await base44.integrations.Core.InvokeLLM({
-          prompt,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              description: { type: "string" }
-            },
-            required: ["title", "description"]
+          const response = await base44.integrations.Core.InvokeLLM({
+            prompt,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                description: { type: "string" }
+              },
+              required: ["title", "description"]
+            }
+          });
+
+          aiTitle = response.title;
+          aiDescription = response.description;
+
+          // ✅ PARITY LOGGING (non-blocking)
+          if (enableParityLogging) {
+            const enrichmentTime = performance.now() - startTime;
+            
+            // Fire-and-forget parity log
+            base44.functions.invoke('parityLog', {
+              property_id: property.id,
+              client_title: aiTitle,
+              client_description: aiDescription,
+              enrichment_time_ms: Math.round(enrichmentTime),
+              session_id: sessionStorage.getItem('session_id') || Math.random().toString(36).substring(2)
+            }).catch(err => {
+              // Silent fail - don't block user experience
+              console.warn('Parity logging failed:', err);
+            });
           }
-        });
+
+        } else {
+          // ⚠️ FALLBACK: Backend function (if still exists)
+          const response = await base44.functions.invoke('generatePropertyDescriptions', {
+            property_id: property.id
+          });
+          
+          aiTitle = response.data.title;
+          aiDescription = response.data.description;
+        }
 
         // Update property with AI content
         const updateData = {};
-        if (needsTitle && response.title) {
-          updateData.ai_title = response.title;
+        if (needsTitle && aiTitle) {
+          updateData.ai_title = aiTitle;
         }
-        if (needsDescription && response.description) {
-          updateData.ai_description = response.description;
+        if (needsDescription && aiDescription) {
+          updateData.ai_description = aiDescription;
         }
 
         if (Object.keys(updateData).length > 0) {
@@ -105,7 +151,8 @@ Return ONLY the JSON, no other text.`;
     };
 
     // Debounce enrichment (only if property is visible for 500ms)
-    const timer = setTimeout(enrichProperty, 500);
+    const debounceMs = getFeatureWithOverride('debounceEnrichmentMs') || 500;
+    const timer = setTimeout(enrichProperty, debounceMs);
     return () => clearTimeout(timer);
 
   }, [property?.id]);

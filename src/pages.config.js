@@ -25,6 +25,7 @@ import FAQ from './pages/FAQ';
 import DeveloperDirectory from './pages/DeveloperDirectory';
 import DeveloperProfile from './pages/DeveloperProfile';
 import SocialListing from './pages/SocialListing';
+import ParityReport from './pages/ParityReport';
 import Layout from './Layout.jsx';
 
 
@@ -56,6 +57,7 @@ export const PAGES = {
     "DeveloperDirectory": DeveloperDirectory,
     "DeveloperProfile": DeveloperProfile,
     "SocialListing": SocialListing,
+    "ParityReport": ParityReport,
 }
 
 export const pagesConfig = {
