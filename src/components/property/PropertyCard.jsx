@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Image as ImageIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -39,7 +38,8 @@ export default function PropertyCard({ property, onViewDetails }) {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [developer, setDeveloper] = useState(null); // ✅ NEW: Developer state
+  const [developer, setDeveloper] = useState(null);
+  const [isGeneratingSocialImage, setIsGeneratingSocialImage] = useState(false);
 
   // Load current user
   useEffect(() => {
@@ -54,16 +54,15 @@ export default function PropertyCard({ property, onViewDetails }) {
     loadUser();
   }, []);
 
-  // ✅ NEW: Fetch developer if building has developer_id
+  // Fetch developer if building has developer_id
   useEffect(() => {
     const loadDeveloper = async () => {
       if (!property?.building_id) {
-        setDeveloper(null); // Reset developer if no building_id
+        setDeveloper(null);
         return;
       }
       
       try {
-        // Fetch building to get developer_id
         const buildings = await base44.entities.Building.list();
         const building = buildings.find(b => b.id === property.building_id);
         
@@ -76,7 +75,7 @@ export default function PropertyCard({ property, onViewDetails }) {
         }
       } catch (error) {
         console.error('Failed to load developer:', error);
-        setDeveloper(null); // Reset developer on error
+        setDeveloper(null);
       }
     };
     
@@ -111,13 +110,9 @@ export default function PropertyCard({ property, onViewDetails }) {
   const canRefresh = () => {
     if (!currentUser) return false;
     
-    // Admin can refresh any property
     if (currentUser.role === 'admin') return true;
     
-    // Broker can refresh their own properties
-    // Check if user's email matches broker contact (for registered brokers)
     if (currentUser.email && property.broker_contact) {
-      // Normalize phone numbers for comparison
       const normalizedUserPhone = currentUser.email.replace(/\D/g, '');
       const normalizedBrokerPhone = property.broker_contact.replace(/\D/g, '');
       if (normalizedUserPhone === normalizedBrokerPhone) return true;
@@ -158,10 +153,50 @@ export default function PropertyCard({ property, onViewDetails }) {
     setIsRefreshing(false);
   };
 
+  // NEW: Generate Social Image
+  const handleGenerateSocialImage = async (e) => {
+    e.stopPropagation();
+    
+    setIsGeneratingSocialImage(true);
+    const loadingToast = toast.loading('📸 Generating social image...', {
+      description: 'This may take 5-10 seconds'
+    });
+
+    try {
+      const response = await base44.functions.invoke('generatePropertySocialImage', {
+        property_id: property.id
+      });
+
+      if (response.data.success) {
+        toast.dismiss(loadingToast);
+        
+        // Copy URL to clipboard
+        await navigator.clipboard.writeText(response.data.image_url);
+        
+        toast.success('✅ Social Image Generated!', {
+          description: 'Image URL copied to clipboard',
+          duration: 5000,
+          action: {
+            label: 'View',
+            onClick: () => window.open(response.data.image_url, '_blank')
+          }
+        });
+      } else {
+        throw new Error(response.data.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('❌ Generation Failed', {
+        description: error.message
+      });
+    } finally {
+      setIsGeneratingSocialImage(false);
+    }
+  };
+
   // Track property contact when WhatsApp is clicked
   const trackPropertyContact = async (property, contactedVia) => {
     try {
-      // Local storage tracking (for user preferences)
       const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
       contactHistory.push({
         id: property.id,
@@ -176,17 +211,15 @@ export default function PropertyCard({ property, onViewDetails }) {
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
 
-      // Server-side tracking (for analytics)
       await base44.functions.invoke('trackContactInteraction', {
         property_id: property.id,
         broker_id: property.broker_id || null,
         interaction_type: 'whatsapp',
         broker_contact: property.broker_contact || null,
-        contacted_via: contactedVia // 'broker' or 'propai_office'
+        contacted_via: contactedVia
       });
     } catch (error) {
       console.error('Failed to track contact:', error);
-      // Don't block the user flow if tracking fails
     }
   };
 
@@ -219,29 +252,19 @@ export default function PropertyCard({ property, onViewDetails }) {
   const handleWhatsAppContact = async (e) => {
     e.stopPropagation();
     
-    // Helper function to normalize Indian phone numbers
     const normalizeIndianPhone = (phone) => {
       if (!phone) return null;
-      
-      // Remove all non-digits
       let cleaned = phone.replace(/\D/g, '');
-      
-      // Extract last 10 digits (Indian mobile is 10 digits)
       cleaned = cleaned.slice(-10);
-      
-      // Validate: must be exactly 10 digits starting with 6-9
       if (cleaned.length === 10 && cleaned[0] >= '6' && cleaned[0] <= '9') {
-        return '91' + cleaned; // Return with country code for WhatsApp
+        return '91' + cleaned;
       }
-      
       return null;
     };
     
-    // Determine phone and contact name
     const rawBrokerContact = property.broker_contact;
     const normalizedBrokerContact = normalizeIndianPhone(rawBrokerContact);
     
-    // FIX: NEVER use PropAI fallback contact - if no valid broker, show error
     if (!normalizedBrokerContact) {
       toast.error('⚠️ No contact available', {
         description: 'This property has no valid broker contact. Please contact admin.',
@@ -252,11 +275,8 @@ export default function PropertyCard({ property, onViewDetails }) {
     }
     
     const primaryContact = normalizedBrokerContact;
-    
-    // Use cached broker_name if available, otherwise use generic name
     const contactName = property.broker_name || 'Broker';
 
-    // Track the contact
     await trackPropertyContact(property, 'broker');
     
     const propertyLink = getPropertyUrl();
@@ -360,7 +380,6 @@ export default function PropertyCard({ property, onViewDetails }) {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  // FIX: Only show broker's first name, no fallback to PropAI
   const getFirstName = (fullName) => {
     if (!fullName) return 'Broker';
     return fullName.split(' ')[0];
@@ -370,13 +389,11 @@ export default function PropertyCard({ property, onViewDetails }) {
     ? getFirstName(property.broker_name)
     : 'Broker';
 
-  // Check if description is long (more than 120 characters)
   const isDescriptionLong = property.ai_description && property.ai_description.length > 120;
   const displayedDescription = isDescriptionLong && !descriptionExpanded 
     ? property.ai_description.substring(0, 120) + '...' 
     : property.ai_description;
 
-  // ✅ NEW: Get tier badge color
   const getTierBadgeClass = (tier) => {
     switch (tier) {
       case "Tier 1": return "bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0";
@@ -385,6 +402,8 @@ export default function PropertyCard({ property, onViewDetails }) {
       default: return "bg-gray-500 text-white border-0";
     }
   };
+
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
     <>
@@ -398,7 +417,7 @@ export default function PropertyCard({ property, onViewDetails }) {
       >
         {/* Main Content Section */}
         <div className="p-4">
-          {/* Badges, Share and Refresh at top */}
+          {/* Badges, Share and Admin Actions at top */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex flex-wrap gap-1.5">
               {property.listing_type && (
@@ -406,7 +425,6 @@ export default function PropertyCard({ property, onViewDetails }) {
                   {property.listing_type}
                 </Badge>
               )}
-              {/* ✅ NEW: Developer Tier Badge */}
               {developer?.tier && (
                 <Badge className={`${getTierBadgeClass(developer.tier)} font-bold text-xs shadow-sm`}>
                   {developer.tier}
@@ -421,6 +439,22 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
             
             <div className="flex items-center gap-1">
+              {/* NEW: Generate Social Image Button - Admin Only */}
+              {isAdmin && (
+                <button
+                  onClick={handleGenerateSocialImage}
+                  disabled={isGeneratingSocialImage}
+                  className={`flex items-center text-xs p-1.5 rounded-lg transition-colors ${
+                    isGeneratingSocialImage
+                      ? 'text-purple-400 cursor-wait'
+                      : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
+                  }`}
+                  title="Generate social share image"
+                >
+                  <ImageIcon className={`w-3.5 h-3.5 ${isGeneratingSocialImage ? 'animate-pulse' : ''}`} />
+                </button>
+              )}
+              
               <button
                 onClick={handleShare}
                 className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
@@ -428,7 +462,6 @@ export default function PropertyCard({ property, onViewDetails }) {
                 <Share2 className="w-3.5 h-3.5" />
               </button>
               
-              {/* Refresh Button - Only for owner/admin */}
               {canRefresh() && (
                 <button
                   onClick={handleRefresh}
@@ -450,7 +483,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             {property.ai_title || `${property.bhk} in ${property.location}`}
           </h3>
 
-          {/* ✅ ENHANCED: Building Name Chip with Developer Info */}
+          {/* Building Name Chip with Developer Info */}
           {property.building_name && property.building_id && (
             <button
               onClick={(e) => handleBuildingClick(e, property.building_id)}
@@ -461,7 +494,6 @@ export default function PropertyCard({ property, onViewDetails }) {
                 <span className="text-xs font-semibold text-indigo-700 group-hover/building:text-indigo-800">
                   {property.building_name}
                 </span>
-                {/* ✅ NEW: Show developer name if available */}
                 {developer?.name && (
                   <span className="text-xs text-indigo-600/70">
                     by {developer.name}
@@ -531,7 +563,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           )}
 
-          {/* AMENITIES - Show top 3 - PURPLE THEME */}
+          {/* AMENITIES */}
           {property.amenities && property.amenities.length > 0 && (
             <div className="mb-3 flex items-center gap-1.5 flex-wrap">
               <Sparkles className="w-3.5 h-3.5 text-purple-500" />
@@ -563,7 +595,7 @@ export default function PropertyCard({ property, onViewDetails }) {
             </div>
           </div>
 
-          {/* WhatsApp Contact Button - ONLY BUTTON, with FIRST NAME only */}
+          {/* WhatsApp Contact Button */}
           <Button
             onClick={handleWhatsAppContact}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md"
