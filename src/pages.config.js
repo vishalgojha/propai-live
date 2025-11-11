@@ -27,6 +27,7 @@ import SocialListing from './pages/SocialListing';
 import ParityReport from './pages/ParityReport';
 import LiveDashboard from './pages/LiveDashboard';
 import InteractionLogs from './pages/InteractionLogs';
+import AIHub from './pages/AIHub';
 import Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "ParityReport": ParityReport,
     "LiveDashboard": LiveDashboard,
     "InteractionLogs": InteractionLogs,
+    "AIHub": AIHub,
 }
 
 export const pagesConfig = {

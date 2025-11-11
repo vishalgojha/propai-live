@@ -939,7 +939,7 @@ Return ONLY the JSON, nothing else.`;
         `Found location inconsistencies:\n` +
         `• ${summary.properties_to_update} properties to update\n` +
         `• ${summary.buildings_to_update} buildings to update\n` +
-        `• ${summary.requirements_to_update} requirements to update\n\n` +
+        `• ${summary.requirements_to_update} requirements to update\n` +
         `Will reduce ${summary.unique_locations_before} locations to ${summary.unique_locations_after} (${summary.reduction} duplicates removed)\n\n` +
         `Fix now?`
       );
@@ -1869,6 +1869,16 @@ Return ONLY the JSON, nothing else.`;
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* NEW: AI Hub Button */}
+              <Button
+                onClick={() => navigate(createPageUrl("AIHub"))}
+                size="sm"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Hub
+              </Button>
+
               {/* NEW: Live Dashboard Button */}
               <Button
                 onClick={() => navigate(createPageUrl("LiveDashboard"))}
