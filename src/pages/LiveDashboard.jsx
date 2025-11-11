@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +18,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import { toast, Toaster } from "sonner";
-import LiveActivityFeed from "../components/dashboard/LiveActivityFeed"; // NEW IMPORT
+import LiveActivityFeed from "../components/dashboard/LiveActivityFeed";
 
 export default function LiveDashboard() {
   const navigate = useNavigate();
@@ -64,14 +63,6 @@ export default function LiveDashboard() {
 
     return () => clearInterval(interval);
   }, []);
-
-  // ✅ NEW: Track previous data for change detection (not fully utilized in this snippet but kept as per outline)
-  const [previousData, setPreviousData] = useState({
-    properties: [],
-    brokers: [],
-    requirements: [],
-    interactions: []
-  });
 
   // Real-time data queries (30s refresh)
   const { data: properties = [], refetch: refetchProperties } = useQuery({
@@ -229,7 +220,7 @@ export default function LiveDashboard() {
     return Object.entries(types).map(([name, value]) => ({ name, value }));
   }, [properties]);
 
-  // ✅ NEW: Generate detailed activity feed
+  // Generate detailed activity feed
   const detailedActivities = useMemo(() => {
     const activities = [];
 
@@ -283,11 +274,7 @@ export default function LiveDashboard() {
     // Check for high-trust broker achievements
     brokers.forEach(b => {
       if ((b.trust_score || 0) >= 85 && b.updated_date) {
-        // Consider an achievement "new" if updated within the last 24 hours.
-        // This is a simple heuristic; more robust would be comparing with previousData.
         const wasRecentlyUpdated = new Date(b.updated_date) > new Date(Date.now() - 24 * 60 * 60 * 1000);
-        // Also check if they *just* crossed the threshold (would require previousData comparison)
-        // For now, we'll just show it if recently updated and meets criteria
         if (wasRecentlyUpdated && b.trust_score !== null && b.trust_score >= 85) {
           activities.push({
             id: `broker-trust-${b.id}`,
@@ -325,27 +312,27 @@ export default function LiveDashboard() {
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-32">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-24 md:pb-8">
       <Toaster position="top-center" richColors closeButton />
 
-      {/* Header */}
+      {/* ✅ FIXED: Responsive Header */}
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">Live Dashboard</h1>
+                <h1 className="text-lg md:text-xl font-bold text-slate-900">Live Dashboard</h1>
                 <p className="text-xs text-slate-500">Real-time platform analytics</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Auto-refresh countdown */}
-              <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
-                <Clock className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600 bg-slate-100 px-2 md:px-3 py-1.5 rounded-lg">
+                <Clock className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="font-mono">{countdown}s</span>
               </div>
 
@@ -354,10 +341,10 @@ export default function LiveDashboard() {
                 onClick={handleManualRefresh}
                 size="sm"
                 variant="outline"
-                className="border-purple-300 hover:bg-purple-50"
+                className="border-purple-300 hover:bg-purple-50 text-xs md:text-sm"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh Now
+                <RefreshCw className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Refresh</span>
               </Button>
 
               {/* Back to Admin */}
@@ -365,43 +352,44 @@ export default function LiveDashboard() {
                 onClick={() => navigate(createPageUrl("Admin"))}
                 size="sm"
                 variant="outline"
+                className="text-xs md:text-sm"
               >
-                Back to Admin
+                Back
               </Button>
             </div>
           </div>
 
           {/* Last update */}
           <p className="text-xs text-slate-500 mt-2">
-            Last updated: {format(lastUpdate, "MMM dd, yyyy 'at' HH:mm:ss")}
+            Updated: {format(lastUpdate, "HH:mm:ss")}
           </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
 
-        {/* Key Metrics - Top Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* ✅ FIXED: Responsive Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {/* Active Properties */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                  <Home className="w-6 h-6 text-white" />
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <Home className="w-5 h-5 md:w-6 md:h-6 text-white" />
                 </div>
-                <Badge className="bg-blue-600 text-white">
+                <Badge className="bg-blue-600 text-white text-xs">
                   {metrics.todayProperties} today
                 </Badge>
               </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                 {metrics.activeProperties}
               </p>
-              <p className="text-sm text-slate-600 mb-3">Active Properties</p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Active Properties</p>
               <div className="flex items-center gap-2 text-xs">
                 {metrics.propertyTrend > 0 ? (
                   <>
@@ -434,23 +422,23 @@ export default function LiveDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-white" />
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                  <Users className="w-5 h-5 md:w-6 md:h-6 text-white" />
                 </div>
-                <Badge className="bg-amber-500 text-white">
-                  <Shield className="w-3 h-3 mr-1" />
-                  {metrics.highTrustBrokers} trusted
+                <Badge className="bg-amber-500 text-white text-xs flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  {metrics.highTrustBrokers}
                 </Badge>
               </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                 {metrics.activeBrokers}
               </p>
-              <p className="text-sm text-slate-600 mb-3">Active Brokers</p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Active Brokers</p>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Star className="w-3 h-3 text-amber-500" />
-                {((metrics.highTrustBrokers / metrics.totalBrokers) * 100).toFixed(0)}% high trust
+                {((metrics.highTrustBrokers / metrics.totalBrokers) * 100).toFixed(0)}% trusted
               </div>
             </Card>
           </motion.div>
@@ -461,19 +449,19 @@ export default function LiveDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
-                  <Target className="w-6 h-6 text-white" />
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 md:w-6 md:h-6 text-white" />
                 </div>
-                <Badge className="bg-emerald-600 text-white">
+                <Badge className="bg-emerald-600 text-white text-xs">
                   Active
                 </Badge>
               </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                 {metrics.activeRequirements}
               </p>
-              <p className="text-sm text-slate-600 mb-3">Client Requirements</p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Requirements</p>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <FileText className="w-3 h-3" />
                 {metrics.totalRequirements} total
@@ -487,19 +475,19 @@ export default function LiveDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Card className="p-6 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="w-6 h-6 text-white" />
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-600 rounded-xl flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
                 </div>
-                <Badge className="bg-orange-600 text-white">
-                  {metrics.todayInteractions} today
+                <Badge className="bg-orange-600 text-white text-xs">
+                  {metrics.todayInteractions}
                 </Badge>
               </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                 {metrics.totalInquiries}
               </p>
-              <p className="text-sm text-slate-600 mb-3">Total Inquiries</p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Inquiries</p>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Eye className="w-3 h-3" />
                 {metrics.totalViews.toLocaleString()} views
@@ -508,15 +496,15 @@ export default function LiveDashboard() {
           </motion.div>
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ✅ FIXED: Responsive Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Weekly Activity Chart */}
-          <Card className="p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              7-Day Activity Trend
+          <Card className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+              <span className="text-sm md:text-base">7-Day Activity</span>
             </h3>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={weeklyActivity}>
                 <defs>
                   <linearGradient id="colorProperties" x1="0" y1="0" x2="0" y2="1">
@@ -529,10 +517,10 @@ export default function LiveDashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} />
+                <XAxis dataKey="date" stroke="#64748b" fontSize={10} />
+                <YAxis stroke="#64748b" fontSize={10} />
                 <Tooltip
-                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Area
                   type="monotone"
@@ -555,20 +543,20 @@ export default function LiveDashboard() {
           </Card>
 
           {/* Listing Type Breakdown */}
-          <Card className="p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-purple-600" />
-              Listing Type Distribution
+          <Card className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+              <span className="text-sm md:text-base">Listing Types</span>
             </h3>
-            <div className="flex items-center justify-between">
-              <ResponsiveContainer width="50%" height={250}>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
                     data={listingTypeBreakdown}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
+                    innerRadius={50}
+                    outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
                   >
@@ -579,7 +567,7 @@ export default function LiveDashboard() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 space-y-2 w-full md:w-auto">
                 {listingTypeBreakdown.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -587,9 +575,9 @@ export default function LiveDashboard() {
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                       />
-                      <span className="text-sm text-slate-700">{item.name}</span>
+                      <span className="text-xs md:text-sm text-slate-700">{item.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                    <span className="text-xs md:text-sm font-bold text-slate-900">{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -597,28 +585,28 @@ export default function LiveDashboard() {
           </Card>
         </div>
 
-        {/* Bottom Row - UPDATED: Replace old activity feed with new component */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ✅ FIXED: Responsive Bottom Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Top Locations */}
-          <Card className="p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-green-600" />
-              Top Locations
+          <Card className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+              <MapPin className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+              <span className="text-sm md:text-base">Top Locations</span>
             </h3>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <BarChart data={topLocations} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis type="number" stroke="#64748b" fontSize={12} />
-                <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={12} width={100} />
+                <XAxis type="number" stroke="#64748b" fontSize={10} />
+                <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} width={80} />
                 <Tooltip
-                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Bar dataKey="count" fill="#10b981" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
 
-          {/* ✅ NEW: Enhanced Live Activity Feed */}
+          {/* Live Activity Feed */}
           <LiveActivityFeed
             activities={detailedActivities}
             isLoading={false}
@@ -626,40 +614,40 @@ export default function LiveDashboard() {
           />
         </div>
 
-        {/* System Health Indicators */}
-        <Card className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-blue-600" />
-            System Health
+        {/* ✅ FIXED: Responsive System Health */}
+        <Card className="p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+            <Activity className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+            <span className="text-sm md:text-base">System Health</span>
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-blue-50 rounded-xl">
-              <p className="text-sm text-slate-600 mb-1">Data Quality</p>
-              <p className="text-2xl font-bold text-blue-600">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="p-3 md:p-4 bg-blue-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Data Quality</p>
+              <p className="text-xl md:text-2xl font-bold text-blue-600">
                 {metrics.photoCompletionRate.toFixed(0)}%
               </p>
-              <p className="text-xs text-slate-500 mt-1">Photos uploaded</p>
+              <p className="text-xs text-slate-500 mt-1">Photos</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-xl">
-              <p className="text-sm text-slate-600 mb-1">Active Rate</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="p-3 md:p-4 bg-green-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Active Rate</p>
+              <p className="text-xl md:text-2xl font-bold text-green-600">
                 {((metrics.activeProperties / metrics.totalProperties) * 100).toFixed(0)}%
               </p>
-              <p className="text-xs text-slate-500 mt-1">Properties active</p>
+              <p className="text-xs text-slate-500 mt-1">Properties</p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-xl">
-              <p className="text-sm text-slate-600 mb-1">Broker Quality</p>
-              <p className="text-2xl font-bold text-purple-600">
+            <div className="p-3 md:p-4 bg-purple-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Trust</p>
+              <p className="text-xl md:text-2xl font-bold text-purple-600">
                 {((metrics.highTrustBrokers / metrics.totalBrokers) * 100).toFixed(0)}%
               </p>
-              <p className="text-xs text-slate-500 mt-1">High trust score</p>
+              <p className="text-xs text-slate-500 mt-1">Brokers</p>
             </div>
-            <div className="p-4 bg-amber-50 rounded-xl">
-              <p className="text-sm text-slate-600 mb-1">Engagement</p>
-              <p className="text-2xl font-bold text-amber-600">
+            <div className="p-3 md:p-4 bg-amber-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Engagement</p>
+              <p className="text-xl md:text-2xl font-bold text-amber-600">
                 {(metrics.totalProperties > 0 ? (metrics.totalViews / metrics.totalProperties) : 0).toFixed(1)}
               </p>
-              <p className="text-xs text-slate-500 mt-1">Avg views/property</p>
+              <p className="text-xs text-slate-500 mt-1">Views/prop</p>
             </div>
           </div>
         </Card>
