@@ -123,36 +123,63 @@ Deno.serve(async (req) => {
     let duplicatesMerged = 0;
     let propertiesReassigned = 0;
     let errors = 0;
+    const errorDetails = []; // ✅ NEW: Track error details
 
     if (mode === 'live' && mergeActions.length > 0) {
       console.log(`🔧 Merging ${mergeActions.length} duplicate brokers...`);
       
       for (const action of mergeActions) {
         try {
-          // Mark broker as duplicate
-          await base44.asServiceRole.entities.Broker.update(action.duplicate_id, {
+          // ✅ FIXED: Only update fields that exist in Broker schema
+          const brokerUpdate = {
             duplicate_of: action.original_id,
             status: 'Dormant'
-          });
+          };
+          
+          await base44.asServiceRole.entities.Broker.update(action.duplicate_id, brokerUpdate);
           
           // Reassign properties
           const duplicateProperties = properties.filter(p => p.broker_id === action.duplicate_id);
           
           for (const property of duplicateProperties) {
             try {
-              await base44.asServiceRole.entities.Property.update(property.id, {
+              // ✅ FIXED: Get original broker data for caching
+              const originalBroker = brokers.find(b => b.id === action.original_id);
+              
+              const propertyUpdate = {
                 broker_id: action.original_id
-              });
+              };
+              
+              // Only add cached fields if they exist in original broker
+              if (originalBroker) {
+                if (originalBroker.name) propertyUpdate.broker_name = originalBroker.name;
+                if (originalBroker.phone) propertyUpdate.broker_contact = originalBroker.phone;
+                if (typeof originalBroker.trust_score === 'number') {
+                  propertyUpdate.broker_trust_score = originalBroker.trust_score;
+                }
+              }
+              
+              await base44.asServiceRole.entities.Property.update(property.id, propertyUpdate);
               propertiesReassigned++;
-            } catch (error) {
-              console.error(`Failed to reassign property ${property.id}:`, error);
+            } catch (propertyError) {
+              console.error(`Failed to reassign property ${property.id}:`, propertyError.message);
+              errorDetails.push({
+                type: 'property_reassign',
+                property_id: property.id,
+                error: propertyError.message
+              });
             }
           }
           
           duplicatesMerged++;
-        } catch (error) {
-          console.error(`Failed to merge broker ${action.duplicate_id}:`, error);
+        } catch (brokerError) {
+          console.error(`Failed to merge broker ${action.duplicate_id}:`, brokerError.message);
           errors++;
+          errorDetails.push({
+            type: 'broker_merge',
+            broker_id: action.duplicate_id,
+            error: brokerError.message
+          });
         }
       }
       
@@ -170,6 +197,7 @@ Deno.serve(async (req) => {
         properties_reassigned: mode === 'live' ? propertiesReassigned : 0,
         errors: mode === 'live' ? errors : 0
       },
+      error_details: mode === 'live' && errorDetails.length > 0 ? errorDetails.slice(0, 10) : undefined, // ✅ NEW: Show first 10 errors
       merge_actions: mode === 'dry_run' ? mergeActions : undefined
     });
 

@@ -144,13 +144,14 @@ Deno.serve(async (req) => {
     let duplicatesMerged = 0;
     let propertiesReassigned = 0;
     let errors = 0;
+    const errorDetails = []; // ✅ NEW: Track error details
 
     if (mode === 'live' && mergeActions.length > 0) {
       console.log(`🔧 Merging ${mergeActions.length} duplicate buildings...`);
       
       for (const action of mergeActions) {
         try {
-          // Mark building as duplicate
+          // ✅ FIXED: Only update duplicate_of field
           await base44.asServiceRole.entities.Building.update(action.duplicate_id, {
             duplicate_of: action.original_id
           });
@@ -160,20 +161,33 @@ Deno.serve(async (req) => {
           
           for (const property of duplicateProperties) {
             try {
-              await base44.asServiceRole.entities.Property.update(property.id, {
+              // ✅ FIXED: Only update building fields
+              const propertyUpdate = {
                 building_id: action.original_id,
-                building_name: action.original_name // Update name too
-              });
+                building_name: action.original_name
+              };
+              
+              await base44.asServiceRole.entities.Property.update(property.id, propertyUpdate);
               propertiesReassigned++;
-            } catch (error) {
-              console.error(`Failed to reassign property ${property.id}:`, error);
+            } catch (propertyError) {
+              console.error(`Failed to reassign property ${property.id}:`, propertyError.message);
+              errorDetails.push({
+                type: 'property_reassign',
+                property_id: property.id,
+                error: propertyError.message
+              });
             }
           }
           
           duplicatesMerged++;
-        } catch (error) {
-          console.error(`Failed to merge building ${action.duplicate_id}:`, error);
+        } catch (buildingError) {
+          console.error(`Failed to merge building ${action.duplicate_id}:`, buildingError.message);
           errors++;
+          errorDetails.push({
+            type: 'building_merge',
+            building_id: action.duplicate_id,
+            error: buildingError.message
+          });
         }
       }
       
@@ -191,6 +205,7 @@ Deno.serve(async (req) => {
         properties_reassigned: mode === 'live' ? propertiesReassigned : 0,
         errors: mode === 'live' ? errors : 0
       },
+      error_details: mode === 'live' && errorDetails.length > 0 ? errorDetails.slice(0, 10) : undefined, // ✅ NEW: Show first 10 errors
       merge_actions: mode === 'dry_run' ? mergeActions : undefined
     });
 
