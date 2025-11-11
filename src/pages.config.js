@@ -19,7 +19,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import MyProfile from './pages/MyProfile';
 import BrokerProfile from './pages/BrokerProfile';
 import AdminLogin from './pages/AdminLogin';
-import AIUsageMonitor from './pages/AIUsageMonitor';
 import RequirementDetails from './pages/RequirementDetails';
 import FAQ from './pages/FAQ';
 import DeveloperDirectory from './pages/DeveloperDirectory';
@@ -51,7 +50,6 @@ export const PAGES = {
     "MyProfile": MyProfile,
     "BrokerProfile": BrokerProfile,
     "AdminLogin": AdminLogin,
-    "AIUsageMonitor": AIUsageMonitor,
     "RequirementDetails": RequirementDetails,
     "FAQ": FAQ,
     "DeveloperDirectory": DeveloperDirectory,
