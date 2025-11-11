@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { usePropertyAIEnrichment } from "../hooks/usePropertyAIEnrichment";
 import { useAutoSlugGeneration } from "../hooks/useAutoSlugGeneration";
+import { useAutoGenerateCustomId } from "../hooks/useAutoGenerateCustomId";
 
 const createPageUrl = (pageName) => {
   switch (pageName) {
@@ -37,7 +38,13 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
   const queryClient = useQueryClient();
   
   // ✅ AUTO-ENRICH: Generate AI title/description on-demand
-  const { property, isEnriching } = usePropertyAIEnrichment(initialProperty);
+  const { property: enrichedProperty, isEnriching } = usePropertyAIEnrichment(initialProperty);
+  
+  // ✅ AUTO-GENERATE CUSTOM ID: Generate ID if missing
+  const propertyWithId = useAutoGenerateCustomId(enrichedProperty);
+  
+  // Use the fully enriched property with ID
+  const property = propertyWithId;
   
   // ✅ AUTO-SLUG: Generate URL slug on-demand
   useAutoSlugGeneration(property);
