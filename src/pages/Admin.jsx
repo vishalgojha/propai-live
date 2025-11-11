@@ -30,7 +30,7 @@ import {
 import {
   AlertTriangle, BarChart3, BookOpen, Building2, Car, CheckCircle2, ChevronDown, Clock, Copy, Eye, FileText, Home,
   Image as ImageIcon, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Search, Shield,
-  Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap, AlertCircleIcon, Target
+  Sparkles, Star, Trash2, TrendingUp, Upload, Users, X, Zap, AlertCircleIcon, Target, Activity
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -1783,6 +1783,16 @@ Return ONLY the JSON, nothing else.`;
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* NEW: Live Dashboard Button */}
+              <Button
+                onClick={() => navigate(createPageUrl("LiveDashboard"))}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Live Dashboard
+              </Button>
+
               {/* Critical: Fix Custom IDs */}
               <Button
                 onClick={backfillCustomIds}
