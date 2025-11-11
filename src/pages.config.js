@@ -59,7 +59,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Home",
+    mainPage: "SmartFeed",
     Pages: PAGES,
     Layout: Layout,
 };
