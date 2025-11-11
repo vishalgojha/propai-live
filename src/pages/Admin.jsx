@@ -655,50 +655,121 @@ export default function Admin() {
   };
 
   const generatePropertyDescriptions = async () => {
-    if (!confirm('🤖 Generate AI Descriptions?\n\nThis will process properties in small batches.\nYou can stop anytime - progress is saved.\n\nContinue?')) return;
+    if (!confirm('🤖 Generate AI Descriptions?\n\nThis will use CLIENT-SIDE AI to generate titles and descriptions.\nProcesses in small batches with progress tracking.\n\nContinue?')) return;
     
     setGeneratingDescriptions(true);
     let toastId = null;
 
     try {
-      let skip = 0;
-      let isDone = false;
-      let batchNumber = 1;
-      let totalProcessed = 0;
-      let totalUpdated = 0;
+      // Fetch properties that need enrichment
+      const needEnrichment = properties.filter(p => !p.ai_title || !p.ai_description);
+      
+      if (needEnrichment.length === 0) {
+        toast.success('✅ All Properties Already Have AI Descriptions!');
+        setGeneratingDescriptions(false);
+        return;
+      }
 
-      while (!isDone) {
-        // Update progress toast
-        if (toastId) {
-          toast.loading(`🤖 Batch ${batchNumber}... (${totalProcessed} processed, ${totalUpdated} updated)`, { id: toastId });
-        } else {
-          toastId = toast.loading(`🤖 Starting generation...`, { id: 'desc-gen' });
-        }
+      const batchSize = 5; // Process 5 at a time
+      let processed = 0;
+      let updated = 0;
+      let errors = 0;
 
-        // Process one micro-batch (5 properties)
-        const response = await base44.functions.invoke('generatePropertyDescriptions', { 
-          skip,
-          limit: 5
-        });
+      toastId = toast.loading(`🤖 Starting generation for ${needEnrichment.length} properties...`, { id: 'desc-gen' });
 
-        const progress = response.data.progress;
-        totalProcessed = progress.processed;
-        totalUpdated = totalProcessed - progress.errors;
+      // Process in batches
+      for (let i = 0; i < needEnrichment.length; i += batchSize) {
+        const batch = needEnrichment.slice(i, i + batchSize);
+        
+        toast.loading(`🤖 Batch ${Math.floor(i / batchSize) + 1}... (${processed}/${needEnrichment.length} processed, ${updated} updated)`, { id: toastId });
 
-        if (response.data.done) {
-          isDone = true;
-        } else {
-          skip = response.data.next_skip;
-          batchNumber++;
-          // Small delay between batches
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
+        // Process batch in parallel
+        await Promise.all(batch.map(async (property) => {
+          try {
+            // ✅ CLIENT-SIDE AI GENERATION
+            const prompt = `You are writing property listings for a Mumbai real estate platform. Write naturally, like a knowledgeable local broker who's direct and informative.
+
+**Property Details:**
+- Type: ${property.bhk} ${property.property_category || 'Residential'}
+- Price: ₹${property.price} ${property.price_unit}
+- Listing: ${property.listing_type}
+- Location: ${property.location}${property.pocket ? ` (${property.pocket})` : ''}
+- Building: ${property.building_name || 'Not specified'}
+- Area: ${property.carpet_area || 'Not specified'} sq.ft
+- Furnishing: ${property.furnishing || 'Not specified'}
+- Floor: ${property.floor || 'N/A'}${property.total_floors ? ` of ${property.total_floors}` : ''}
+- Parking: ${property.parking || 'Not specified'}
+- View: ${property.view || 'N/A'}
+- Amenities: ${property.amenities?.slice(0, 5).join(', ') || 'Standard amenities'}
+
+**Generate JSON:**
+{
+  "title": "Natural title here",
+  "description": "Natural description here"
+}
+
+**Title Rules (12-18 words):**
+❌ NEVER use: "Charming", "Stunning", "Luxurious", "Premium", "Elegant", "Exquisite", "Heart of", "Just steps from", "Nestled in", "Boasts"
+✅ DO use: Specific features, actual amenities, real location details
+✅ Format: "[Size/Type] [Key Feature] in [Specific Location]"
+✅ Examples:
+  - "Fully Furnished 3 BHK with Sea View in Bandra West, 2 Covered Parking"
+  - "Spacious 2 BHK Office Space in BKC with Modern Fit-Out and Metro Access"
+  - "1800 sq.ft 4 BHK Apartment in Worli, Top Floor with City Views"
+
+**Description Rules (40-80 words, one paragraph):**
+❌ NEVER use: Generic adjectives, flowery language, "offers", "features", "boasts"
+✅ DO write: Direct, factual, specific
+✅ Start with: What makes it practical/useful
+✅ Mention: Building reputation (if known), connectivity, specific amenities, tenant suitability
+✅ Examples:
+  - "This 2 BHK in Oberoi Sky Heights comes fully furnished with modular kitchen, split ACs, and 2 covered parking. Located on Linking Road, you're walking distance to Bandra station and major restaurants. Building has 24/7 security and backup power."
+  - "Commercial space on the 8th floor of a Grade A building in BKC. Modern glass facade, central AC, 2 washrooms, and pantry area included. Direct metro access makes client meetings easy. Suitable for consulting firms or small tech companies."
+
+**Mumbai Context:**
+- Mention metro stations, railway stations if nearby
+- Reference known buildings by name if applicable
+- Note if expat-friendly, pet-friendly, veg-only (if specified)
+- Connectivity matters: mention if near highways, airports
+- Area vibe: Bandra = trendy/expat hub, BKC = corporate, Worli = sea-facing luxury, Lower Parel = mills redevelopment
+
+Return ONLY the JSON, nothing else.`;
+
+            const response = await base44.integrations.Core.InvokeLLM({
+              prompt,
+              response_json_schema: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  description: { type: "string" }
+                },
+                required: ["title", "description"]
+              }
+            });
+
+            // Update property
+            await base44.entities.Property.update(property.id, {
+              ai_title: response.title,
+              ai_description: response.description
+            });
+
+            updated++;
+          } catch (error) {
+            console.error(`Failed to generate for ${property.id}:`, error);
+            errors++;
+          } finally {
+            processed++;
+          }
+        }));
+
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // All done
       toast.dismiss(toastId);
       toast.success('✅ All Descriptions Generated!', {
-        description: `Successfully generated ${totalUpdated} descriptions`,
+        description: `Successfully generated ${updated} descriptions (${errors} errors)`,
         duration: 6000,
         className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
       });
