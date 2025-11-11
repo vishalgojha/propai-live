@@ -13,13 +13,13 @@ import {
   Calendar, DollarSign, Building2, Target, Shield, AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, formatDistanceToNow } from "date-fns";
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import { toast, Toaster } from "sonner";
-import RealtimeActivityFeed from "../components/admin/RealtimeActivityFeed";
+import LiveActivityFeed from "../components/dashboard/LiveActivityFeed"; // NEW IMPORT
 
 export default function LiveDashboard() {
   const navigate = useNavigate();
@@ -64,6 +64,14 @@ export default function LiveDashboard() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // ✅ NEW: Track previous data for change detection (not fully utilized in this snippet but kept as per outline)
+  const [previousData, setPreviousData] = useState({
+    properties: [],
+    brokers: [],
+    requirements: [],
+    interactions: []
+  });
 
   // Real-time data queries (30s refresh)
   const { data: properties = [], refetch: refetchProperties } = useQuery({
@@ -119,10 +127,10 @@ export default function LiveDashboard() {
 
     // Today's stats
     const today = startOfDay(new Date());
-    const todayProperties = properties.filter(p => 
+    const todayProperties = properties.filter(p =>
       new Date(p.created_date) >= today
     );
-    const todayInteractions = interactions.filter(i => 
+    const todayInteractions = interactions.filter(i =>
       new Date(i.created_date) >= today
     );
 
@@ -220,6 +228,84 @@ export default function LiveDashboard() {
 
     return Object.entries(types).map(([name, value]) => ({ name, value }));
   }, [properties]);
+
+  // ✅ NEW: Generate detailed activity feed
+  const detailedActivities = useMemo(() => {
+    const activities = [];
+
+    // Recent properties (last 20)
+    properties.slice(0, 20).forEach(p => {
+      activities.push({
+        id: `prop-${p.id}`,
+        type: 'property_created',
+        description: `${p.bhk || 'N/A'} in ${p.location || 'Unknown'} • ₹${p.price || '?'}${p.price_unit === 'crores' ? 'Cr' : 'L'}`,
+        timestamp: p.created_date,
+        meta: [
+          p.listing_type,
+          p.building_name || p.location,
+          p.broker_name || 'Broker'
+        ].filter(Boolean),
+      });
+    });
+
+    // Recent requirements (last 15)
+    requirements.slice(0, 15).forEach(r => {
+      activities.push({
+        id: `req-${r.id}`,
+        type: 'requirement_created',
+        description: `Looking for ${r.bhk_preference?.join('/') || 'Any'} in ${r.preferred_locations?.[0] || 'Mumbai'}`,
+        timestamp: r.created_date,
+        meta: [
+          r.listing_type,
+          r.urgency || 'Medium',
+          `₹${r.budget_min || '?'}-${r.budget_max || '?'}${r.budget_unit === 'crores' ? 'Cr' : 'L'}`
+        ].filter(Boolean),
+      });
+    });
+
+    // Recent interactions (last 30)
+    interactions.slice(0, 30).forEach(i => {
+      const type = i.interaction_type === 'whatsapp' ? 'whatsapp_contact' : 'property_view';
+      activities.push({
+        id: `int-${i.id}`,
+        type,
+        description: i.interaction_type === 'whatsapp'
+          ? `WhatsApp inquiry from ${i.user_name || 'User'}`
+          : `Property viewed by ${i.user_name || 'User'}`,
+        timestamp: i.created_date,
+        meta: [
+          i.source || 'Direct',
+          i.device_type || 'Unknown device'
+        ].filter(Boolean),
+      });
+    });
+
+    // Check for high-trust broker achievements
+    brokers.forEach(b => {
+      if ((b.trust_score || 0) >= 85 && b.updated_date) {
+        // Consider an achievement "new" if updated within the last 24 hours.
+        // This is a simple heuristic; more robust would be comparing with previousData.
+        const wasRecentlyUpdated = new Date(b.updated_date) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+        // Also check if they *just* crossed the threshold (would require previousData comparison)
+        // For now, we'll just show it if recently updated and meets criteria
+        if (wasRecentlyUpdated && b.trust_score !== null && b.trust_score >= 85) {
+          activities.push({
+            id: `broker-trust-${b.id}`,
+            type: 'high_trust_achieved',
+            description: `${b.name || 'A broker'} achieved high trust score`,
+            timestamp: b.updated_date,
+            meta: [
+              `Trust: ${b.trust_score}/100`,
+              `${b.active_listings_count || 0} listings`
+            ],
+          });
+        }
+      }
+    });
+
+    // Sort by timestamp (newest first)
+    return activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [properties, requirements, interactions, brokers]);
 
   const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
 
@@ -445,22 +531,22 @@ export default function LiveDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
                 <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="properties" 
-                  stroke="#3b82f6" 
-                  fillOpacity={1} 
-                  fill="url(#colorProperties)" 
+                <Area
+                  type="monotone"
+                  dataKey="properties"
+                  stroke="#3b82f6"
+                  fillOpacity={1}
+                  fill="url(#colorProperties)"
                   name="Properties"
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="interactions" 
-                  stroke="#10b981" 
-                  fillOpacity={1} 
+                <Area
+                  type="monotone"
+                  dataKey="interactions"
+                  stroke="#10b981"
+                  fillOpacity={1}
                   fill="url(#colorInteractions)"
                   name="Interactions"
                 />
@@ -497,8 +583,8 @@ export default function LiveDashboard() {
                 {listingTypeBreakdown.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
+                      <div
+                        className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                       />
                       <span className="text-sm text-slate-700">{item.name}</span>
@@ -511,7 +597,7 @@ export default function LiveDashboard() {
           </Card>
         </div>
 
-        {/* Bottom Row */}
+        {/* Bottom Row - UPDATED: Replace old activity feed with new component */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Locations */}
           <Card className="p-6">
@@ -524,7 +610,7 @@ export default function LiveDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" stroke="#64748b" fontSize={12} />
                 <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={12} width={100} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
                 />
                 <Bar dataKey="count" fill="#10b981" radius={[0, 8, 8, 0]} />
@@ -532,10 +618,12 @@ export default function LiveDashboard() {
             </ResponsiveContainer>
           </Card>
 
-          {/* Real-Time Activity Feed Component */}
-          <Card className="p-6">
-            <RealtimeActivityFeed />
-          </Card>
+          {/* ✅ NEW: Enhanced Live Activity Feed */}
+          <LiveActivityFeed
+            activities={detailedActivities}
+            isLoading={false}
+            lastUpdateTime={formatDistanceToNow(lastUpdate, { addSuffix: true })}
+          />
         </div>
 
         {/* System Health Indicators */}
@@ -569,7 +657,7 @@ export default function LiveDashboard() {
             <div className="p-4 bg-amber-50 rounded-xl">
               <p className="text-sm text-slate-600 mb-1">Engagement</p>
               <p className="text-2xl font-bold text-amber-600">
-                {(metrics.totalViews / metrics.totalProperties).toFixed(1)}
+                {(metrics.totalProperties > 0 ? (metrics.totalViews / metrics.totalProperties) : 0).toFixed(1)}
               </p>
               <p className="text-xs text-slate-500 mt-1">Avg views/property</p>
             </div>
