@@ -3,12 +3,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 /**
  * BACKFILL BROKER NAMES
  * 
- * Caches broker names on properties for faster display on property cards.
- * Updates property.broker_name from the linked Broker entity.
+ * Caches broker names on properties for faster display
+ * 
+ * This ensures PropertyCard can show broker names without extra API calls
  * 
  * Modes:
- * - dry_run: Analyze what needs updating
- * - live: Apply the updates
+ * - dry_run: Analyze which properties need broker names
+ * - live: Actually update property records
  */
 
 Deno.serve(async (req) => {
@@ -25,48 +26,65 @@ Deno.serve(async (req) => {
 
     const { mode = 'dry_run' } = await req.json();
 
-    console.log(`📛 Running broker name backfill in ${mode} mode...`);
+    console.log(`🔤 Running broker name backfill in ${mode} mode...`);
 
-    // Fetch all properties and brokers
+    // Fetch all data
     const properties = await base44.asServiceRole.entities.Property.list();
     const brokers = await base44.asServiceRole.entities.Broker.list();
 
     // Create broker lookup map
     const brokerMap = {};
     brokers.forEach(broker => {
-      brokerMap[broker.id] = broker.name;
+      brokerMap[broker.id] = broker;
     });
 
-    // Find properties needing broker names
-    const needsUpdate = [];
-    const propertiesWithBrokerId = properties.filter(p => p.broker_id);
+    let missingBrokerName = 0;
+    let alreadyHasName = 0;
+    let noBrokerId = 0;
     let brokerNotFound = 0;
+    const examples = [];
+    const updates = [];
 
-    for (const property of propertiesWithBrokerId) {
-      const brokerName = brokerMap[property.broker_id];
+    // Check each property
+    for (const property of properties) {
+      if (!property.broker_id) {
+        noBrokerId++;
+        continue;
+      }
+
+      const broker = brokerMap[property.broker_id];
       
-      if (!brokerName) {
+      if (!broker) {
         brokerNotFound++;
         continue;
       }
 
-      // Check if broker_name is missing or different
-      if (!property.broker_name || property.broker_name !== brokerName) {
-        needsUpdate.push({
+      if (!property.broker_name && broker.name) {
+        missingBrokerName++;
+        
+        updates.push({
           property_id: property.id,
           custom_id: property.custom_id,
-          current_broker_name: property.broker_name,
-          correct_broker_name: brokerName
+          broker_name: broker.name
         });
+
+        // Store first 10 examples
+        if (examples.length < 10) {
+          examples.push({
+            custom_id: property.custom_id || property.id.slice(0, 8),
+            broker_name: broker.name
+          });
+        }
+      } else if (property.broker_name) {
+        alreadyHasName++;
       }
     }
 
-    console.log(`Found ${needsUpdate.length} properties needing broker name cache`);
-
     const summary = {
       total_properties: properties.length,
-      properties_with_broker_id: propertiesWithBrokerId.length,
-      missing_broker_name: needsUpdate.length,
+      properties_with_broker_id: properties.length - noBrokerId,
+      missing_broker_name: missingBrokerName,
+      already_has_name: alreadyHasName,
       broker_not_found: brokerNotFound
     };
 
@@ -75,43 +93,51 @@ Deno.serve(async (req) => {
         success: true,
         mode: 'dry_run',
         summary,
-        examples: needsUpdate.slice(0, 10).map(p => ({
-          custom_id: p.custom_id,
-          current: p.current_broker_name || '(missing)',
-          correct: p.correct_broker_name
-        }))
+        examples
       });
     }
 
     // LIVE MODE: Apply updates
     let updated = 0;
-    let unchanged = 0;
+    let unchanged = alreadyHasName;
     let errors = 0;
+    const errorDetails = [];
 
-    for (const item of needsUpdate) {
+    for (const update of updates) {
       try {
-        await base44.asServiceRole.entities.Property.update(item.property_id, {
-          broker_name: item.correct_broker_name
+        await base44.asServiceRole.entities.Property.update(update.property_id, {
+          broker_name: update.broker_name
         });
         updated++;
-        console.log(`✓ Updated ${item.custom_id}: "${item.current_broker_name}" → "${item.correct_broker_name}"`);
       } catch (error) {
-        console.error(`Failed to update ${item.property_id}:`, error);
+        console.error(`Failed to update property ${update.property_id}:`, error.message);
         errors++;
+        
+        if (errorDetails.length < 20) {
+          errorDetails.push({
+            property_id: update.property_id,
+            custom_id: update.custom_id,
+            broker_name: update.broker_name,
+            error: error.message
+          });
+        }
       }
     }
 
-    unchanged = propertiesWithBrokerId.length - needsUpdate.length;
-
     return Response.json({
-      success: true,
+      success: errors < updated,
       mode: 'live',
       summary: {
-        ...summary,
+        total_properties: properties.length,
         updated,
         unchanged,
-        errors
-      }
+        errors,
+        broker_not_found: brokerNotFound
+      },
+      error_details: errorDetails.length > 0 ? errorDetails : undefined,
+      message: errors === 0
+        ? `✅ Successfully cached ${updated} broker names`
+        : `⚠️ Cached ${updated} of ${missingBrokerName} names (${errors} errors)`
     });
 
   } catch (error) {
