@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 /**
  * Generate Property Social Image
  * 
- * Uses Browserless.io to take a screenshot of the SocialListing page
+ * Uses Browserless.io BrowserQL (GraphQL API) to take a screenshot of the SocialListing page
  * Returns the uploaded image URL for use in Open Graph meta tags
  * 
  * @param {string} property_id - Property ID to generate image for
@@ -60,29 +60,35 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Call Browserless screenshot API - FIXED FORMAT
-    // Correct endpoint: https://chrome.browserless.io/screenshot?token=YOUR_TOKEN
-    const browserlessUrl = `https://chrome.browserless.io/screenshot?token=${browserlessApiKey}`;
+    // BrowserQL endpoint
+    const endpoint = "https://production-sfo.browserless.io/chromium/bql";
     
-    console.log('📸 Calling Browserless API...');
+    console.log('📸 Calling Browserless BrowserQL API...');
 
-    const screenshotResponse = await fetch(browserlessUrl, {
+    // Call Browserless BrowserQL API with GraphQL mutation
+    const screenshotResponse = await fetch(`${endpoint}?token=${browserlessApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url: pageUrl,
-        options: {
-          fullPage: false,
-          type: 'png',
-          viewport: {
-            width: 1200,
-            height: 630,
-            deviceScaleFactor: 2 // High DPI for sharp images
+        query: `
+          mutation Screenshot($url: String!, $width: Int!, $height: Int!) {
+            goto(url: $url, waitUntil: networkidle) {
+              status
+            }
+            viewport(width: $width, height: $height, deviceScaleFactor: 2)
+            wait(duration: 2000)
+            screenshot(type: png, fullPage: false) {
+              base64
+            }
           }
-        },
-        waitFor: 3000 // Wait 3 seconds for page to fully render (increased from 2s)
+        `,
+        variables: {
+          url: pageUrl,
+          width: 1200,
+          height: 630
+        }
       })
     });
 
@@ -95,10 +101,32 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
+    const responseData = await screenshotResponse.json();
+    
+    // Check for GraphQL errors
+    if (responseData.errors) {
+      console.error('❌ GraphQL errors:', responseData.errors);
+      return Response.json({ 
+        success: false, 
+        error: `GraphQL error: ${JSON.stringify(responseData.errors)}` 
+      }, { status: 500 });
+    }
+
     console.log('✅ Screenshot captured successfully');
 
-    // Get image buffer
-    const imageBuffer = await screenshotResponse.arrayBuffer();
+    // Extract base64 image from response
+    const base64Image = responseData.data?.screenshot?.base64;
+    
+    if (!base64Image) {
+      console.error('❌ No screenshot data in response');
+      return Response.json({ 
+        success: false, 
+        error: 'No screenshot data returned from Browserless' 
+      }, { status: 500 });
+    }
+
+    // Convert base64 to buffer
+    const imageBuffer = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
     
     // Create a Blob from the buffer
     const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
