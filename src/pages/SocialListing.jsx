@@ -9,20 +9,32 @@ import SocialSharePropertyCard from "../components/property/SocialSharePropertyC
 /**
  * SocialListing Page - Renders property social share cards
  * This page is accessed by the screenshot service (Browserless)
- * Login gate ensures only authenticated requests can generate images
+ * Supports authentication via user login OR via secret token for automation
  */
 export default function SocialListing() {
   const urlParams = new URLSearchParams(window.location.search);
   const propertyId = urlParams.get('id');
   const propertySlug = urlParams.get('slug');
+  const secretToken = urlParams.get('token');
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [hasValidToken, setHasValidToken] = useState(false);
 
-  // Check authentication
+  // Check authentication (user OR secret token)
   useEffect(() => {
     const loadUser = async () => {
       try {
         setIsLoadingUser(true);
+        
+        // Check if secret token is provided and valid
+        if (secretToken === 'propai-screenshot-2025') {
+          console.log('✅ Valid secret token provided');
+          setHasValidToken(true);
+          setIsLoadingUser(false);
+          return;
+        }
+        
+        // Otherwise check regular user auth
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
@@ -32,9 +44,9 @@ export default function SocialListing() {
       }
     };
     loadUser();
-  }, []);
+  }, [secretToken]);
 
-  // Fetch property data
+  // Fetch property data (enabled if user OR valid token)
   const { data: property, isLoading: propertyLoading, error } = useQuery({
     queryKey: ['property', propertyId || propertySlug],
     queryFn: async () => {
@@ -44,7 +56,7 @@ export default function SocialListing() {
         p.slug === propertySlug
       );
     },
-    enabled: !!(propertyId || propertySlug) && !!user,
+    enabled: !!(propertyId || propertySlug) && (!!user || hasValidToken),
   });
 
   // Fetch building data if property has building_id
@@ -81,8 +93,8 @@ export default function SocialListing() {
     );
   }
 
-  // Login gate - only authenticated users can access
-  if (!user) {
+  // Login gate - only authenticated users OR valid token can access
+  if (!user && !hasValidToken) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-6">
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border-2 border-purple-200 max-w-md text-center">
