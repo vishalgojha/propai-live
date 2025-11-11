@@ -88,12 +88,7 @@ export default function Admin() {
   const [cleaningBuildings, setCleaningBuildings] = useState(false);
   const [recalculatingTrust, setRecalculatingTrust] = useState(false); // NEW STATE for broker trust
   const [backfillingDevelopers, setBackfillingDevelopers] = useState(false); // NEW STATE for backfilling developers
-
-  // Building query modal states
-  const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
-  const [buildingQuery, setBuildingQuery] = useState("");
-  const [buildingQueryResult, setBuildingQueryResult] = useState(null);
-  const [queryingBuilding, setQueryingBuilding] = useState(false);
+  const [fixingResidentialLease, setFixingResidentialLease] = useState(false); // ✅ NEW STATE
 
   // ⚡ OPTIMIZATION: Debounced search for properties
   const debouncedPropSearchFn = useCallback(
@@ -962,7 +957,7 @@ Return ONLY the JSON, nothing else.`;
               <div>• Properties: {results.properties_updated} updated</div>
               <div>• Buildings: {results.buildings_updated} updated</div>
               <div>• Requirements: {results.requirements_updated} updated</div>
-              <div>• Locations reduced: {results.unique_locations_before} → {results.unique_locations_after}</div>
+              <div>• Locations reduced: ${results.unique_locations_before} -> ${results.unique_locations_after}</div>
               {results.errors > 0 && (
                 <div className="text-red-300">⚠ Errors: {results.errors}</div>
               )}
@@ -1524,6 +1519,91 @@ Return ONLY the JSON, nothing else.`;
     }
   };
 
+  // ✅ NEW FUNCTION: Fix Residential Lease → Rent
+  const fixResidentialLease = async () => {
+    if (!confirm('🔧 Fix Residential Lease → Rent?\n\nThis will:\n• Find all residential properties with "Lease" type\n• Convert them to "Rent"\n• Normalize prices (Rent in lakhs, Sale in crores)\n\nRun analysis first?')) {
+      return;
+    }
+
+    setFixingResidentialLease(true);
+    toast.loading('🔍 Analyzing residential lease properties...', { id: 'lease-fix-analysis' });
+
+    try {
+      const dryRunResponse = await base44.functions.invoke('fixResidentialLease', { mode: 'dry_run' });
+      toast.dismiss('lease-fix-analysis');
+
+      const analysis = dryRunResponse.data.analysis;
+
+      if (analysis.residential_leases_to_fix === 0 && analysis.prices_to_normalize === 0) {
+        toast.success('✅ All Data Already Correct!', {
+          description: 'No residential leases or price normalization needed',
+          duration: 4000
+        });
+        setFixingResidentialLease(false);
+        return;
+      }
+
+      // Show examples
+      let exampleText = '';
+      if (analysis.examples && analysis.examples.length > 0) {
+        exampleText = '\n\nExamples to fix:\n' + analysis.examples.map(ex => 
+          `• ${ex.custom_id || ex.bhk}: ${ex.listing_type} ${ex.price}`
+        ).join('\n');
+      }
+
+      const shouldFix = confirm(
+        `🎯 Analysis Complete!\n\n` +
+        `Found issues:\n` +
+        `• ${analysis.residential_leases_to_fix} residential "Lease" to convert\n` +
+        `• ${analysis.prices_to_normalize} properties need price normalization\n` +
+        exampleText +
+        `\n\nFix now?`
+      );
+
+      if (!shouldFix) {
+        setFixingResidentialLease(false);
+        return;
+      }
+
+      toast.loading('🔧 Fixing residential leases and prices...', { id: 'lease-fix-apply' });
+      const fixResponse = await base44.functions.invoke('fixResidentialLease', { mode: 'fix' });
+      toast.dismiss('lease-fix-apply');
+
+      const results = fixResponse.data.results;
+
+      toast.success('✅ Residential Lease Fix Complete!', {
+        description: (
+          <div className="space-y-2">
+            <div className="font-semibold">Data corrected successfully</div>
+            <div className="text-xs opacity-90 space-y-1">
+              <div>• Lease → Rent: {results.residential_lease_fixed} properties</div>
+              <div>• Prices normalized: {results.prices_normalized} properties</div>
+              <div>• Total fixed: {results.total_fixed} properties</div>
+              {results.errors > 0 && (
+                <div className="text-red-300">⚠ Errors: {results.errors}</div>
+              )}
+            </div>
+          </div>
+        ),
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0',
+        duration: 8000
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+
+    } catch (error) {
+      toast.dismiss('lease-fix-analysis');
+      toast.dismiss('lease-fix-apply');
+      toast.error('❌ Lease Fix Failed', {
+        description: error.message || 'Something went wrong',
+        className: 'bg-red-600 text-white border-0',
+        duration: 5000
+      });
+    } finally {
+      setFixingResidentialLease(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1791,6 +1871,17 @@ Return ONLY the JSON, nothing else.`;
               >
                 <Activity className="w-4 h-4 mr-2" />
                 Live Dashboard
+              </Button>
+
+              {/* ✅ NEW: Fix Residential Lease Button */}
+              <Button
+                onClick={fixResidentialLease}
+                disabled={fixingResidentialLease}
+                size="sm"
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold"
+              >
+                <AlertTriangle className={`w-4 h-4 mr-2 ${fixingResidentialLease ? 'animate-spin' : ''}`} />
+                {fixingResidentialLease ? 'Fixing...' : 'Fix Rent/Lease'}
               </Button>
 
               {/* Critical: Fix Custom IDs */}
