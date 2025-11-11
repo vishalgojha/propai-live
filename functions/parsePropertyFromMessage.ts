@@ -7,6 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * 
  * NEW: Automatically detects co-brokers and creates team relationships
  * ENHANCED: Extracts primary + secondary brokers from listings
+ * FIXED: Proper Rent vs Lease classification + Price normalization
  * 
  * TEAM LOGIC:
  * - Primary broker = first name/phone found (gets assigned to property)
@@ -92,6 +93,43 @@ Return this EXACT JSON structure:
   "ai_title": "string (10-15 word descriptive title)",
   "ai_description": "string (EXACTLY 4-5 complete sentences, 60-80 words)"
 }
+
+**CRITICAL - LISTING TYPE CLASSIFICATION:**
+
+Use this decision tree:
+
+1. **RENT** - Residential monthly rentals
+   - 1-4 BHK apartments, flats, homes
+   - Price typically: ₹50K - ₹5L per month
+   - Keywords: "rent", "rental", "monthly", "residential"
+   - Example: "2 BHK for rent ₹1.5L/month"
+
+2. **SALE** - Property purchase
+   - Any property for sale/purchase
+   - Price typically: ₹50L - ₹50Cr+
+   - Keywords: "sale", "buy", "purchase", "investment"
+   - Example: "3 BHK for sale ₹3.5 Cr"
+
+3. **LEASE** - Commercial long-term contracts ONLY
+   - Office spaces, retail shops, warehouses
+   - Contract duration: 3-9 years typically
+   - Keywords: "office", "commercial", "retail", "lease agreement"
+   - Example: "Office space lease 3 years ₹4L/month"
+
+**WRONG vs RIGHT:**
+❌ WRONG: "2 BHK apartment ₹1.5L monthly" → Lease
+✅ RIGHT: "2 BHK apartment ₹1.5L monthly" → Rent
+
+❌ WRONG: "3 BHK flat ₹2L rent" → Lease  
+✅ RIGHT: "3 BHK flat ₹2L rent" → Rent
+
+❌ WRONG: "Office space ₹4L/month" → Rent
+✅ RIGHT: "Office space ₹4L/month" → Lease
+
+**RULE OF THUMB:**
+- Residential + Monthly = RENT (not Lease!)
+- Commercial + Long-term = LEASE
+- Any property + One-time payment = SALE
 
 **CRITICAL - MULTIPLE BROKER DETECTION:**
 
@@ -214,6 +252,42 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 400 });
     }
 
+    // STEP 2.1: ✅ PRICE NORMALIZATION - Convert to K, Lakhs, Crores format
+    let normalizedPrice = extractedData.price;
+    let normalizedPriceUnit = extractedData.price_unit;
+
+    if (extractedData.listing_type === 'Rent' || extractedData.listing_type === 'Lease') {
+      // For Rent/Lease: Convert to lakhs if needed
+      if (normalizedPriceUnit === 'crores') {
+        normalizedPrice = normalizedPrice * 100; // Convert crores to lakhs
+        normalizedPriceUnit = 'lakhs';
+      }
+      
+      // If less than 1 lakh (100K), keep in lakhs with decimals
+      // No conversion to 'K' format - lakhs is standard
+    } else if (extractedData.listing_type === 'Sale') {
+      // For Sale: Convert to crores if >= 1 crore
+      if (normalizedPriceUnit === 'lakhs' && normalizedPrice >= 100) {
+        normalizedPrice = normalizedPrice / 100; // Convert lakhs to crores
+        normalizedPriceUnit = 'crores';
+      }
+    }
+
+    console.log(`✓ Price normalized: ₹${normalizedPrice}${normalizedPriceUnit === 'crores' ? ' Cr' : 'L'}`);
+
+    // STEP 2.2: ✅ VALIDATE LISTING TYPE - Final check
+    if (extractedData.property_category === 'Residential') {
+      // Residential monthly rentals should NEVER be "Lease"
+      if (extractedData.listing_type === 'Lease') {
+        console.warn(`⚠️ Correcting Residential "Lease" → "Rent"`);
+        extractedData.listing_type = 'Rent';
+      }
+    } else if (extractedData.property_category === 'Commercial') {
+      // Commercial properties can be Rent or Lease
+      // If broker said "rent" but it's commercial, we'll respect it
+      // Only force Lease if explicitly long-term contract mentioned in description
+    }
+
     // STEP 2.5: CHECK FOR DUPLICATES
     console.log('🔍 Checking for duplicates...');
     const allProperties = await base44.asServiceRole.entities.Property.filter({
@@ -227,7 +301,7 @@ Return ONLY valid JSON, no markdown`;
       const sameBhk = existing.bhk === extractedData.bhk;
       
       const existingPriceInLakhs = existing.price_unit === 'crores' ? existing.price * 100 : existing.price;
-      const newPriceInLakhs = extractedData.price_unit === 'crores' ? extractedData.price * 100 : extractedData.price;
+      const newPriceInLakhs = normalizedPriceUnit === 'crores' ? normalizedPrice * 100 : normalizedPrice;
       const priceDiff = Math.abs(existingPriceInLakhs - newPriceInLakhs) / existingPriceInLakhs;
       const similarPrice = priceDiff <= 0.10;
       
@@ -537,8 +611,8 @@ Return ONLY valid JSON, no markdown`;
         slug: slug,
         bhk: extractedData.bhk,
         property_category: extractedData.property_category || "Residential",
-        price: extractedData.price,
-        price_unit: extractedData.price_unit,
+        price: normalizedPrice, // ✅ USE NORMALIZED PRICE
+        price_unit: normalizedPriceUnit, // ✅ USE NORMALIZED UNIT
         carpet_area: extractedData.carpet_area,
         built_up_area: extractedData.built_up_area,
         floor: extractedData.floor,
@@ -549,10 +623,10 @@ Return ONLY valid JSON, no markdown`;
         pocket: extractedData.pocket,
         building_name: extractedData.building_name,
         building_id: buildingId,
-        listing_type: extractedData.listing_type,
+        listing_type: extractedData.listing_type, // ✅ VALIDATED LISTING TYPE
         amenities: extractedData.amenities || [],
         description: extractedData.description,
-        source_text: message,
+        source_text: message, // ✅ STORE RAW MESSAGE FOR AUDITING
         ai_title: extractedData.ai_title,
         ai_description: extractedData.ai_description,
         broker_id: primaryBroker ? primaryBroker.id : null,
@@ -609,6 +683,8 @@ Return ONLY valid JSON, no markdown`;
         custom_id: property.custom_id,
         slug: property.slug,
         ai_title: property.ai_title,
+        listing_type: property.listing_type, // ✅ SHOW VALIDATED TYPE
+        price: `₹${property.price}${property.price_unit === 'crores' ? ' Cr' : 'L'}`, // ✅ SHOW NORMALIZED PRICE
         broker_custom_id: primaryBroker ? primaryBroker.custom_id : null,
         broker_name: primaryBrokerName,
         team_size: extractedData.brokers ? extractedData.brokers.length : 0,
