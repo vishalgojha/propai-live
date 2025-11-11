@@ -49,6 +49,8 @@ Deno.serve(async (req) => {
     // Construct the SocialListing page URL with property ID
     const pageUrl = `${appUrl}/sociallisting?id=${property_id}`;
 
+    console.log('🔍 Generating screenshot for:', pageUrl);
+
     // Get Browserless API key
     const browserlessApiKey = Deno.env.get('BROWSERLESS_API_KEY');
     if (!browserlessApiKey) {
@@ -58,9 +60,12 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Call Browserless screenshot API
-    const browserlessUrl = 'https://chrome.browserless.io/screenshot';
+    // Call Browserless screenshot API - FIXED FORMAT
+    // Correct endpoint: https://chrome.browserless.io/screenshot?token=YOUR_TOKEN
+    const browserlessUrl = `https://chrome.browserless.io/screenshot?token=${browserlessApiKey}`;
     
+    console.log('📸 Calling Browserless API...');
+
     const screenshotResponse = await fetch(browserlessUrl, {
       method: 'POST',
       headers: {
@@ -68,28 +73,29 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: pageUrl,
-        token: browserlessApiKey,
         options: {
           fullPage: false,
           type: 'png',
-          quality: 100,
           viewport: {
             width: 1200,
             height: 630,
             deviceScaleFactor: 2 // High DPI for sharp images
           }
         },
-        waitFor: 2000 // Wait 2 seconds for page to fully render
+        waitFor: 3000 // Wait 3 seconds for page to fully render (increased from 2s)
       })
     });
 
     if (!screenshotResponse.ok) {
       const errorText = await screenshotResponse.text();
+      console.error('❌ Browserless API error:', errorText);
       return Response.json({ 
         success: false, 
-        error: `Browserless API error: ${errorText}` 
+        error: `Browserless API error (${screenshotResponse.status}): ${errorText}` 
       }, { status: 500 });
     }
+
+    console.log('✅ Screenshot captured successfully');
 
     // Get image buffer
     const imageBuffer = await screenshotResponse.arrayBuffer();
@@ -101,22 +107,22 @@ Deno.serve(async (req) => {
     const fileName = `social-${property_id}-${Date.now()}.png`;
     const imageFile = new File([imageBlob], fileName, { type: 'image/png' });
 
+    console.log('⬆️ Uploading to Base44 storage...');
+
     // Upload to Base44 storage
     const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({
       file: imageFile
     });
 
     if (!uploadResult.file_url) {
+      console.error('❌ Failed to upload image');
       return Response.json({ 
         success: false, 
         error: 'Failed to upload image to storage' 
       }, { status: 500 });
     }
 
-    // Optionally: Update property with social_image_url field
-    // await base44.asServiceRole.entities.Property.update(property_id, {
-    //   social_image_url: uploadResult.file_url
-    // });
+    console.log('✅ Image uploaded:', uploadResult.file_url);
 
     // Return success with image URL
     return Response.json({
@@ -127,10 +133,11 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error generating social image:', error);
+    console.error('❌ Error generating social image:', error);
     return Response.json({ 
       success: false, 
-      error: error.message 
+      error: error.message,
+      stack: error.stack
     }, { status: 500 });
   }
 });
