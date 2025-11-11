@@ -48,37 +48,53 @@ export function usePropertyAIEnrichment(property) {
         let aiDescription = property.ai_description;
 
         if (useClientAI) {
-          // ✅ CLIENT-SIDE AI GENERATION
-          const prompt = `Generate a property listing title and description for this Mumbai property:
+          // ✅ CLIENT-SIDE AI GENERATION WITH IMPROVED PROMPT
+          const prompt = `You are writing property listings for a Mumbai real estate platform. Write naturally, like a knowledgeable local broker who's direct and informative.
 
 **Property Details:**
-- BHK: ${property.bhk}
+- Type: ${property.bhk} ${property.property_category || 'Residential'}
 - Price: ₹${property.price} ${property.price_unit}
-- Listing Type: ${property.listing_type}
+- Listing: ${property.listing_type}
 - Location: ${property.location}${property.pocket ? ` (${property.pocket})` : ''}
-- Building: ${property.building_name || 'N/A'}
-- Category: ${property.property_category}
-- Carpet Area: ${property.carpet_area || 'N/A'} sq.ft
-- Furnishing: ${property.furnishing || 'N/A'}
+- Building: ${property.building_name || 'Not specified'}
+- Area: ${property.carpet_area || 'Not specified'} sq.ft
+- Furnishing: ${property.furnishing || 'Not specified'}
 - Floor: ${property.floor || 'N/A'}${property.total_floors ? ` of ${property.total_floors}` : ''}
-- Parking: ${property.parking || 'N/A'}
-- Amenities: ${property.amenities?.slice(0, 5).join(', ') || 'N/A'}
+- Parking: ${property.parking || 'Not specified'}
 - View: ${property.view || 'N/A'}
+- Amenities: ${property.amenities?.slice(0, 5).join(', ') || 'Standard amenities'}
 
-**Output JSON format:**
+**Generate JSON:**
 {
-  "title": "Natural, engaging title (12-18 words, highlight key features like location, view, furnishing)",
-  "description": "Full paragraph description (40-80 words, engaging, specific, no generic fluff)"
+  "title": "Natural title here",
+  "description": "Natural description here"
 }
 
-**Rules:**
-- Title: Conversational, not salesy. Example: "Spacious 3 BHK with Sea Views in Prime Bandra West Location"
-- Description: Full paragraph, paint the picture, mention standout features
-- Be specific about location/building/amenities
-- No "luxury", "premium", "world-class" generic terms
-- Mumbai context matters (mention connectivity, vibe)
+**Title Rules (12-18 words):**
+❌ NEVER use: "Charming", "Stunning", "Luxurious", "Premium", "Elegant", "Exquisite", "Heart of", "Just steps from", "Nestled in", "Boasts"
+✅ DO use: Specific features, actual amenities, real location details
+✅ Format: "[Size/Type] [Key Feature] in [Specific Location]"
+✅ Examples:
+  - "Fully Furnished 3 BHK with Sea View in Bandra West, 2 Covered Parking"
+  - "Spacious 2 BHK Office Space in BKC with Modern Fit-Out and Metro Access"
+  - "1800 sq.ft 4 BHK Apartment in Worli, Top Floor with City Views"
 
-Return ONLY the JSON, no other text.`;
+**Description Rules (40-80 words, one paragraph):**
+❌ NEVER use: Generic adjectives, flowery language, "offers", "features", "boasts"
+✅ DO write: Direct, factual, specific
+✅ Start with: What makes it practical/useful
+✅ Mention: Building reputation (if known), connectivity, specific amenities, tenant suitability
+✅ Examples:
+  - "This 2 BHK in Oberoi Sky Heights comes fully furnished with modular kitchen, split ACs, and 2 covered parking. Located on Linking Road, you're walking distance to Bandra station and major restaurants. Building has 24/7 security and backup power."
+  - "Commercial space on the 8th floor of a Grade A building in BKC. Modern glass facade, central AC, 2 washrooms, and pantry area included. Direct metro access makes client meetings easy. Suitable for consulting firms or small tech companies."
+
+**Mumbai Context:**
+- Mention metro stations, railway stations if nearby
+- Reference known buildings by name if applicable
+- Note if expat-friendly, pet-friendly, veg-only (if specified)
+- Connectivity matters: mention if near highways, airports
+
+Return ONLY the JSON, nothing else.`;
 
           const response = await base44.integrations.Core.InvokeLLM({
             prompt,
