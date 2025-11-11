@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { usePropertyAIEnrichment } from "../hooks/usePropertyAIEnrichment";
+import { useAutoSlugGeneration } from "../hooks/useAutoSlugGeneration";
 
 const createPageUrl = (pageName) => {
   switch (pageName) {
@@ -36,6 +37,9 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
   
   // ✅ AUTO-ENRICH: Generate AI title/description on-demand
   const { property, isEnriching } = usePropertyAIEnrichment(initialProperty);
+  
+  // ✅ AUTO-SLUG: Generate URL slug on-demand
+  useAutoSlugGeneration(property);
   
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
