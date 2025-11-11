@@ -90,6 +90,12 @@ export default function Admin() {
   const [backfillingDevelopers, setBackfillingDevelopers] = useState(false); // NEW STATE for backfilling developers
   const [fixingResidentialLease, setFixingResidentialLease] = useState(false); // ✅ NEW STATE
 
+  // Building query modal states
+  const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
+  const [buildingQuery, setBuildingQuery] = useState("");
+  const [buildingQueryResult, setBuildingQueryResult] = useState(null);
+  const [queryingBuilding, setQueryingBuilding] = useState(false);
+
   // ⚡ OPTIMIZATION: Debounced search for properties
   const debouncedPropSearchFn = useCallback(
     debounce((searchValue) => {
