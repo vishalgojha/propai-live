@@ -11,9 +11,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  */
 Deno.serve(async (req) => {
   console.log('🚀 ========== FUNCTION INVOKED ==========');
-  console.log('📍 Method:', req.method);
-  console.log('📍 URL:', req.url);
-  console.log('📍 Headers:', Object.fromEntries(req.headers.entries()));
   
   let base44;
   
@@ -38,7 +35,6 @@ Deno.serve(async (req) => {
 
     const { property_id } = requestBody;
     console.log('🔑 Extracted property_id:', property_id);
-    console.log('🔑 Type of property_id:', typeof property_id);
     
     if (!property_id || property_id === 'null' || property_id === 'undefined') {
       console.log('❌ Invalid property_id:', property_id);
@@ -82,7 +78,6 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ User authenticated:', user.email);
-    console.log('👤 User role:', user.role);
 
     console.log('🔍 Fetching property with ID:', property_id);
 
@@ -103,7 +98,6 @@ Deno.serve(async (req) => {
     
     if (!property) {
       console.log('❌ Property not found with ID:', property_id);
-      console.log('🔍 Available property IDs (first 5):', properties.slice(0, 5).map(p => p.id));
       return Response.json({ 
         success: false, 
         error: 'Property not found',
@@ -111,13 +105,7 @@ Deno.serve(async (req) => {
       }, { status: 404 });
     }
 
-    console.log('✅ Property found!');
-    console.log('📋 Property details:', {
-      id: property.id,
-      title: property.ai_title || property.bhk,
-      location: property.location,
-      building_name: property.building_name
-    });
+    console.log('✅ Property found:', property.ai_title || property.bhk);
 
     // Get the base URL for the app
     const appUrl = req.headers.get('origin') || 'https://propai.live';
@@ -137,7 +125,7 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    console.log('🔑 API key found:', browserlessApiKey.substring(0, 15) + '...');
+    console.log('🔑 API key configured');
 
     // BrowserQL endpoint
     const endpoint = "https://production-sfo.browserless.io/chromium/bql";
@@ -145,14 +133,14 @@ Deno.serve(async (req) => {
     
     console.log('📸 Calling Browserless BrowserQL API...');
 
-    // Prepare GraphQL request body
+    // ✅ FIXED: Correct GraphQL syntax - no "options" wrapper
     const graphqlBody = {
       query: `
         mutation Screenshot($url: String!) {
           goto(url: $url, waitUntil: load) {
             status
           }
-          screenshot(type: png, options: { fullPage: false, clip: { x: 0, y: 0, width: 1200, height: 630 } }) {
+          screenshot(type: png, fullPage: false, clip: { x: 0, y: 0, width: 1200, height: 630 }) {
             base64
           }
         }
@@ -162,7 +150,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log('📦 GraphQL variables:', JSON.stringify(graphqlBody.variables));
+    console.log('📦 GraphQL query prepared');
 
     // Call Browserless BrowserQL API
     let screenshotResponse;
@@ -196,8 +184,7 @@ Deno.serve(async (req) => {
     let responseData;
     try {
       const responseText = await screenshotResponse.text();
-      console.log('📦 Browserless response length:', responseText.length);
-      console.log('📦 Response preview:', responseText.substring(0, 200));
+      console.log('📦 Browserless response received, length:', responseText.length);
       responseData = JSON.parse(responseText);
     } catch (jsonError) {
       console.error('❌ Failed to parse Browserless JSON:', jsonError.message);
@@ -206,8 +193,6 @@ Deno.serve(async (req) => {
         error: 'Invalid JSON response from Browserless: ' + jsonError.message 
       }, { status: 500 });
     }
-    
-    console.log('📦 Response structure:', JSON.stringify(Object.keys(responseData)));
     
     // Check for GraphQL errors
     if (responseData.errors) {
@@ -223,16 +208,13 @@ Deno.serve(async (req) => {
     
     if (!base64Image) {
       console.error('❌ No screenshot.base64 in response');
-      console.error('📦 Full response:', JSON.stringify(responseData, null, 2));
       return Response.json({ 
         success: false, 
-        error: 'No screenshot data returned from Browserless',
-        response_structure: responseData
+        error: 'No screenshot data returned from Browserless'
       }, { status: 500 });
     }
 
-    console.log('✅ Screenshot captured!');
-    console.log('🖼️ Base64 length:', base64Image.length);
+    console.log('✅ Screenshot captured! Base64 length:', base64Image.length);
 
     // Convert base64 to buffer
     let bytes;
@@ -268,7 +250,6 @@ Deno.serve(async (req) => {
         file: imageFile
       });
       console.log('✅ Upload successful!');
-      console.log('📦 Upload result:', JSON.stringify(uploadResult, null, 2));
     } catch (uploadError) {
       console.error('❌ Upload failed:', uploadError.message);
       return Response.json({ 
@@ -281,35 +262,28 @@ Deno.serve(async (req) => {
       console.error('❌ No file_url in upload result');
       return Response.json({ 
         success: false, 
-        error: 'Failed to upload image to storage - no URL returned',
-        upload_result: uploadResult
+        error: 'Failed to upload image to storage - no URL returned'
       }, { status: 500 });
     }
 
     console.log('🎉 SUCCESS! Image URL:', uploadResult.file_url);
 
     // Return success with image URL
-    const successResponse = {
+    return Response.json({
       success: true,
       image_url: uploadResult.file_url,
       property_id: property_id,
       generated_at: new Date().toISOString()
-    };
-    
-    console.log('📤 Returning success response:', JSON.stringify(successResponse, null, 2));
-
-    return Response.json(successResponse);
+    });
 
   } catch (error) {
     console.error('❌ ========== UNEXPECTED ERROR ==========');
-    console.error('❌ Error name:', error.name);
-    console.error('❌ Error message:', error.message);
-    console.error('❌ Stack trace:', error.stack);
+    console.error('❌ Error:', error.message);
+    console.error('❌ Stack:', error.stack);
     
     return Response.json({ 
       success: false, 
       error: error.message,
-      error_name: error.name,
       stack: error.stack
     }, { status: 500 });
   }
