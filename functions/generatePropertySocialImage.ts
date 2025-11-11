@@ -97,7 +97,9 @@ Deno.serve(async (req) => {
     console.log('✅ Property found:', property.ai_title || property.bhk);
 
     const appUrl = req.headers.get('origin') || 'https://propai.live';
-    const pageUrl = `${appUrl}/sociallisting?id=${property_id}&token=propai-screenshot-2025`;
+    
+    // ✅ NO TOKEN NEEDED - Page is now public
+    const pageUrl = `${appUrl}/sociallisting?id=${property_id}`;
 
     console.log('🔍 Target URL:', pageUrl);
 
@@ -117,7 +119,6 @@ Deno.serve(async (req) => {
     
     console.log('📸 Calling Browserless BrowserQL...');
 
-    // ✅ CORRECTED: Remove invalid wait() - use networkidle + delay in goto
     const graphqlBody = {
       query: `
         mutation Screenshot($url: String!) {

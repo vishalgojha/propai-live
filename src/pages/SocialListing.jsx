@@ -1,52 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Lock, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import SocialSharePropertyCard from "../components/property/SocialSharePropertyCard";
 
 /**
  * SocialListing Page - Renders property social share cards
  * This page is accessed by the screenshot service (Browserless)
- * Supports authentication via user login OR via secret token for automation
+ * NO LOGIN REQUIRED - Public endpoint for automated screenshots
  */
 export default function SocialListing() {
   const urlParams = new URLSearchParams(window.location.search);
   const propertyId = urlParams.get('id');
   const propertySlug = urlParams.get('slug');
-  const secretToken = urlParams.get('token');
-  const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [hasValidToken, setHasValidToken] = useState(false);
 
-  // Check authentication (user OR secret token)
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setIsLoadingUser(true);
-        
-        // Check if secret token is provided and valid
-        if (secretToken === 'propai-screenshot-2025') {
-          console.log('✅ Valid secret token provided');
-          setHasValidToken(true);
-          setIsLoadingUser(false);
-          return;
-        }
-        
-        // Otherwise check regular user auth
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        setUser(null);
-      } finally {
-        setIsLoadingUser(false);
-      }
-    };
-    loadUser();
-  }, [secretToken]);
-
-  // Fetch property data (enabled if user OR valid token)
+  // Fetch property data - NO AUTH REQUIRED
   const { data: property, isLoading: propertyLoading, error } = useQuery({
     queryKey: ['property', propertyId || propertySlug],
     queryFn: async () => {
@@ -56,7 +25,7 @@ export default function SocialListing() {
         p.slug === propertySlug
       );
     },
-    enabled: !!(propertyId || propertySlug) && (!!user || hasValidToken),
+    enabled: !!(propertyId || propertySlug),
   });
 
   // Fetch building data if property has building_id
@@ -80,41 +49,6 @@ export default function SocialListing() {
     },
     enabled: !!building?.developer_id,
   });
-
-  // Loading state for authentication
-  if (isLoadingUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <Skeleton className="h-12 w-48 mx-auto mb-4" />
-          <Skeleton className="h-6 w-64 mx-auto" />
-        </div>
-      </div>
-    );
-  }
-
-  // Login gate - only authenticated users OR valid token can access
-  if (!user && !hasValidToken) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-6">
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border-2 border-purple-200 max-w-md text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Login Required</h2>
-          <p className="text-slate-600 mb-6 leading-relaxed">
-            This page generates social share images for properties. Please login to access this feature.
-          </p>
-          <Button
-            onClick={() => base44.auth.redirectToLogin(window.location.pathname + window.location.search)}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 py-3"
-          >
-            Login to Continue
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   // No property ID provided
   if (!propertyId && !propertySlug) {
