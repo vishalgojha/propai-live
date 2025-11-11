@@ -10,6 +10,7 @@ import { getFeatureWithOverride } from '../config/features';
  * - Feature flag support (client-side vs backend)
  * - Parity logging for monitoring
  * - Session caching to prevent re-enrichment
+ * - Price validation for Mumbai market
  */
 export function usePropertyAIEnrichment(property) {
   const [enrichedProperty, setEnrichedProperty] = useState(property);
@@ -48,12 +49,41 @@ export function usePropertyAIEnrichment(property) {
         let aiDescription = property.ai_description;
 
         if (useClientAI) {
+          // ✅ PRICE VALIDATION FOR MUMBAI MARKET
+          const priceInLakhs = property.price_unit === 'crores' ? property.price * 100 : property.price;
+          let priceWarning = '';
+          
+          // Sanity checks for Mumbai real estate
+          if (property.listing_type === 'Sale' || property.listing_type === 'Pre Leased') {
+            if (property.property_category === 'Residential') {
+              if (priceInLakhs > 10000) { // > 100 Cr
+                priceWarning = '⚠️ WARNING: Price seems unusually high for residential (>100 Cr). Verify data accuracy.';
+              } else if (priceInLakhs < 50) { // < 50 Lakhs
+                priceWarning = '⚠️ WARNING: Price seems too low for Mumbai property (<50L). Verify data accuracy.';
+              }
+            } else if (property.property_category === 'Commercial') {
+              if (priceInLakhs > 20000) { // > 200 Cr
+                priceWarning = '⚠️ WARNING: Price seems extremely high for commercial (>200 Cr). Verify data accuracy.';
+              }
+            }
+          } else if (property.listing_type === 'Rent' || property.listing_type === 'Lease') {
+            if (property.property_category === 'Residential') {
+              if (priceInLakhs > 20) { // > 20 Lakhs/month
+                priceWarning = '⚠️ WARNING: Monthly rent seems very high (>20L/month). Verify data accuracy.';
+              }
+            } else if (property.property_category === 'Commercial') {
+              if (priceInLakhs > 50) { // > 50 Lakhs/month
+                priceWarning = '⚠️ WARNING: Monthly rent seems very high (>50L/month). Verify data accuracy.';
+              }
+            }
+          }
+
           // ✅ CLIENT-SIDE AI GENERATION WITH IMPROVED PROMPT
           const prompt = `You are writing property listings for a Mumbai real estate platform. Write naturally, like a knowledgeable local broker who's direct and informative.
 
 **Property Details:**
 - Type: ${property.bhk} ${property.property_category || 'Residential'}
-- Price: ₹${property.price} ${property.price_unit}
+- Price: ₹${property.price} ${property.price_unit} ${priceWarning ? `\n${priceWarning}` : ''}
 - Listing: ${property.listing_type}
 - Location: ${property.location}${property.pocket ? ` (${property.pocket})` : ''}
 - Building: ${property.building_name || 'Not specified'}
@@ -63,6 +93,12 @@ export function usePropertyAIEnrichment(property) {
 - Parking: ${property.parking || 'Not specified'}
 - View: ${property.view || 'N/A'}
 - Amenities: ${property.amenities?.slice(0, 5).join(', ') || 'Standard amenities'}
+
+**Mumbai Real Estate Context (Typical Pricing):**
+- Residential Sale: ₹1-30 Cr (premium areas like Bandra, Worli, BKC can go ₹5-50 Cr)
+- Residential Rent: ₹50k-5L/month (luxury can be ₹10-20L/month)
+- Commercial Sale: ₹5-100 Cr (depends heavily on location and size)
+- Commercial Rent: ₹2L-30L/month (Grade A buildings command premium)
 
 **Generate JSON:**
 {
@@ -78,6 +114,7 @@ export function usePropertyAIEnrichment(property) {
   - "Fully Furnished 3 BHK with Sea View in Bandra West, 2 Covered Parking"
   - "Spacious 2 BHK Office Space in BKC with Modern Fit-Out and Metro Access"
   - "1800 sq.ft 4 BHK Apartment in Worli, Top Floor with City Views"
+⚠️ If price seems unusual: DO NOT mention the price in title/description, let the numbers speak
 
 **Description Rules (40-80 words, one paragraph):**
 ❌ NEVER use: Generic adjectives, flowery language, "offers", "features", "boasts"
@@ -87,12 +124,14 @@ export function usePropertyAIEnrichment(property) {
 ✅ Examples:
   - "This 2 BHK in Oberoi Sky Heights comes fully furnished with modular kitchen, split ACs, and 2 covered parking. Located on Linking Road, you're walking distance to Bandra station and major restaurants. Building has 24/7 security and backup power."
   - "Commercial space on the 8th floor of a Grade A building in BKC. Modern glass facade, central AC, 2 washrooms, and pantry area included. Direct metro access makes client meetings easy. Suitable for consulting firms or small tech companies."
+⚠️ If price seems unusual: Focus on property features, avoid price commentary
 
 **Mumbai Context:**
 - Mention metro stations, railway stations if nearby
 - Reference known buildings by name if applicable
 - Note if expat-friendly, pet-friendly, veg-only (if specified)
 - Connectivity matters: mention if near highways, airports
+- Area vibe: Bandra = trendy/expat hub, BKC = corporate, Worli = sea-facing luxury, Lower Parel = mills redevelopment
 
 Return ONLY the JSON, nothing else.`;
 
@@ -121,6 +160,7 @@ Return ONLY the JSON, nothing else.`;
               client_title: aiTitle,
               client_description: aiDescription,
               enrichment_time_ms: Math.round(enrichmentTime),
+              price_warning: priceWarning || null,
               session_id: sessionStorage.getItem('session_id') || Math.random().toString(36).substring(2)
             }).catch(err => {
               // Silent fail - don't block user experience
