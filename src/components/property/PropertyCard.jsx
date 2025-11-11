@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -184,22 +185,34 @@ export default function PropertyCard({ property: initialProperty, onViewDetails 
   };
 
   const formatPrice = () => {
-    if (property.price_unit === "crores") {
-      if (property.price < 1) {
-        const lakhs = property.price * 100;
-        return `₹${lakhs} ${lakhs === 1 ? 'Lakh' : 'Lakhs'}`;
-      }
-      return `₹${property.price} Cr`;
-    }
+    // ✅ FIXED: Better price formatting with proper rounding and validation
+    const priceNum = parseFloat(property.price);
     
-    if (property.price >= 100) {
-      const crores = (property.price / 100).toFixed(2);
+    if (isNaN(priceNum) || priceNum === 0) {
+      return "Price on Request";
+    }
+
+    // Convert everything to lakhs for consistent calculation
+    let priceInLakhs;
+    if (property.price_unit === "crores") {
+      priceInLakhs = priceNum * 100;
+    } else {
+      priceInLakhs = priceNum;
+    }
+
+    // Format based on magnitude
+    if (priceInLakhs >= 100) {
+      // Display in crores (100+ lakhs)
+      const crores = (priceInLakhs / 100).toFixed(2);
       return `₹${crores} Cr`;
-    } else if (property.price < 1) {
-      const thousands = (property.price * 100).toFixed(0);
+    } else if (priceInLakhs >= 1) {
+      // Display in lakhs (1-99 lakhs)
+      return `₹${priceInLakhs.toFixed(2)} L`;
+    } else {
+      // Display in thousands (<1 lakh)
+      const thousands = (priceInLakhs * 100).toFixed(0);
       return `₹${thousands}K`;
     }
-    return `₹${property.price} ${property.price === 1 ? 'Lakh' : 'Lakhs'}`;
   };
 
   const getPropertyUrl = () => {
