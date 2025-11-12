@@ -147,10 +147,10 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // ✅ Get sitemap URL from environment/functions
+  // ✅ CORRECT: Use base44.functions.getUrl to get the proper function URL
   const getSitemapUrl = () => {
-    // The sitemap function URL - you can get this from Dashboard → Functions → generateSitemap
-    return `${window.location.origin}/api/sitemap.xml`;
+    // This will construct the correct URL: https://api.base44.com/functions/<app-id>/generateSitemap
+    return base44.functions.getUrl('generateSitemap');
   };
 
   return (
@@ -487,7 +487,7 @@ export default function Layout({ children, currentPageName }) {
                     <span className="ml-1 text-xs">🌍</span>
                   </Link>
                 </li>
-                {/* ✅ ADDED: Sitemap Link */}
+                {/* ✅ Sitemap Link - using base44.functions.getUrl() */}
                 <li>
                   <a 
                     href={getSitemapUrl()}
