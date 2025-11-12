@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Building2, Search, MapPin, Star, ArrowRight, Check
+  Building2, Search, MapPin, Star, ArrowRight, Check, AlertCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -27,7 +26,6 @@ export default function Buildings() {
   const [buildingsToShow, setBuildingsToShow] = useState(9);
   const BUILDINGS_PER_LOAD = 9;
 
-  // ✅ NEW: Read developer filter from URL on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const developerParam = urlParams.get('developer');
@@ -53,39 +51,59 @@ export default function Buildings() {
 
   const isAdmin = user?.role === 'admin';
 
-  // ⚡ OPTIMIZATION: Aggressive caching for buildings (10 min stale time)
-  const { data: buildings = [], isLoading } = useQuery({
+  // ✅ FIXED: Better error handling and logging
+  const { data: buildings = [], isLoading: buildingsLoading, error: buildingsError } = useQuery({
     queryKey: ['buildings'],
-    queryFn: () => base44.entities.Building.list('-active_listings'),
+    queryFn: async () => {
+      console.log('🏢 Fetching buildings...');
+      const result = await base44.entities.Building.list('-active_listings');
+      console.log('✅ Buildings fetched:', result?.length || 0);
+      return result || [];
+    },
     initialData: [],
     staleTime: 10 * 60 * 1000,
     cacheTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // ⚡ FETCH ALL PROPERTIES (not just active) to calculate counts
-  const { data: properties = [] } = useQuery({
+  const { data: properties = [], isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['properties-for-buildings'],
-    queryFn: () => base44.entities.Property.list(),
+    queryFn: async () => {
+      console.log('🏠 Fetching properties...');
+      const result = await base44.entities.Property.list();
+      console.log('✅ Properties fetched:', result?.length || 0);
+      return result || [];
+    },
     initialData: [],
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // ✅ NEW: Fetch developers for filter
-  const { data: developers = [] } = useQuery({
+  const { data: developers = [], isLoading: developersLoading } = useQuery({
     queryKey: ['developers'],
-    queryFn: () => base44.entities.Developer.list('-name'),
+    queryFn: async () => {
+      console.log('🏗️ Fetching developers...');
+      const result = await base44.entities.Developer.list('-name');
+      console.log('✅ Developers fetched:', result?.length || 0);
+      return result || [];
+    },
     initialData: [],
     staleTime: 10 * 60 * 1000,
     cacheTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // ✅ FIXED: Calculate listing counts from properties data
+  const isLoading = buildingsLoading || propertiesLoading || developersLoading;
+
+  // ✅ FIXED: Calculate listing counts with logging
   const buildingsWithCounts = useMemo(() => {
-    return buildings.map(building => {
+    console.log('📊 Calculating building counts...', {
+      buildingsCount: buildings.length,
+      propertiesCount: properties.length
+    });
+    
+    const result = buildings.map(building => {
       const buildingProps = properties.filter(p => p.building_id === building.id);
       const activeProps = buildingProps.filter(p => p.status === 'Active' && !p.is_duplicate);
       
@@ -95,13 +113,15 @@ export default function Buildings() {
         active_listings: activeProps.length
       };
     });
+    
+    console.log('✅ Buildings with counts:', result.length);
+    return result;
   }, [buildings, properties]);
 
   const locations = useMemo(() => {
     return [...new Set(buildingsWithCounts.map(b => b.location).filter(Boolean))];
   }, [buildingsWithCounts]);
 
-  // ⚡ OPTIMIZATION: Memoize filtered buildings - NOW WITH DEVELOPER FILTER
   const filteredBuildings = useMemo(() => {
     return buildingsWithCounts.filter(building => {
       const matchesSearch = !searchQuery ||
@@ -112,7 +132,6 @@ export default function Buildings() {
 
       const matchesLocation = locationFilter === "all" || building.location === locationFilter;
 
-      // ✅ NEW: Developer filter matching
       const matchesDeveloper = developerFilter === "all" || 
         building.developer_name === developerFilter ||
         developers.find(d => d.id === building.developer_id)?.name === developerFilter;
@@ -134,7 +153,6 @@ export default function Buildings() {
   };
 
   const handleBuildingClick = (building) => {
-    // ✅ CHANGED: Navigate to BuildingBlog instead of BuildingProfile
     navigate(createPageUrl("BuildingBlog") + `?id=${building.id}`);
   };
 
@@ -146,13 +164,13 @@ export default function Buildings() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://chariotrealty.com"
+        "item": "https://propai.live"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Buildings",
-        "item": "https://chariotrealty.com/buildings"
+        "item": "https://propai.live/buildings"
       }
     ]
   };
@@ -165,7 +183,7 @@ export default function Buildings() {
         title="Mumbai Buildings Directory | Street-Level Intelligence"
         description="Explore verified buildings in Mumbai — from Pali Hill to Carter Road. Building-level insights: pricing, amenities, broker references & street intelligence."
         schema={breadcrumbSchema}
-        canonical="https://chariotrealty.com/buildings"
+        canonical="https://propai.live/buildings"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
@@ -183,27 +201,59 @@ export default function Buildings() {
           </div>
         </div>
 
+        {/* ✅ NEW: Error Display */}
+        {(buildingsError || propertiesError) && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-bold text-red-900 mb-2">Failed to Load Data</h3>
+                <p className="text-sm text-red-700 mb-3">
+                  {buildingsError ? `Buildings: ${buildingsError.message}` : ''}
+                  {buildingsError && propertiesError && ' | '}
+                  {propertiesError ? `Properties: ${propertiesError.message}` : ''}
+                </p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Reload Page
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Total Buildings</p>
-            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{buildingsWithCounts.length}</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              {isLoading ? '...' : buildingsWithCounts.length}
+            </p>
           </div>
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Verified</p>
-            <p className="text-2xl font-bold text-green-600">{buildingsWithCounts.filter(b => b.verified).length}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {isLoading ? '...' : buildingsWithCounts.filter(b => b.verified).length}
+            </p>
           </div>
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Total Listings</p>
-            <p className="text-2xl font-bold text-purple-600">{buildingsWithCounts.reduce((sum, b) => sum + (b.total_listings || 0), 0)}</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {isLoading ? '...' : buildingsWithCounts.reduce((sum, b) => sum + (b.total_listings || 0), 0)}
+            </p>
           </div>
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
             <p className="text-xs text-slate-600 mb-1">Active Listings</p>
-            <p className="text-2xl font-bold text-blue-600">{buildingsWithCounts.reduce((sum, b) => sum + (b.active_listings || 0), 0)}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {isLoading ? '...' : buildingsWithCounts.reduce((sum, b) => sum + (b.active_listings || 0), 0)}
+            </p>
           </div>
         </div>
 
-        {/* ✅ ENHANCED: Filters with Developer dropdown */}
+        {/* Filters */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-purple-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
@@ -237,7 +287,6 @@ export default function Buildings() {
             </select>
           </div>
           
-          {/* ✅ NEW: Active filter badges */}
           {(developerFilter !== "all" || locationFilter !== "all") && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-purple-100">
               <p className="text-xs text-slate-600 font-semibold">Active Filters:</p>
@@ -281,12 +330,39 @@ export default function Buildings() {
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoading && filteredBuildings.length === 0 && (
-          <div className="bg-white rounded-3xl p-12 text-center border-2 border-[#F7F7F7]">
-            <Building2 className="w-12 h-12 text-[#3B3B3B] mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-[#111111] mb-2">No buildings found</h3>
-            <p className="text-[#3B3B3B]">Try adjusting your search or filters</p>
+        {/* ✅ NEW: No Data State */}
+        {!isLoading && !buildingsError && !propertiesError && buildings.length === 0 && (
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-3xl p-12 text-center border-2 border-amber-200">
+            <Building2 className="w-16 h-16 text-amber-600 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">No Buildings Yet</h3>
+            <p className="text-slate-700 mb-6">
+              It looks like no buildings have been added to the database yet.
+            </p>
+            {isAdmin && (
+              <p className="text-sm text-amber-700">
+                💡 Buildings are automatically created when properties are added via the admin panel or WhatsApp AI agent.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Empty Filter Results */}
+        {!isLoading && buildings.length > 0 && filteredBuildings.length === 0 && (
+          <div className="bg-white rounded-3xl p-12 text-center border-2 border-purple-200">
+            <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No buildings found</h3>
+            <p className="text-slate-600 mb-4">Try adjusting your search or filters</p>
+            <Button
+              onClick={() => {
+                setSearchQuery("");
+                setLocationFilter("all");
+                setDeveloperFilter("all");
+              }}
+              variant="outline"
+              className="border-purple-300"
+            >
+              Clear Filters
+            </Button>
           </div>
         )}
 
@@ -329,14 +405,12 @@ export default function Buildings() {
                       </div>
                     </div>
 
-                    {/* ✅ ENHANCED: Show building summary if available */}
                     {building.building_summary && (
                       <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">
                         {building.building_summary}
                       </p>
                     )}
 
-                    {/* ✅ ENHANCED: Show developer and year */}
                     {(building.developer_name || building.year_built) && (
                       <div className="mb-3 pb-3 border-b border-purple-100">
                         {building.developer_name && (
@@ -369,7 +443,6 @@ export default function Buildings() {
                       </div>
                     )}
 
-                    {/* ✅ ENHANCED: Show amenities count if available */}
                     {building.amenities && building.amenities.length > 0 && (
                       <div className="mb-3 text-xs text-slate-600">
                         <Check className="w-3 h-3 inline mr-1 text-green-600" />
@@ -443,7 +516,6 @@ export default function Buildings() {
                 <Button
                   onClick={handleLoadMore}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg"
-                  disabled={isLoading}
                 >
                   Load More Buildings ({filteredBuildings.length - displayedBuildings.length} left)
                 </Button>
