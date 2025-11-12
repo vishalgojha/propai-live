@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,16 @@ import {
 import { DollarSign, AlertTriangle, CheckCircle2, RefreshCw, Zap, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function PriceValidationTool({ properties }) {
   const queryClient = useQueryClient();
@@ -21,8 +32,13 @@ export default function PriceValidationTool({ properties }) {
   const [isFixing, setIsFixing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [filterIssueType, setFilterIssueType] = useState("all");
+  
+  // Modal state for delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState(null);
 
-  // ✅ PRICE VALIDATION LOGIC
+  // PRICE VALIDATION LOGIC
   const priceIssues = useMemo(() => {
     return properties.map(property => {
       const priceNum = parseFloat(property.price);
@@ -142,15 +158,16 @@ export default function PriceValidationTool({ properties }) {
     }
   };
 
-  const deleteProperty = async (propertyId, customId) => {
-    if (!confirm(`Delete ${customId}?\n\nThis action cannot be undone.`)) return;
-
+  // IMPROVED: Delete with modal confirmation
+  const deleteProperty = async (property) => {
     try {
-      await base44.entities.Property.delete(propertyId);
+      await base44.entities.Property.delete(property.id);
       toast.success("🗑️ Property Deleted", {
-        description: `${customId} removed from database`
+        description: `${property.custom_id} removed from database`
       });
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      setDeleteDialogOpen(false);
+      setPropertyToDelete(null);
     } catch (error) {
       toast.error("Failed to delete", {
         description: error.message
@@ -158,22 +175,7 @@ export default function PriceValidationTool({ properties }) {
     }
   };
 
-  const deleteAllIssues = async () => {
-    const confirmMessage = `🚨 DELETE ALL ${filteredIssues.length} PROPERTIES WITH PRICE ISSUES?\n\n` +
-      `This will PERMANENTLY delete:\n` +
-      `• ${severityCounts.critical} critical issues\n` +
-      `• ${severityCounts.high} high priority issues\n` +
-      `• ${severityCounts.medium} medium issues\n\n` +
-      `⚠️ THIS CANNOT BE UNDONE!\n\n` +
-      `Type "DELETE ALL" to confirm:`;
-
-    const userInput = prompt(confirmMessage);
-    
-    if (userInput !== "DELETE ALL") {
-      toast.info("Deletion cancelled");
-      return;
-    }
-
+  const confirmDeleteAllIssues = async () => {
     setIsDeleting(true);
     let deleted = 0;
     let errors = 0;
@@ -189,7 +191,6 @@ export default function PriceValidationTool({ properties }) {
         errors++;
       }
 
-      // Show progress every 10 properties
       if (deleted % 10 === 0) {
         toast.loading(`Deleted ${deleted}/${filteredIssues.length}...`, { id: "bulk-delete" });
       }
@@ -197,7 +198,7 @@ export default function PriceValidationTool({ properties }) {
 
     toast.dismiss("bulk-delete");
     toast.success("✅ Bulk Delete Complete!", {
-      description: `Deleted ${deleted} properties (${errors} errors)`,
+      description: `Deleted ${deleted} properties${errors > 0 ? ` (${errors} errors)` : ''}`,
       className: 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-0',
       duration: 6000
     });
@@ -206,6 +207,7 @@ export default function PriceValidationTool({ properties }) {
     queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
     
     setIsDeleting(false);
+    setDeleteAllDialogOpen(false);
   };
 
   const runBulkAnalysis = async () => {
@@ -297,24 +299,14 @@ export default function PriceValidationTool({ properties }) {
               )}
             </Button>
             
-            {/* ✅ NEW: Delete All Button */}
             {filteredIssues.length > 0 && (
               <Button
-                onClick={deleteAllIssues}
+                onClick={() => setDeleteAllDialogOpen(true)}
                 disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {isDeleting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete All Issues
-                  </>
-                )}
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete All Issues
               </Button>
             )}
           </div>
@@ -340,7 +332,7 @@ export default function PriceValidationTool({ properties }) {
           </div>
         </div>
 
-        {/* ✅ WARNING BANNER */}
+        {/* WARNING BANNER */}
         {priceIssues.length > 0 && (
           <div className="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
@@ -351,7 +343,7 @@ export default function PriceValidationTool({ properties }) {
                 </p>
                 <p className="text-xs text-red-800 leading-relaxed">
                   The "Delete All Issues" button will permanently remove ALL properties with pricing problems. 
-                  This is useful for cleaning up bad parsing results. Type "DELETE ALL" to confirm.
+                  This is useful for cleaning up bad parsing results.
                 </p>
               </div>
             </div>
@@ -466,9 +458,12 @@ export default function PriceValidationTool({ properties }) {
                   >
                     View Property
                   </Button>
-                  {/* ✅ NEW: Delete Individual Property */}
+                  {/* NEW: Delete Individual Property */}
                   <Button
-                    onClick={() => deleteProperty(item.property.id, item.property.custom_id)}
+                    onClick={() => {
+                      setPropertyToDelete(item.property);
+                      setDeleteDialogOpen(true);
+                    }}
                     size="sm"
                     variant="outline"
                     className="whitespace-nowrap text-red-600 hover:bg-red-50 border-red-300"
@@ -482,6 +477,81 @@ export default function PriceValidationTool({ properties }) {
           ))}
         </div>
       )}
+
+      {/* SINGLE DELETE DIALOG */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Property?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {propertyToDelete && (
+                <div className="space-y-2 mt-2">
+                  <p className="font-semibold text-slate-900">
+                    {propertyToDelete.ai_title || `${propertyToDelete.bhk} in ${propertyToDelete.location}`}
+                  </p>
+                  <p className="text-sm">
+                    ID: <code className="bg-slate-100 px-2 py-1 rounded">{propertyToDelete.custom_id}</code>
+                  </p>
+                  <p className="text-sm text-red-600 font-semibold mt-3">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => propertyToDelete && deleteProperty(propertyToDelete)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Property
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* BULK DELETE DIALOG */}
+      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Permanently Delete {filteredIssues.length} Properties?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-3 mt-3">
+                <p className="font-semibold text-slate-900">
+                  This will PERMANENTLY delete:
+                </p>
+                <ul className="text-sm space-y-1">
+                  <li>• {severityCounts.critical} critical issues</li>
+                  <li>• {severityCounts.high} high priority issues</li>
+                  <li>• {severityCounts.medium} medium issues</li>
+                </ul>
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3 mt-4">
+                  <p className="text-sm text-red-800 font-bold">
+                    ⚠️ THIS CANNOT BE UNDONE
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    All {filteredIssues.length} properties with pricing issues will be removed from the database.
+                  </p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteAllIssues}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Deleting...</> : `Delete All ${filteredIssues.length} Properties`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
