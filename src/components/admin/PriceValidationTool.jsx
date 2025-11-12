@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -12,19 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { DollarSign, AlertTriangle, CheckCircle2, RefreshCw, Zap, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export default function PriceValidationTool({ properties }) {
   const queryClient = useQueryClient();
@@ -33,12 +30,11 @@ export default function PriceValidationTool({ properties }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [filterIssueType, setFilterIssueType] = useState("all");
   
-  // Modal state for delete confirmation
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
-  const [propertyToDelete, setPropertyToDelete] = useState(null);
+  // ✅ NEW: Delete confirmation dialog state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-  // PRICE VALIDATION LOGIC
+  // ✅ PRICE VALIDATION LOGIC
   const priceIssues = useMemo(() => {
     return properties.map(property => {
       const priceNum = parseFloat(property.price);
@@ -63,19 +59,19 @@ export default function PriceValidationTool({ properties }) {
 
       if (property.listing_type === 'Sale' || property.listing_type === 'Pre Leased') {
         if (property.property_category === 'Residential') {
-          if (priceInLakhs > 10000) { // > 100 Cr
+          if (priceInLakhs > 10000) {
             issue = "extremely_high_sale";
             severity = "critical";
             message = `₹${(priceInLakhs / 100).toFixed(2)} Cr seems too high for residential sale`;
             suggestedFix = priceInLakhs > 50000 ? { price: priceInLakhs / 100, unit: 'lakhs' } : null;
-          } else if (priceInLakhs < 50) { // < 50 Lakhs
+          } else if (priceInLakhs < 50) {
             issue = "too_low_sale";
             severity = "high";
             message = `₹${priceInLakhs.toFixed(2)} L seems too low for Mumbai property`;
             suggestedFix = priceInLakhs < 1 ? { price: priceInLakhs * 100, unit: 'lakhs' } : null;
           }
         } else if (property.property_category === 'Commercial') {
-          if (priceInLakhs > 20000) { // > 200 Cr
+          if (priceInLakhs > 20000) {
             issue = "extremely_high_commercial";
             severity = "critical";
             message = `₹${(priceInLakhs / 100).toFixed(2)} Cr seems very high for commercial`;
@@ -83,19 +79,18 @@ export default function PriceValidationTool({ properties }) {
         }
       } else if (property.listing_type === 'Rent' || property.listing_type === 'Lease') {
         if (property.property_category === 'Residential') {
-          if (priceInLakhs > 20) { // > 20 Lakhs/month
+          if (priceInLakhs > 20) {
             issue = "high_rent_residential";
             severity = "high";
             message = `₹${priceInLakhs.toFixed(2)} L/month seems very high for residential rent`;
-            // Could be yearly rent stored as monthly, or stored in wrong unit
             suggestedFix = priceInLakhs > 100 ? { price: priceInLakhs / 100, unit: 'lakhs' } : null;
-          } else if (priceInLakhs < 0.3) { // < 30k/month
+          } else if (priceInLakhs < 0.3) {
             issue = "low_rent_residential";
-            severity = "medium";
+            severity: "medium";
             message = `₹${(priceInLakhs * 100).toFixed(0)}K/month seems low for the area`;
           }
         } else if (property.property_category === 'Commercial') {
-          if (priceInLakhs > 50) { // > 50 Lakhs/month
+          if (priceInLakhs > 50) {
             issue = "high_rent_commercial";
             severity = "high";
             message = `₹${priceInLakhs.toFixed(2)} L/month seems very high for commercial rent`;
@@ -158,16 +153,18 @@ export default function PriceValidationTool({ properties }) {
     }
   };
 
-  // IMPROVED: Delete with modal confirmation
-  const deleteProperty = async (property) => {
+  const deleteProperty = async (propertyId, customId) => {
+    if (!confirm(`Delete ${customId}?\n\nThis action cannot be undone.`)) {
+      toast.info("Deletion cancelled");
+      return;
+    }
+
     try {
-      await base44.entities.Property.delete(property.id);
+      await base44.entities.Property.delete(propertyId);
       toast.success("🗑️ Property Deleted", {
-        description: `${property.custom_id} removed from database`
+        description: `${customId} removed from database`
       });
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
-      setDeleteDialogOpen(false);
-      setPropertyToDelete(null);
     } catch (error) {
       toast.error("Failed to delete", {
         description: error.message
@@ -175,8 +172,17 @@ export default function PriceValidationTool({ properties }) {
     }
   };
 
-  const confirmDeleteAllIssues = async () => {
+  // ✅ FIXED: Use Dialog instead of prompt() for mobile compatibility
+  const deleteAllIssues = async () => {
+    if (deleteConfirmText !== "DELETE ALL") {
+      toast.error("Please type 'DELETE ALL' to confirm");
+      return;
+    }
+
+    setDeleteConfirmOpen(false);
+    setDeleteConfirmText("");
     setIsDeleting(true);
+    
     let deleted = 0;
     let errors = 0;
 
@@ -198,7 +204,7 @@ export default function PriceValidationTool({ properties }) {
 
     toast.dismiss("bulk-delete");
     toast.success("✅ Bulk Delete Complete!", {
-      description: `Deleted ${deleted} properties${errors > 0 ? ` (${errors} errors)` : ''}`,
+      description: `Deleted ${deleted} properties (${errors} errors)`,
       className: 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-0',
       duration: 6000
     });
@@ -207,14 +213,12 @@ export default function PriceValidationTool({ properties }) {
     queryClient.invalidateQueries({ queryKey: ['duplicate-properties'] });
     
     setIsDeleting(false);
-    setDeleteAllDialogOpen(false);
   };
 
   const runBulkAnalysis = async () => {
     setIsAnalyzing(true);
     toast.loading("🔍 Analyzing all property prices...", { id: "price-analysis" });
 
-    // Simulate analysis (already done via useMemo)
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     toast.dismiss("price-analysis");
@@ -268,6 +272,66 @@ export default function PriceValidationTool({ properties }) {
 
   return (
     <div className="space-y-6">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Delete All Price Issues?
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-2">
+              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                <p className="font-bold text-red-900 mb-2">
+                  ⚠️ This will PERMANENTLY delete {filteredIssues.length} properties:
+                </p>
+                <ul className="text-sm text-red-800 space-y-1">
+                  <li>• {severityCounts.critical} critical issues</li>
+                  <li>• {severityCounts.high} high priority issues</li>
+                  <li>• {severityCounts.medium} medium issues</li>
+                </ul>
+                <p className="text-xs text-red-700 mt-3 font-semibold">
+                  ⚠️ THIS CANNOT BE UNDONE!
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-900 mb-2 block">
+                  Type "DELETE ALL" to confirm:
+                </label>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE ALL"
+                  className="font-mono"
+                  autoFocus
+                />
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setDeleteConfirmText("");
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={deleteAllIssues}
+              disabled={deleteConfirmText !== "DELETE ALL"}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete {filteredIssues.length} Properties
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header Card */}
       <Card className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200">
         <div className="flex items-center justify-between mb-4">
@@ -299,14 +363,24 @@ export default function PriceValidationTool({ properties }) {
               )}
             </Button>
             
+            {/* ✅ FIXED: Opens dialog instead of prompt */}
             {filteredIssues.length > 0 && (
               <Button
-                onClick={() => setDeleteAllDialogOpen(true)}
+                onClick={() => setDeleteConfirmOpen(true)}
                 disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete All Issues
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete All Issues
+                  </>
+                )}
               </Button>
             )}
           </div>
@@ -332,7 +406,7 @@ export default function PriceValidationTool({ properties }) {
           </div>
         </div>
 
-        {/* WARNING BANNER */}
+        {/* Warning Banner */}
         {priceIssues.length > 0 && (
           <div className="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
@@ -343,7 +417,7 @@ export default function PriceValidationTool({ properties }) {
                 </p>
                 <p className="text-xs text-red-800 leading-relaxed">
                   The "Delete All Issues" button will permanently remove ALL properties with pricing problems. 
-                  This is useful for cleaning up bad parsing results.
+                  This is useful for cleaning up bad parsing results. You'll need to type "DELETE ALL" to confirm.
                 </p>
               </div>
             </div>
@@ -458,12 +532,8 @@ export default function PriceValidationTool({ properties }) {
                   >
                     View Property
                   </Button>
-                  {/* NEW: Delete Individual Property */}
                   <Button
-                    onClick={() => {
-                      setPropertyToDelete(item.property);
-                      setDeleteDialogOpen(true);
-                    }}
+                    onClick={() => deleteProperty(item.property.id, item.property.custom_id)}
                     size="sm"
                     variant="outline"
                     className="whitespace-nowrap text-red-600 hover:bg-red-50 border-red-300"
@@ -477,81 +547,6 @@ export default function PriceValidationTool({ properties }) {
           ))}
         </div>
       )}
-
-      {/* SINGLE DELETE DIALOG */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Property?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {propertyToDelete && (
-                <div className="space-y-2 mt-2">
-                  <p className="font-semibold text-slate-900">
-                    {propertyToDelete.ai_title || `${propertyToDelete.bhk} in ${propertyToDelete.location}`}
-                  </p>
-                  <p className="text-sm">
-                    ID: <code className="bg-slate-100 px-2 py-1 rounded">{propertyToDelete.custom_id}</code>
-                  </p>
-                  <p className="text-sm text-red-600 font-semibold mt-3">
-                    This action cannot be undone.
-                  </p>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => propertyToDelete && deleteProperty(propertyToDelete)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete Property
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* BULK DELETE DIALOG */}
-      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="w-5 h-5" />
-              Permanently Delete {filteredIssues.length} Properties?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="space-y-3 mt-3">
-                <p className="font-semibold text-slate-900">
-                  This will PERMANENTLY delete:
-                </p>
-                <ul className="text-sm space-y-1">
-                  <li>• {severityCounts.critical} critical issues</li>
-                  <li>• {severityCounts.high} high priority issues</li>
-                  <li>• {severityCounts.medium} medium issues</li>
-                </ul>
-                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3 mt-4">
-                  <p className="text-sm text-red-800 font-bold">
-                    ⚠️ THIS CANNOT BE UNDONE
-                  </p>
-                  <p className="text-xs text-red-700 mt-1">
-                    All {filteredIssues.length} properties with pricing issues will be removed from the database.
-                  </p>
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteAllIssues}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isDeleting}
-            >
-              {isDeleting ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Deleting...</> : `Delete All ${filteredIssues.length} Properties`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
