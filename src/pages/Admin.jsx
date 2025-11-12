@@ -89,6 +89,7 @@ export default function Admin() {
   const [recalculatingTrust, setRecalculatingTrust] = useState(false); // NEW STATE for broker trust
   const [backfillingDevelopers, setBackfillingDevelopers] = useState(false); // NEW STATE for backfilling developers
   const [fixingResidentialLease, setFixingResidentialLease] = useState(false); // ✅ NEW STATE
+  const [runningDiagnostic, setRunningDiagnostic] = useState(false); // ✅ NEW
 
   // Building query modal states
   const [buildingQueryModalOpen, setBuildingQueryModalOpen] = useState(false);
@@ -1610,6 +1611,91 @@ Return ONLY the JSON, nothing else.`;
     }
   };
 
+  // ✅ NEW: Run Diagnostic Check
+  const runDiagnosticCheck = async () => {
+    setRunningDiagnostic(true);
+    toast.loading('🔍 Running diagnostic check...', { id: 'diagnostic' });
+
+    try {
+      const response = await base44.functions.invoke('diagnosticCheck', {});
+      toast.dismiss('diagnostic');
+      
+      const data = response.data;
+      
+      // Build diagnostic report
+      let report = `📊 DIAGNOSTIC REPORT\n\n`;
+      report += `🕒 Last Activity: ${data.recent_activity.last_property?.created_date || 'No recent activity'}\n\n`;
+      report += `📈 SmartFeed Counter: ${data.smartfeed_counter.should_show}\n`;
+      report += `   (${data.smartfeed_counter.total_in_db} total in DB)\n\n`;
+      
+      if (data.recent_activity.last_2_hours.properties === 0) {
+        report += `⚠️ WARNING: No properties created in last 2 hours\n\n`;
+      } else {
+        report += `✅ Recent Activity (Last 2h):\n`;
+        report += `   • ${data.recent_activity.last_2_hours.properties} properties\n`;
+        report += `   • ${data.recent_activity.last_2_hours.requirements} requirements\n`;
+        report += `   • ${data.recent_activity.last_2_hours.brokers} new brokers\n\n`;
+      }
+      
+      if (data.diagnosis.potential_issues.length > 0) {
+        report += `🚨 ISSUES DETECTED:\n`;
+        data.diagnosis.potential_issues.forEach(issue => {
+          report += `   ${issue}\n`;
+        });
+        report += `\n`;
+      }
+      
+      report += `💾 Database Health:\n`;
+      report += `   • Total Properties: ${data.database_health.total_properties}\n`;
+      report += `   • Missing broker_id: ${data.database_health.properties_missing_broker_id}\n`;
+      report += `   • Missing custom_id: ${data.database_health.properties_missing_custom_id}\n`;
+      report += `   • Missing location: ${data.database_health.properties_missing_location}\n\n`;
+      
+      if (data.data_quality.properties_with_issues > 0) {
+        report += `⚠️ Data Quality: ${data.data_quality.properties_with_issues}/10 recent properties have issues\n`;
+        report += `   Common issues: ${data.data_quality.common_issues.join(', ')}\n`;
+      }
+      
+      // Show alert with findings
+      if (data.diagnosis.potential_issues.length > 0 || !data.diagnosis.is_data_being_saved) {
+        toast.error('🚨 Issues Detected!', {
+          description: (
+            <div className="text-xs space-y-1 whitespace-pre-line">
+              {data.diagnosis.potential_issues.join('\n')}
+              <div className="mt-2 pt-2 border-t border-white/20">
+                Last property: {data.diagnosis.last_activity_minutes_ago || '60+'} minutes ago
+              </div>
+            </div>
+          ),
+          duration: 10000,
+          className: 'bg-red-600 text-white border-0'
+        });
+      } else {
+        toast.success('✅ System Healthy!', {
+          description: `Last property added ${data.diagnosis.last_activity_minutes_ago}min ago`,
+          duration: 5000
+        });
+      }
+      
+      // Show full report in console
+      console.log('=== PROPAI DIAGNOSTIC REPORT ===');
+      console.log(report);
+      console.log('=== FULL DATA ===');
+      console.log(data);
+      
+      // Show modal with report
+      alert(report);
+      
+    } catch (error) {
+      toast.dismiss('diagnostic');
+      toast.error('❌ Diagnostic Failed', {
+        description: error.message
+      });
+    } finally {
+      setRunningDiagnostic(false);
+    }
+  };
+
 
   // Broker handlers
   const handleWhatsApp = (broker) => {
@@ -1869,6 +1955,26 @@ Return ONLY the JSON, nothing else.`;
 
             {/* Organized Quick Actions with Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
+              {/* ✅ NEW: DIAGNOSTIC CHECK BUTTON - HIGHEST PRIORITY */}
+              <Button
+                onClick={runDiagnosticCheck}
+                disabled={runningDiagnostic}
+                size="sm"
+                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold animate-pulse"
+              >
+                {runningDiagnostic ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    🚨 Run Diagnostic
+                  </>
+                )}
+              </Button>
+
               {/* NEW: AI Hub Button */}
               <Button
                 onClick={() => navigate(createPageUrl("AIHub"))}
