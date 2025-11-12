@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -460,6 +461,15 @@ export default function Layout({ children, currentPageName }) {
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Analytics
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("AboutUs")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    About Us
                   </Link>
                 </li>
                 <li>

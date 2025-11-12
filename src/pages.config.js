@@ -29,6 +29,7 @@ import LiveDashboard from './pages/LiveDashboard';
 import InteractionLogs from './pages/InteractionLogs';
 import AIHub from './pages/AIHub';
 import BuildingBlog from './pages/BuildingBlog';
+import AboutUs from './pages/AboutUs';
 import Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "InteractionLogs": InteractionLogs,
     "AIHub": AIHub,
     "BuildingBlog": BuildingBlog,
+    "AboutUs": AboutUs,
 }
 
 export const pagesConfig = {
