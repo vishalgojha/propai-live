@@ -268,114 +268,143 @@ export default function AIBlogCreator() {
       
       if (dataTemplate === "location_deep_dive") {
         targetCategory = "Neighborhood Guide";
-        prompt = `Write a data-driven neighborhood guide about ${data.location}, Mumbai.
+        prompt = `Write a HUMAN neighborhood guide about ${data.location}, Mumbai.
 
-**REAL MARKET DATA (Use these exact numbers):**
-- Total Active Listings: ${data.totalListings}
-- Rentals: ${data.activeRentals} | Sales: ${data.activeSales}
-- BHK Breakdown: ${JSON.stringify(data.bhkBreakdown)}
-- Average Rent Prices: ${JSON.stringify(data.avgRentByBhk)}
-- Average Sale Prices: ${JSON.stringify(data.avgSaleByBhk)}
-- Top Buildings: ${data.topBuildings.map(b => `${b.name} (${b.listings} listings)`).join(', ')}
-- Furnishing Split: ${JSON.stringify(data.furnishingCounts)}
+**USE THESE EXACT REAL NUMBERS:**
+- Active Listings: ${data.totalListings} (${data.activeRentals} rent, ${data.activeSales} sale)
+- BHK Split: ${JSON.stringify(data.bhkBreakdown)}
+- Avg Rent: ${JSON.stringify(data.avgRentByBhk)}
+- Avg Sale: ${JSON.stringify(data.avgSaleByBhk)}
+- Top Buildings: ${data.topBuildings.map(b => b.name).join(', ')}
 
-**Sample Recent Listings:**
-${data.sampleProperties.map(p => `- ${p.bhk}, ₹${p.price}${p.price_unit === 'crores' ? 'Cr' : 'L'}, ${p.building || 'N/A'}, ${p.furnishing}`).join('\n')}
+**Recent Examples:**
+${data.sampleProperties.map(p => `${p.bhk} ₹${p.price}${p.price_unit === 'crores' ? 'Cr' : 'L'} ${p.building || ''} ${p.furnishing || ''}`).join('\n')}
 
-**WRITING STYLE:**
-- Sharp, no-BS tone (like texting a local friend who knows the area)
-- Lead with real numbers and insights from the data above
-- Include a pricing table comparing BHK types
-- Call out what makes this location unique (vibe, crowd, pros/cons)
-- Mention specific buildings from the data
-- Use real market stats (not generic fluff)
-- Include actionable advice
+**CRITICAL - WRITE LIKE A HUMAN:**
 
-**STRUCTURE:**
-1. Hook: Start with a truth bomb using real data ("${data.location} has ${data.totalListings} active listings right now, here's what that tells us...")
-2. Pricing Reality Check: Table with actual rent/sale prices by BHK
-3. Who Lives Here: Infer from furnishing data, building types
-4. Top Buildings: Mention the real buildings from our data
-5. Honest Verdict: Pros, cons, who should consider this area
+❌ BANNED:
+"Let's dive into", "When it comes to", "vibrant", "dynamic", "comprehensive"
+Exclamation marks everywhere!!! Overly enthusiastic tone!!!
 
-Generate JSON with title, excerpt, content (markdown), tags, read_time.`;
+✅ DO THIS:
+- Short sentences. Get to the point.
+- Real data first. Examples second.
+- Name actual buildings/streets
+- Active voice only
+- No marketing speak
+
+**EXAMPLES:**
+
+❌ BAD: "Bandra West has emerged as one of Mumbai's most vibrant and dynamic neighborhoods, offering a comprehensive range of premium lifestyle amenities!"
+
+✅ GOOD: "${data.location} has ${data.totalListings} active listings. 2BHK rents average ₹${data.avgRentByBhk['2 BHK'] || 'X'}L. Here's what that buys you."
+
+**STRUCTURE (MAX 800 WORDS):**
+
+1. **Opening** (2 sentences):
+   - Data point + what it means
+   - Example: "${data.location}: ${data.totalListings} listings, mostly ${Object.keys(data.bhkBreakdown)[0]}. Prices just hit ₹XL."
+
+2. **Pricing Table** (clean markdown):
+   - Rent and Sale prices by BHK
+   - Use actual numbers from data
+
+3. **Top Buildings** (3-4 sentences):
+   - List ${data.topBuildings.slice(0, 3).map(b => b.name).join(', ')}
+   - Why they're popular
+
+4. **Who Lives Here** (2-3 sentences):
+   - Infer from furnishing data (${data.furnishingCounts.Furnished ? 'mostly furnished = expats/corporates' : 'unfurnished = families'})
+
+5. **Reality Check** (3 short bullets):
+   - 1 pro, 1 con, 1 verdict
+
+Return JSON: title (under 60 chars), excerpt (under 150 chars), content (markdown), tags (5 max), read_time.`;
 
       } else if (dataTemplate === "building_spotlight") {
         targetCategory = "Neighborhood Guide";
-        prompt = `Write a building spotlight about ${data.building} in ${data.location}.
+        prompt = `Write about ${data.building}, ${data.location}.
 
-**REAL BUILDING DATA:**
-- Building: ${data.building}
-- Location: ${data.location}
+**DATA (use exact numbers):**
+- ${data.totalListings} listings tracked (${data.activeListings} active now)
 - Developer: ${data.developer}${data.developerTier ? ` (${data.developerTier})` : ''}
-- Total Listings Ever: ${data.totalListings}
-- Currently Active: ${data.activeListings}
-- Avg 2 BHK Rent: ${data.avgRent2BHK ? `₹${data.avgRent2BHK}L` : 'N/A'}
-- Avg 3 BHK Rent: ${data.avgRent3BHK ? `₹${data.avgRent3BHK}L` : 'N/A'}
-- Avg 2 BHK Sale: ${data.avgSale2BHK ? `₹${data.avgSale2BHK}Cr` : 'N/A'}
-- Avg 3 BHK Sale: ${data.avgSale3BHK ? `₹${data.avgSale3BHK}Cr` : 'N/A'}
-- Year Built: ${data.yearBuilt || 'N/A'}
-- Total Floors: ${data.totalFloors || 'N/A'}
-- Amenities: ${data.amenities?.join(', ') || 'N/A'}
-- Tags: ${data.tags?.join(', ') || 'N/A'}
+- 2BHK rent: ${data.avgRent2BHK ? `₹${data.avgRent2BHK}L` : 'varies'} | sale: ${data.avgSale2BHK ? `₹${data.avgSale2BHK}Cr` : 'varies'}
+- 3BHK rent: ${data.avgRent3BHK ? `₹${data.avgRent3BHK}L` : 'varies'} | sale: ${data.avgSale3BHK ? `₹${data.avgSale3BHK}Cr` : 'varies'}
+- Built: ${data.yearBuilt || 'unknown'}
+- Amenities: ${data.amenities?.slice(0, 5).join(', ') || 'basic'}
 
-${data.buildingSummary ? `**Building Intelligence Summary:**\n${data.buildingSummary}` : ''}
+${data.buildingSummary ? `\nContext: ${data.buildingSummary}` : ''}
 
-**WRITING STYLE:**
-- Witty, insider knowledge tone
-- Lead with market activity ("${data.building} has seen ${data.totalListings} listings tracked—here's what that means")
-- Use the REAL pricing data above
-- Include a pricing table for different BHK configs
-- Mention the developer context (tier, reputation)
-- Talk about tenant profile, building vibe
-- Compare to nearby buildings if relevant
+**WRITE LIKE A HUMAN (MAX 600 WORDS):**
 
-**STRUCTURE:**
-1. Hook: Activity stats + what they reveal
-2. Pricing Intel: Table with real rent/sale prices
-3. Developer Context: Who built it, their reputation
-4. Living Experience: Amenities, crowd, vibe
-5. Investment Angle: Price trends, who should consider it
+❌ NO: "Let's explore this stunning building!", "vibrant community", "nestled in"
+✅ YES: "${data.building} costs ₹XL for 2BHK. ${data.developer} built it. Here's if it's worth it."
 
-Generate JSON with title, excerpt, content, tags, read_time.`;
+**FORMAT:**
+
+**Opening** (1 sentence): 
+"${data.building}: ${data.activeListings} active listings, ₹XL avg rent."
+
+**Pricing** (markdown table):
+| BHK | Rent | Sale |
+|-----|------|------|
+| 2   | ₹XL  | ₹XCr |
+| 3   | ₹XL  | ₹XCr |
+
+**What You Get** (3 bullets):
+- Developer tier
+- Key amenities
+- Building age
+
+**Who It's For** (2 sentences):
+Based on furnishing/pricing data
+
+**Verdict** (1 sentence):
+Worth it? Skip it?
+
+Return JSON: title (under 50 chars), excerpt (under 120 chars, no fluff), content (markdown), tags (3-5), read_time.`;
 
       } else if (dataTemplate === "developer_profile") {
         targetCategory = "Market Insights";
-        prompt = `Write a developer profile about ${data.name}.
+        prompt = `Write about ${data.name} (${data.tier} developer).
 
-**REAL DEVELOPER DATA:**
-- Developer: ${data.name}
-- Tier: ${data.tier}
-- Total Projects: ${data.totalProjects || 'Not specified'}
-- Buildings Tracked in PropAI: ${data.totalBuildings}
-- Market Segment: ${data.marketSegment}
-- Delivery Track Record: ${data.deliveryTrackRecord}
-- Reputation Score: ${data.reputationScore || 'N/A'}/100
-- Specializations: ${data.specializations?.join(', ') || 'N/A'}
-- Key Focus Areas: ${data.keyFocusAreas?.join(', ') || 'N/A'}
-- Locations Active: ${data.locationsActive?.join(', ') || 'N/A'}
-- Notable Projects: ${data.notableProjects?.join(', ') || 'N/A'}
-- Avg Price/sq.ft: ${data.avgPricePerSqft ? `₹${data.avgPricePerSqft}` : 'N/A'}
+**DATA:**
+- ${data.totalBuildings} buildings tracked
+- ${data.totalProjects || 'Multiple'} total projects
+- Segment: ${data.marketSegment}
+- Delivery: ${data.deliveryTrackRecord}
+- Avg ₹/sqft: ${data.avgPricePerSqft ? `₹${data.avgPricePerSqft}` : 'varies'}
+- Active in: ${data.locationsActive?.slice(0, 3).join(', ') || 'Mumbai'}
 
-**Buildings in PropAI Database:**
-${data.buildings?.map(b => `- ${b.name}, ${b.location} (${b.activeListings || 0} active listings)`).join('\n')}
+**Their Buildings:**
+${data.buildings?.slice(0, 5).map(b => `${b.name} (${b.location})`).join(', ') || 'Multiple projects'}
 
-**WRITING STYLE:**
-- Analytical, investor-focused tone
-- Use the REAL data above
-- Compare to other developers in same tier
-- Talk about reputation, delivery, pricing strategy
-- Include a table of their tracked buildings
-- Be honest about strengths and weaknesses
+**WRITE LIKE A HUMAN (MAX 500 WORDS):**
 
-**STRUCTURE:**
-1. Hook: Market position ("${data.name} is a ${data.tier} developer with ${data.totalBuildings} buildings in our database")
-2. Portfolio Analysis: Table of their buildings + locations
-3. Pricing Strategy: Use real avg price data
-4. Reputation Reality: Delivery track record, market perception
-5. Investor Verdict: Who should buy from them, what to watch for
+NO AI fluff. Just facts.
 
-Generate JSON with title, excerpt, content, tags, read_time.`;
+**Opening:** 
+"${data.name}: ${data.tier}, ${data.totalBuildings} buildings tracked. ${data.deliveryTrackRecord} delivery record."
+
+**What They Build:**
+- Projects: ${data.notableProjects?.slice(0, 3).join(', ') || 'various'}
+- Focus: ${data.keyFocusAreas?.join(', ') || data.marketSegment}
+
+**Pricing Strategy** (if data available):
+Avg ₹${data.avgPricePerSqft || 'X'}/sqft. ${data.marketSegment} segment.
+
+**Track Record:**
+Delivery: ${data.deliveryTrackRecord}. Reputation: ${data.reputationScore || 'TBD'}/100.
+
+**Buildings Table:**
+| Building | Location | Activity |
+|----------|----------|----------|
+${data.buildings?.slice(0, 5).map(b => `| ${b.name} | ${b.location} | ${b.activeListings || 0} active |`).join('\n') || '| N/A | N/A | N/A |'}
+
+**Verdict** (2 sentences):
+Who should buy from them? What to watch for?
+
+Return JSON: title (developer name + 1 insight), excerpt (1 sentence summary), content (markdown), tags (3-4), read_time.`;
 
       }
       
@@ -426,28 +455,45 @@ Generate JSON with title, excerpt, content, tags, read_time.`;
 
 Category: ${category}
 
-Follow these rules:
-- Sharp, witty tone (like texting a smart friend)
-- Call out real estate BS (no "luxury", "premium" fluff)
-- Include real data/numbers where relevant
-- Short paragraphs (2-4 sentences max)
-- Use tables for comparisons
-- Start with a truth bomb or question
-- Have strong opinions (backed by data)
-- Make it sharable
+**CRITICAL WRITING STYLE RULES:**
 
-Structure:
-1. Hook opening (1 paragraph)
-2. Main content with subheadings
-3. Myth-busting section (if relevant)
-4. Actionable closing
+1. **NO AI CLICHÉS** - Banned words/phrases:
+   - "Navigating the...", "Let's dive into", "In this comprehensive guide"
+   - "When it comes to", "At the end of the day", "It's important to note"
+   - "Delve", "Landscape", "Ecosystem", "Vibrant", "Dynamic"
+   - Exclamation points everywhere!!!
 
-Provide JSON output with:
-- title (catchy, includes year if relevant)
-- excerpt (150-160 chars, with personality)
-- content (full markdown blog post)
-- tags (mix of serious + casual)
-- read_time (estimate in minutes)`;
+2. **Write Like a Human:**
+   - Start with a real observation or data point
+   - Use short sentences. No purple prose.
+   - Real examples: "Bandra rents hit ₹2.5L for 2BHK this month" NOT "The vibrant neighborhood landscape of Bandra..."
+   - Active voice only
+   - Numbers > adjectives
+
+3. **Structure (TIGHT):**
+   - Opening: 1 sentence of truth + 1 question
+   - Body: 3-5 short sections with data
+   - Close: 1 sentence takeaway
+
+4. **Specificity:**
+   - Use real Mumbai locations, buildings, streets
+   - Actual price points (₹1.8L, ₹5Cr)
+   - Month/year context ("As of Nov 2025...")
+   - Named examples when possible
+
+5. **Tone:**
+   - Conversational but direct
+   - Skip the setup, jump to the point
+   - No marketing speak
+   - No patronizing "you might be wondering..."
+
+**BAD Example:**
+"When it comes to navigating Mumbai's vibrant real estate landscape, Bandra emerges as a truly dynamic neighborhood that offers a comprehensive range of premium amenities and lifestyle options!"
+
+**GOOD Example:**
+"Bandra 2BHKs now cost ₹2.5L/month. Here's what that gets you—and where you're overpaying."
+
+Return JSON with title, excerpt, content (markdown), tags, read_time.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt,
