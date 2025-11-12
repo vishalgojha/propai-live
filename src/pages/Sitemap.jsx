@@ -133,17 +133,103 @@ ${urls.map(url => `  <url>
     );
   }
 
+  // Auto-download XML as file
+  useEffect(() => {
+    if (xmlContent && !isLoading) {
+      const blob = new Blob([xmlContent], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sitemap.xml';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }, [xmlContent, isLoading]);
+
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">XML Sitemap</h1>
-          <p className="text-slate-600 mb-6">
-            View the raw XML below or <a href={window.location.href} download="sitemap.xml" className="text-purple-600 hover:underline">download sitemap.xml</a>
-          </p>
-          <pre className="bg-white p-4 rounded border border-slate-300 overflow-x-auto text-xs">
-            <code>{xmlContent}</code>
-          </pre>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-3xl p-8 border-2 border-purple-200 shadow-lg">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">PropAI Live Sitemap</h1>
+            <p className="text-slate-600">
+              XML sitemap for search engines
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-4">
+              <p className="text-sm text-green-800 text-center">
+                ✅ Sitemap generated successfully! Your download should start automatically.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+              <h2 className="font-bold text-slate-900 mb-3">What's in the sitemap?</h2>
+              <ul className="space-y-2 text-sm text-slate-700">
+                <li>• All active properties ({xmlContent.match(/<url>/g)?.length || 0} total URLs)</li>
+                <li>• Building profiles</li>
+                <li>• Published blog posts</li>
+                <li>• Developer profiles</li>
+                <li>• Static pages (Home, SmartFeed, etc.)</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  const blob = new Blob([xmlContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'sitemap.xml';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all"
+              >
+                📥 Download Again
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(xmlContent);
+                  alert('Sitemap XML copied to clipboard!');
+                }}
+                className="flex-1 border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold py-3 px-6 rounded-xl transition-all"
+              >
+                📋 Copy XML
+              </button>
+            </div>
+
+            <details className="bg-white rounded-2xl border border-slate-200">
+              <summary className="cursor-pointer p-4 font-semibold text-slate-900 hover:bg-slate-50 rounded-2xl">
+                View Raw XML
+              </summary>
+              <div className="p-4 pt-0">
+                <pre className="bg-slate-900 text-green-400 p-4 rounded-xl overflow-x-auto text-xs max-h-96 overflow-y-auto">
+                  <code>{xmlContent}</code>
+                </pre>
+              </div>
+            </details>
+
+            <div className="text-center pt-4">
+              <a 
+                href="/"
+                className="text-purple-600 hover:text-purple-700 font-semibold inline-flex items-center gap-2 hover:underline"
+              >
+                ← Back to Home
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
