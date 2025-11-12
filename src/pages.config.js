@@ -32,6 +32,7 @@ import BuildingBlog from './pages/BuildingBlog';
 import AboutUs from './pages/AboutUs';
 import CronScheduler from './pages/CronScheduler';
 import AutomationHub from './pages/AutomationHub';
+import Sitemap from './pages/Sitemap';
 import Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "AboutUs": AboutUs,
     "CronScheduler": CronScheduler,
     "AutomationHub": AutomationHub,
+    "Sitemap": Sitemap,
 }
 
 export const pagesConfig = {

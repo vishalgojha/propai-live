@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -493,24 +492,14 @@ export default function Layout({ children, currentPageName }) {
                 </li>
                 {/* ✅ FIXED: Sitemap link using base44.functions.invoke approach */}
                 <li>
-                  <button
-                    onClick={async () => {
-                      try {
-                        // Call the function to get the sitemap XML
-                        const response = await base44.functions.invoke('generateSitemap', {});
-                        // Create a blob and download it
-                        const blob = new Blob([response.data], { type: 'application/xml' });
-                        const url = window.URL.createObjectURL(blob);
-                        window.open(url, '_blank');
-                      } catch (error) {
-                        console.error('Failed to load sitemap:', error);
-                      }
-                    }}
-                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation text-left"
+                  <Link 
+                    to={createPageUrl("Sitemap")} 
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
+                    target="_blank"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Sitemap
-                  </button>
+                  </Link>
                 </li>
               </ul>
             </div>
