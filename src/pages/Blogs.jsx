@@ -14,11 +14,26 @@ import {
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import SEO from "../components/SEO";
+import AIBlogCreator from "../components/admin/AIBlogCreator";
 
 export default function Blogs() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Check if user is admin
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        setCurrentUser(null);
+      }
+    };
+    loadUser();
+  }, []);
 
   // Read category from URL parameters on mount
   useEffect(() => {
@@ -80,6 +95,8 @@ export default function Blogs() {
     ]
   };
 
+  const isAdmin = currentUser?.role === 'admin';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
@@ -93,14 +110,19 @@ export default function Blogs() {
 
         {/* Hero Section */}
         <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
-              <BookOpen className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">PropAI Insights</h1>
+                <p className="text-sm text-slate-600 font-light">Mumbai real estate knowledge, simplified</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">PropAI Insights</h1>
-              <p className="text-sm text-slate-600 font-light">Mumbai real estate knowledge, simplified</p>
-            </div>
+            
+            {/* ✅ AI Blog Creator (Admin Only) */}
+            {isAdmin && <AIBlogCreator />}
           </div>
 
           {/* Search */}
