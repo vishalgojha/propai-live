@@ -186,11 +186,11 @@ export default function PropertyDetails() {
   };
 
   const getShareUrl = () => {
-    if (property?.slug) {
-      return `${window.location.origin}/propertydetails?slug=${property.slug}`;
+    // ✅ CHANGED: Use socialPreview endpoint for proper OG tags
+    if (property.slug) {
+      return `https://propai.live/api/socialPreview?type=property&slug=${property.slug}`;
     }
-    // Fallback to current URL if slug is not available (e.g., old links) or property is not loaded
-    return window.location.href;
+    return `https://propai.live/api/socialPreview?type=property&id=${property.id}`;
   };
 
   const getShareText = () => {
@@ -323,7 +323,7 @@ export default function PropertyDetails() {
           schema={propertyJsonLd ? [propertyJsonLd] : []}
           organization={organizationJsonLd}
           breadcrumbs={breadcrumbJsonLd}
-          canonical={getShareUrl()}
+          canonical={getPropertyUrl()} // Use the canonical URL for propertydetails page, not social preview
         />
       )}
 
@@ -356,7 +356,7 @@ export default function PropertyDetails() {
                   <div>
                     <h3 className="font-bold text-slate-900 mb-1 text-sm">📸 Why This Listing Has No Photos</h3>
                     <p className="text-xs text-slate-700 leading-relaxed">
-                      This property was just listed—likely within seconds of being posted by the broker. PropAI prioritizes <strong>real-time data over static images</strong> to ensure you see the freshest inventory first. Photos will appear automatically when the broker shares them. 
+                      This property was just listed—likely within seconds of being posted by the broker. PropAI prioritizes <strong>real-time data over static images</strong> to ensure you see the freshest inventory first. Photos will appear automatically when the broker shares them.
                       <a href={createPageUrl("FAQ")} className="text-indigo-700 font-semibold hover:underline ml-1">Learn more →</a>
                     </p>
                   </div>

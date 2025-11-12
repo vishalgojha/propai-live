@@ -330,10 +330,11 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
   };
 
   const getShareUrl = () => {
+    // ✅ CHANGED: Use socialPreview endpoint for proper OG tags
     if (property.slug) {
-      return `${window.location.origin}${createPageUrl("PropertyDetails")}?slug=${property.slug}`;
+      return `https://propai.live/api/socialPreview?type=property&slug=${property.slug}`;
     }
-    return `${window.location.origin}${createPageUrl("PropertyDetails")}?id=${property.id}`;
+    return `https://propai.live/api/socialPreview?type=property&id=${property.id}`;
   };
 
   const getShareText = () => {

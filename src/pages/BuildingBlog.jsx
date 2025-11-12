@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -249,6 +250,12 @@ export default function BuildingBlog() {
       });
     }
   }, [buildingBlog?.id]);
+
+  // ✅ NEW: Social share URL
+  const getSocialShareUrl = () => {
+    if (!building) return ""; // Should not happen if this is called when building is loaded
+    return `https://propai.live/api/socialPreview?type=building&id=${building.id}`;
+  };
 
   if (!buildingId) {
     return (
@@ -604,7 +611,7 @@ export default function BuildingBlog() {
                 </p>
               )}
 
-              <div className="flex items-center gap-4 text-sm text-white/80">
+              <div className="flex items-center gap-4 text-sm text-white/80 mb-4">
                 <span className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
                   {buildingBlog.views_count || 0} views
@@ -614,6 +621,30 @@ export default function BuildingBlog() {
                 <span>•</span>
                 <span>By {buildingBlog.author}</span>
               </div>
+
+              {/* ✅ NEW: Share Button */}
+              <Button
+                onClick={() => {
+                  const shareUrl = getSocialShareUrl();
+                  if (navigator.share) {
+                    navigator.share({
+                      title: buildingBlog.title,
+                      text: buildingBlog.summary || buildingBlog.excerpt,
+                      url: shareUrl
+                    }).catch(() => {
+                      navigator.clipboard.writeText(shareUrl);
+                      toast.success('Share link copied!');
+                    });
+                  } else {
+                    navigator.clipboard.writeText(shareUrl);
+                    toast.success('Share link copied!');
+                  }
+                }}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Share Building
+              </Button>
             </div>
 
             {/* Blog Content */}
