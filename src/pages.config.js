@@ -30,6 +30,7 @@ import InteractionLogs from './pages/InteractionLogs';
 import AIHub from './pages/AIHub';
 import BuildingBlog from './pages/BuildingBlog';
 import AboutUs from './pages/AboutUs';
+import CronScheduler from './pages/CronScheduler';
 import AutomationHub from './pages/AutomationHub';
 import Layout from './Layout.jsx';
 
@@ -67,6 +68,7 @@ export const PAGES = {
     "AIHub": AIHub,
     "BuildingBlog": BuildingBlog,
     "AboutUs": AboutUs,
+    "CronScheduler": CronScheduler,
     "AutomationHub": AutomationHub,
 }
 
