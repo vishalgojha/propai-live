@@ -53,7 +53,17 @@ export default function SmartFeed() {
 
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
-  const previousCountsRef = useRef({ properties: 0, requirements: 0 });
+  
+  // ✅ FIXED: Initialize from localStorage to persist across page refreshes
+  const previousCountsRef = useRef(() => {
+    try {
+      const stored = localStorage.getItem('propai_last_seen_counts');
+      return stored ? JSON.parse(stored) : { properties: 0, requirements: 0 };
+    } catch {
+      return { properties: 0, requirements: 0 };
+    }
+  }());
+  
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
   const ITEMS_PER_PAGE = 24;
@@ -218,7 +228,7 @@ export default function SmartFeed() {
     }
 
     setFilters(newFilters);
-  }, [user]);
+  }, [user, filters]); // Added filters to dependency array to prevent stale closure issues for newFilters
 
   useEffect(() => {
     setItemsToShow(ITEMS_PER_PAGE);
@@ -246,16 +256,20 @@ export default function SmartFeed() {
     refetchOnWindowFocus: true, // ✅ ENABLED
   });
 
+  // ✅ FIXED: Only show banner for TRULY new items, persist counts in localStorage
   useEffect(() => {
-    if (!isLoading && !requirementsLoading) {
+    if (!isLoading && !requirementsLoading && properties.length > 0) {
       const currentCounts = {
         properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
         requirements: requirements.filter(r => r.status === "Active").length
       };
 
-      if (previousCountsRef.current.properties > 0 || previousCountsRef.current.requirements > 0) {
-        const newProperties = currentCounts.properties - previousCountsRef.current.properties;
-        const newRequirements = currentCounts.requirements - previousCountsRef.current.requirements;
+      // ✅ CRITICAL FIX: Only show banner if we have a baseline AND there are new items
+      const hasBaseline = previousCountsRef.current.properties > 0 || previousCountsRef.current.requirements > 0;
+      
+      if (hasBaseline) {
+        const newProperties = Math.max(0, currentCounts.properties - previousCountsRef.current.properties);
+        const newRequirements = Math.max(0, currentCounts.requirements - previousCountsRef.current.requirements);
 
         if (newProperties > 0 || newRequirements > 0) {
           setNewItemsCount({ properties: newProperties, requirements: newRequirements });
@@ -279,13 +293,18 @@ export default function SmartFeed() {
               onClick: () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 setShowNewItemsBanner(false);
+                // ✅ Update localStorage when user views new items
+                localStorage.setItem('propai_last_seen_counts', JSON.stringify(currentCounts));
+                previousCountsRef.current = currentCounts;
               }
             }
           });
         }
+      } else {
+        // ✅ First load - just set the baseline, don't show banner
+        previousCountsRef.current = currentCounts;
+        localStorage.setItem('propai_last_seen_counts', JSON.stringify(currentCounts));
       }
-
-      previousCountsRef.current = currentCounts;
     }
   }, [properties, requirements, isLoading, requirementsLoading]);
 
@@ -508,6 +527,14 @@ export default function SmartFeed() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setShowNewItemsBanner(false);
     setNewItemsCount({ properties: 0, requirements: 0 });
+    
+    // ✅ Update localStorage when user acknowledges new items
+    const currentCounts = {
+      properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
+      requirements: requirements.filter(r => r.status === "Active").length
+    };
+    localStorage.setItem('propai_last_seen_counts', JSON.stringify(currentCounts));
+    previousCountsRef.current = currentCounts;
   };
 
   const handleAreaQuickFilter = (area) => {
