@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -107,9 +106,6 @@ export default function Layout({ children, currentPageName }) {
     addDnsPrefetch('https://qtrypzzcjebvfcihiynt.supabase.co');
     addDnsPrefetch('https://api.base44.com');
     
-    // ✅ REMOVED: RSS and Sitemap links (not needed in head, will be accessible via direct URLs)
-    // These are backend functions that should be accessed directly via their function URLs
-    
   }, []);
 
   useEffect(() => {
@@ -150,6 +146,12 @@ export default function Layout({ children, currentPageName }) {
       { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
     );
   }
+
+  // ✅ Get sitemap URL from environment/functions
+  const getSitemapUrl = () => {
+    // The sitemap function URL - you can get this from Dashboard → Functions → generateSitemap
+    return `${window.location.origin}/api/sitemap.xml`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -484,6 +486,18 @@ export default function Layout({ children, currentPageName }) {
                     <span>Expat Corner</span>
                     <span className="ml-1 text-xs">🌍</span>
                   </Link>
+                </li>
+                {/* ✅ ADDED: Sitemap Link */}
+                <li>
+                  <a 
+                    href={getSitemapUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Sitemap
+                  </a>
                 </li>
               </ul>
             </div>
