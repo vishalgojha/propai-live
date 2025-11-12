@@ -134,7 +134,8 @@ export default function Buildings() {
   };
 
   const handleBuildingClick = (building) => {
-    navigate(createPageUrl("BuildingProfile") + `?id=${building.id}`);
+    // ✅ CHANGED: Navigate to BuildingBlog instead of BuildingProfile
+    navigate(createPageUrl("BuildingBlog") + `?id=${building.id}`);
   };
 
   const breadcrumbSchema = {

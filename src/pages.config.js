@@ -28,6 +28,7 @@ import ParityReport from './pages/ParityReport';
 import LiveDashboard from './pages/LiveDashboard';
 import InteractionLogs from './pages/InteractionLogs';
 import AIHub from './pages/AIHub';
+import BuildingBlog from './pages/BuildingBlog';
 import Layout from './Layout.jsx';
 
 
@@ -62,6 +63,7 @@ export const PAGES = {
     "LiveDashboard": LiveDashboard,
     "InteractionLogs": InteractionLogs,
     "AIHub": AIHub,
+    "BuildingBlog": BuildingBlog,
 }
 
 export const pagesConfig = {
