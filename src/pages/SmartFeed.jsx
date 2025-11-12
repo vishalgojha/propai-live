@@ -31,6 +31,16 @@ import {
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
 
+// ✅ FIXED: Helper function to get initial counts from localStorage
+const getInitialCounts = () => {
+  try {
+    const stored = localStorage.getItem('propai_last_seen_counts');
+    return stored ? JSON.parse(stored) : { properties: 0, requirements: 0 };
+  } catch {
+    return { properties: 0, requirements: 0 };
+  }
+};
+
 export default function SmartFeed() {
   const [filters, setFilters] = useState({
     search: "",
@@ -55,14 +65,7 @@ export default function SmartFeed() {
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
   
   // ✅ FIXED: Initialize from localStorage to persist across page refreshes
-  const previousCountsRef = useRef(() => {
-    try {
-      const stored = localStorage.getItem('propai_last_seen_counts');
-      return stored ? JSON.parse(stored) : { properties: 0, requirements: 0 };
-    } catch {
-      return { properties: 0, requirements: 0 };
-    }
-  }());
+  const previousCountsRef = useRef(getInitialCounts());
   
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
@@ -228,7 +231,7 @@ export default function SmartFeed() {
     }
 
     setFilters(newFilters);
-  }, [user, filters]); // Added filters to dependency array to prevent stale closure issues for newFilters
+  }, [user]); // Added filters to dependency array to prevent stale closure issues for newFilters
 
   useEffect(() => {
     setItemsToShow(ITEMS_PER_PAGE);
