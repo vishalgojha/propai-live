@@ -25,10 +25,6 @@ export default function AboutUs() {
         {
           "@type": "Person",
           "name": "Vishal"
-        },
-        {
-          "@type": "Person",
-          "name": "Kapil"
         }
       ]
     }
@@ -61,7 +57,7 @@ export default function AboutUs() {
     {
       year: "The Problem",
       title: "WhatsApp Chaos",
-      description: "Vishal and Kapil were drowning in WhatsApp broker spam. 'Pali Hill 2bhk sf mod kit 2cp 80L' × 1000 messages. No structure. No trust layer. Just noise."
+      description: "Vishal was drowning in WhatsApp broker spam. 'Pali Hill 2bhk sf mod kit 2cp 80L' × 1000 messages. No structure. No trust layer. Just noise."
     },
     {
       year: "The Insight",
@@ -84,7 +80,7 @@ export default function AboutUs() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
         title="About PropAI Live | Our Mission to Fix Mumbai Real Estate"
-        description="PropAI Live transforms WhatsApp chaos into structured property intelligence. Built by Vishal & Kapil to bring transparency, AI-powered insights, and trust to Mumbai's real estate market."
+        description="PropAI Live transforms WhatsApp chaos into structured property intelligence. Built by Vishal to bring transparency, AI-powered insights, and trust to Mumbai's real estate market."
         schema={aboutSchema}
         canonical="https://propai.live/about"
       />
@@ -246,7 +242,7 @@ export default function AboutUs() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="max-w-md mx-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -257,26 +253,9 @@ export default function AboutUs() {
                 V
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Vishal</h3>
-              <p className="text-purple-700 font-semibold mb-4">Co-Founder</p>
+              <p className="text-purple-700 font-semibold mb-4">Founder</p>
               <p className="text-slate-700 leading-relaxed">
                 Real estate operator turned builder. Spent years navigating WhatsApp broker chaos—decided to fix it with AI.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-3xl p-8 border-2 border-purple-200 text-center hover:shadow-xl transition-all"
-            >
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-                K
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Kapil</h3>
-              <p className="text-blue-700 font-semibold mb-4">Co-Founder</p>
-              <p className="text-slate-700 leading-relaxed">
-                Tech architect obsessed with structured data. Believed Mumbai real estate deserved better than MagicBricks.
               </p>
             </motion.div>
           </div>
