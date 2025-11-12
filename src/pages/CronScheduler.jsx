@@ -3,10 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import {
-  Clock, Play, Pause, Zap, Mail, MessageCircle, TrendingUp,
+  Clock, Play, Zap, Mail, MessageCircle, TrendingUp,
   AlertTriangle, Target, RefreshCw, Calendar, Bell, Check
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -35,7 +33,6 @@ export default function CronScheduler() {
     loadUser();
   }, []);
   
-  // Load last run times from localStorage
   useEffect(() => {
     const stored = localStorage.getItem('propai_cron_last_run');
     if (stored) {
@@ -220,8 +217,6 @@ export default function CronScheduler() {
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-md">
@@ -233,7 +228,6 @@ export default function CronScheduler() {
             </div>
           </div>
           
-          {/* Info Banner */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border-2 border-blue-200">
             <div className="flex items-start gap-3">
               <Bell className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -252,8 +246,8 @@ export default function CronScheduler() {
                     <strong>Method:</strong> POST with JSON payload
                   </div>
                   <div className="bg-white/60 rounded px-3 py-2">
-                    <strong>Services:</strong> <a href="https://cron-job.org" target="_blank" className="text-blue-700 hover:underline">cron-job.org</a>, 
-                    <a href="https://easycron.com" target="_blank" className="text-blue-700 hover:underline ml-1">EasyCron</a>, or Deno Deploy cron
+                    <strong>Services:</strong> <a href="https://cron-job.org" target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">cron-job.org</a>, 
+                    <a href="https://easycron.com" target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline ml-1">EasyCron</a>, or Deno Deploy cron
                   </div>
                 </div>
               </div>
@@ -261,7 +255,6 @@ export default function CronScheduler() {
           </div>
         </div>
         
-        {/* Jobs by Category */}
         {categories.map(category => (
           <div key={category} className="mb-8">
             <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -340,7 +333,6 @@ export default function CronScheduler() {
           </div>
         ))}
         
-        {/* Setup Instructions */}
         <Card className="p-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200">
           <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-purple-600" />
@@ -351,7 +343,7 @@ export default function CronScheduler() {
             <div>
               <p className="font-semibold mb-2">Option 1: External Cron Service (Easiest)</p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Go to <a href="https://cron-job.org" target="_blank" className="text-blue-700 hover:underline">cron-job.org</a> (free)</li>
+                <li>Go to <a href="https://cron-job.org" target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">cron-job.org</a> (free)</li>
                 <li>Create account and add new cron job</li>
                 <li>Use URL: <code className="bg-white px-2 py-1 rounded">https://propai.live/api/functionName</code></li>
                 <li>Set schedule using the cron expression shown above</li>
@@ -379,7 +371,6 @@ Deno.cron("job-name", "0 */6 * * *", async () => {
           </div>
         </Card>
         
-        {/* Quick Actions */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200">
             <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
