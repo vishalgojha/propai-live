@@ -147,12 +147,6 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // ✅ CORRECT: Use base44.functions.getUrl to get the proper function URL
-  const getSitemapUrl = () => {
-    // This will construct the correct URL: https://api.base44.com/functions/<app-id>/generateSitemap
-    return base44.functions.getUrl('generateSitemap');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {/* Header */}
@@ -487,17 +481,26 @@ export default function Layout({ children, currentPageName }) {
                     <span className="ml-1 text-xs">🌍</span>
                   </Link>
                 </li>
-                {/* ✅ Sitemap Link - using base44.functions.getUrl() */}
+                {/* ✅ FIXED: Sitemap link using base44.functions.invoke approach */}
                 <li>
-                  <a 
-                    href={getSitemapUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation"
+                  <button
+                    onClick={async () => {
+                      try {
+                        // Call the function to get the sitemap XML
+                        const response = await base44.functions.invoke('generateSitemap', {});
+                        // Create a blob and download it
+                        const blob = new Blob([response.data], { type: 'application/xml' });
+                        const url = window.URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                      } catch (error) {
+                        console.error('Failed to load sitemap:', error);
+                      }
+                    }}
+                    className="hover:text-purple-600 transition-colors flex items-center group touch-manipulation text-left"
                   >
                     <span className="w-1 h-1 bg-purple-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     Sitemap
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
