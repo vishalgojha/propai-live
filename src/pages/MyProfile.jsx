@@ -1,54 +1,55 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Award, BarChart3, Eye, MessageCircle, Target,
-  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search,
-  Edit2, Save, Plus, Trash2, CheckCircle2, Home, Briefcase
+  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import BrowserNotificationManager from "@/components/notifications/BrowserNotificationManager";
-import { useNavigate } from "react-router-dom"; // Added back for navigation in Admin Shortcuts
-import { createPageUrl } from "@/utils"; // Added back for navigation in Admin Shortcuts
 
+import BrowserNotifications from "../components/BrowserNotifications";
 
 export default function MyProfile() {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate(); // Kept for navigation in Admin Shortcuts
-
-  const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [brokerProfile, setBrokerProfile] = useState(null);
-  const [isLoadingBroker, setIsLoadingBroker] = useState(true);
 
-  // Profile setup states
-  const [setupMode, setSetupMode] = useState(null); // null, 'create', 'link'
-  const [searchPhone, setSearchPhone] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    agency_name: "",
+    email: "",
+    phone: "",
+    name: ""
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [creatingBrokerProfile, setCreatingBrokerProfile] = useState(false);
+  const [linkingBroker, setLinkingBroker] = useState(false);
+  const [phoneSearchQuery, setPhoneSearchQuery] = useState("");
 
-  // Edit mode states
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editedProfile, setEditedProfile] = useState({});
+  const [editingTeam, setEditingTeam] = useState(false);
+  const [teamMemberPhone, setTeamMemberPhone] = useState("");
+  const [addingTeamMember, setAddingTeamMember] = useState(false);
 
-  // Preferred areas state
-  const [isEditingAreas, setIsEditingAreas] = useState(false);
-  const [newArea, setNewArea] = useState("");
-  const [preferredAreas, setPreferredAreas] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Team management states
-  const [isAddingTeamMember, setIsAddingTeamMember] = useState(false);
-  const [newTeamMemberPhone, setNewTeamMemberPhone] = useState("");
+  // ✅ NEW: Preferred Areas state
+  const [editingAreas, setEditingAreas] = useState(false);
+  const [selectedAreas, setSelectedAreas] = useState([]);
+  const [savingAreas, setSavingAreas] = useState(false);
 
-  // Popular Mumbai areas (kept from original code)
+  // ✅ NEW: Popular Mumbai areas
   const popularAreas = [
     "Bandra West", "Bandra East", "Juhu", "Andheri West", "Andheri East",
     "Khar West", "BKC", "Worli", "Lower Parel", "Powai",
@@ -56,453 +57,453 @@ export default function MyProfile() {
     "Santacruz West", "Versova", "Lokhandwala", "Pali Hill", "Carter Road"
   ];
 
-  // 1. Load User
+  // ✅ LOAD USER AND CHECK FOR EXISTING BROKER PROFILE
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoadingUser(true);
-        const currentUser = await base44.auth.me();
-        if (!currentUser) {
+        const user = await base44.auth.me();
+        if (!user) {
           base44.auth.redirectToLogin(window.location.pathname);
           return;
         }
-        setUser(currentUser);
+        
+        setCurrentUser(user);
+        setSelectedAreas(user.preferred_areas || []); // ✅ LOAD PREFERRED AREAS
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldCompleteProfile = urlParams.get('complete_profile') === 'true';
+
+        // ✅ USER HAS BROKER_ID LINKED - FETCH BROKER DATA
+        if (user.broker_id) {
+          const brokers = await base44.entities.Broker.list();
+          const broker = brokers.find(b => b.id === user.broker_id);
+          
+          if (broker) {
+            setBrokerProfile(broker);
+            setProfileData({
+              agency_name: broker.agency_name || "",
+              email: broker.email || "",
+              phone: broker.phone || "",
+              name: broker.name || user.full_name || ""
+            });
+            
+            const isProfileIncomplete = !broker.phone || !broker.agency_name;
+            if (isProfileIncomplete || shouldCompleteProfile) {
+              setEditingProfile(true);
+              setActiveTab('overview');
+              toast.info('👋 Please complete your profile to unlock all features', {
+                description: 'Phone number and agency name are required',
+                duration: 10000,
+                className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
+              });
+            }
+          }
+        } 
+        // ✅ NO BROKER_ID - SHOW LINK OR CREATE OPTIONS
+        else {
+          setEditingProfile(true);
+          setActiveTab('overview');
+          setProfileData({
+            agency_name: "",
+            email: user.email || "",
+            phone: "",
+            name: user.full_name || ""
+          });
+        }
       } catch (error) {
         console.error("Failed to load user:", error);
         base44.auth.redirectToLogin(window.location.pathname);
       } finally {
-        setIsLoadingUser(false);
+        setIsLoading(false);
       }
     };
     loadUser();
-  }, []);
+  }, [navigate]);
 
-  // 2. Load Broker Profile based on User
-  useEffect(() => {
-    if (!user) return;
-
-    const loadBrokerProfile = async () => {
-      try {
-        setIsLoadingBroker(true);
-        // Try to find broker by user's email
-        let brokers = await base44.entities.Broker.filter({
-          email: user.email
-        });
-
-        let foundBroker = brokers.length > 0 ? brokers[0] : null;
-
-        // If no broker found by email, try by user's primary phone (if available)
-        if (!foundBroker && user.phone_number) {
-            const normalizedUserPhone = user.phone_number.replace(/\D/g, '').slice(-10);
-            const allBrokers = await base44.entities.Broker.list(); // Fetch all to match last 10 digits
-            foundBroker = allBrokers.find(b => {
-                if (!b.phone) return false;
-                const brokerPhoneLast10 = b.phone.replace(/\D/g, '').slice(-10);
-                return brokerPhoneLast10 === normalizedUserPhone;
-            });
-        }
-        
-        // If still no broker found, check if user has a broker_id
-        if (!foundBroker && user.broker_id) {
-            const allBrokers = await base44.entities.Broker.list();
-            foundBroker = allBrokers.find(b => b.id === user.broker_id);
-        }
-
-        if (foundBroker) {
-          setBrokerProfile(foundBroker);
-          setPreferredAreas(foundBroker.areas_covered || []);
-          // Check for incomplete profile immediately after loading if necessary
-          if (!foundBroker.phone || !foundBroker.agency_name) {
-            toast.info('👋 Please complete your profile to unlock all features', {
-              description: 'Phone number and agency name are required',
-              duration: 10000,
-              className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
-            });
-            setIsEditingProfile(true); // Automatically open edit mode
-          }
-        } else {
-            // If no broker profile found at all, suggest creating or linking
-            setSetupMode(null); // Ensure setup mode is not 'link' or 'create' from previous attempt
-        }
-      } catch (error) {
-        console.error("Failed to load broker profile:", error);
-        toast.error("Failed to load broker profile", {
-            description: error.message
-        });
-      } finally {
-        setIsLoadingBroker(false);
-      }
-    };
-
-    loadBrokerProfile();
-  }, [user]);
-
-  // Utility to validate phone numbers
-  const validatePhoneNumber = (phone) => {
-    const cleanPhone = phone.trim().replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      return { isValid: false, message: `Must be 10 digits (you entered ${cleanPhone.length} digits)` };
-    }
-    if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
-      return { isValid: false, message: 'Must start with 6, 7, 8, or 9 for Indian numbers' };
-    }
-    return { isValid: true, cleaned: cleanPhone, normalized: '91' + cleanPhone };
-  };
-
-  const searchBrokerByPhone = async () => {
-    if (!searchPhone.trim()) {
-      toast.error("Please enter a phone number");
+  // ✅ SEARCH FOR EXISTING BROKER BY PHONE
+  const handleSearchBrokerByPhone = async () => {
+    if (!phoneSearchQuery.trim()) {
+      toast.error('Please enter a phone number');
       return;
     }
 
-    const phoneValidation = validatePhoneNumber(searchPhone);
-    if (!phoneValidation.isValid) {
-        toast.error('❌ Invalid Phone Number', { description: phoneValidation.message });
-        return;
-    }
-
-    setIsSearching(true);
+    setLinkingBroker(true);
     try {
-      const phoneLast10 = phoneValidation.cleaned;
+      const normalizedPhone = phoneSearchQuery.trim().replace(/\D/g, '');
+      const phoneLast10 = normalizedPhone.slice(-10);
 
       const allBrokers = await base44.entities.Broker.list();
-      const matches = allBrokers.filter(b => {
+      const foundBroker = allBrokers.find(b => {
         if (!b.phone) return false;
         const brokerPhoneLast10 = b.phone.replace(/\D/g, '').slice(-10);
         return brokerPhoneLast10 === phoneLast10;
       });
 
-      setSearchResults(matches);
-
-      if (matches.length === 0) {
-        toast.info("No broker found", {
-          description: "You can create a new profile instead"
+      if (foundBroker) {
+        // ✅ LINK USER TO EXISTING BROKER
+        await base44.auth.updateMe({ broker_id: foundBroker.id });
+        toast.success(`✅ Linked to existing broker profile: ${foundBroker.name}`);
+        window.location.reload();
+      } else {
+        toast.error('❌ No broker found with this phone number', {
+          description: 'Create a new profile instead'
         });
       }
     } catch (error) {
-      toast.error("Search failed", {
-        description: error.message
-      });
+      toast.error('Search failed', { description: error.message });
       console.error('Search broker by phone error:', error);
     } finally {
-      setIsSearching(false);
+      setLinkingBroker(false);
     }
   };
 
-  const linkToBroker = async (broker) => {
-    if (!user) {
-        toast.error("User not logged in.");
+  // ✅ SAVE OR CREATE BROKER PROFILE
+  const handleSaveProfile = async () => {
+    if (!brokerProfile) {
+      // ✅ CREATE NEW BROKER PROFILE
+      if (!profileData.phone || !profileData.name || !profileData.agency_name) {
+        toast.error('Name, Phone number, and Agency Name are required');
         return;
-    }
-    try {
-      // Update the broker profile to include the user's email if it's not already there
-      const updateData = {};
-      if (!broker.email && user.email) {
-          updateData.email = user.email;
-      }
-      // Ensure the broker_id is set on the user's account
-      await base44.auth.updateMe({ broker_id: broker.id });
-      
-      // Update broker with email if needed
-      if (Object.keys(updateData).length > 0) {
-          await base44.entities.Broker.update(broker.id, updateData);
       }
 
-      setBrokerProfile({ ...broker, ...updateData }); // Update local state
-      setPreferredAreas(broker.areas_covered || []);
-      setSetupMode(null);
-      setSearchPhone("");
-      setSearchResults([]);
-
-      toast.success("Profile linked!", {
-        description: `Connected to broker profile: ${broker.name}`
-      });
-      queryClient.invalidateQueries(['broker-profile']);
-      window.location.reload(); // Reload to refresh all related data
-    } catch (error) {
-      toast.error("Failed to link profile", {
-        description: error.message
-      });
-      console.error('Link to broker error:', error);
-    }
-  };
-
-  const createNewBrokerProfile = async () => {
-    if (!user) {
-        toast.error("User not logged in.");
-        return;
-    }
-    try {
-      const allBrokers = await base44.entities.Broker.list();
-      const brokerCount = allBrokers.length;
-      const customId = `CHR-BRK-${String(brokerCount + 1).padStart(4, '0')}`;
-      
-      // Use user's full_name as initial name, email as email, and phone_number if available for phone
-      let initialName = user.full_name || user.email.split('@')[0];
-      let initialEmail = user.email;
-      let initialPhone = user.phone_number ? validatePhoneNumber(user.phone_number).normalized : null;
-
-      if (!initialPhone) {
-        toast.error('❌ Missing Phone Number', {
-            description: 'Please set your phone number in user settings or link an existing broker profile',
-            duration: 8000,
-            className: 'bg-red-600 text-white border-0'
+      // ✅ ENHANCED: Validate phone number format
+      const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        toast.error('❌ Invalid Phone Number', {
+          description: `Must be 10 digits (you entered ${cleanPhone.length} digits)`,
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
         });
         return;
       }
-      
-      // Check for existing phone number before creating
-      const existingBrokerWithPhone = allBrokers.find(b => {
-          if (!b.phone) return false;
-          const brokerPhoneLast10 = b.phone.replace(/\D/g, '').slice(-10);
-          return brokerPhoneLast10 === validatePhoneNumber(user.phone_number).cleaned;
-      });
 
-      if (existingBrokerWithPhone) {
+      // ✅ Check if phone starts with valid Indian prefix
+      if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
+        toast.error('❌ Invalid Indian Mobile Number', {
+          description: 'Must start with 6, 7, 8, or 9',
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
+        });
+        return;
+      }
+
+      setCreatingBrokerProfile(true);
+      
+      try {
+        console.log('🔵 Starting broker profile creation...');
+        console.log('📱 Phone:', cleanPhone);
+        console.log('👤 Name:', profileData.name.trim());
+        console.log('🏢 Agency:', profileData.agency_name.trim());
+        
+        let normalizedPhone = '91' + cleanPhone;
+
+        // ✅ Check if phone already exists
+        console.log('🔍 Checking for existing brokers...');
+        const allBrokers = await base44.entities.Broker.list();
+        console.log(`✅ Found ${allBrokers.length} existing brokers`);
+        
+        const existingBroker = allBrokers.find(b => {
+          const brokerPhoneLast10 = (b.phone || '').replace(/\D/g, '').slice(-10);
+          return brokerPhoneLast10 === cleanPhone;
+        });
+
+        if (existingBroker) {
+          console.log('⚠️ Phone number already exists:', existingBroker.name);
           toast.error('❌ Phone Number Already Exists', {
-              description: `This phone number is already linked to broker: ${existingBrokerWithPhone.name}. Please link your profile instead.`,
-              duration: 8000,
-              className: 'bg-red-600 text-white border-0'
+            description: `This number is already linked to broker: ${existingBroker.name}`,
+            duration: 6000,
+            className: 'bg-orange-600 text-white border-0'
           });
+          setCreatingBrokerProfile(false);
           return;
+        }
+
+        const brokerData = {
+          name: profileData.name.trim(),
+          phone: normalizedPhone,
+          agency_name: profileData.agency_name.trim(),
+          email: profileData.email.trim() || currentUser.email,
+          status: "Active",
+          total_listings_count: 0,
+          active_listings_count: 0,
+          verified: false
+        };
+        
+        console.log('📝 Creating broker with data:', brokerData);
+
+        const newBroker = await base44.entities.Broker.create(brokerData);
+        console.log('✅ Broker created successfully:', newBroker.id);
+
+        console.log('🔗 Linking broker to user account...');
+        await base44.auth.updateMe({ broker_id: newBroker.id });
+        console.log('✅ User linked to broker');
+        
+        toast.success('✅ Broker Profile Created!', {
+          description: 'Welcome to PropAI Live',
+          duration: 3000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+        });
+        
+        console.log('🔄 Reloading page...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        
+      } catch (error) {
+        console.error('❌ CREATE PROFILE ERROR:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack
+        });
+        
+        // ✅ ENHANCED: Extract actual error message from different error formats
+        let errorMessage = 'Unknown error occurred';
+        let errorDescription = 'Please check browser console (F12) for details';
+        
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        // Check for specific error patterns
+        if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+          errorDescription = 'Phone number or email already exists';
+        } else if (errorMessage.includes('required')) {
+          errorDescription = 'Missing required fields';
+        } else if (errorMessage.includes('validation')) {
+          errorDescription = 'Data validation failed';
+        } else if (errorMessage.includes('permission') || errorMessage.includes('authorized')) {
+          errorDescription = 'Permission denied';
+        }
+        
+        toast.error(`❌ ${errorMessage}`, {
+          description: errorDescription,
+          duration: 10000,
+          className: 'bg-red-600 text-white border-0'
+        });
+      } finally {
+        setCreatingBrokerProfile(false);
       }
-
-      const newBrokerData = {
-        custom_id: customId,
-        name: initialName,
-        phone: initialPhone,
-        email: initialEmail,
-        status: "Active",
-        total_listings_count: 0,
-        active_listings_count: 0,
-        verified: false,
-        areas_covered: []
-      };
-
-      const newBroker = await base44.entities.Broker.create(newBrokerData);
-      
-      await base44.auth.updateMe({ broker_id: newBroker.id });
-
-      setBrokerProfile(newBroker);
-      setPreferredAreas(newBroker.areas_covered || []);
-      setSetupMode(null);
-
-      toast.success("Profile created!", {
-        description: "Your broker profile is now active"
-      });
-      queryClient.invalidateQueries(['broker-profile']);
-      window.location.reload(); // Reload to refresh all related data
-    } catch (error) {
-      let errorMessage = 'Unknown error occurred';
-      let errorDescription = 'Please check browser console (F12) for details';
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      toast.error(`❌ ${errorMessage}`, {
-        description: errorDescription,
-        duration: 8000,
-        className: 'bg-red-600 text-white border-0'
-      });
-      console.error('Create new broker profile error:', error);
-    }
-  };
-
-  const saveProfileEdits = async () => {
-    if (!brokerProfile) return;
-
-    let updatedPhone = editedProfile.phone;
-    if (updatedPhone) {
-      const phoneValidation = validatePhoneNumber(updatedPhone);
-      if (!phoneValidation.isValid) {
-          toast.error('❌ Invalid Phone Number', { description: phoneValidation.message });
-          return;
-      }
-      updatedPhone = phoneValidation.normalized;
-    }
-
-    try {
-      const dataToUpdate = {
-        name: editedProfile.name,
-        phone: updatedPhone,
-        email: editedProfile.email,
-        agency_name: editedProfile.agency_name,
-        notes: editedProfile.notes
-      };
-
-      await base44.entities.Broker.update(brokerProfile.id, dataToUpdate);
-      
-      setBrokerProfile(prev => ({ ...prev, ...dataToUpdate }));
-      setIsEditingProfile(false);
-      setEditedProfile({});
-
-      toast.success("Profile updated!");
-      queryClient.invalidateQueries(['broker-profile']);
-    } catch (error) {
-      let errorMessage = 'Unknown error occurred';
-      let errorDescription = 'Please check browser console (F12) for details';
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
-        errorDescription = 'Phone number or email might already exist for another broker.';
-      }
-
-      toast.error(`❌ ${errorMessage}`, {
-        description: errorDescription,
-        duration: 8000,
-        className: 'bg-red-600 text-white border-0'
-      });
-      console.error('Save profile edits error:', error);
-    }
-  };
-
-  const addPreferredArea = async () => {
-    if (!newArea.trim()) {
-        toast.error("Please enter an area.");
-        return;
-    }
-    const areaToAdd = newArea.trim();
-    if (preferredAreas.includes(areaToAdd)) {
-        toast.info("Area already added.");
-        setNewArea("");
-        return;
-    }
-
-    const updatedAreas = [...preferredAreas, areaToAdd];
-    setPreferredAreas(updatedAreas);
-    setNewArea("");
-
-    try {
-      await base44.entities.Broker.update(brokerProfile.id, {
-        areas_covered: updatedAreas
-      });
-      toast.success("Area added!");
-    } catch (error) {
-      toast.error("Failed to add area");
-      setPreferredAreas(preferredAreas); // Revert on error
-      console.error('Add preferred area error:', error);
-    }
-  };
-
-  const removePreferredArea = async (areaToRemove) => {
-    const updatedAreas = preferredAreas.filter(a => a !== areaToRemove);
-    setPreferredAreas(updatedAreas);
-
-    try {
-      await base44.entities.Broker.update(brokerProfile.id, {
-        areas_covered: updatedAreas
-      });
-      toast.success("Area removed!");
-    } catch (error) {
-      toast.error("Failed to remove area");
-      setPreferredAreas(preferredAreas); // Revert on error
-      console.error('Remove preferred area error:', error);
-    }
-  };
-
-  const savePreferredAreas = async () => {
-    try {
-      await base44.entities.Broker.update(brokerProfile.id, {
-        areas_covered: preferredAreas
-      });
-      setIsEditingAreas(false);
-      toast.success("Preferred areas saved!");
-    } catch (error) {
-      toast.error("Failed to save areas");
-      console.error('Save preferred areas error:', error);
-    }
-  };
-
-  const addTeamMember = async () => {
-    if (!newTeamMemberPhone.trim()) {
-      toast.error("Please enter a phone number");
       return;
     }
-
-    const phoneValidation = validatePhoneNumber(newTeamMemberPhone);
-    if (!phoneValidation.isValid) {
-        toast.error('❌ Invalid Phone Number', { description: phoneValidation.message });
-        return;
-    }
-
+    
+    // ✅ UPDATE EXISTING BROKER PROFILE
+    setSavingProfile(true);
     try {
-      const phoneLast10 = phoneValidation.cleaned;
-
-      const allBrokers = await base44.entities.Broker.list();
-      const teamMember = allBrokers.find(b => {
-        if (!b.phone) return false;
-        const brokerPhoneLast10 = b.phone.replace(/\D/g, '').slice(-10);
-        return brokerPhoneLast10 === phoneLast10;
-      });
-
-      if (!teamMember) {
-        toast.error("Broker not found", {
-          description: "No broker with this phone number exists in PropAI. Ask them to create a profile first."
+      console.log('🔵 Starting broker profile update for ID:', brokerProfile.id);
+      console.log('📱 Original Phone:', brokerProfile.phone);
+      console.log('📱 New Phone:', profileData.phone);
+      console.log('👤 Original Name:', brokerProfile.name);
+      console.log('👤 New Name:', profileData.name);
+      
+      // ✅ ENHANCED: Validate phone number format for updates too
+      const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        toast.error('❌ Invalid Phone Number', {
+          description: `Must be 10 digits (you entered ${cleanPhone.length} digits)`,
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
         });
-        return;
-      }
-      if (teamMember.id === brokerProfile.id) {
-        toast.error("Cannot add yourself to your team.");
+        setSavingProfile(false);
         return;
       }
 
-      const currentTeamMembers = brokerProfile.team_members || [];
-      const alreadyInTeam = currentTeamMembers.some(m => m.broker_id === teamMember.id);
+      if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
+        toast.error('❌ Invalid Indian Mobile Number', {
+          description: 'Must start with 6, 7, 8, or 9',
+          duration: 5000,
+          className: 'bg-red-600 text-white border-0'
+        });
+        setSavingProfile(false);
+        return;
+      }
 
-      if (alreadyInTeam) {
-        toast.info(`${teamMember.name} is already in your team!`);
+      let normalizedPhone = '91' + cleanPhone;
+
+      const updateData = {
+        name: profileData.name.trim() || brokerProfile.name,
+        agency_name: profileData.agency_name.trim() || null,
+        email: profileData.email.trim() || null,
+        phone: normalizedPhone || brokerProfile.phone
+      };
+
+      console.log('📝 Updating broker with data:', updateData);
+      
+      await base44.entities.Broker.update(brokerProfile.id, updateData);
+      console.log('✅ Broker updated successfully');
+      
+      setBrokerProfile(prev => ({
+        ...prev,
+        name: profileData.name.trim() || prev.name,
+        agency_name: profileData.agency_name.trim() || null,
+        email: profileData.email.trim() || null,
+        phone: normalizedPhone || prev.phone
+      }));
+      
+      setEditingProfile(false);
+      toast.success('✅ Profile Updated!', {
+        duration: 3000,
+        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+      });
+    } catch (error) {
+      console.error('❌ UPDATE PROFILE ERROR:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      
+      // ✅ ENHANCED: Extract actual error message from different error formats for update
+      let errorMessage = 'Unknown error occurred';
+      let errorDescription = 'Please check browser console (F12) for details';
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check for specific error patterns
+      if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+        errorDescription = 'Phone number or email already exists';
+      } else if (errorMessage.includes('required')) {
+        errorDescription = 'Missing required fields';
+      } else if (errorMessage.includes('validation')) {
+        errorDescription = 'Data validation failed';
+      } else if (errorMessage.includes('permission') || errorMessage.includes('authorized')) {
+        errorDescription = 'Permission denied';
+      }
+      
+      toast.error(`❌ ${errorMessage}`, {
+        description: errorDescription,
+        duration: 8000,
+        className: 'bg-red-600 text-white border-0'
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // ✅ NEW: Save Preferred Areas
+  const handleSaveAreas = async () => {
+    setSavingAreas(true);
+    try {
+      await base44.auth.updateMe({ preferred_areas: selectedAreas });
+      setCurrentUser(prev => ({ ...prev, preferred_areas: selectedAreas }));
+      setEditingAreas(false);
+      toast.success('✅ Preferred areas saved!', {
+        description: 'SmartFeed will prioritize properties from these areas',
+        duration: 3000
+      });
+    } catch (error) {
+      toast.error('Failed to save areas', {
+        description: error.message
+      });
+      console.error('Save areas error:', error);
+    } finally {
+      setSavingAreas(false);
+    }
+  };
+
+  // ✅ NEW: Toggle Area Selection
+  const toggleArea = (area) => {
+    if (selectedAreas.includes(area)) {
+      setSelectedAreas(selectedAreas.filter(a => a !== area));
+    } else {
+      setSelectedAreas([...selectedAreas, area]);
+    }
+  };
+
+  // ✅ TEAM MEMBER MANAGEMENT
+  const handleAddTeamMember = async () => {
+    if (!teamMemberPhone.trim() || !brokerProfile) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+    
+    setAddingTeamMember(true);
+    try {
+      const normalizePhone = (phone) => phone.replace(/\D/g, '').slice(-10);
+      const normalized = normalizePhone(teamMemberPhone);
+      
+      if (normalized.length !== 10) {
+        toast.error('Invalid Phone - must be 10 digits');
+        setAddingTeamMember(false);
         return;
       }
       
-      const memberListingCount = await base44.entities.Property.filter({
-        broker_id: teamMember.id,
-        status: 'Active',
-        is_duplicate: false
-      }).then(res => res.length);
-
-
+      const brokers = await base44.entities.Broker.list();
+      const teamMemberBroker = brokers.find(b => normalizePhone(b.phone || '') === normalized);
+      
+      if (!teamMemberBroker) {
+        toast.error('❌ Broker Not Found', {
+          description: 'No broker with this phone number exists'
+        });
+        setAddingTeamMember(false);
+        return;
+      }
+      
+      if (teamMemberBroker.id === brokerProfile.id) {
+        toast.error('Cannot add yourself to your team');
+        setAddingTeamMember(false);
+        return;
+      }
+      
+      const currentTeam = brokerProfile.team_members || [];
+      if (currentTeam.some(m => m.broker_id === teamMemberBroker.id)) {
+        toast.error(`${teamMemberBroker.name} is already in your team`);
+        setAddingTeamMember(false);
+        return;
+      }
+      
+      const allProps = await base44.entities.Property.list();
+      const memberListings = allProps.filter(p => 
+        p.broker_id === teamMemberBroker.id && p.status === 'Active' && !p.is_duplicate
+      );
+      
       const newTeamMemberData = {
-        broker_id: teamMember.id,
-        name: teamMember.name,
-        phone: teamMember.phone,
-        role: teamMember.agency_name || 'Team Member', // Default role
-        co_listing_count: memberListingCount // Dynamically get listings count
+        broker_id: teamMemberBroker.id,
+        name: teamMemberBroker.name,
+        phone: teamMemberBroker.phone,
+        role: teamMemberBroker.agency_name || 'Team Member',
+        co_listing_count: memberListings.length,
+        agency_name: teamMemberBroker.agency_name
       };
 
-      const updatedTeam = [...currentTeamMembers, newTeamMemberData];
-      const updatedTeamLeaderOf = [...(brokerProfile.team_leader_of || []), teamMember.id];
+      const updatedTeam = [...currentTeam, newTeamMemberData];
+      const updatedTeamLeaderOf = [...(brokerProfile.team_leader_of || []), teamMemberBroker.id];
       
       await base44.entities.Broker.update(brokerProfile.id, {
         team_members: updatedTeam,
         team_leader_of: updatedTeamLeaderOf
       });
       
-      await base44.entities.Broker.update(teamMember.id, { reports_to: brokerProfile.id });
-
+      await base44.entities.Broker.update(teamMemberBroker.id, { reports_to: brokerProfile.id });
+      
       setBrokerProfile(prev => ({
         ...prev,
         team_members: updatedTeam,
         team_leader_of: updatedTeamLeaderOf,
       }));
-      setIsAddingTeamMember(false);
-      setNewTeamMemberPhone("");
 
-      toast.success(`Added ${teamMember.name} to team!`);
-      queryClient.invalidateQueries(['broker-profile']);
+      toast.success(`✅ ${teamMemberBroker.name} joined your team!`);
+      setTeamMemberPhone('');
+      setEditingTeam(false);
     } catch (error) {
-      toast.error("Failed to add team member", {
+      toast.error('Failed to add team member', {
         description: error.message
       });
       console.error('Add team member error:', error);
+    } finally {
+      setAddingTeamMember(false);
     }
   };
 
@@ -535,29 +536,65 @@ export default function MyProfile() {
     }
   };
 
-
-  // Fetch properties and requirements
+  // ✅ DATA QUERIES
   const { data: properties = [] } = useQuery({
-    queryKey: ['broker-properties', brokerProfile?.id],
-    queryFn: () => base44.entities.Property.filter({ broker_id: brokerProfile.id }, '-created_date'),
-    enabled: !!brokerProfile
+    queryKey: ['my-properties', brokerProfile?.id],
+    queryFn: async () => {
+      if (!brokerProfile) return [];
+      const allProps = await base44.entities.Property.list('-created_date');
+      return allProps.filter(p => p.broker_id === brokerProfile.id);
+    },
+    enabled: !!brokerProfile,
+    initialData: []
   });
 
   const { data: requirements = [] } = useQuery({
-    queryKey: ['broker-requirements', brokerProfile?.id],
-    queryFn: () => base44.entities.Requirement.filter({ broker_id: brokerProfile.id }, '-created_date'),
-    enabled: !!brokerProfile
+    queryKey: ['my-requirements', brokerProfile?.id],
+    queryFn: async () => {
+      if (!brokerProfile) return [];
+      const allReqs = await base44.entities.Requirement.list('-created_date');
+      return allReqs.filter(r => r.broker_id === brokerProfile.id);
+    },
+    enabled: !!brokerProfile,
+    initialData: []
   });
 
-  // Calculate metrics
-  const activeProperties = properties.filter(p => p.status === 'Active' && !p.is_duplicate).length;
-  const totalProperties = properties.length;
-  const activeRequirements = requirements.filter(r => r.status === 'Active').length;
-  const totalRequirements = requirements.length;
-  const totalListings = totalProperties + totalRequirements;
+  const brokerMetrics = useMemo(() => {
+    if (!brokerProfile) return null;
 
+    const activeProps = properties.filter(p => p.status === 'Active' && !p.is_duplicate);
+    const activeReqs = requirements.filter(r => r.status === 'Active');
 
-  if (isLoadingUser || isLoadingBroker) {
+    return {
+      totalListings: properties.length,
+      activeListings: activeProps.length,
+      totalRequirements: requirements.length,
+      activeRequirements: activeReqs.length
+    };
+  }, [brokerProfile, properties, requirements]);
+
+  const enrichedTeamMembers = useMemo(() => {
+    if (!brokerProfile?.team_members || properties.length === 0) {
+      return brokerProfile?.team_members || [];
+    }
+
+    return brokerProfile.team_members.map(member => {
+      const memberActiveListings = properties.filter(p => 
+        p.broker_id === member.broker_id && 
+        p.status === 'Active' && 
+        !p.is_duplicate
+      ).length;
+
+      return {
+        ...member,
+        co_listing_count: memberActiveListings,
+        hasData: memberActiveListings > 0
+      };
+    });
+  }, [brokerProfile, properties]);
+
+  // ✅ LOADING STATE
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -568,141 +605,143 @@ export default function MyProfile() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
-        <Toaster position="top-center" richColors closeButton />
-        <Card className="p-8 text-center">
-          <p className="text-slate-700 mb-4">Please log in to view your profile</p>
-          <Button onClick={() => base44.auth.redirectToLogin()}>
-            Log In
-          </Button>
-        </Card>
-      </div>
-    );
-  }
+  if (!currentUser) return null;
 
-  // Initial setup: No broker profile, offer to link or create
-  if (!brokerProfile && !setupMode) {
+  // ✅ NO BROKER PROFILE - SHOW LINK OR CREATE OPTIONS
+  if (!brokerProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
         <Toaster position="top-center" richColors closeButton />
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center bg-white border-2 border-slate-200">
-            <User className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome to PropAI Live!</h2>
-            <p className="text-slate-600 mb-6">
-              Let's set up your broker profile to get started
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                onClick={() => setSetupMode('link')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-12 text-lg font-bold"
-              >
-                Link Existing Profile
-              </Button>
-              <Button
-                onClick={() => setSetupMode('create')}
-                variant="outline"
-                className="h-12 text-lg font-bold"
-              >
-                Create New Profile
-              </Button>
+
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-blue-400"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">👋 Welcome to PropAI!</h2>
+                <p className="text-blue-100 leading-relaxed">
+                  Let's set up your broker profile. You can link to an existing profile or create a new one.
+                </p>
+              </div>
             </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+          </motion.div>
 
-  // Setup mode: Link existing profile
-  if (setupMode === 'link') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-        <Toaster position="top-center" richColors closeButton />
-        <div className="max-w-2xl mx-auto px-4 py-12">
-          <Card className="p-8 bg-white border-2 border-slate-200">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Link Existing Profile</h2>
-            <p className="text-slate-600 mb-6">
-              Enter your phone number to find your existing broker profile (e.g., from WhatsApp AI messages).
+          {/* ✅ OPTION 1: LINK TO EXISTING BROKER */}
+          <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Search className="w-5 h-5 text-blue-600" />
+              Already have listings? Link your phone number
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              If your phone number is already in our system (from WhatsApp AI messages), enter it to link your account.
             </p>
-
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2">
               <Input
-                placeholder="Enter 10-digit phone number (e.g., 9820012345)"
-                value={searchPhone}
-                onChange={(e) => setSearchPhone(e.target.value)}
-                className="flex-1"
                 type="tel"
+                value={phoneSearchQuery}
+                onChange={(e) => setPhoneSearchQuery(e.target.value)}
+                placeholder="9820056789"
+                className="text-sm font-mono"
               />
-              <Button onClick={searchBrokerByPhone} disabled={isSearching}>
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+              <Button
+                onClick={handleSearchBrokerByPhone}
+                disabled={linkingBroker || !phoneSearchQuery.trim()}
+                className="bg-blue-600 text-white"
+              >
+                {linkingBroker ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Searching...
+                  </>
                 ) : (
-                  'Search'
+                  'Link Profile'
                 )}
               </Button>
             </div>
+          </Card>
 
-            {searchResults.length > 0 && (
-              <div className="space-y-2 mb-4">
-                <p className="text-sm text-slate-700 font-semibold mb-2">Found Profiles:</p>
-                {searchResults.map(broker => (
-                  <Card key={broker.id} className="p-4 flex items-center justify-between border-2 border-purple-200 bg-purple-50">
-                    <div>
-                      <p className="font-semibold text-slate-900">{broker.name}</p>
-                      <p className="text-sm text-slate-600 font-mono">{broker.phone}</p>
-                      {broker.agency_name && (
-                        <p className="text-xs text-purple-700">{broker.agency_name}</p>
-                      )}
-                    </div>
-                    <Button onClick={() => linkToBroker(broker)} size="sm" className="bg-purple-600 text-white">
-                      Link This Profile
-                    </Button>
-                  </Card>
-                ))}
+          {/* ✅ OPTION 2: CREATE NEW BROKER PROFILE */}
+          <Card className="p-6 bg-white border-2 border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-600" />
+              Create New Broker Profile
+            </h3>
+
+            <div className="space-y-4">
+              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Your Name <span className="text-purple-600 font-bold">*REQUIRED</span>
+                </label>
+                <Input
+                  type="text"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  placeholder="e.g., Ramesh Kumar"
+                  className="text-sm border-purple-400"
+                />
               </div>
-            )}
 
-            <Button onClick={() => setSetupMode(null)} variant="outline" className="w-full mt-4">
-              Cancel
-            </Button>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Setup mode: Create new profile
-  if (setupMode === 'create') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-        <Toaster position="top-center" richColors closeButton />
-        <div className="max-w-2xl mx-auto px-4 py-12">
-          <Card className="p-8 bg-white border-2 border-slate-200">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Create New Broker Profile</h2>
-            <p className="text-slate-600 mb-6">
-              We'll create a new broker profile for you using your account information.
-            </p>
-
-            <div className="bg-purple-50 rounded-lg p-4 mb-6 border-2 border-purple-200">
-              <p className="text-sm text-slate-700 mb-2"><strong>Name:</strong> {user.full_name || user.email.split('@')[0]}</p>
-              <p className="text-sm text-slate-700 mb-2"><strong>Email:</strong> {user.email}</p>
-              <p className="text-sm text-slate-700"><strong>Phone:</strong> {user.phone_number || <span className="text-red-500">Not set in user profile</span>}</p>
-              {!user.phone_number && (
-                <p className="text-xs text-red-600 mt-2">
-                    ⚠️ Your user profile does not have a phone number. Please update your user profile's phone number or use the "Link Existing Profile" option.
+              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Phone Number (WhatsApp) <span className="text-purple-600 font-bold">*REQUIRED</span>
+                </label>
+                <Input
+                  type="tel"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  placeholder="9820056789"
+                  className="text-sm font-mono border-purple-400"
+                />
+                <p className="text-xs text-purple-600 mt-2 font-semibold">
+                  ⚠️ Required for WhatsApp AI agent and client contacts
                 </p>
-              )}
-            </div>
+              </div>
 
-            <div className="flex gap-2">
-              <Button onClick={createNewBrokerProfile} className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 h-12 text-lg font-bold" disabled={!user.phone_number}>
-                Create Profile
-              </Button>
-              <Button onClick={() => setSetupMode(null)} variant="outline" className="h-12 text-lg font-bold">
-                Cancel
+              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Agency Name <span className="text-purple-600 font-bold">*REQUIRED</span>
+                </label>
+                <Input
+                  type="text"
+                  value={profileData.agency_name}
+                  onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
+                  placeholder="e.g., Bandra Homes"
+                  className="text-sm border-purple-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                  Email (Optional)
+                </label>
+                <Input
+                  type="email"
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  placeholder="your.email@example.com"
+                  className="text-sm"
+                />
+              </div>
+
+              <Button
+                onClick={handleSaveProfile}
+                disabled={creatingBrokerProfile || !profileData.phone || !profileData.name || !profileData.agency_name}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-14 text-lg font-bold"
+              >
+                {creatingBrokerProfile ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Creating Profile...
+                  </>
+                ) : (
+                  '✅ Create Broker Profile'
+                )}
               </Button>
             </div>
           </Card>
@@ -711,49 +750,91 @@ export default function MyProfile() {
     );
   }
 
-  // Main Profile View
+  // ✅ BROKER PROFILE EXISTS - SHOW FULL PROFILE PAGE
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-12">
-        {/* Header */}
-        <div className="mb-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-                    <Users className="w-8 h-8 text-purple-600" />
-                </div>
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
-                    <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600">
-                    <span>{brokerProfile.custom_id}</span>
-                    {brokerProfile.phone && (
-                        <>
-                        <span>•</span>
-                        <span className="font-mono text-purple-700">{brokerProfile.phone}</span>
-                        </>
-                    )}
-                    {brokerProfile.agency_name && (
-                        <>
-                        <span>•</span>
-                        <span className="font-semibold text-purple-700">{brokerProfile.agency_name}</span>
-                        </>
-                    )}
-                    {user.role === 'admin' && (
-                        <>
-                        <span>•</span>
-                        <Badge className="bg-purple-600 text-white">Admin</Badge>
-                        </>
-                    )}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+        {(!brokerProfile.phone || !brokerProfile.agency_name) && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-purple-400"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">⚠️ Profile Incomplete</h3>
+                <p className="text-purple-100 mb-3">
+                  Please add these details to unlock full access:
+                </p>
+                <div className="space-y-2 text-sm text-purple-100">
+                  {!brokerProfile.phone && (
+                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                      <Phone className="w-4 h-4" />
+                      <span><strong>Phone</strong> - WhatsApp integration</span>
                     </div>
+                  )}
+                  {!brokerProfile.agency_name && (
+                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                      <Building2 className="w-4 h-4" />
+                      <span><strong>Agency</strong> - Displayed on listings</span>
+                    </div>
+                  )}
                 </div>
-                </div>
+                <Button
+                  onClick={() => {
+                    setActiveTab('overview');
+                    setEditingProfile(true);
+                  }}
+                  className="mt-4 bg-white text-purple-600 hover:bg-purple-50 font-bold"
+                >
+                  Complete Profile Now
+                </Button>
+              </div>
             </div>
+          </motion.div>
+        )}
+
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-purple-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
+                <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600">
+                  <span>{brokerProfile.custom_id}</span>
+                  {brokerProfile.phone && (
+                    <>
+                      <span>•</span>
+                      <span className="font-mono text-purple-700">{brokerProfile.phone}</span>
+                    </>
+                  )}
+                  {brokerProfile.agency_name && (
+                    <>
+                      <span>•</span>
+                      <span className="font-semibold text-purple-700">{brokerProfile.agency_name}</span>
+                    </>
+                  )}
+                  {currentUser.role === 'admin' && (
+                    <>
+                      <span>•</span>
+                      <Badge className="bg-purple-600 text-white">Admin</Badge>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Admin Actions */}
-        {user.role === 'admin' && (
+        {/* ✅ NEW: Admin Quick Actions */}
+        {currentUser.role === 'admin' && (
           <Card className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 border-0 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-white font-bold flex items-center gap-2">
@@ -794,133 +875,86 @@ export default function MyProfile() {
           </Card>
         )}
 
-        {/* Profile Incomplete Banner (re-added from original if conditions met) */}
-        {(!brokerProfile.phone || !brokerProfile.agency_name) && (
-          <div className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-purple-400">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
-                <AlertCircle className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-2">⚠️ Profile Incomplete</h3>
-                <p className="text-purple-100 mb-3">
-                  Please add these details to unlock full access:
-                </p>
-                <div className="space-y-2 text-sm text-purple-100">
-                  {!brokerProfile.phone && (
-                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                      <Phone className="w-4 h-4" />
-                      <span><strong>Phone</strong> - WhatsApp integration</span>
-                    </div>
-                  )}
-                  {!brokerProfile.agency_name && (
-                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                      <Building2 className="w-4 h-4" />
-                      <span><strong>Agency</strong> - Displayed on listings</span>
-                    </div>
-                  )}
-                </div>
-                <Button
-                  onClick={() => {
-                    setIsEditingProfile(true);
-                    setEditedProfile({
-                        name: brokerProfile.name,
-                        phone: brokerProfile.phone,
-                        email: brokerProfile.email,
-                        agency_name: brokerProfile.agency_name,
-                        notes: brokerProfile.notes
-                    });
-                  }}
-                  className="mt-4 bg-white text-purple-600 hover:bg-purple-50 font-bold"
-                >
-                  Complete Profile Now
-                </Button>
-              </div>
-            </div>
+        {brokerMetrics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="p-4 bg-white border-2 border-slate-200">
+              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
+                <Package className="w-4 h-4 text-sky-600" />
+                Active Listings
+              </p>
+              <p className="text-3xl font-bold text-sky-600">{brokerMetrics.activeListings}</p>
+              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalListings} total</p>
+            </Card>
+
+            <Card className="p-4 bg-white border-2 border-slate-200">
+              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
+                <Target className="w-4 h-4 text-purple-600" />
+                Active Requirements
+              </p>
+              <p className="text-3xl font-bold text-purple-600">{brokerMetrics.activeRequirements}</p>
+              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalRequirements} total</p>
+            </Card>
+
+            <Card className="p-4 bg-white border-2 border-slate-200">
+              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
+                <Users className="w-4 h-4 text-blue-600" />
+                Team Members
+              </p>
+              <p className="text-3xl font-bold text-blue-600">{enrichedTeamMembers.length}</p>
+            </Card>
+
+            <Card className="p-4 bg-white border-2 border-slate-200">
+              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
+                <Star className="w-4 h-4 text-amber-600" />
+                Trust Score
+              </p>
+              <p className="text-3xl font-bold text-amber-600">{brokerProfile.trust_score || 50}</p>
+            </Card>
           </div>
         )}
 
-        {/* Metrics Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <div className="flex items-center justify-between mb-2">
-                <Home className="w-8 h-8 text-purple-600" />
-                <Badge className="bg-purple-600 text-white">{activeProperties} active</Badge>
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{totalProperties}</p>
-            <p className="text-sm text-slate-600">Total Properties</p>
-            </Card>
-
-            <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <div className="flex items-center justify-between mb-2">
-                <Briefcase className="w-8 h-8 text-blue-600" />
-                <Badge className="bg-blue-600 text-white">{activeRequirements} active</Badge>
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{totalRequirements}</p>
-            <p className="text-sm text-slate-600">Total Requirements</p>
-            </Card>
-
-            <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-8 h-8 text-green-600" />
-                <Badge className="bg-green-600 text-white">Combined</Badge>
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{totalListings}</p>
-            <p className="text-sm text-slate-600">Total Listings & Req.</p>
-            </Card>
-        </div>
-
-        {/* Browser Notifications Section */}
+        {/* ✅ NEW: Browser Notifications Section */}
         <div className="mb-8">
-          <BrowserNotificationManager user={user} />
+          <BrowserNotifications user={currentUser} />
         </div>
 
-        {/* Preferred Areas */}
-        <Card className="p-6 bg-white border-2 border-purple-200 mb-8">
+        {/* ✅ NEW: PREFERRED AREAS CARD */}
+        <Card className="p-6 bg-white border-2 border-purple-200 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-purple-600" />
-              <h3 className="font-bold text-slate-900">Preferred Areas ({preferredAreas.length})</h3>
-            </div>
-            {!isEditingAreas ? (
-              <Button onClick={() => setIsEditingAreas(true)} size="sm" variant="outline" className="border-purple-300 text-purple-700">
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button onClick={savePreferredAreas} size="sm" className="bg-purple-600 text-white">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-                <Button onClick={() => setIsEditingAreas(false)} size="sm" variant="outline" className="border-purple-300 text-purple-700">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
+              My Preferred Areas ({selectedAreas.length})
+            </h3>
+            <Button
+              onClick={() => {
+                setEditingAreas(!editingAreas);
+                if (!editingAreas) {
+                  setSelectedAreas(currentUser.preferred_areas || []);
+                }
+              }}
+              variant="outline"
+              size="sm"
+              className="border-purple-300 text-purple-700"
+            >
+              {editingAreas ? 'Cancel' : <><Edit className="w-3 h-3 mr-1" /> Edit Areas</>}
+            </Button>
           </div>
 
           <p className="text-sm text-slate-600 mb-4">
-            {isEditingAreas 
-              ? '✨ Select your focus areas or add custom ones. SmartFeed will prioritize properties from these locations.' 
+            {editingAreas 
+              ? '✨ Select your focus areas. SmartFeed will prioritize properties from these locations.' 
               : '📍 Your preferred areas for property searches and listings'}
           </p>
 
-          {isEditingAreas && (
+          {editingAreas ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                 {popularAreas.map((area) => {
-                  const isSelected = preferredAreas.includes(area);
+                  const isSelected = selectedAreas.includes(area);
                   return (
                     <Button
                       key={area}
-                      onClick={() => {
-                        if (isSelected) {
-                            removePreferredArea(area);
-                        } else {
-                            setPreferredAreas([...preferredAreas, area]); // Optimistic update
-                        }
-                      }}
+                      onClick={() => toggleArea(area)}
                       variant={isSelected ? "default" : "outline"}
                       size="sm"
                       className={`h-auto py-3 text-xs justify-start ${
@@ -935,250 +969,283 @@ export default function MyProfile() {
                   );
                 })}
               </div>
-              <div className="flex gap-2 mb-4">
-                <Input
-                  placeholder="Add custom area (e.g., Colaba)"
-                  value={newArea}
-                  onChange={(e) => setNewArea(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addPreferredArea()}
-                  className="flex-1"
-                />
-                <Button onClick={addPreferredArea}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            {preferredAreas.length === 0 ? (
-              <div className="text-center py-8 bg-purple-50 rounded-xl border-2 border-purple-200 w-full">
-                <MapPin className="w-12 h-12 text-purple-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-600 mb-3">No preferred areas set yet</p>
-                <Button
-                  onClick={() => setIsEditingAreas(true)}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Select Your Areas
-                </Button>
-              </div>
-            ) : (
-              preferredAreas.map((area, idx) => (
-                <Badge
-                  key={idx}
-                  className="bg-purple-100 text-purple-800 border-purple-300 text-sm px-3 py-1.5 flex items-center gap-1"
-                >
-                  <Star className="w-3 h-3" fill="currentColor" />
-                  {area}
-                  {isEditingAreas && (
-                    <button
-                      onClick={() => removePreferredArea(area)}
-                      className="ml-2 text-red-500 hover:text-red-700"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </Badge>
-              ))
-            )}
-          </div>
-        </Card>
-
-        {/* Profile Details */}
-        <Card className="p-6 bg-white border-2 border-slate-200 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-purple-600" />
-              <h3 className="font-bold text-slate-900">Profile Details</h3>
-            </div>
-            {!isEditingProfile ? (
-              <Button onClick={() => {
-                setIsEditingProfile(true);
-                setEditedProfile({
-                  name: brokerProfile.name,
-                  phone: brokerProfile.phone ? brokerProfile.phone.replace('91', '') : '', // Pre-fill with 10 digits
-                  email: brokerProfile.email,
-                  agency_name: brokerProfile.agency_name,
-                  notes: brokerProfile.notes
-                });
-              }} size="sm" variant="outline" className="border-purple-300 text-purple-700">
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
+              <Button
+                onClick={handleSaveAreas}
+                disabled={savingAreas}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-12 font-bold"
+              >
+                {savingAreas ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  '✅ Save Preferred Areas'
+                )}
               </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button onClick={saveProfileEdits} size="sm" className="bg-purple-600 text-white">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-                <Button onClick={() => {
-                  setIsEditingProfile(false);
-                  setEditedProfile({});
-                }} size="sm" variant="outline" className="border-purple-300 text-purple-700">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
+            </>
+          ) : (
             <div>
-              <label className="text-sm font-semibold text-slate-700">Name</label>
-              {isEditingProfile ? (
-                <Input
-                  value={editedProfile.name || ''}
-                  onChange={(e) => setEditedProfile({...editedProfile, name: e.target.value})}
-                  placeholder="Your full name"
-                />
+              {selectedAreas.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {selectedAreas.map((area) => (
+                    <Badge
+                      key={area}
+                      className="bg-purple-100 text-purple-800 border-purple-300 text-sm px-3 py-1.5"
+                    >
+                      <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                      {area}
+                    </Badge>
+                  ))}
+                </div>
               ) : (
-                <p className="text-slate-900">{brokerProfile.name || <span className="text-slate-400 italic">Not set</span>}</p>
+                <div className="text-center py-8 bg-purple-50 rounded-xl border-2 border-purple-200">
+                  <MapPin className="w-12 h-12 text-purple-300 mx-auto mb-3" />
+                  <p className="text-sm text-slate-600 mb-3">No preferred areas set yet</p>
+                  <Button
+                    onClick={() => setEditingAreas(true)}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Select Your Areas
+                  </Button>
+                </div>
               )}
             </div>
+          )}
+        </Card>
 
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Phone (WhatsApp)</label>
-              {isEditingProfile ? (
+        {/* ✅ FIXED: PROFILE DETAILS CARD */}
+        <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-600" />
+              Profile Details
+            </h3>
+            <Button
+              onClick={() => {
+                if (editingProfile) {
+                  // ✅ FIX: Reset to original data when canceling
+                  setProfileData({
+                    agency_name: brokerProfile.agency_name || "",
+                    email: brokerProfile.email || "",
+                    phone: brokerProfile.phone || "",
+                    name: brokerProfile.name || currentUser.full_name || ""
+                  });
+                }
+                setEditingProfile(!editingProfile);
+              }}
+              variant="outline"
+              size="sm"
+              className="border-purple-300 text-purple-700"
+            >
+              {editingProfile ? 'Cancel' : <><Edit className="w-3 h-3 mr-1" /> Edit</>}
+            </Button>
+          </div>
+
+          {editingProfile ? (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Name</label>
+                <Input
+                  type="text"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  placeholder="Your full name"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Phone (WhatsApp)</label>
                 <Input
                   type="tel"
-                  value={editedProfile.phone || ''}
-                  onChange={(e) => setEditedProfile({...editedProfile, phone: e.target.value})}
-                  placeholder="9820012345"
-                  className="font-mono"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  placeholder="9820056789"
+                  className="text-sm font-mono"
                 />
-              ) : (
-                <p className="text-slate-900 font-mono">{brokerProfile.phone || <span className="text-slate-400 italic">Not set</span>}</p>
-              )}
-            </div>
+              </div>
 
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Email</label>
-              {isEditingProfile ? (
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Agency</label>
+                <Input
+                  type="text"
+                  value={profileData.agency_name}
+                  onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
+                  placeholder="e.g., Bandra Homes"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Email</label>
                 <Input
                   type="email"
-                  value={editedProfile.email || ''}
-                  onChange={(e) => setEditedProfile({...editedProfile, email: e.target.value})}
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                   placeholder="your.email@example.com"
+                  className="text-sm"
                 />
-              ) : (
-                <p className="text-slate-900">{brokerProfile.email || <span className="text-slate-400 italic">Not set</span>}</p>
-              )}
-            </div>
+              </div>
 
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Agency Name</label>
-              {isEditingProfile ? (
-                <Input
-                  value={editedProfile.agency_name || ''}
-                  onChange={(e) => setEditedProfile({...editedProfile, agency_name: e.target.value})}
-                  placeholder="e.g., Bandra Homes"
-                />
-              ) : (
-                <p className="text-slate-900">{brokerProfile.agency_name || <span className="text-slate-400 italic">Not set</span>}</p>
-              )}
+              <Button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-12 font-bold"
+              >
+                {savingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  '✅ Save Profile'
+                )}
+              </Button>
             </div>
-
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Notes</label>
-              {isEditingProfile ? (
-                <Textarea
-                  value={editedProfile.notes || ''}
-                  onChange={(e) => setEditedProfile({...editedProfile, notes: e.target.value})}
-                  rows={3}
-                  placeholder="Any internal notes about this broker..."
-                />
-              ) : (
-                <p className="text-slate-900 whitespace-pre-wrap">{brokerProfile.notes || <span className="text-slate-400 italic">No notes</span>}</p>
-              )}
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <User className="w-5 h-5 text-purple-600" />
+                <div>
+                  <span className="text-xs text-slate-600 block">Name:</span>
+                  <span className="font-semibold text-slate-900">
+                    {brokerProfile.name || <span className="text-purple-600 italic">Not set</span>}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
+                <Phone className="w-6 h-6 text-purple-600" />
+                <div>
+                  <span className="text-xs text-slate-600 block">WhatsApp:</span>
+                  <span className="text-lg font-bold font-mono text-purple-900">
+                    {brokerProfile.phone || <span className="text-purple-600 italic text-base">Not set</span>}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <Building2 className="w-5 h-5 text-purple-600" />
+                <div>
+                  <span className="text-xs text-slate-600 block">Agency:</span>
+                  <span className="font-semibold text-slate-900">
+                    {brokerProfile.agency_name || <span className="text-purple-600 italic">Not set</span>}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <Mail className="w-5 h-5 text-slate-500" />
+                <div>
+                  <span className="text-xs text-slate-600 block">Email:</span>
+                  <span className="font-semibold text-slate-900">
+                    {brokerProfile.email || <span className="text-slate-400 italic">Not set</span>}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </Card>
 
-        {/* Team Management */}
-        <Card className="p-6 bg-white border-2 border-slate-200">
+        {/* ✅ FIXED: TEAM MEMBERS CARD */}
+        <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-slate-900">Team Members ({brokerProfile.team_members?.length || 0})</h3>
-            </div>
-            {!isAddingTeamMember ? (
-                <Button onClick={() => setIsAddingTeamMember(true)} size="sm" variant="outline" className="border-blue-300 text-blue-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Member
-                </Button>
-            ) : (
-                <Button onClick={() => {
-                    setIsAddingTeamMember(false);
-                    setNewTeamMemberPhone('');
-                }} size="sm" variant="outline" className="border-blue-300 text-blue-700">
-                    <X className="w-4 h-4" />
-                    Cancel
-                </Button>
-            )}
+              My Team ({enrichedTeamMembers.length})
+            </h3>
+            <Button
+              onClick={() => {
+                if (editingTeam) {
+                  // ✅ FIX: Clear phone input when canceling
+                  setTeamMemberPhone('');
+                }
+                setEditingTeam(!editingTeam);
+              }}
+              variant="outline"
+              size="sm"
+              className="border-blue-300 text-blue-700"
+            >
+              {editingTeam ? 'Cancel' : 'Manage Team'}
+            </Button>
           </div>
 
-          {isAddingTeamMember && (
+          {/* ✅ FIX: Always render the input when editingTeam is true */}
+          {editingTeam && (
             <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm font-semibold text-blue-900 mb-3">Add Team Member by Phone</p>
               <p className="text-xs text-slate-600 mb-3">Enter the WhatsApp number of another broker to add them to your team</p>
               <div className="flex gap-2">
                 <Input
                   type="tel"
-                  placeholder="Enter 10-digit phone number (e.g., 9820012345)"
-                  value={newTeamMemberPhone}
-                  onChange={(e) => setNewTeamMemberPhone(e.target.value)}
+                  value={teamMemberPhone}
+                  onChange={(e) => setTeamMemberPhone(e.target.value)}
+                  placeholder="9820056789"
                   className="flex-1 font-mono"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newTeamMemberPhone.trim()) {
-                      addTeamMember();
+                    if (e.key === 'Enter' && teamMemberPhone.trim()) {
+                      handleAddTeamMember();
                     }
                   }}
                 />
-                <Button onClick={addTeamMember} className="bg-blue-600 text-white" size="sm">
-                  <Plus className="w-4 h-4" /> Add
+                <Button
+                  onClick={handleAddTeamMember}
+                  disabled={addingTeamMember || !teamMemberPhone.trim()}
+                  className="bg-blue-600 text-white"
+                  size="sm"
+                >
+                  {addingTeamMember ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add'
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-blue-600 mt-2">💡 The broker must already exist in PropAI system</p>
             </div>
           )}
 
-          {(brokerProfile.team_members && brokerProfile.team_members.length > 0) ? (
+          {enrichedTeamMembers.length > 0 ? (
             <div className="space-y-3">
-              {brokerProfile.team_members.map((member) => (
-                <Card key={member.broker_id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              {enrichedTeamMembers.map((member) => (
+                <div key={member.broker_id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-semibold text-slate-900">{member.name}</p>
-                      <p className="text-sm text-slate-600 font-mono">{member.phone}</p>
+                      <p className="text-xs text-slate-600 font-mono">{member.phone}</p>
                       {member.agency_name && (
                         <p className="text-xs text-purple-700 font-semibold">{member.agency_name}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-lg font-bold text-blue-700">{member.co_listing_count || 0}</p>
+                        <p className="text-lg font-bold text-blue-700">{member.co_listing_count}</p>
                         <p className="text-xs text-slate-600">listings</p>
                       </div>
-                      <Button
-                        onClick={() => handleRemoveTeamMember(member.broker_id)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 h-8 w-8 p-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {editingTeam && (
+                        <Button
+                          onClick={() => handleRemoveTeamMember(member.broker_id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <p className="text-sm text-slate-600 mb-2">No team members yet</p>
-              {!isAddingTeamMember && (
+              {!editingTeam && (
                 <Button
-                  onClick={() => setIsAddingTeamMember(true)}
+                  onClick={() => setEditingTeam(true)}
                   variant="outline"
                   size="sm"
                   className="mt-2"
