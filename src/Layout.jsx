@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -11,6 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import ServiceWorkerSetup from "@/components/notifications/ServiceWorkerSetup";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -149,6 +151,9 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      {/* ✅ Service Worker Setup */}
+      <ServiceWorkerSetup />
+      
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -490,7 +495,6 @@ export default function Layout({ children, currentPageName }) {
                     <span className="ml-1 text-xs">🌍</span>
                   </Link>
                 </li>
-                {/* ✅ FIXED: Sitemap link using base44.functions.invoke approach */}
                 <li>
                   <Link 
                     to={createPageUrl("Sitemap")} 
