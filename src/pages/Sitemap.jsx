@@ -5,6 +5,7 @@ export default function Sitemap() {
   const [xmlContent, setXmlContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ FIRST useEffect: Generate sitemap
   useEffect(() => {
     const generateSitemap = async () => {
       try {
@@ -122,18 +123,7 @@ ${urls.map(url => `  <url>
     generateSitemap();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Generating sitemap...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Auto-download XML as file
+  // ✅ SECOND useEffect: Auto-download XML (MUST be before any returns!)
   useEffect(() => {
     if (xmlContent && !isLoading) {
       const blob = new Blob([xmlContent], { type: 'application/xml' });
@@ -147,6 +137,18 @@ ${urls.map(url => `  <url>
       URL.revokeObjectURL(url);
     }
   }, [xmlContent, isLoading]);
+
+  // ✅ Early return AFTER all hooks
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Generating sitemap...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
