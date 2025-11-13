@@ -4,6 +4,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
  * Auto-Match Requirements to Properties with AI Scoring
  * Runs periodically to find matches and notify brokers
  * Combines entity filtering with LLM intelligence for match quality
+ * ✅ UPDATED: Only matches scoring 80+ are saved (high-quality matches only)
  */
 Deno.serve(async (req) => {
   try {
@@ -70,7 +71,7 @@ ${topCandidates.map((p, idx) => `
 `).join('\n')}
 
 Return JSON: { "matches": [{"index": 0, "score": 85, "reasons": ["perfect location", "within budget"]}] }
-Only include matches scoring 70+.`;
+Only include matches scoring 80+.`;
 
       const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: llmPrompt,
@@ -92,26 +93,29 @@ Only include matches scoring 70+.`;
         }
       });
       
-      // Update requirement with AI-matched properties
-      const matchedPropertyIds = llmResponse.matches.map(m => topCandidates[m.index].id);
+      // ✅ Filter to only include 80+ scores
+      const highQualityMatches = llmResponse.matches.filter(m => m.score >= 80);
       
-      if (matchedPropertyIds.length > 0) {
-        await base44.asServiceRole.entities.Requirement.update(requirement.id, {
-          ai_matched_properties: llmResponse.matches.map(m => ({
-            property_id: topCandidates[m.index].id,
-            match_score: m.score,
-            match_reasons: m.reasons
-          })),
-          matched_property_ids: matchedPropertyIds
-        });
-        
-        matches.push({
-          requirement_id: requirement.id,
-          broker_id: requirement.broker_id,
-          match_count: matchedPropertyIds.length,
-          top_score: Math.max(...llmResponse.matches.map(m => m.score))
-        });
-      }
+      if (highQualityMatches.length === 0) continue;
+      
+      // Update requirement with AI-matched properties (80+ only)
+      const matchedPropertyIds = highQualityMatches.map(m => topCandidates[m.index].id);
+      
+      await base44.asServiceRole.entities.Requirement.update(requirement.id, {
+        ai_matched_properties: highQualityMatches.map(m => ({
+          property_id: topCandidates[m.index].id,
+          match_score: m.score,
+          match_reasons: m.reasons
+        })),
+        matched_property_ids: matchedPropertyIds
+      });
+      
+      matches.push({
+        requirement_id: requirement.id,
+        broker_id: requirement.broker_id,
+        match_count: matchedPropertyIds.length,
+        top_score: Math.max(...highQualityMatches.map(m => m.score))
+      });
       
       processedCount++;
     }
@@ -120,7 +124,8 @@ Only include matches scoring 70+.`;
       success: true,
       processed: processedCount,
       matches_found: matches.length,
-      matches: matches
+      matches: matches,
+      threshold: 80
     });
     
   } catch (error) {
