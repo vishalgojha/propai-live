@@ -5,6 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
  * Runs periodically to find matches and notify brokers
  * Combines entity filtering with LLM intelligence for match quality
  * ✅ UPDATED: Only matches scoring 80+ are saved (high-quality matches only)
+ * ✅ NEW: Triggers WhatsApp notifications for brokers when matches found
  */
 Deno.serve(async (req) => {
   try {
@@ -16,6 +17,7 @@ Deno.serve(async (req) => {
     
     const matches = [];
     let processedCount = 0;
+    let notificationsTriggered = 0;
     
     for (const requirement of requirements) {
       // Basic filtering using entity criteria
@@ -98,6 +100,12 @@ Only include matches scoring 80+.`;
       
       if (highQualityMatches.length === 0) continue;
       
+      // Check if this is a NEW match (not previously saved)
+      const existingMatchIds = requirement.matched_property_ids || [];
+      const newMatches = highQualityMatches.filter(m => 
+        !existingMatchIds.includes(topCandidates[m.index].id)
+      );
+      
       // Update requirement with AI-matched properties (80+ only)
       const matchedPropertyIds = highQualityMatches.map(m => topCandidates[m.index].id);
       
@@ -114,8 +122,32 @@ Only include matches scoring 80+.`;
         requirement_id: requirement.id,
         broker_id: requirement.broker_id,
         match_count: matchedPropertyIds.length,
+        new_matches: newMatches.length,
         top_score: Math.max(...highQualityMatches.map(m => m.score))
       });
+      
+      // ✅ NEW: Trigger WhatsApp notification if there are NEW matches
+      if (newMatches.length > 0) {
+        try {
+          const notificationPayload = {
+            requirement_id: requirement.id,
+            matches: newMatches.map(m => ({
+              property_id: topCandidates[m.index].id,
+              match_score: m.score,
+              match_reasons: m.reasons
+            }))
+          };
+          
+          // Call notification function asynchronously (don't wait for response)
+          base44.asServiceRole.functions.invoke('notifyBrokerMatch', notificationPayload)
+            .then(() => console.log(`✅ Notification triggered for requirement ${requirement.custom_id}`))
+            .catch(err => console.warn(`⚠️ Notification failed for ${requirement.custom_id}:`, err.message));
+          
+          notificationsTriggered++;
+        } catch (notifError) {
+          console.warn(`Failed to trigger notification for ${requirement.custom_id}:`, notifError.message);
+        }
+      }
       
       processedCount++;
     }
@@ -124,6 +156,7 @@ Only include matches scoring 80+.`;
       success: true,
       processed: processedCount,
       matches_found: matches.length,
+      notifications_triggered: notificationsTriggered,
       matches: matches,
       threshold: 80
     });

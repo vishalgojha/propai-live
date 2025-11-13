@@ -18,6 +18,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
+import BrowserNotifications from "../components/BrowserNotifications";
+
 export default function MyProfile() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -910,6 +912,11 @@ export default function MyProfile() {
             </Card>
           </div>
         )}
+
+        {/* ✅ NEW: Browser Notifications Section */}
+        <div className="mb-8">
+          <BrowserNotifications user={currentUser} />
+        </div>
 
         {/* ✅ NEW: PREFERRED AREAS CARD */}
         <Card className="p-6 bg-white border-2 border-purple-200 mb-6">
