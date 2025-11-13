@@ -24,7 +24,7 @@ export default function AboutUs() {
       "founders": [
         {
           "@type": "Person",
-          "name": "Vishal"
+          "name": "Vishal Ojha"
         }
       ]
     }
@@ -80,7 +80,7 @@ export default function AboutUs() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <SEO
         title="About PropAI Live | Our Mission to Fix Mumbai Real Estate"
-        description="PropAI Live transforms WhatsApp chaos into structured property intelligence. Built by Vishal to bring transparency, AI-powered insights, and trust to Mumbai's real estate market."
+        description="PropAI Live transforms WhatsApp chaos into structured property intelligence. Built by Vishal Ojha to bring transparency, AI-powered insights, and trust to Mumbai's real estate market."
         schema={aboutSchema}
         canonical="https://propai.live/about"
       />
@@ -250,9 +250,9 @@ export default function AboutUs() {
               className="bg-white rounded-3xl p-8 border-2 border-purple-200 text-center hover:shadow-xl transition-all"
             >
               <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-                V
+                VO
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Vishal</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Vishal Ojha</h3>
               <p className="text-purple-700 font-semibold mb-4">Founder</p>
               <p className="text-slate-700 leading-relaxed">
                 Real estate operator turned builder. Spent years navigating WhatsApp broker chaos—decided to fix it with AI.
