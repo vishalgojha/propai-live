@@ -28,6 +28,8 @@ import {
   generateBreadcrumbJsonLd
 } from "../components/utils/jsonLdHelpers";
 
+import BrowserNotificationManager from "@/components/notifications/BrowserNotificationManager";
+
 
 const PropertyDetailsModal = lazy(() => import("../components/property/PropertyDetailsModal"));
 
@@ -557,18 +559,19 @@ export default function SmartFeed() {
     { name: "SmartFeed", url: window.location.href }
   ]);
 
+  // Combine all JSON-LD schemas into a single array for the SEO component
+  const smartFeedSchema = [webSiteJsonLd, organizationJsonLd, breadcrumbJsonLd];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
       {/* ✅ Enhanced SEO with structured data for search */}
       <SEO
-        title="SmartFeed - AI-Powered Property Discovery | PropAI Live"
-        description="Discover Mumbai properties with AI-powered SmartFeed. Real-time listings, personalized recommendations, and instant broker connections. Find your perfect property today."
-        schema={[webSiteJsonLd]}
-        organization={organizationJsonLd}
-        breadcrumbs={breadcrumbJsonLd}
-        canonical={window.location.href.split('?')[0]}
+        title="SmartFeed | PropAI Live - AI-Powered Property Listings Mumbai"
+        description="Browse curated property listings in Mumbai. Ranked by BrokerTrust™, filtered by Building Intelligence™. Find verified residential & commercial properties instantly."
+        canonical="https://propai.live/smartfeed"
+        schema={smartFeedSchema}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
@@ -751,6 +754,13 @@ export default function SmartFeed() {
               </Button>
             </div>
           </motion.div>
+        )}
+
+        {/* ✅ Browser Notification Prompt (for logged-in users) */}
+        {user && (
+          <div className="mb-6">
+            <BrowserNotificationManager user={user} />
+          </div>
         )}
 
         {userPreferences && personalizedProperties.length > 0 && filters.viewMode === "properties" && (
