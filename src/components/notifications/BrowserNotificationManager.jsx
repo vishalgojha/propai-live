@@ -95,9 +95,8 @@ export default function BrowserNotificationManager({ user }) {
       }
 
       // Subscribe to push notifications
-      // Note: You'll need to generate VAPID keys and set them on your backend
-      // For now, using a dummy key - replace with your actual VAPID public key
-      const vapidPublicKey = "BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8xYR6rRKmDgHNOBj1UcXYrXZLiV_JDFNFGvUfL_Pw7lQEf_7UUPLuI";
+      // ✅ UPDATED: Using actual VAPID public key
+      const vapidPublicKey = "BJVtD5ykgmQ439gS5z4yifCKI8I70lxiblVxRnDI4jd4Qv48pAxFhoHEiWntiXU-sNbicldCJAvzESC6vnydkpw";
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
