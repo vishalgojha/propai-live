@@ -42,12 +42,8 @@ export default function FAQ() {
       icon: Building2,
       questions: [
         {
-          q: "Why don't PropAI listings show photos?",
-          a: "PropAI intentionally avoids photos because our listings come directly from brokers' WhatsApp messages in real-time—often within seconds of being posted. We prioritize fresh, accurate data over static images. This ensures you see live inventory, not recycled listings with misleading photos. Photos are added automatically when brokers share them, but speed and authenticity come first."
-        },
-        {
-          q: "Does PropAI plan to add images later?",
-          a: "Photos will appear automatically when brokers share them via WhatsApp. However, our core philosophy is data-first: we'd rather show you a property that's actually available (without photos) than a beautiful listing that was rented 3 months ago. Real-time accuracy beats pretty pictures."
+          q: "Why doesn't PropAI show property photos?",
+          a: "PropAI is built for real-time, zero-noise property discovery, and photos slow that down. Mumbai brokers rarely have updated images when a listing first goes live, and old photos create more confusion than clarity. So we follow one simple rule: No photos. No misrepresentation. No fake expectations. Every PropAI listing is text-cleaned, structured, and verified exactly as received—the fastest, most accurate way to see what's truly available right now. If you need photos, your broker will share them directly during the inspection process, where they actually matter."
         },
         {
           q: "How fresh is the property data?",
@@ -60,6 +56,10 @@ export default function FAQ() {
         {
           q: "Can I contact brokers directly?",
           a: "Yes! Every listing has a WhatsApp button that connects you directly to the broker (or our PropAI team if broker contact isn't available). Messages are pre-filled with property details for instant follow-up."
+        },
+        {
+          q: "How do I know if a property is still available?",
+          a: "Properties on PropAI come from live broker messages, typically sent within the last 24-48 hours. High-trust brokers (85+ BrokerTrust score) have the best availability track record. When you contact a broker via WhatsApp, they'll confirm availability immediately. This is faster than calling outdated portal listings from 3 months ago."
         }
       ]
     },
