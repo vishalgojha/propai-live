@@ -118,7 +118,7 @@ export default function Home() {
       <SEO
         title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence"
         description="Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence."
-        schema={Array.isArray(homeSchema) ? [...homeSchema, webSiteJsonLd] : [homeSchema, webSiteJsonLd]} // Ensure homeSchema is correctly handled if it's not an array initially.
+        schema={Array.isArray(homeSchema) ? [...homeSchema, webSiteJsonLd] : [homeSchema, webSiteJsonLd]}
         organization={organizationJsonLd}
         breadcrumbs={breadcrumbJsonLd}
         canonical={typeof window !== 'undefined' ? window.location.origin : 'https://propai.live'}
@@ -137,10 +137,10 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            {/* Badge */}
+            {/* ✅ NEW: Data-First Badge */}
             <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
-              <Sparkles className="w-4 h-4" />
-              Powered by Building-Level Intelligence
+              <Zap className="w-4 h-4" />
+              Real-time property data > pretty pictures
             </Badge>
 
             {/* Headline */}
@@ -152,14 +152,14 @@ export default function Home() {
               </span>
             </h1>
 
-            {/* Subheadline */}
+            {/* ✅ NEW: Updated Subheadline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
-              Stop losing deals in WhatsApp chaos. AI turns messy broker chats
+              Listings parsed from WhatsApp in seconds—
               <br className="hidden md:block" />
-              <span className="text-slate-700 font-medium">into structured listings in seconds.</span>
+              <span className="text-slate-700 font-medium">accurate, live, and trusted by brokers.</span>
             </p>
 
-            {/* CTA Buttons */}
+            {/* ✅ UPDATED: CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
@@ -167,7 +167,7 @@ export default function Home() {
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group touch-manipulation"
               >
                 <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Explore SmartFeed
+                See Live Listings
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button

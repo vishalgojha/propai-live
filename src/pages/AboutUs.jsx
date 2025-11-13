@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -122,6 +123,22 @@ export default function AboutUs() {
             </Button>
           </div>
         </motion.div>
+
+        {/* ✅ NEW: Data-First Philosophy Section */}
+        <section className="mb-20">
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-10 text-white shadow-xl">
+            <div className="max-w-3xl mx-auto text-center">
+              <Zap className="w-16 h-16 mx-auto mb-6 animate-pulse" />
+              <h2 className="text-3xl font-bold mb-6">Why No Photos on Property Cards?</h2>
+              <p className="text-xl leading-relaxed mb-6 text-white/95">
+                PropAI Live turns broker WhatsApp chaos into a clean, searchable marketplace. We prioritise live accuracy over stale photos—brokers share images at inspection; we give you what's actually available now.
+              </p>
+              <p className="text-lg text-blue-100 italic">
+                "Real-time data you can trust &gt; Beautiful photos from 3 months ago."
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* The Origin Story */}
         <section className="mb-20">
