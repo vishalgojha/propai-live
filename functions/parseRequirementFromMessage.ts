@@ -5,6 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * Properly identifies broker vs direct client and sets client_name correctly
  * ✅ FIX: Ensures broker_id is NEVER null (required field)
  * ✅ FIXED: Agent authentication - allows both admin users AND agent calls
+ * ✅ NEW: Auto-triggers automatch after requirement creation
  */
 
 const ADMIN_NUMBERS = ['919819471310', '9102269622278'];
@@ -323,8 +324,9 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 500 });
     }
 
-    // STEP 7: BACKGROUND TASKS
+    // STEP 7: ✅ BACKGROUND TASKS - NOW INCLUDES AUTOMATCH
     Promise.all([
+      // Sync to PropAI
       base44.asServiceRole.functions.invoke('sendToPropAI', {
         data_type: 'requirement',
         data: {
@@ -332,10 +334,15 @@ Return ONLY valid JSON, no markdown`;
           broker_name: brokerRecord.name,
           broker_phone: brokerContact
         }
-      }).catch(err => console.warn('PropAI sync failed:', err.message))
+      }).catch(err => console.warn('PropAI sync failed:', err.message)),
+      
+      // ✅ NEW: Trigger automatch for this requirement
+      base44.asServiceRole.functions.invoke('autoMatchRequirements', {})
+        .then(() => console.log(`✓ Automatch triggered for ${customId}`))
+        .catch(err => console.warn('Automatch failed:', err.message))
     ]).catch(err => console.warn('Background tasks failed:', err.message));
 
-    console.log(`✅ Requirement parsed successfully`);
+    console.log(`✅ Requirement parsed successfully with automatch triggered`);
 
     return Response.json({
       success: true,
@@ -346,7 +353,8 @@ Return ONLY valid JSON, no markdown`;
         broker_custom_id: brokerRecord.custom_id,
         broker_name: brokerRecord.name,
         client_name: requirement.client_name
-      }
+      },
+      automatch_triggered: true
     });
 
   } catch (error) {
