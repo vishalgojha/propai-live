@@ -9,9 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin, Home, Maximize2, Car, MessageCircle, Building2,
-  Calendar, Armchair, Check, Utensils, ArrowRight
+  Calendar, Armchair, Check, Utensils, ArrowRight, Zap, Info
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const createPageUrl = (pageName) => {
   switch (pageName) {
@@ -151,7 +157,22 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* Building Intelligence Link - NEW */}
+        {/* ✅ NEW: Data-First Philosophy Banner */}
+        <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 mb-1 text-sm">Real-Time Data, No Misrepresentation</h4>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                This listing updates live from broker messages. <strong>No photos means zero confusion—</strong>accurate data you can trust. Broker shares photos during inspection, where they actually matter.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Building Intelligence Link */}
         {property.building_name && property.building_id && (
           <button
             onClick={handleBuildingClick}
@@ -283,6 +304,19 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
             </div>
           </div>
         )}
+
+        {/* ✅ NEW: Photos During Inspection Note */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-start gap-2">
+            <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-blue-900 mb-1">Photos shared during inspection</p>
+              <p className="text-xs text-blue-700 leading-relaxed">
+                Broker will share latest photos via WhatsApp when scheduling your visit—exactly when they're most useful.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Action Button */}
         <Button

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Maximize2, MessageCircle,
-  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Phone, X
+  Armchair, Shield, Eye, Home, Calendar, Share2, Facebook, Twitter, Link as LinkIcon, Linkedin, ChevronDown, ChevronUp, Building2, RefreshCw, Sparkles, Phone, X, Zap
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -52,7 +51,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [showAdminInfo, setShowAdminInfo] = useState(false); // ✅ NEW: Toggle admin info
+  const [showAdminInfo, setShowAdminInfo] = useState(false);
   const [currentUser, setCurrentUser] = useState(user || null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [developer, setDeveloper] = useState(null);
@@ -271,7 +270,6 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
     window.open(`https://wa.me/${primaryContact}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // ✅ NEW: Admin-only WhatsApp to check availability
   const handleAdminWhatsApp = async (e) => {
     e.stopPropagation();
     
@@ -330,7 +328,6 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
   };
 
   const getShareUrl = () => {
-    // ✅ CHANGED: Use socialPreview endpoint for proper OG tags
     if (property.slug) {
       return `https://propai.live/api/socialPreview?type=property&slug=${property.slug}`;
     }
@@ -437,9 +434,15 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
         onClick={handleCardClick}
       >
         <div className="p-4">
-          {/* Badges, Share and Admin Actions at top */}
+          {/* ✅ NEW: Text-First Badge + Badges Row */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex flex-wrap gap-1.5">
+              {/* ✅ NEW: Data-First Philosophy Badge */}
+              <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 font-bold text-xs shadow-sm">
+                <Zap className="w-3 h-3 mr-1" />
+                DATA-FIRST
+              </Badge>
+              
               {property.listing_type && (
                 <Badge className="bg-purple-100 border border-purple-300 text-purple-700 font-semibold text-xs">
                   {property.listing_type}
@@ -596,7 +599,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
             </div>
           </div>
 
-          {/* ✅ ADMIN-ONLY: Collapsible Broker Info */}
+          {/* ADMIN-ONLY: Collapsible Broker Info */}
           {isAdmin && property.broker_name && property.broker_contact && (
             <div className="mb-3">
               {!showAdminInfo ? (
