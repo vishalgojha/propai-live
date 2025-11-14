@@ -507,6 +507,37 @@ export default function SmartFeed() {
   const displayedItems = allItems.slice(0, itemsToShow);
   const hasMore = itemsToShow < allItems.length;
 
+  // ✅ NEW: Add pagination link tags for Google
+  useEffect(() => {
+    // Calculate current page number
+    const currentPage = Math.ceil(itemsToShow / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+    
+    // Remove existing pagination link tags
+    document.querySelectorAll('link[rel="next"], link[rel="prev"]').forEach(link => link.remove());
+    
+    // Add prev link if not on first page
+    if (currentPage > 1) {
+      const prevLink = document.createElement('link');
+      prevLink.rel = 'prev';
+      prevLink.href = `${window.location.origin}/smartfeed?page=${currentPage - 1}`;
+      document.head.appendChild(prevLink);
+    }
+    
+    // Add next link if more items available and not on the last page
+    if (hasMore && currentPage < totalPages) {
+      const nextLink = document.createElement('link');
+      nextLink.rel = 'next';
+      nextLink.href = `${window.location.origin}/smartfeed?page=${currentPage + 1}`;
+      document.head.appendChild(nextLink);
+    }
+    
+    // Cleanup on unmount or dependency change
+    return () => {
+      document.querySelectorAll('link[rel="next"], link[rel="prev"]').forEach(link => link.remove());
+    };
+  }, [itemsToShow, hasMore, allItems.length, ITEMS_PER_PAGE]); // Added ITEMS_PER_PAGE as a dependency
+
   const loadMore = () => {
     setItemsToShow(prev => Math.min(prev + ITEMS_PER_PAGE, allItems.length));
   };
@@ -881,7 +912,7 @@ export default function SmartFeed() {
                       filters.sortBy === 'brokertrust'
                         ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
                         : "border-purple-200 hover:bg-purple-50 text-slate-700"
-                    }`}
+                  }`}
                   >
                     🛡️ BrokerTrust™
                   </Button>

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,20 +34,17 @@ export default function PropertyDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Read from URL query params instead of route params
   const urlParams = new URLSearchParams(window.location.search);
   const propertySlug = urlParams.get('slug') || urlParams.get('id');
 
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const [showPhotoDisclaimer, setShowPhotoDisclaimer] = React.useState(true);
-  // REMOVED: const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', propertySlug],
     queryFn: async () => {
       const properties = await base44.entities.Property.list();
-      // Look up by slug first, then fallback to ID
       return properties.find(p => p.slug === propertySlug || p.id === propertySlug);
     },
     enabled: !!propertySlug,
@@ -70,6 +66,37 @@ export default function PropertyDetails() {
     }
   }, [property?.id]);
 
+  // ✅ NEW: Set longtail SEO meta tags
+  useEffect(() => {
+    if (!property) return;
+
+    const priceText = property.price_unit === "crores" 
+      ? `₹${property.price} Cr` 
+      : `₹${property.price} L`;
+    
+    const setMeta = (property, content) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    // Product-specific OG tags
+    setMeta('og:type', 'product');
+    setMeta('product:price:amount', property.price);
+    setMeta('product:price:currency', 'INR');
+    setMeta('product:availability', property.status === 'Active' ? 'in stock' : 'out of stock');
+    setMeta('product:condition', 'new');
+    
+    // Enhanced location tags
+    setMeta('og:locality', property.location);
+    setMeta('og:region', 'Mumbai');
+    setMeta('og:country-name', 'India');
+  }, [property]);
+
   const formatPrice = () => {
     if (!property) return "";
     if (property.price_unit === "crores") {
@@ -79,7 +106,6 @@ export default function PropertyDetails() {
   };
 
   const getContactInfo = () => {
-    // Determine phone and contact name based on broker info
     const hasRealBroker = property?.broker_contact &&
                          property.broker_contact !== '9102269622278' &&
                          property.broker_contact !== '919819471310';
@@ -91,7 +117,6 @@ export default function PropertyDetails() {
       };
     }
 
-    // Default to PropAI Office
     return {
       phone: '9102269622278',
       name: 'PropAI Team'
@@ -110,17 +135,14 @@ export default function PropertyDetails() {
 
     const details = [];
 
-    // Basic info
     details.push(`📍 Property: ${property.ai_title || `${property.bhk} in ${property.location}`}`);
     details.push(`💰 Price: ${formatPrice()}`);
     details.push(`🏠 Type: ${property.listing_type} | ${property.property_type || 'Apartment'}`);
 
-    // Location details
     if (property.building_name) details.push(`🏢 Building: ${property.building_name}`);
     if (property.location) details.push(`📌 Location: ${property.location}`);
     if (property.pocket) details.push(`📍 Area: ${property.pocket}`);
 
-    // Property specs
     if (property.carpet_area) details.push(`📐 Carpet Area: ${property.carpet_area} sq.ft`);
     if (property.built_up_area) details.push(`📏 Built-up: ${property.built_up_area} sq.ft`);
     if (property.furnishing) details.push(`🪑 Furnishing: ${property.furnishing}`);
@@ -129,25 +151,20 @@ export default function PropertyDetails() {
     if (property.possession) details.push(`📅 Possession: ${property.possession}`);
     if (property.view) details.push(`🌅 View: ${property.view}`);
 
-    // Additional info
     if (property.veg_nonveg && property.veg_nonveg !== 'N/A') details.push(`🍽️ Food: ${property.veg_nonveg}`);
     if (property.amenities && property.amenities.length > 0) {
       details.push(`✨ Amenities: ${property.amenities.join(', ')}`);
     }
 
-    // Reference ID
     if (property.custom_id) details.push(`🔖 Ref ID: ${property.custom_id}`);
 
-    // Branding link
     details.push(`\n📱 View on PropAI Live: ${getPropertyUrl()}`);
 
     return details.join('\n');
   };
 
   const handleWhatsApp = async () => {
-    // Track WhatsApp contact
     try {
-      // Local storage tracking (for user preferences)
       const contactHistory = JSON.parse(localStorage.getItem('propai_contact_history') || '[]');
       contactHistory.push({
         id: property.id,
@@ -163,7 +180,6 @@ export default function PropertyDetails() {
       const recentContacts = contactHistory.slice(-50);
       localStorage.setItem('propai_contact_history', JSON.stringify(recentContacts));
 
-      // Server-side tracking (for analytics)
       const contact = getContactInfo();
       const contactedVia = contact.phone === '9102269622278' ? 'propai_office' : 'broker';
 
@@ -176,7 +192,6 @@ export default function PropertyDetails() {
       });
     } catch (error) {
       console.error('Failed to track contact:', error);
-      // Don't block user flow if tracking fails
     }
 
     const contact = getContactInfo();
@@ -186,7 +201,6 @@ export default function PropertyDetails() {
   };
 
   const getShareUrl = () => {
-    // ✅ CHANGED: Use socialPreview endpoint for proper OG tags
     if (property.slug) {
       return `https://propai.live/api/socialPreview?type=property&slug=${property.slug}`;
     }
@@ -220,7 +234,7 @@ export default function PropertyDetails() {
         });
         return;
       } catch (err) {
-        // User cancelled or error - open modal instead
+        // User cancelled or error
       }
     }
     setShareModalOpen(true);
@@ -265,7 +279,50 @@ export default function PropertyDetails() {
     return parts.join(', ');
   };
 
-  // ✅ Generate JSON-LD structured data
+  // ✅ Generate longtail SEO title
+  const generateSEOTitle = () => {
+    if (!property) return "";
+    const parts = [];
+    
+    // BHK + Property Type
+    parts.push(property.bhk);
+    
+    // Furnishing (if premium)
+    if (property.furnishing === "Fully Furnished" || property.furnishing === "Semi-Furnished") {
+      parts.push(property.furnishing);
+    }
+    
+    // Property Type
+    if (property.property_type && property.property_type !== "Apartment") {
+      parts.push(property.property_type);
+    }
+    
+    // Transaction type
+    parts.push(`for ${property.listing_type}`);
+    
+    // Building (if famous)
+    if (property.building_name) {
+      parts.push(`in ${property.building_name}`);
+    }
+    
+    // Location
+    if (property.pocket) {
+      parts.push(`${property.pocket}, ${property.location}`);
+    } else {
+      parts.push(property.location);
+    }
+    
+    // Price
+    const priceText = property.price_unit === "crores" 
+      ? `₹${property.price} Cr` 
+      : property.listing_type === "Rent" 
+        ? `₹${property.price}L/month` 
+        : `₹${property.price} Lakhs`;
+    parts.push(`- ${priceText}`);
+    
+    return parts.join(' ');
+  };
+
   const propertyJsonLd = property ? generatePropertyJsonLd(property) : null;
   const organizationJsonLd = generateOrganizationJsonLd();
   const breadcrumbJsonLd = property ? generateBreadcrumbJsonLd([
@@ -275,13 +332,8 @@ export default function PropertyDetails() {
     { name: property.ai_title || `${property.bhk} in ${property.location}`, url: window.location.href }
   ]) : null;
 
-  // REMOVED: handlePrevImage and handleNextImage functions
-
-  // ✅ Updated schema generation for SEO - now using utility function
   const generatePropertySchema = () => {
     if (!property) return null;
-
-    // Use the utility function to generate the complete JSON-LD
     return propertyJsonLd;
   };
 
@@ -314,22 +366,21 @@ export default function PropertyDetails() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
-      {/* ✅ Enhanced SEO with JSON-LD structured data */}
+      {/* ✅ ENHANCED: Longtail SEO with rich meta tags */}
       {property && (
         <SEO
-          title={`${property.ai_title || `${property.bhk} in ${property.location}`} | PropAI Live`}
-          description={property.ai_description || `${property.bhk} property for ${property.listing_type} in ${property.location}. ${property.furnishing ? property.furnishing + '.' : ''} ${property.carpet_area ? property.carpet_area + ' sq.ft.' : ''} View details and contact broker on PropAI Live.`}
+          title={`${generateSEOTitle()} | Mumbai Real Estate | PropAI Live`}
+          description={`${property.ai_description || `${property.bhk} ${property.furnishing || ''} property for ${property.listing_type.toLowerCase()} in ${property.location}, Mumbai`}. ${property.carpet_area ? `${property.carpet_area} sq.ft carpet area. ` : ''}${property.parking ? `Parking: ${property.parking}. ` : ''}${property.building_name ? `Located in ${property.building_name}. ` : ''}Contact verified broker on PropAI Live. Real-time listings, transparent pricing.`}
           ogImage={property.images?.[0]}
           schema={propertyJsonLd ? [propertyJsonLd] : []}
           organization={organizationJsonLd}
           breadcrumbs={breadcrumbJsonLd}
-          canonical={getPropertyUrl()} // Use the canonical URL for propertydetails page, not social preview
+          canonical={getPropertyUrl()}
         />
       )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
 
-        {/* Back Button */}
         <Button
           onClick={() => navigate(createPageUrl("SmartFeed"))}
           variant="ghost"
@@ -339,7 +390,6 @@ export default function PropertyDetails() {
           Back to Properties
         </Button>
 
-        {/* ✅ NEW: Photo Disclaimer - Only show if property has no images */}
         {property && (!property.images || property.images.length === 0) && showPhotoDisclaimer && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -374,10 +424,8 @@ export default function PropertyDetails() {
           </motion.div>
         )}
 
-        {/* Main Content Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-purple-200/50 overflow-hidden mb-8">
 
-          {/* Header Section */}
           <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 md:px-8 py-6 border-b border-purple-100">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
               <div className="flex-1">
@@ -430,7 +478,6 @@ export default function PropertyDetails() {
               </div>
             </div>
 
-            {/* Share Buttons */}
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={handleShare}
@@ -444,10 +491,8 @@ export default function PropertyDetails() {
             </div>
           </div>
 
-          {/* Content Section */}
           <div className="p-6 md:p-8">
 
-            {/* AI Description */}
             {property.ai_description && (
               <div className="mb-8 p-4 md:p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
                 <div className="flex items-start gap-3">
@@ -459,7 +504,6 @@ export default function PropertyDetails() {
               </div>
             )}
 
-            {/* Key Details Grid - Responsive */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
               <div className="text-center p-4 md:p-5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
                 <Home className="w-5 h-5 md:w-6 md:h-6 text-purple-600 mx-auto mb-2" />
@@ -485,7 +529,6 @@ export default function PropertyDetails() {
               </div>
             </div>
 
-            {/* Additional Details */}
             <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
               {property.floor && (
                 <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
@@ -528,7 +571,6 @@ export default function PropertyDetails() {
               )}
             </div>
 
-            {/* Full Description */}
             {property.description && property.description !== property.ai_description && (
               <div className="mb-8">
                 <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 uppercase tracking-wide">Description</h3>
@@ -538,7 +580,6 @@ export default function PropertyDetails() {
               </div>
             )}
 
-            {/* Amenities */}
             {property.amenities && property.amenities.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4 uppercase tracking-wide">Amenities</h3>
@@ -553,7 +594,6 @@ export default function PropertyDetails() {
               </div>
             )}
 
-            {/* CTA Section - Single WhatsApp Button Only */}
             <div className="space-y-3 md:space-y-4">
               <Button
                 onClick={handleWhatsApp}
@@ -575,7 +615,6 @@ export default function PropertyDetails() {
             </div>
           </div>
 
-          {/* Footer - Branding */}
           <div className="px-6 md:px-8 py-4 md:py-5 bg-purple-50 border-t border-purple-100">
             <div className="text-center text-xs md:text-sm text-slate-500">
               Listed by <a href="https://propai.live" target="_blank" rel="noopener" className="font-semibold text-purple-700 hover:text-purple-800 transition-colors">PropAI Live</a>
@@ -588,7 +627,6 @@ export default function PropertyDetails() {
 
       </div>
 
-      {/* Share Modal */}
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -598,7 +636,6 @@ export default function PropertyDetails() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Share Buttons */}
           <div className="space-y-3">
             <Button
               onClick={shareToWhatsApp}
@@ -638,7 +675,6 @@ export default function PropertyDetails() {
             </Button>
           </div>
 
-          {/* Share URL Preview */}
           <div className="bg-stone-50 rounded-lg p-3 mt-2">
             <p className="text-xs text-stone-500 mb-1">Share link:</p>
             <p className="text-xs text-stone-700 font-mono break-all">{getShareUrl()}</p>
