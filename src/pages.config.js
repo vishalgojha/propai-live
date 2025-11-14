@@ -33,6 +33,7 @@ import AboutUs from './pages/AboutUs';
 import CronScheduler from './pages/CronScheduler';
 import AutomationHub from './pages/AutomationHub';
 import Sitemap from './pages/Sitemap';
+import LocationProperties from './pages/LocationProperties';
 import Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "CronScheduler": CronScheduler,
     "AutomationHub": AutomationHub,
     "Sitemap": Sitemap,
+    "LocationProperties": LocationProperties,
 }
 
 export const pagesConfig = {

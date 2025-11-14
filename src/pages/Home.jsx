@@ -40,11 +40,9 @@ export default function Home() {
     "priceRange": "$$"
   };
 
-  // Mock data fetching for featured properties
   useEffect(() => {
     const fetchFeaturedProperties = async () => {
       setIsLoadingProperties(true);
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       const mockProperties = [
         {
@@ -102,7 +100,18 @@ export default function Home() {
     { number: "24/7", label: "AI Monitoring" },
   ];
 
-  // ✅ Generate JSON-LD for Home page
+  // ✅ Popular Mumbai localities for SEO linking
+  const topLocalities = [
+    { name: "Bandra West", slug: "bandra-west", emoji: "⭐" },
+    { name: "Juhu", slug: "juhu", emoji: "🌊" },
+    { name: "Andheri West", slug: "andheri-west", emoji: "🏢" },
+    { name: "Worli", slug: "worli", emoji: "🌆" },
+    { name: "BKC", slug: "bkc", emoji: "💼" },
+    { name: "Lower Parel", slug: "lower-parel", emoji: "🏗️" },
+    { name: "Powai", slug: "powai", emoji: "🌳" },
+    { name: "Khar West", slug: "khar-west", emoji: "✨" }
+  ];
+
   const webSiteJsonLd = generateWebSiteJsonLd();
   const organizationJsonLd = generateOrganizationJsonLd();
   const breadcrumbJsonLd = generateBreadcrumbJsonLd([
@@ -114,9 +123,8 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Toaster position="top-center" richColors closeButton />
 
-      {/* ✅ Enhanced SEO with structured data */}
       <SEO
-        title="PropAI Live | AI-Powered Mumbai Real Estate Intelligence"
+        title="Rent & Buy Flats in Mumbai — 1,500+ Verified WhatsApp Listings | PropAI Live"
         description="Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence."
         schema={Array.isArray(homeSchema) ? [...homeSchema, webSiteJsonLd] : [homeSchema, webSiteJsonLd]}
         organization={organizationJsonLd}
@@ -124,9 +132,8 @@ export default function Home() {
         canonical={typeof window !== 'undefined' ? window.location.origin : 'https://propai.live'}
       />
 
-      {/* Hero Section - Light & Clean */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50 overflow-hidden">
-        {/* Subtle decorative elements */}
         <div className="absolute top-20 right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl"></div>
 
@@ -137,29 +144,26 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            {/* ✅ NEW: Data-First Badge */}
             <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
               <Zap className="w-4 h-4" />
               Real-time property data > pretty pictures
             </Badge>
 
-            {/* Headline */}
+            {/* ✅ SEO: Proper H1 with longtail keywords */}
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
-              WhatsApp → Organized Properties.
+              Rent & Buy Flats in Mumbai
               <br />
               <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Instantly.
+                1,500+ WhatsApp Listings
               </span>
             </h1>
 
-            {/* ✅ NEW: Updated Subheadline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
               Listings parsed from WhatsApp in seconds—
               <br className="hidden md:block" />
               <span className="text-slate-700 font-medium">accurate, live, and trusted by brokers.</span>
             </p>
 
-            {/* ✅ UPDATED: CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
                 onClick={() => navigate(createPageUrl("SmartFeed"))}
@@ -180,7 +184,6 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* WhatsApp AI Connect Button */}
             <div className="flex justify-center mb-8">
               <a
                 href={base44.agents.getWhatsAppConnectURL('chariot_master')}
@@ -193,7 +196,6 @@ export default function Home() {
               </a>
             </div>
 
-            {/* ✅ FIXED: Inline Chat Widget with AnimatePresence */}
             <AnimatePresence>
               {showInlineChat && (
                 <motion.div
@@ -211,7 +213,6 @@ export default function Home() {
               )}
             </AnimatePresence>
 
-            {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -230,7 +231,70 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Properties Section - NO IMAGES */}
+      {/* ✅ NEW: SEO Content Block - Popular Localities */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white/50">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-slate-900 mb-3">Find Properties in Mumbai's Top Localities</h2>
+          <p className="text-slate-600">Browse verified listings from popular areas across Mumbai</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {topLocalities.map((locality) => (
+            <Link
+              key={locality.slug}
+              to={`${createPageUrl("SmartFeed")}?location_multi=${encodeURIComponent(locality.name)}`}
+              className="bg-white rounded-2xl p-6 border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group"
+            >
+              <div className="text-3xl mb-2">{locality.emoji}</div>
+              <h3 className="font-bold text-slate-900 mb-1 group-hover:text-purple-700 transition-colors">
+                {locality.name}
+              </h3>
+              <p className="text-xs text-slate-600">View properties →</p>
+            </Link>
+          ))}
+        </div>
+
+        {/* ✅ SEO: Category Links */}
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link
+            to={`${createPageUrl("SmartFeed")}?listingType=Rent&propertyCategory=Residential`}
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all text-center group"
+          >
+            <HomeIcon className="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-slate-900 mb-1">Rent Flats</h3>
+            <p className="text-xs text-slate-600">Mumbai rentals</p>
+          </Link>
+
+          <Link
+            to={`${createPageUrl("SmartFeed")}?listingType=Sale&propertyCategory=Residential`}
+            className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all text-center group"
+          >
+            <Building2 className="w-8 h-8 text-purple-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-slate-900 mb-1">Buy Flats</h3>
+            <p className="text-xs text-slate-600">Residential sale</p>
+          </Link>
+
+          <Link
+            to={`${createPageUrl("SmartFeed")}?propertyCategory=Commercial`}
+            className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200 hover:border-amber-400 hover:shadow-lg transition-all text-center group"
+          >
+            <Building2 className="w-8 h-8 text-amber-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-slate-900 mb-1">Commercial</h3>
+            <p className="text-xs text-slate-600">Offices & retail</p>
+          </Link>
+
+          <Link
+            to={createPageUrl("Buildings")}
+            className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200 hover:border-green-400 hover:shadow-lg transition-all text-center group"
+          >
+            <Brain className="w-8 h-8 text-green-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-slate-900 mb-1">Buildings</h3>
+            <p className="text-xs text-slate-600">Intel & pricing</p>
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured Properties Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -287,7 +351,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* Why PropAI - Simple Value Props */}
+      {/* Why PropAI */}
       <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -300,7 +364,6 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Building Intelligence */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -316,7 +379,6 @@ export default function Home() {
               </p>
             </motion.div>
 
-            {/* Trust Scoring */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -333,7 +395,6 @@ export default function Home() {
               </p>
             </motion.div>
 
-            {/* Real-time Updates */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -353,8 +414,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works - Simple */}
-      <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
+      {/* How It Works */}
+      <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50" id="how-it-works">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-slate-900 mb-6">
             How It Works
@@ -420,10 +481,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust Indicators - Images with lazy loading */}
+      {/* Trust Indicators */}
       <section className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Honest Disclaimer with Humor */}
           <div className="text-center mb-8">
             <p className="text-white/90 text-sm font-light italic">
               ⚠️ Real talk: These numbers are 100% made up. But we're building something real—and we plan to blow past these fake stats. Watch this space. 🚀
@@ -445,7 +505,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Aspirational Footer */}
           <div className="text-center mt-8">
             <p className="text-white/80 text-xs font-light">
               (Aspirational AF. But give us a minute—we'll make the real numbers even better.) 💪✨
@@ -454,7 +513,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof / Trust Section */}
+      {/* Social Proof */}
       <section className="py-20 bg-white/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-6">
@@ -485,7 +544,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section - Light */}
+      {/* CTA Section */}
       <section className="py-16 bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">

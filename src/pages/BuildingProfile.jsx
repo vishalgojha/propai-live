@@ -232,78 +232,151 @@ export default function BuildingProfile() {
   const handleWhatsApp = () => {
     // Get broker contact from most recent active property
     let brokerContact = '919819471310'; // Fallback to Vishal
-    let brokerName = 'Vishal';
-    
+    let brokerName = 'Broker'; // Default to 'Broker' for general message
+
     if (properties && properties.length > 0) {
-      // Find first property with broker contact
-      const propertyWithBroker = properties.find(p => 
-        p.broker_contact && 
+      // Find first property with broker contact, excluding the fallback number if it's the only one
+      const propertyWithBroker = properties.find(p =>
+        p.broker_contact &&
         p.broker_contact !== '919819471310'
       );
-      
+
       if (propertyWithBroker) {
         brokerContact = propertyWithBroker.broker_contact;
-        brokerName = 'Broker';
+        // No change to brokerName, it remains 'Broker' as we don't have the actual name from propertyWithBroker
       }
     }
-    
+
     const message = `Hi${brokerName !== 'Broker' ? ` ${brokerName}` : ''}, I'm interested in properties at ${building.name}, ${building.location}. Can you share available options?\n\nFound via www.propai.live`;
     window.open(`https://wa.me/${brokerContact}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  // ✅ NEW: Generate SEO-optimized title and description
+  const generateSEOTitle = () => {
+    if (!building) return "Building Profile | PropAI Live";
+
+    const parts = [building.name];
+    if (building.location) parts.push(building.location);
+    parts.push("Mumbai"); // Assuming all buildings are in Mumbai
+
+    // Use total_listings from building if available, or from buildingIntelligence
+    const numListings = building.total_listings || buildingIntelligence?.totalListings;
+    if (numListings > 0) {
+      parts.push(`${numListings} Listings`);
+    }
+
+    if (building.avg_rent_2bhk || building.avg_sale_2bhk) {
+      parts.push("Pricing Intel");
+    }
+
+    parts.push("PropAI Live");
+
+    return parts.join(" | ");
+  };
+
+  const generateSEODescription = () => {
+    if (!building) return "";
+
+    const parts = [];
+
+    parts.push(`Comprehensive intelligence on ${building.name}${building.location ? ` in ${building.location}, Mumbai` : ''}.`);
+
+    const numListings = building.total_listings || buildingIntelligence?.totalListings;
+    if (numListings > 0) {
+      parts.push(`${numListings} listings tracked.`);
+    }
+
+    if (building.avg_rent_2bhk) {
+      parts.push(`Avg 2 BHK rent: ₹${building.avg_rent_2bhk}L.`);
+    }
+
+    // `building.avg_sale_2bhk` is in Lakhs, so divide by 100 to get Crores
+    if (building.avg_sale_2bhk) {
+      parts.push(`Avg 2 BHK sale: ₹${(building.avg_sale_2bhk / 100).toFixed(2)} Cr.`);
+    }
+
+    if (building.developer_name) {
+      parts.push(`Built by ${building.developer_name}.`);
+    }
+
+    if (building.amenities && building.amenities.length > 0) {
+      parts.push(`Amenities: ${building.amenities.slice(0, 3).join(', ')}.`);
+    }
+
+    parts.push("Real-time building intelligence, pricing trends, and broker activity on PropAI Live.");
+
+    return parts.join(' ');
+  };
+
+  // Helper for BreadcrumbList JSON-LD
+  const generateBreadcrumbJsonLd = (items) => ({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": item.name,
+      "item": item.url
+    }))
+  });
+
+  // Helper for Organization JSON-LD
+  const generateOrganizationJsonLd = () => ({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "PropAI Live",
+    "url": "https://propai.live",
+    "logo": "https://propai.live/logo.png", // Assuming a default logo
+    "sameAs": [] // Add social media links here if available
+  });
+
+  // ✅ NEW: Enhanced Building Schema
   const buildingSchema = building ? {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Residence",
-        "name": building.name,
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": building.location,
-          "streetAddress": building.pocket || building.location,
-          "addressCountry": "IN"
-        },
-        "description": `${building.name} in ${building.location}. ${building.amenities?.length || 0} amenities, ${building.total_units || 'Multiple'} units.`,
-        "numberOfRooms": building.total_units,
-        "amenityFeature": building.amenities?.map(a => ({
-          "@type": "LocationFeatureSpecification",
-          "name": a
-        })) || [],
-        "image": building.images?.[0],
-        "aggregateRating": building.management_quality && building.management_quality !== "Unknown" ? {
-          "@type": "AggregateRating",
-          "ratingValue": building.management_quality === "Excellent" ? "5" :
-                        building.management_quality === "Good" ? "4" :
-                        building.management_quality === "Average" ? "3" : "2",
-          "bestRating": "5",
-          "worstRating": "1"
-        } : undefined
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://propai.live"
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Buildings",
-            "item": "https://propai.live/buildings"
-          },
-          {
-            "@type": "ListItem",
-            "position": 3,
-            "name": building.name,
-            "item": `https://propai.live/building/${building.slug || building.id}`
-          }
-        ]
-      }
-    ]
+    "@type": "Residence",
+    "name": building.name,
+    "description": building.building_summary || generateSEODescription(),
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": building.pocket || building.location || "",
+      "addressLocality": building.location || "Mumbai", // Default to Mumbai if not specified
+      "addressRegion": "Maharashtra", // Assuming Maharashtra for Mumbai
+      "addressCountry": "IN"
+    },
+    "numberOfRooms": building.total_units,
+    "floorCount": building.total_floors,
+    "amenityFeature": building.amenities?.map(a => ({
+      "@type": "LocationFeatureSpecification",
+      "name": a,
+      "value": true
+    })) || [],
+    "additionalProperty": [
+      building.year_built ? {
+        "@type": "PropertyValue",
+        "name": "Year Built",
+        "value": building.year_built
+      } : null,
+      building.developer_name ? {
+        "@type": "PropertyValue",
+        "name": "Developer",
+        "value": building.developer_name
+      } : null,
+      // Use building.total_listings as per outline, falling back to buildingIntelligence if needed
+      (building.total_listings || buildingIntelligence?.totalListings) ? {
+        "@type": "PropertyValue",
+        "name": "Total Listings",
+        "value": (building.total_listings || buildingIntelligence?.totalListings)
+      } : null
+    ].filter(Boolean),
+    "image": building.images && building.images.length > 0 ? building.images : undefined
   } : null;
+
+  const breadcrumbs = building ? generateBreadcrumbJsonLd([
+    { name: "Home", url: window.location.origin },
+    { name: "Buildings", url: `${window.location.origin}/buildings` },
+    { name: building.location, url: `${window.location.origin}/buildings?location=${encodeURIComponent(building.location)}` },
+    { name: building.name, url: window.location.href }
+  ]) : null;
 
   if (!buildingId) {
     return (
@@ -332,13 +405,16 @@ export default function BuildingProfile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      {/* ✅ ENHANCED: SEO with building schema */}
       {building && (
         <SEO
-          title={`${building.name}, ${building.location} | Pricing, Amenities & Listings | PropAI`}
-          description={`${building.name} in ${building.location} — View active listings, average pricing, building amenities & verified reviews. Street-level property intelligence by PropAI Live.`}
-          ogImage={building.images?.[0]}
-          schema={buildingSchema}
-          canonical={`https://propai.live/building/${building.slug || building.id}`}
+          title={generateSEOTitle()}
+          description={generateSEODescription()}
+          // schema prop expects an array of JSON-LD objects
+          schema={buildingSchema ? [buildingSchema] : []}
+          organization={generateOrganizationJsonLd()}
+          breadcrumbs={breadcrumbs}
+          canonical={window.location.href.split('?')[0]} // Canonical URL without query parameters
         />
       )}
 
