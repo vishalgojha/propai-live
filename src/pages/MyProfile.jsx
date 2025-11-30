@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -11,14 +10,20 @@ import { Input } from "@/components/ui/input";
 import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Award, BarChart3, Eye, MessageCircle, Target,
-  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search
+  Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search,
+  ExternalLink, Share2, Palette
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-
-import BrowserNotifications from "../components/BrowserNotifications";
+import RealtorProfileEditor from "../components/broker/RealtorProfileEditor";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function MyProfile() {
   const navigate = useNavigate();
@@ -912,11 +917,6 @@ export default function MyProfile() {
             </Card>
           </div>
         )}
-
-        {/* ✅ NEW: Browser Notifications Section */}
-        <div className="mb-8">
-          <BrowserNotifications user={currentUser} />
-        </div>
 
         {/* ✅ NEW: PREFERRED AREAS CARD */}
         <Card className="p-6 bg-white border-2 border-purple-200 mb-6">
