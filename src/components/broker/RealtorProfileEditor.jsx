@@ -38,7 +38,7 @@ const THEMES = [
 export default function RealtorProfileEditor({ broker, onClose, onUpdated }) {
   const queryClient = useQueryClient();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = React.useState({
     slug: broker?.slug || '',
     tagline: broker?.tagline || '',
     bio: broker?.bio || '',
@@ -49,7 +49,7 @@ export default function RealtorProfileEditor({ broker, onClose, onUpdated }) {
     custom_links: broker?.custom_links || []
   });
 
-  const [newLink, setNewLink] = useState({ title: '', url: '' });
+  const [newLink, setNewLink] = React.useState({ title: '', url: '' });
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Broker.update(broker.id, data),
