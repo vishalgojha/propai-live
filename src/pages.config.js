@@ -34,7 +34,8 @@ import CronScheduler from './pages/CronScheduler';
 import AutomationHub from './pages/AutomationHub';
 import Sitemap from './pages/Sitemap';
 import LocationProperties from './pages/LocationProperties';
-import Layout from './Layout.jsx';
+import RealtorPage from './pages/RealtorPage';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -74,10 +75,11 @@ export const PAGES = {
     "AutomationHub": AutomationHub,
     "Sitemap": Sitemap,
     "LocationProperties": LocationProperties,
+    "RealtorPage": RealtorPage,
 }
 
 export const pagesConfig = {
     mainPage: "Home",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
