@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -603,6 +602,11 @@ export default function Layout({ children, currentPageName }) {
       </footer>
 
       <style jsx>{`
+        /* ✅ Base font size reduction */
+        html {
+          font-size: 14px;
+        }
+
         /* ✅ FIXED: Better touch handling */
         .touch-manipulation {
           -webkit-tap-highlight-color: transparent;
@@ -611,7 +615,7 @@ export default function Layout({ children, currentPageName }) {
           user-select: none;
           cursor: pointer;
         }
-        
+
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
