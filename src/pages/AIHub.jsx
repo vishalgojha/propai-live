@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Bot, Send, Loader2, Zap, BookOpen, Building2, 
-  Sparkles, MessageCircle, Trash2, Plus, User, X
+  Sparkles, MessageCircle, Trash2, Plus, User, X, QrCode
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "sonner";
@@ -452,6 +452,69 @@ export default function AIHub() {
             <p className="text-xs text-slate-500 mt-2">
               Press Enter to send • Shift+Enter for new line
             </p>
+          </div>
+        </div>
+
+        {/* QR Code Generator */}
+        <div className="mt-6 bg-white/80 backdrop-blur-xl rounded-2xl border-2 border-purple-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+              <QrCode className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">QR Code Generator</h3>
+              <p className="text-xs text-slate-600">Generate QR codes from any text</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <Textarea
+              placeholder="Paste your text here (e.g., WhatsApp pairing code, URL, etc.)..."
+              className="min-h-[80px]"
+              id="qr-input"
+            />
+            <Button
+              onClick={async () => {
+                const text = document.getElementById('qr-input').value;
+                if (!text.trim()) {
+                  toast.error('Please enter some text');
+                  return;
+                }
+                
+                try {
+                  toast.loading('Generating QR code...');
+                  const response = await base44.functions.invoke('generateQRCode', {
+                    text: text.trim(),
+                    size: 400
+                  });
+                  toast.dismiss();
+                  
+                  if (response.data.success) {
+                    // Open QR code in new window
+                    const win = window.open('', '_blank');
+                    win.document.write(`
+                      <html>
+                        <head><title>QR Code</title></head>
+                        <body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;">
+                          <div style="text-align:center;padding:20px;">
+                            <img src="${response.data.qrCodeDataUrl}" style="max-width:100%;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);" />
+                            <p style="margin-top:20px;color:#666;font-family:sans-serif;">Right-click to save image</p>
+                          </div>
+                        </body>
+                      </html>
+                    `);
+                    toast.success('QR code generated! Opening in new window...');
+                  }
+                } catch (error) {
+                  toast.dismiss();
+                  toast.error('Failed to generate QR code: ' + error.message);
+                }
+              }}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              Generate QR Code
+            </Button>
           </div>
         </div>
 
