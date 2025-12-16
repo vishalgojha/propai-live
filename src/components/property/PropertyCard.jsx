@@ -238,12 +238,43 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
       return null;
     };
     
-    const rawBrokerContact = property.broker_contact;
-    const normalizedBrokerContact = normalizeIndianPhone(rawBrokerContact);
+    let rawBrokerContact = property.broker_contact;
+    let normalizedBrokerContact = normalizeIndianPhone(rawBrokerContact);
+    
+    // ✅ FALLBACK: If no valid contact, try fetching from Broker entity
+    if (!normalizedBrokerContact && property.broker_id) {
+      try {
+        toast.loading('Fetching broker contact...');
+        const response = await base44.functions.invoke('getBrokerContact', { 
+          property_id: property.id 
+        });
+        
+        if (response.data?.contact) {
+          rawBrokerContact = response.data.contact;
+          normalizedBrokerContact = normalizeIndianPhone(rawBrokerContact);
+          toast.dismiss();
+          toast.success('Contact retrieved!');
+        } else {
+          toast.dismiss();
+          toast.error('⚠️ No contact available', {
+            description: 'This broker has no phone number on file.',
+            duration: 5000
+          });
+          return;
+        }
+      } catch (error) {
+        toast.dismiss();
+        toast.error('⚠️ Failed to fetch contact', {
+          description: error.message,
+          duration: 5000
+        });
+        return;
+      }
+    }
     
     if (!normalizedBrokerContact) {
       toast.error('⚠️ No contact available', {
-        description: 'This property has no valid broker contact. Please contact admin.',
+        description: 'This property has no broker contact information.',
         duration: 5000,
         className: 'bg-red-600 text-white border-0'
       });
