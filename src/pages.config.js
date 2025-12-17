@@ -30,6 +30,7 @@ import MyProfile from './pages/MyProfile';
 import ParityReport from './pages/ParityReport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PropertyDetails from './pages/PropertyDetails';
+import QRGenerator from './pages/QRGenerator';
 import RealtorPage from './pages/RealtorPage';
 import RequirementDetails from './pages/RequirementDetails';
 import Sitemap from './pages/Sitemap';
@@ -37,7 +38,6 @@ import SmartFeed from './pages/SmartFeed';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
-import QRGenerator from './pages/QRGenerator';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +74,7 @@ export const PAGES = {
     "ParityReport": ParityReport,
     "PrivacyPolicy": PrivacyPolicy,
     "PropertyDetails": PropertyDetails,
+    "QRGenerator": QRGenerator,
     "RealtorPage": RealtorPage,
     "RequirementDetails": RequirementDetails,
     "Sitemap": Sitemap,
@@ -81,7 +82,6 @@ export const PAGES = {
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
-    "QRGenerator": QRGenerator,
 }
 
 export const pagesConfig = {

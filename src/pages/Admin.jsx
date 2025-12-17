@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1953,14 +1952,14 @@ Return ONLY the JSON, nothing else.`;
               </div>
             </div>
 
-            {/* Organized Quick Actions with Dropdowns */}
+            {/* ✅ SIMPLIFIED: Read-Only Metrics + AI Hub Only */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* ✅ NEW: DIAGNOSTIC CHECK BUTTON - HIGHEST PRIORITY */}
+              {/* Diagnostic Check - Read-Only */}
               <Button
                 onClick={runDiagnosticCheck}
                 disabled={runningDiagnostic}
                 size="sm"
-                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold animate-pulse"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
               >
                 {runningDiagnostic ? (
                   <>
@@ -1969,13 +1968,13 @@ Return ONLY the JSON, nothing else.`;
                   </>
                 ) : (
                   <>
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    🚨 Run Diagnostic
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    System Health
                   </>
                 )}
               </Button>
 
-              {/* NEW: AI Hub Button */}
+              {/* AI Hub */}
               <Button
                 onClick={() => navigate(createPageUrl("AIHub"))}
                 size="sm"
@@ -1985,220 +1984,15 @@ Return ONLY the JSON, nothing else.`;
                 AI Hub
               </Button>
 
-              {/* NEW: Live Dashboard Button */}
+              {/* Live Dashboard */}
               <Button
                 onClick={() => navigate(createPageUrl("LiveDashboard"))}
                 size="sm"
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold"
               >
                 <Activity className="w-4 h-4 mr-2" />
-                Live Dashboard
+                Live Feed
               </Button>
-
-              {/* ✅ NEW: Fix Residential Lease Button */}
-              <Button
-                onClick={fixResidentialLease}
-                disabled={fixingResidentialLease}
-                size="sm"
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold"
-              >
-                <AlertTriangle className={`w-4 h-4 mr-2 ${fixingResidentialLease ? 'animate-spin' : ''}`} />
-                {fixingResidentialLease ? 'Fixing...' : 'Fix Rent/Lease'}
-              </Button>
-
-              {/* Critical: Fix Custom IDs */}
-              <Button
-                onClick={backfillCustomIds}
-                disabled={backfillingIds}
-                size="sm"
-                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold"
-              >
-                <AlertTriangle className={`w-4 h-4 mr-2 ${backfillingIds ? 'animate-spin' : ''}`} />
-                {backfillingIds ? 'Fixing...' : 'Fix IDs'}
-              </Button>
-
-              {/* NEW: Backfill Broker Names Button */}
-              <Button
-                onClick={backfillBrokerNames}
-                disabled={generatingSlugs}
-                size="sm"
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
-              >
-                <Users className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                Cache Names
-              </Button>
-
-              {/* Data Quality Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="border-sky-300 text-sky-700 hover:bg-sky-50">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Data Quality
-                    <ChevronDown className="w-3 h-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={runDataCleanup}
-                    disabled={generatingSlugs}
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                    Fix Data Issues
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={normalizeLocations}
-                    disabled={normalizingLocations}
-                  >
-                    <MapPin className={`w-4 h-4 mr-2 ${normalizingLocations ? 'animate-spin' : ''}`} />
-                    Normalize Locations
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={normalizeBhkValues}
-                    disabled={normalizingBhk}
-                  >
-                    <Home className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
-                    Normalize BHK Values
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={normalizeParkingValues}
-                    disabled={normalizingBhk}
-                  >
-                    <Car className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
-                    Normalize Parking
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={normalizeBrokerPhones}
-                    disabled={normalizingBhk}
-                  >
-                    <Phone className={`w-4 h-4 mr-2 ${normalizingBhk ? 'animate-spin' : ''}`} />
-                    Normalize Phone Numbers
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={backfillBrokerContacts}
-                    disabled={generatingSlugs}
-                  >
-                    <Phone className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                    Sync Broker Contacts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={generatePropertySlugs}
-                    disabled={generatingSlugs}
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                    Generate SEO Slugs
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Deduplication Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Deduplication
-                    <ChevronDown className="w-3 h-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={detectDuplicates}
-                    disabled={detectingDuplicates}
-                  >
-                    <Copy className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
-                    Dedup Properties
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={detectBrokerDuplicates}
-                    disabled={detectingDuplicates}
-                  >
-                    <Users className={`w-4 h-4 mr-2 ${detectingDuplicates ? 'animate-spin' : ''}`} />
-                    Dedup Brokers
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={detectBuildingDuplicates}
-                    disabled={detectingBuildingDuplicates}
-                  >
-                    <Building2 className={`w-4 h-4 mr-2 ${detectingBuildingDuplicates ? 'animate-spin' : ''}`} />
-                    Dedup Buildings
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* AI Tools Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    AI Tools
-                    <ChevronDown className="w-3 h-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={generatePropertyDescriptions}
-                    disabled={generatingDescriptions}
-                  >
-                    <Sparkles className={`w-4 h-4 mr-2 ${generatingDescriptions ? 'animate-spin' : ''}`} />
-                    Generate Descriptions
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={loadDealsRadar}
-                    disabled={dealsLoading}
-                  >
-                    <Sparkles className={`w-4 h-4 mr-2 ${dealsLoading ? 'animate-spin' : ''}`} />
-                    Deals Radar
-                  </DropdownMenuItem>
-                  {/* Moved Broker Trust Score here */}
-                  <DropdownMenuItem
-                    onClick={recalculateBrokerTrust}
-                    disabled={recalculatingTrust}
-                  >
-                    <Star className={`w-4 h-4 mr-2 ${recalculatingTrust ? 'animate-spin' : ''}`} />
-                    Recalculate Broker Trust
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Buildings Menu - ENHANCED */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="border-cyan-300 text-cyan-700 hover:bg-cyan-50">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Buildings
-                    <ChevronDown className="w-3 h-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={backfillDevelopers}
-                    disabled={backfillingDevelopers}
-                  >
-                    <Building2 className={`w-4 h-4 mr-2 ${backfillingDevelopers ? 'animate-spin' : ''}`} />
-                    Link to Developers
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={cleanBuildingData}
-                    disabled={cleaningBuildings}
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${cleaningBuildings ? 'animate-spin' : ''}`} />
-                    Clean Building Data
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={backfillBuildings}
-                    disabled={generatingSlugs}
-                  >
-                    <Building2 className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                    Generate Buildings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={recalculateBuildingStats}
-                    disabled={generatingSlugs}
-                  >
-                    <TrendingUp className={`w-4 h-4 mr-2 ${generatingSlugs ? 'animate-spin' : ''}`} />
-                    Recalculate Stats
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
