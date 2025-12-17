@@ -64,11 +64,22 @@ Deno.serve(async (req) => {
 
     const newBroker = await base44.asServiceRole.entities.Broker.create(brokerData);
 
+    // ✅ TRIGGER ONBOARDING FLOW for new brokers
+    try {
+      await base44.asServiceRole.functions.invoke('sendBrokerWelcome', {
+        broker_id: newBroker.id
+      });
+    } catch (error) {
+      console.error('Failed to send welcome message:', error);
+      // Don't fail broker creation if welcome email fails
+    }
+
     return Response.json({
       success: true,
       broker: newBroker,
       status: 'created',
-      custom_id: customId
+      custom_id: customId,
+      onboarding_sent: true
     });
 
   } catch (error) {
