@@ -15,7 +15,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { payload } = await req.json();
+    
+    // ✅ Parse request body - handle both direct calls and agent calls
+    const body = await req.json();
+    const payload = body.payload || body;
 
     // ===== STEP 1: NORMALIZATION =====
     
