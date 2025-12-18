@@ -151,17 +151,17 @@ export default function Home() {
 
             {/* ✅ SEO: Proper H1 with longtail keywords */}
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
-              Rent & Buy Flats in Mumbai
+              WhatsApp → Deal-ready
               <br />
               <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                1,500+ WhatsApp Listings
+                property listings
               </span>
             </h1>
 
             <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
-              Listings parsed from WhatsApp in seconds—
+              Paste a real broker WhatsApp message.
               <br className="hidden md:block" />
-              <span className="text-slate-700 font-medium">accurate, live, and trusted by brokers.</span>
+              <span className="text-slate-700 font-medium">PropAI converts it into a verified, searchable listing with price band, intent, and trust score — in seconds.</span>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -171,30 +171,23 @@ export default function Home() {
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group touch-manipulation"
               >
                 <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                See Live Listings
+                Explore SmartFeed (Live Listings)
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button
-                onClick={() => setShowInlineChat(!showInlineChat)}
-                size="lg"
-                className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg group touch-manipulation"
-              >
-                <Bot className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                {showInlineChat ? 'Close' : 'Chat with'} AI Assistant
-              </Button>
-            </div>
-
-            <div className="flex justify-center mb-8">
               <a
                 href={base44.agents.getWhatsAppConnectURL('chariot_master')}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all touch-manipulation"
+                className="inline-flex items-center gap-2 bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg transition-all touch-manipulation"
               >
                 <MessageCircle className="w-5 h-5" />
                 Connect WhatsApp AI
               </a>
             </div>
+
+            <p className="text-sm text-slate-500 mb-8 italic">
+              WhatsApp access is limited to verified users to prevent spam and fake listings.
+            </p>
 
             <AnimatePresence>
               {showInlineChat && (
@@ -216,15 +209,19 @@ export default function Home() {
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>AI-Verified Data</span>
+                <span>1,500+ live WhatsApp listings</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>Real-Time Updates</span>
+                <span>Real-time updates</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>Broker Trust Scoring</span>
+                <span>BrokerTrust™ scoring</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span>No fake inventory</span>
               </div>
             </div>
           </motion.div>
