@@ -139,8 +139,13 @@ export default function Layout({ children, currentPageName }) {
     { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
   ];
 
-  // Add Network for ALL logged-in users
+  // Add features for logged-in users
   if (user) {
+    if (user.broker_id) {
+      navItems.push(
+        { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") }
+      );
+    }
     navItems.push(
       { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
     );

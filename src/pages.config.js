@@ -38,6 +38,7 @@ import SmartFeed from './pages/SmartFeed';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
+import BrokerAssistant from './pages/BrokerAssistant';
 import __Layout from './Layout.jsx';
 
 
@@ -82,6 +83,7 @@ export const PAGES = {
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
+    "BrokerAssistant": BrokerAssistant,
 }
 
 export const pagesConfig = {
