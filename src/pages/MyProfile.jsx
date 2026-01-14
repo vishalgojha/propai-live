@@ -17,7 +17,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import RealtorProfileEditor from "../components/broker/RealtorProfileEditor";
+
 import {
   Dialog,
   DialogContent,
@@ -839,58 +839,7 @@ export default function MyProfile() {
           </div>
         </div>
 
-        {/* ✅ NEW: Public Linktree Profile Card */}
-        <Card className="p-4 bg-gradient-to-r from-green-600 to-emerald-600 border-0 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white font-bold flex items-center gap-2">
-              <Share2 className="w-5 h-5" />
-              Your Public Profile
-            </h3>
-            <Badge className="bg-white/20 text-white border-0">
-              propai.live/r?u={brokerProfile.slug || brokerProfile.id}
-            </Badge>
-          </div>
-          <p className="text-green-100 text-sm mb-4">
-            Share your Linktree-style profile with clients. Add bio, social links, and showcase your listings.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
-                  <Palette className="w-4 h-4 mr-2" />
-                  Customize Profile
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Customize Your Public Profile</DialogTitle>
-                </DialogHeader>
-                <RealtorProfileEditor 
-                  broker={brokerProfile} 
-                  onClose={() => {}} 
-                  onUpdated={() => window.location.reload()}
-                />
-              </DialogContent>
-            </Dialog>
-            <Button
-              onClick={() => window.open(`/r?u=${brokerProfile.slug || brokerProfile.id}`, '_blank')}
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View Profile
-            </Button>
-            <Button
-              onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/r?u=${brokerProfile.slug || brokerProfile.id}`);
-                toast.success('Profile link copied!');
-              }}
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Copy Link
-            </Button>
-          </div>
-        </Card>
+
 
         {/* ✅ Admin Quick Actions */}
         {currentUser.role === 'admin' && (
