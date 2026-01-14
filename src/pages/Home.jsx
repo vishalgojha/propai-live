@@ -252,7 +252,7 @@ export default function Home() {
         </div>
 
         {/* ✅ SEO: Category Links */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
           <Link
             to={`${createPageUrl("SmartFeed")}?listingType=Rent&propertyCategory=Residential`}
             className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all text-center group"
@@ -280,14 +280,7 @@ export default function Home() {
             <p className="text-xs text-slate-600">Offices & retail</p>
           </Link>
 
-          <Link
-            to={createPageUrl("Buildings")}
-            className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200 hover:border-green-400 hover:shadow-lg transition-all text-center group"
-          >
-            <Brain className="w-8 h-8 text-green-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-slate-900 mb-1">Buildings</h3>
-            <p className="text-xs text-slate-600">Intel & pricing</p>
-          </Link>
+
         </div>
       </section>
 
@@ -529,14 +522,7 @@ export default function Home() {
               <Search className="w-5 h-5 mr-2" />
               Browse Properties
             </Button>
-            <Button
-              onClick={() => navigate(createPageUrl("Blogs"))}
-              size="lg"
-              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl"
-            >
-              <BookOpen className="w-5 h-5 mr-2" />
-              Read Insights
-            </Button>
+
           </div>
         </div>
       </section>

@@ -468,12 +468,6 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
           {/* ✅ NEW: Text-First Badge + Badges Row */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex flex-wrap gap-1.5">
-              {/* ✅ NEW: Data-First Philosophy Badge */}
-              <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 font-bold text-xs shadow-sm">
-                <Zap className="w-3 h-3 mr-1" />
-                DATA-FIRST
-              </Badge>
-              
               {property.listing_type && (
                 <Badge className="bg-purple-100 border border-purple-300 text-purple-700 font-semibold text-xs">
                   {property.listing_type}
