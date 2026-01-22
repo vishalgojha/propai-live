@@ -257,46 +257,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ✅ SEO: Category Links */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-slate-50">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Link
-            to={`${createPageUrl("SmartFeed")}?listingType=Rent&propertyCategory=Residential`}
-            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
-          >
-            <HomeIcon className="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-slate-900 mb-1">Rent Flats</h3>
-            <p className="text-xs text-slate-600">Mumbai rentals</p>
-          </Link>
 
-          <Link
-            to={`${createPageUrl("SmartFeed")}?listingType=Sale&propertyCategory=Residential`}
-            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
-          >
-            <Building2 className="w-8 h-8 text-slate-700 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-slate-900 mb-1">Buy Flats</h3>
-            <p className="text-xs text-slate-600">Residential sale</p>
-          </Link>
-
-          <Link
-            to={`${createPageUrl("SmartFeed")}?propertyCategory=Commercial`}
-            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
-          >
-            <Building2 className="w-8 h-8 text-slate-700 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-slate-900 mb-1">Commercial</h3>
-            <p className="text-xs text-slate-600">Offices & retail</p>
-          </Link>
-
-          <Link
-            to={createPageUrl("MarketInsights")}
-            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
-          >
-            <Brain className="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-slate-900 mb-1">Market Insights</h3>
-            <p className="text-xs text-slate-600">Live data & trends</p>
-          </Link>
-          </div>
-          </section>
 
       {/* Featured Properties Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
