@@ -440,15 +440,7 @@ export default function Layout({ children, currentPageName }) {
                     Buy
                   </Link>
                 </li>
-                <li>
-                  <Link 
-                    to={createPageUrl("Buildings")} 
-                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
-                  >
-                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Buildings
-                  </Link>
-                </li>
+
                 <li>
                   <Link 
                     to={createPageUrl("DeveloperDirectory")} 
@@ -492,15 +484,7 @@ export default function Layout({ children, currentPageName }) {
                     How It Works
                   </Link>
                 </li>
-                <li>
-                  <Link 
-                    to={createPageUrl("Buildings")} 
-                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
-                  >
-                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Building Directory
-                  </Link>
-                </li>
+
                 <li>
                   <Link 
                     to={createPageUrl("AdminDashboard")} 

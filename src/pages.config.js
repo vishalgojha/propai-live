@@ -18,7 +18,6 @@ import BrokerPerformance from './pages/BrokerPerformance';
 import BrokerProfile from './pages/BrokerProfile';
 import BuildingBlog from './pages/BuildingBlog';
 import BuildingProfile from './pages/BuildingProfile';
-import Buildings from './pages/Buildings';
 import CronScheduler from './pages/CronScheduler';
 import DeveloperDirectory from './pages/DeveloperDirectory';
 import DeveloperProfile from './pages/DeveloperProfile';
@@ -66,7 +65,6 @@ export const PAGES = {
     "BrokerProfile": BrokerProfile,
     "BuildingBlog": BuildingBlog,
     "BuildingProfile": BuildingProfile,
-    "Buildings": Buildings,
     "CronScheduler": CronScheduler,
     "DeveloperDirectory": DeveloperDirectory,
     "DeveloperProfile": DeveloperProfile,
