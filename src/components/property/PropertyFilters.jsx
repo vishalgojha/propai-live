@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/select";
 import { Search, X, MapPin, Home, Sliders, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Label } from "@/components/ui/label";
 
-export default function PropertyFilters({ filters, onFilterChange, onClearFilters, allProperties = [] }) {
+export default function PropertyFilters({ filters, onFilterChange, onClearFilters, allProperties = [], showAmenitiesFilter = false }) {
   const [bhkSearchQuery, setBhkSearchQuery] = useState("");
   const [areaSearchQuery, setAreaSearchQuery] = useState("");
   const [showBhkSuggestions, setShowBhkSuggestions] = useState(false);
@@ -30,6 +31,11 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
   const uniqueBhks = useMemo(() => {
     return [...new Set(allProperties.map(p => p.bhk).filter(Boolean))].sort();
   }, [allProperties]);
+
+  const commonAmenities = [
+    "Swimming Pool", "Gym", "Garden", "Kids Play Area", "Security",
+    "Power Backup", "Lift", "Parking", "Club House", "Jogging Track"
+  ];
 
   // Filter suggestions based on search query
   const filteredBhkSuggestions = useMemo(() => {
@@ -363,6 +369,34 @@ export default function PropertyFilters({ filters, onFilterChange, onClearFilter
                   </span>
                 </div>
               </div>
+
+              {showAmenitiesFilter && (
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Amenities</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {commonAmenities.map(amenity => {
+                      const isSelected = filters.amenities?.includes(amenity);
+                      return (
+                        <Button
+                          key={amenity}
+                          onClick={() => {
+                            const currentAmenities = filters.amenities || [];
+                            const newAmenities = isSelected
+                              ? currentAmenities.filter(a => a !== amenity)
+                              : [...currentAmenities, amenity];
+                            onFilterChange({ ...filters, amenities: newAmenities });
+                          }}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className="rounded-lg touch-manipulation"
+                        >
+                          {amenity}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Selected Filters Display */}
               {(filters.bhk_multi?.length > 0 || filters.location_multi?.length > 0) && (
