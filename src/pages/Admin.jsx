@@ -963,7 +963,7 @@ Return ONLY the JSON, nothing else.`;
               <div>• Properties: {results.properties_updated} updated</div>
               <div>• Buildings: {results.buildings_updated} updated</div>
               <div>• Requirements: {results.requirements_updated} updated</div>
-              <div>• Locations reduced: ${results.unique_locations_before} -> ${results.unique_locations_after}</div>
+              <div>• Locations reduced: {results.unique_locations_before} to {results.unique_locations_after}</div>
               {results.errors > 0 && (
                 <div className="text-red-300">⚠ Errors: {results.errors}</div>
               )}
