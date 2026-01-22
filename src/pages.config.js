@@ -27,6 +27,8 @@ import Home from './pages/Home';
 import InteractionLogs from './pages/InteractionLogs';
 import LiveDashboard from './pages/LiveDashboard';
 import LocationProperties from './pages/LocationProperties';
+import MapSearch from './pages/MapSearch';
+import MarketInsights from './pages/MarketInsights';
 import MyProfile from './pages/MyProfile';
 import ParityReport from './pages/ParityReport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -39,8 +41,6 @@ import SmartFeed from './pages/SmartFeed';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
-import MarketInsights from './pages/MarketInsights';
-import MapSearch from './pages/MapSearch';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +74,8 @@ export const PAGES = {
     "InteractionLogs": InteractionLogs,
     "LiveDashboard": LiveDashboard,
     "LocationProperties": LocationProperties,
+    "MapSearch": MapSearch,
+    "MarketInsights": MarketInsights,
     "MyProfile": MyProfile,
     "ParityReport": ParityReport,
     "PrivacyPolicy": PrivacyPolicy,
@@ -86,8 +88,6 @@ export const PAGES = {
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
-    "MarketInsights": MarketInsights,
-    "MapSearch": MapSearch,
 }
 
 export const pagesConfig = {

@@ -99,6 +99,26 @@ export default function SmartFeed() {
     debouncedSearch(filters.search);
   }, [filters.search, debouncedSearch]);
 
+  // ✅ FIXED: Reduced caching, faster refresh
+  const { data: properties = [], isLoading, error } = useQuery({
+    queryKey: ['properties'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    staleTime: 0,
+    cacheTime: 30 * 1000,
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true,
+  });
+
+  // ✅ FIXED: Reduced caching for requirements
+  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    staleTime: 0,
+    cacheTime: 30 * 1000,
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true,
+  });
+
   // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
@@ -394,28 +414,6 @@ export default function SmartFeed() {
   useEffect(() => {
     setItemsToShow(ITEMS_PER_PAGE);
   }, [filters]);
-
-  // ✅ FIXED: Reduced caching, faster refresh
-  const { data: properties, isLoading, error } = useQuery({
-    queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.list('-created_date'),
-    initialData: [],
-    staleTime: 0, // ✅ CHANGED
-    cacheTime: 30 * 1000, // ✅ CHANGED
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true, // ✅ ENABLED: Refresh when user returns to tab
-  });
-
-  // ✅ FIXED: Reduced caching for requirements
-  const { data: requirements, isLoading: requirementsLoading } = useQuery({
-    queryKey: ['requirements'],
-    queryFn: () => base44.entities.Requirement.list('-created_date'),
-    initialData: [],
-    staleTime: 0, // ✅ CHANGED
-    cacheTime: 30 * 1000, // ✅ CHANGED
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true, // ✅ ENABLED
-  });
 
   // ✅ FIXED: Only show banner for TRULY new items, persist counts in localStorage
   useEffect(() => {
