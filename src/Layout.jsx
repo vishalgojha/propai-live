@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3, Sparkles } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3, Sparkles, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -144,7 +144,8 @@ export default function Layout({ children, currentPageName }) {
   if (user) {
     if (user.broker_id) {
       navItems.push(
-        { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") }
+        { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
+        { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
       );
     }
     navItems.push(
