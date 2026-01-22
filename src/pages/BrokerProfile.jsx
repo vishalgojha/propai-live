@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +15,7 @@ import {
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import PropertyCard from "../components/property/PropertyCard";
+import ReviewsSection from "../components/broker/ReviewsSection";
 
 export default function BrokerProfile() {
   const navigate = useNavigate();
@@ -87,7 +87,7 @@ export default function BrokerProfile() {
 
   if (!brokerId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Broker not found</h2>
@@ -101,11 +101,11 @@ export default function BrokerProfile() {
 
   if (isLoading || !broker) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-32 w-full mb-6 rounded-3xl" />
           <div className="grid grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
           </div>
         </div>
       </div>
@@ -120,25 +120,25 @@ export default function BrokerProfile() {
         <Button
           onClick={() => navigate(createPageUrl("BrokerNetwork"))}
           variant="ghost"
-          className="mb-6 text-slate-600 hover:text-slate-900 hover:bg-white/80 rounded-2xl"
+          className="mb-6 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Network
         </Button>
 
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-purple-200 mb-6">
+        <div className="bg-white rounded-xl p-6 border border-slate-200 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-                <Users className="w-8 h-8 text-purple-600" />
+              <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-slate-700" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">{broker.name}</h1>
                 {broker.agency_name && (
                   <div className="flex items-center gap-2 mt-1">
-                    <Building2 className="w-4 h-4 text-purple-600" />
-                    <p className="text-lg font-semibold text-purple-700">{broker.agency_name}</p>
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                    <p className="text-lg font-semibold text-blue-700">{broker.agency_name}</p>
                   </div>
                 )}
                 <p className="text-slate-600 mt-1">{broker.custom_id}</p>
@@ -240,8 +240,8 @@ export default function BrokerProfile() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Phone className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Phone className="w-6 h-6 text-blue-600" />
                 </div>
                 <p className="text-sm text-slate-600 mb-3">
                   🔒 Connect with {broker.name} to unlock contact details
@@ -249,7 +249,7 @@ export default function BrokerProfile() {
                 <Button
                   onClick={() => navigate(createPageUrl("BrokerNetwork"))}
                   size="sm"
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Go to Network
                 </Button>
@@ -330,9 +330,9 @@ export default function BrokerProfile() {
 
         {/* AI Profile Summary */}
         {broker.ai_profile_summary && (
-          <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 mb-6">
+          <Card className="p-6 bg-blue-50 border border-blue-200 mb-6">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-purple-600" />
+              <Award className="w-5 h-5 text-blue-600" />
               Profile Summary
             </h3>
             <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
@@ -359,7 +359,7 @@ export default function BrokerProfile() {
                   onClick={() => navigate(createPageUrl("BrokerPerformance") + `?id=${brokerId}`)}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   View Analytics
@@ -395,9 +395,16 @@ export default function BrokerProfile() {
           </div>
         )}
 
+        {/* Reviews Section */}
+        <ReviewsSection 
+          brokerId={brokerId} 
+          brokerName={broker.name}
+          currentUserBrokerId={currentUser?.broker_id}
+        />
+
         {/* Active Requirements */}
         {requirements.filter(r => r.status === 'Active').length > 0 && (
-          <div>
+          <div className="mt-6">
             <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-cyan-600" />
               Active Requirements ({requirements.filter(r => r.status === 'Active').length})
