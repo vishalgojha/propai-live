@@ -68,10 +68,10 @@ export default function BrokerAssistant() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Toaster position="top-center" richColors closeButton />
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center mx-auto mb-4 animate-pulse">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <p className="text-slate-600 font-medium">Analyzing your listings...</p>
@@ -82,13 +82,13 @@ export default function BrokerAssistant() {
 
   if (!insights) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <Toaster position="top-center" richColors closeButton />
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">No Data Available</h2>
           <p className="text-slate-600 mb-4">Complete your broker profile to get AI-powered insights</p>
-          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
             Complete Profile
           </Button>
         </div>
@@ -97,7 +97,7 @@ export default function BrokerAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors closeButton />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -109,7 +109,7 @@ export default function BrokerAssistant() {
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -155,7 +155,7 @@ export default function BrokerAssistant() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300">
+            <Card className="p-6 bg-white border border-slate-200">
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-5 h-5 text-white" />
@@ -237,7 +237,7 @@ export default function BrokerAssistant() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 mb-6">
+            <Card className="p-6 bg-blue-50 border border-blue-200 mb-6">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Lightbulb className="w-5 h-5 text-white" />

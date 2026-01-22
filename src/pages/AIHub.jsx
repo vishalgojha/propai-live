@@ -19,7 +19,7 @@ const AGENTS = [
     id: 'chariot_master',
     name: 'PropAI Sync',
     icon: Zap,
-    color: 'from-purple-600 to-blue-600',
+    color: 'blue-600',
     description: 'Super-fast property & requirement parser. Processes WhatsApp listings instantly.',
     greeting: '👋 PropAI Sync here! Send me property listings or requirements and I\'ll process them in seconds! 🚀',
   },
@@ -27,7 +27,7 @@ const AGENTS = [
     id: 'blog_generator',
     name: 'Content Writer',
     icon: BookOpen,
-    color: 'from-orange-600 to-red-600',
+    color: 'orange-600',
     description: 'Sassy Mumbai real estate writer. No fluff, just facts and opinions.',
     greeting: '👋 Content Writer here! I create real estate content with personality. What should we write about?',
   },
@@ -35,7 +35,7 @@ const AGENTS = [
     id: 'building_assistant',
     name: 'Building Intel',
     icon: Building2,
-    color: 'from-cyan-600 to-blue-600',
+    color: 'cyan-600',
     description: 'Building data expert. Fixes locations, enriches profiles, answers queries.',
     greeting: '👋 Building Intelligence here! I can fix building errors, enrich data, or answer questions about any building.',
   },
@@ -200,7 +200,7 @@ export default function AIHub() {
       >
         {!isUser && (
           <motion.div 
-            className={`h-10 w-10 rounded-2xl bg-gradient-to-br ${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+            className={`h-10 w-10 rounded-xl bg-${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-md`}
             whileHover={{ scale: 1.1, rotate: 5 }}
           >
             <selectedAgent.icon className="w-5 h-5 text-white" />
@@ -210,10 +210,10 @@ export default function AIHub() {
         <div className={`max-w-[85%] ${isUser ? 'flex flex-col items-end' : ''}`}>
           {message.content && (
             <motion.div 
-              className={`rounded-2xl px-5 py-3.5 ${
+              className={`rounded-xl px-5 py-3.5 ${
                 isUser 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-md'
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'bg-white border border-slate-200 shadow-sm'
               }`}
               whileHover={{ scale: 1.01 }}
               transition={{ type: "spring", stiffness: 400 }}
@@ -269,7 +269,7 @@ export default function AIHub() {
         
         {isUser && (
           <motion.div 
-            className="h-10 w-10 rounded-2xl bg-slate-700 flex items-center justify-center flex-shrink-0 shadow-md"
+            className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm"
             whileHover={{ scale: 1.1 }}
           >
             <User className="w-5 h-5 text-white" />
@@ -281,9 +281,9 @@ export default function AIHub() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center mx-auto mb-4 animate-pulse">
             <Bot className="w-8 h-8 text-white" />
           </div>
           <p className="text-slate-600 font-medium">Loading AI Hub...</p>
@@ -301,11 +301,11 @@ export default function AIHub() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-md">
               <Bot className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-slate-900">
                 AI Hub
               </h1>
               <p className="text-sm text-slate-600">All your AI agents in one place</p>
@@ -329,28 +329,16 @@ export default function AIHub() {
                 whileHover={{ scale: isActive ? 1 : 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 className={`group relative p-6 rounded-xl border transition-all text-left touch-manipulation overflow-hidden ${
-                  isActive
-                    ? 'bg-white border-slate-900 shadow-lg'
-                    : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                isActive
+                  ? 'bg-white border-blue-600 shadow-md'
+                  : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                 }`}
-              >
-                {/* Gradient Overlay for Active */}
-                {isActive && (
-                  <motion.div 
-                    className={`absolute inset-0 bg-gradient-to-br ${agent.color} opacity-5`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.05 }}
-                  />
-                )}
+                >
                 
                 <div className="relative flex flex-col gap-4">
                   <div className="flex items-start justify-between">
                     <motion.div 
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
-                        isActive 
-                          ? `bg-gradient-to-br ${agent.color}` 
-                          : `bg-gradient-to-br ${agent.color} opacity-80`
-                      }`}
+                      className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-md bg-${agent.color}`}
                       whileHover={{ rotate: [0, -5, 5, 0] }}
                       transition={{ duration: 0.3 }}
                     >
@@ -361,7 +349,7 @@ export default function AIHub() {
                       <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-600 shadow-md"
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-600 shadow-sm"
                       >
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
                         <span className="text-[10px] font-bold text-white uppercase tracking-wider">Live</span>
@@ -453,7 +441,7 @@ export default function AIHub() {
           </motion.div>
 
           {/* Messages Area - Enhanced Design */}
-          <div className="h-[550px] overflow-y-auto p-6 space-y-5 bg-gradient-to-br from-slate-50/50 via-purple-50/20 to-blue-50/30 relative">
+          <div className="h-[550px] overflow-y-auto p-6 space-y-5 bg-slate-50 relative">
             {/* Subtle Pattern Overlay */}
             <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
               backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(100 100 100) 1px, transparent 0)',
@@ -468,7 +456,7 @@ export default function AIHub() {
                   transition={{ delay: 0.2 }}
                 >
                   <motion.div 
-                    className={`w-20 h-20 bg-gradient-to-br ${selectedAgent.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl`}
+                    className={`w-20 h-20 bg-${selectedAgent.color} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
                     animate={{ 
                       y: [0, -10, 0],
                       rotate: [0, 5, -5, 0]
@@ -505,7 +493,7 @@ export default function AIHub() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5 }}
                   >
-                    <Badge className={`bg-gradient-to-r ${selectedAgent.color} text-white border-0 px-4 py-2 text-sm shadow-lg`}>
+                    <Badge className={`bg-${selectedAgent.color} text-white border-0 px-4 py-2 text-sm shadow-sm`}>
                       <Sparkles className="w-3 h-3 mr-2" />
                       Ready to assist
                     </Badge>
@@ -534,7 +522,7 @@ export default function AIHub() {
                 animate={{ opacity: 1, y: 0 }}
               >
                 <motion.div 
-                  className={`h-10 w-10 rounded-2xl bg-gradient-to-br ${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+                  className={`h-10 w-10 rounded-xl bg-${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-sm`}
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}
                 >
@@ -603,19 +591,12 @@ export default function AIHub() {
                 <Button
                   onClick={handleSendMessage}
                   disabled={!input.trim() || isSending}
-                  className={`bg-gradient-to-r ${selectedAgent.color} hover:opacity-90 text-white px-6 h-[52px] rounded-2xl shadow-lg disabled:opacity-50 touch-manipulation relative overflow-hidden`}
+                  className={`bg-${selectedAgent.color} hover:opacity-90 text-white px-6 h-[52px] rounded-xl shadow-sm disabled:opacity-50 touch-manipulation`}
                 >
-                  {isSending && (
-                    <motion.div
-                      className="absolute inset-0 bg-white/20"
-                      animate={{ x: ['-100%', '100%'] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                    />
-                  )}
                   {isSending ? (
-                    <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <Send className="w-5 h-5 relative z-10" />
+                    <Send className="w-5 h-5" />
                   )}
                 </Button>
               </motion.div>
@@ -634,9 +615,9 @@ export default function AIHub() {
         </motion.div>
 
         {/* QR Code Generator */}
-        <div className="mt-6 bg-white/80 backdrop-blur-xl rounded-2xl border-2 border-purple-200 p-6">
+        <div className="mt-6 bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
               <QrCode className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -688,7 +669,7 @@ export default function AIHub() {
                   toast.error('Failed to generate QR code: ' + error.message);
                 }
               }}
-              className="w-full bg-green-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               <QrCode className="w-4 h-4 mr-2" />
               Generate QR Code
@@ -698,7 +679,7 @@ export default function AIHub() {
 
         {/* Quick Actions */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-purple-200">
+          <div className="bg-white rounded-xl p-4 border border-slate-200">
             <h4 className="font-bold text-slate-900 mb-2 text-sm">💡 Quick Tips</h4>
             <ul className="text-xs text-slate-600 space-y-1">
               <li>• Switch agents anytime using tabs above</li>
@@ -708,8 +689,8 @@ export default function AIHub() {
           </div>
           
           {selectedAgent.id === 'chariot_master' && (
-            <div className="bg-purple-50 rounded-2xl p-4 border border-purple-300">
-              <h4 className="font-bold text-purple-900 mb-2 text-sm">🚀 PropAI Sync Examples</h4>
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <h4 className="font-bold text-slate-900 mb-2 text-sm">🚀 PropAI Sync Examples</h4>
               <ul className="text-xs text-slate-700 space-y-1">
                 <li>• "2bhk 80L rent bandra west furnished"</li>
                 <li>• "3bhk sale worli 5cr sea view"</li>
@@ -719,8 +700,8 @@ export default function AIHub() {
           )}
           
           {selectedAgent.id === 'blog_generator' && (
-            <div className="bg-orange-50 rounded-2xl p-4 border border-orange-300">
-              <h4 className="font-bold text-orange-900 mb-2 text-sm">📝 Content Examples</h4>
+            <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+              <h4 className="font-bold text-slate-900 mb-2 text-sm">📝 Content Examples</h4>
               <ul className="text-xs text-slate-700 space-y-1">
                 <li>• "Write about Pali Hill vs Carter Road"</li>
                 <li>• "Guide for expats renting in Bandra"</li>
@@ -730,8 +711,8 @@ export default function AIHub() {
           )}
           
           {selectedAgent.id === 'building_assistant' && (
-            <div className="bg-cyan-50 rounded-2xl p-4 border border-cyan-300">
-              <h4 className="font-bold text-cyan-900 mb-2 text-sm">🏗️ Building Intel Examples</h4>
+            <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+              <h4 className="font-bold text-slate-900 mb-2 text-sm">🏗️ Building Intel Examples</h4>
               <ul className="text-xs text-slate-700 space-y-1">
                 <li>• "Tell me about Maker Tower"</li>
                 <li>• "Ekta Trinity is Santacruz West, not Bandra"</li>

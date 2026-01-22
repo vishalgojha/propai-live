@@ -658,10 +658,10 @@ export default function SmartFeed() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6"
           >
-            <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-4 border-2 border-amber-300">
+            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Brain className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -674,7 +674,7 @@ export default function SmartFeed() {
                 <Button
                   onClick={injectSampleHistory}
                   size="sm"
-                  className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold touch-manipulation"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold touch-manipulation"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Test Auto-Match
@@ -692,7 +692,7 @@ export default function SmartFeed() {
               exit={{ opacity: 0, y: -20, height: 0 }}
               className="mb-6"
             >
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl p-4 shadow-lg border-2 border-white">
+              <div className="bg-green-600 text-white rounded-xl p-4 shadow-md border border-green-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">

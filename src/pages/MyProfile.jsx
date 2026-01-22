@@ -602,9 +602,9 @@ export default function MyProfile() {
   // ✅ LOADING STATE
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <User className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
+          <User className="w-16 h-16 text-slate-600 mx-auto mb-4 animate-pulse" />
           <p className="text-slate-600 font-medium">Loading profile...</p>
         </div>
       </div>
@@ -616,14 +616,14 @@ export default function MyProfile() {
   // ✅ NO BROKER PROFILE - SHOW LINK OR CREATE OPTIONS
   if (!brokerProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen bg-slate-50">
         <Toaster position="top-center" richColors closeButton />
 
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-blue-400"
+            className="mb-6 bg-blue-600 text-white rounded-xl p-6 shadow-md border border-blue-700"
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
@@ -738,7 +738,7 @@ export default function MyProfile() {
               <Button
                 onClick={handleSaveProfile}
                 disabled={creatingBrokerProfile || !profileData.phone || !profileData.name || !profileData.agency_name}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-14 text-lg font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full h-12 text-base font-semibold"
               >
                 {creatingBrokerProfile ? (
                   <>
@@ -758,7 +758,7 @@ export default function MyProfile() {
 
   // ✅ BROKER PROFILE EXISTS - SHOW FULL PROFILE PAGE
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors closeButton />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
@@ -766,7 +766,7 @@ export default function MyProfile() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-3xl p-6 shadow-xl border-2 border-purple-400"
+            className="mb-6 bg-blue-600 text-white rounded-xl p-6 shadow-md border border-blue-700"
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
@@ -796,7 +796,7 @@ export default function MyProfile() {
                     setActiveTab('overview');
                     setEditingProfile(true);
                   }}
-                  className="mt-4 bg-white text-purple-600 hover:bg-purple-50 font-bold"
+                  className="mt-4 bg-white text-blue-600 hover:bg-blue-50 font-semibold"
                 >
                   Complete Profile Now
                 </Button>
@@ -808,8 +808,8 @@ export default function MyProfile() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-                <Users className="w-8 h-8 text-purple-600" />
+              <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-slate-700" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
@@ -843,7 +843,7 @@ export default function MyProfile() {
 
         {/* ✅ Admin Quick Actions */}
         {currentUser.role === 'admin' && (
-          <Card className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 border-0 mb-6">
+          <Card className="p-4 bg-slate-900 border-0 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-white font-bold flex items-center gap-2">
                 <Shield className="w-5 h-5" />
@@ -962,8 +962,8 @@ export default function MyProfile() {
                       size="sm"
                       className={`h-auto py-3 text-xs justify-start ${
                         isSelected
-                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
-                          : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                          ? "bg-blue-600 text-white border-0 shadow-sm"
+                          : "border-slate-200 hover:bg-slate-50 text-slate-700"
                       }`}
                     >
                       {isSelected && <Star className="w-3 h-3 mr-1" fill="currentColor" />}
@@ -975,7 +975,7 @@ export default function MyProfile() {
               <Button
                 onClick={handleSaveAreas}
                 disabled={savingAreas}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-12 font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full h-12 font-semibold"
               >
                 {savingAreas ? (
                   <>
@@ -1007,7 +1007,7 @@ export default function MyProfile() {
                   <p className="text-sm text-slate-600 mb-3">No preferred areas set yet</p>
                   <Button
                     onClick={() => setEditingAreas(true)}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <MapPin className="w-4 h-4 mr-2" />
                     Select Your Areas
@@ -1095,7 +1095,7 @@ export default function MyProfile() {
               <Button
                 onClick={handleSaveProfile}
                 disabled={savingProfile}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white w-full h-12 font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full h-12 font-semibold"
               >
                 {savingProfile ? (
                   <>
