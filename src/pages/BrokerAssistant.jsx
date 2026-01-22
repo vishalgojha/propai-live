@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Sparkles, AlertCircle, TrendingDown, Copy, CheckCircle2,
-  Lightbulb, Target, BarChart3, Loader2, RefreshCw, ArrowRight
+  Lightbulb, Target, BarChart3, Loader2, RefreshCw, ArrowRight,
+  TrendingUp, Search, MapPin
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -15,6 +16,8 @@ export default function BrokerAssistant() {
   const [isLoading, setIsLoading] = useState(true);
   const [insights, setInsights] = useState(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  const [marketDemand, setMarketDemand] = useState(null);
+  const [loadingDemand, setLoadingDemand] = useState(false);
 
   useEffect(() => {
     const loadInsights = async () => {
@@ -32,6 +35,22 @@ export default function BrokerAssistant() {
     };
 
     loadInsights();
+  }, []);
+
+  useEffect(() => {
+    const loadMarketDemand = async () => {
+      try {
+        setLoadingDemand(true);
+        const response = await base44.functions.invoke('getMarketDemand');
+        setMarketDemand(response.data);
+      } catch (error) {
+        console.error('Failed to load market demand:', error);
+      } finally {
+        setLoadingDemand(false);
+      }
+    };
+
+    loadMarketDemand();
   }, []);
 
   const handleRefresh = async () => {
@@ -128,6 +147,88 @@ export default function BrokerAssistant() {
             </Card>
           </div>
         </motion.div>
+
+        {/* Market Demand Insights */}
+        {marketDemand && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">Market Demand Intelligence</h3>
+                  <p className="text-sm text-slate-600">
+                    Based on {marketDemand.summary.total_searches} searches in last {marketDemand.summary.period_days} days + Google Trends
+                  </p>
+                </div>
+              </div>
+
+              {/* Top Locations */}
+              <div className="mb-6">
+                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-purple-600" />
+                  High-Demand Locations
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {marketDemand.top_locations.slice(0, 5).map((loc, idx) => {
+                    const trendData = marketDemand.google_trends.find(t => t.location === loc.location);
+                    return (
+                      <div key={idx} className="bg-white rounded-xl p-3 border border-purple-200">
+                        <p className="font-semibold text-slate-900 text-sm mb-1">{loc.location}</p>
+                        <p className="text-xs text-slate-600">{loc.searches} searches</p>
+                        {trendData && (
+                          <div className="mt-2">
+                            <Badge className={
+                              trendData.trend === 'rising' ? 'bg-green-600 text-white' :
+                              trendData.trend === 'falling' ? 'bg-red-600 text-white' :
+                              'bg-slate-600 text-white'
+                            }>
+                              {trendData.trend === 'rising' ? '📈' : trendData.trend === 'falling' ? '📉' : '➡️'} {trendData.trend}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* AI Market Insights */}
+              {marketDemand.ai_insights?.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    AI Market Analysis
+                  </h4>
+                  <div className="space-y-2">
+                    {marketDemand.ai_insights.map((insight, idx) => (
+                      <div key={idx} className="p-3 bg-white rounded-xl border border-purple-200">
+                        <div className="flex items-start gap-3">
+                          <Badge className={
+                            insight.priority === 'high' ? 'bg-red-600 text-white' :
+                            insight.priority === 'medium' ? 'bg-amber-600 text-white' :
+                            'bg-blue-600 text-white'
+                          }>
+                            {insight.priority}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="font-semibold text-slate-900 text-sm">{insight.title}</p>
+                            <p className="text-xs text-slate-600 mt-1">{insight.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </motion.div>
+        )}
 
         {/* AI Suggestions */}
         {insights.insights.ai_suggestions?.length > 0 && (

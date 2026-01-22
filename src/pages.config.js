@@ -11,6 +11,7 @@ import AutomationHub from './pages/AutomationHub';
 import BlogPost from './pages/BlogPost';
 import Blogs from './pages/Blogs';
 import BrokerAnalytics from './pages/BrokerAnalytics';
+import BrokerAssistant from './pages/BrokerAssistant';
 import BrokerNetwork from './pages/BrokerNetwork';
 import BrokerPerformance from './pages/BrokerPerformance';
 import BrokerProfile from './pages/BrokerProfile';
@@ -38,7 +39,6 @@ import SmartFeed from './pages/SmartFeed';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
-import BrokerAssistant from './pages/BrokerAssistant';
 import __Layout from './Layout.jsx';
 
 
@@ -56,6 +56,7 @@ export const PAGES = {
     "BlogPost": BlogPost,
     "Blogs": Blogs,
     "BrokerAnalytics": BrokerAnalytics,
+    "BrokerAssistant": BrokerAssistant,
     "BrokerNetwork": BrokerNetwork,
     "BrokerPerformance": BrokerPerformance,
     "BrokerProfile": BrokerProfile,
@@ -83,7 +84,6 @@ export const PAGES = {
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
-    "BrokerAssistant": BrokerAssistant,
 }
 
 export const pagesConfig = {

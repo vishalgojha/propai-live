@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -90,6 +89,54 @@ export default function SmartFeed() {
   useEffect(() => {
     debouncedSearch(filters.search);
   }, [filters.search, debouncedSearch]);
+
+  // Track search intent when filters change
+  useEffect(() => {
+    const trackSearchIntent = async () => {
+      try {
+        let sessionId = sessionStorage.getItem('propai_session_id');
+        if (!sessionId) {
+          sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          sessionStorage.setItem('propai_session_id', sessionId);
+        }
+
+        const deviceType = window.innerWidth < 768 ? 'mobile' : 
+                          window.innerWidth < 1024 ? 'tablet' : 'desktop';
+
+        await base44.entities.SearchIntent.create({
+          user_id: user?.id,
+          session_id: sessionId,
+          search_query: debouncedSearchQuery || '',
+          filters_applied: {
+            bhk_multi: filters.bhk_multi,
+            location_multi: filters.location_multi,
+            listingType: filters.listingType,
+            propertyCategory: filters.propertyCategory,
+            furnishing: filters.furnishing,
+            minPrice: filters.minPrice ? parseFloat(filters.minPrice) : null,
+            maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : null
+          },
+          results_count: filteredProperties.length,
+          device_type: deviceType,
+          user_agent: navigator.userAgent
+        });
+      } catch (error) {
+        console.error('Failed to track search intent:', error);
+      }
+    };
+
+    const hasActiveFilters = 
+      debouncedSearchQuery || 
+      filters.bhk_multi?.length > 0 || 
+      filters.location_multi?.length > 0 || 
+      (filters.listingType && filters.listingType !== 'all') ||
+      filters.minPrice || 
+      filters.maxPrice;
+
+    if (hasActiveFilters) {
+      trackSearchIntent();
+    }
+  }, [debouncedSearchQuery, filters, filteredProperties.length, user]);
 
   useEffect(() => {
     const loadUser = async () => {
