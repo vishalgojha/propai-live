@@ -192,20 +192,32 @@ export default function AIHub() {
     const isAssistant = message.role === 'assistant';
 
     return (
-      <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <motion.div 
+        className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+        initial={{ opacity: 0, x: isUser ? 20 : -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      >
         {!isUser && (
-          <div className={`h-8 w-8 rounded-xl bg-gradient-to-r ${selectedAgent.color} flex items-center justify-center flex-shrink-0`}>
-            <selectedAgent.icon className="w-4 h-4 text-white" />
-          </div>
+          <motion.div 
+            className={`h-10 w-10 rounded-2xl bg-gradient-to-br ${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+            whileHover={{ scale: 1.1, rotate: 5 }}
+          >
+            <selectedAgent.icon className="w-5 h-5 text-white" />
+          </motion.div>
         )}
         
         <div className={`max-w-[85%] ${isUser ? 'flex flex-col items-end' : ''}`}>
           {message.content && (
-            <div className={`rounded-2xl px-4 py-3 ${
-              isUser 
-                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' 
-                : 'bg-white border border-slate-200'
-            }`}>
+            <motion.div 
+              className={`rounded-2xl px-5 py-3.5 ${
+                isUser 
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg' 
+                  : 'bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-md'
+              }`}
+              whileHover={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
               {isUser ? (
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
               ) : (
@@ -256,11 +268,14 @@ export default function AIHub() {
         </div>
         
         {isUser && (
-          <div className="h-8 w-8 rounded-xl bg-slate-600 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-white" />
-          </div>
+          <motion.div 
+            className="h-10 w-10 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0 shadow-md"
+            whileHover={{ scale: 1.1 }}
+          >
+            <User className="w-5 h-5 text-white" />
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
@@ -298,95 +313,204 @@ export default function AIHub() {
           </div>
         </div>
 
-        {/* Agent Selector */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-          {AGENTS.map((agent) => {
+        {/* Agent Selector - Modern Card Layout */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {AGENTS.map((agent, idx) => {
             const Icon = agent.icon;
             const isActive = selectedAgent.id === agent.id;
             
             return (
-              <button
+              <motion.button
                 key={agent.id}
                 onClick={() => switchAgent(agent)}
-                className={`p-4 rounded-2xl border-2 transition-all text-left touch-manipulation ${
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ scale: isActive ? 1 : 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className={`group relative p-6 rounded-3xl border-2 transition-all text-left touch-manipulation overflow-hidden ${
                   isActive
-                    ? `bg-gradient-to-r ${agent.color} text-white border-transparent shadow-lg`
-                    : 'bg-white border-slate-200 hover:border-purple-300 hover:shadow-md'
+                    ? 'bg-white border-purple-300 shadow-2xl'
+                    : 'bg-white/60 backdrop-blur-sm border-slate-200 hover:border-purple-200 hover:shadow-lg'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    isActive ? 'bg-white/20' : `bg-gradient-to-r ${agent.color}`
-                  }`}>
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-white'}`} />
+                {/* Gradient Overlay for Active */}
+                {isActive && (
+                  <motion.div 
+                    className={`absolute inset-0 bg-gradient-to-br ${agent.color} opacity-5`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.05 }}
+                  />
+                )}
+                
+                <div className="relative flex flex-col gap-4">
+                  <div className="flex items-start justify-between">
+                    <motion.div 
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
+                        isActive 
+                          ? `bg-gradient-to-br ${agent.color}` 
+                          : `bg-gradient-to-br ${agent.color} opacity-80`
+                      }`}
+                      whileHover={{ rotate: [0, -5, 5, 0] }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Icon className="w-7 h-7 text-white" />
+                    </motion.div>
+                    
+                    {isActive && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 shadow-md"
+                      >
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider">Live</span>
+                      </motion.div>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className={`font-bold mb-1 ${isActive ? 'text-white' : 'text-slate-900'}`}>
+                  
+                  <div>
+                    <h3 className={`font-bold text-lg mb-2 ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>
                       {agent.name}
                     </h3>
-                    <p className={`text-xs leading-relaxed ${isActive ? 'text-white/80' : 'text-slate-600'}`}>
+                    <p className="text-sm leading-relaxed text-slate-600">
                       {agent.description}
                     </p>
                   </div>
+                  
                   {isActive && (
-                    <div className="flex-shrink-0">
-                      <Badge className="bg-white/20 text-white border-white/40">
-                        Active
-                      </Badge>
-                    </div>
+                    <motion.div 
+                      className="flex items-center gap-2 text-xs text-slate-500"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Active conversation</span>
+                    </motion.div>
                   )}
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
 
-        {/* Chat Interface */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-purple-200 shadow-xl overflow-hidden">
+        {/* Chat Interface - Modern Glass Design */}
+        <motion.div 
+          className="bg-white/90 backdrop-blur-2xl rounded-3xl border border-purple-200/50 shadow-2xl overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           
-          {/* Chat Header */}
-          <div className={`bg-gradient-to-r ${selectedAgent.color} p-4 flex items-center justify-between`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <selectedAgent.icon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">{selectedAgent.name}</h2>
-                <p className="text-xs text-white/80">AI Agent</p>
-              </div>
+          {/* Chat Header - Glassmorphism */}
+          <motion.div 
+            className={`bg-gradient-to-r ${selectedAgent.color} p-5 relative overflow-hidden`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {/* Animated background pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={createNewConversation}
-                size="sm"
-                variant="ghost"
-                className="text-white hover:bg-white/20 h-8"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                New Chat
-              </Button>
-            </div>
-          </div>
-
-          {/* Messages Area */}
-          <div className="h-[500px] overflow-y-auto p-6 space-y-4 bg-gradient-to-br from-slate-50 to-purple-50/30">
-            {messages.length === 0 && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center max-w-md">
-                  <div className={`w-16 h-16 bg-gradient-to-r ${selectedAgent.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                    <selectedAgent.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <motion.div 
+                  className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <selectedAgent.icon className="w-6 h-6 text-white" />
+                </motion.div>
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     {selectedAgent.name}
-                  </h3>
-                  <p className="text-sm text-slate-600 mb-4">
-                    {selectedAgent.greeting}
-                  </p>
-                  <Badge className={`bg-gradient-to-r ${selectedAgent.color} text-white border-0`}>
-                    Start chatting below
-                  </Badge>
+                    <motion.div
+                      className="w-2 h-2 bg-green-400 rounded-full shadow-lg"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                    />
+                  </h2>
+                  <p className="text-sm text-white/80 font-medium">AI-Powered Assistant</p>
                 </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    onClick={createNewConversation}
+                    size="sm"
+                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30 h-10 rounded-xl shadow-lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Chat
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Messages Area - Enhanced Design */}
+          <div className="h-[550px] overflow-y-auto p-6 space-y-5 bg-gradient-to-br from-slate-50/50 via-purple-50/20 to-blue-50/30 relative">
+            {/* Subtle Pattern Overlay */}
+            <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(100 100 100) 1px, transparent 0)',
+              backgroundSize: '24px 24px'
+            }} />
+            {messages.length === 0 && (
+              <div className="flex items-center justify-center h-full relative z-10">
+                <motion.div 
+                  className="text-center max-w-md"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <motion.div 
+                    className={`w-20 h-20 bg-gradient-to-br ${selectedAgent.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl`}
+                    animate={{ 
+                      y: [0, -10, 0],
+                      rotate: [0, 5, -5, 0]
+                    }}
+                    transition={{ 
+                      repeat: Infinity, 
+                      duration: 4,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <selectedAgent.icon className="w-10 h-10 text-white" />
+                  </motion.div>
+                  
+                  <motion.h3 
+                    className="text-2xl font-bold text-slate-900 mb-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {selectedAgent.name}
+                  </motion.h3>
+                  
+                  <motion.p 
+                    className="text-sm text-slate-600 mb-6 leading-relaxed"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    {selectedAgent.greeting}
+                  </motion.p>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <Badge className={`bg-gradient-to-r ${selectedAgent.color} text-white border-0 px-4 py-2 text-sm shadow-lg`}>
+                      <Sparkles className="w-3 h-3 mr-2" />
+                      Ready to assist
+                    </Badge>
+                  </motion.div>
+                </motion.div>
               </div>
             )}
             
@@ -404,54 +528,108 @@ export default function AIHub() {
             </AnimatePresence>
             
             {isSending && (
-              <div className="flex gap-3 justify-start">
-                <div className={`h-8 w-8 rounded-xl bg-gradient-to-r ${selectedAgent.color} flex items-center justify-center flex-shrink-0`}>
-                  <selectedAgent.icon className="w-4 h-4 text-white" />
-                </div>
-                <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                    <span className="text-sm text-slate-500">Thinking...</span>
+              <motion.div 
+                className="flex gap-3 justify-start relative z-10"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <motion.div 
+                  className={`h-10 w-10 rounded-2xl bg-gradient-to-br ${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <selectedAgent.icon className="w-5 h-5 text-white" />
+                </motion.div>
+                <div className="bg-white/90 backdrop-blur-sm border border-slate-200/50 rounded-2xl px-5 py-3.5 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    >
+                      <Loader2 className="w-5 h-5 text-slate-400" />
+                    </motion.div>
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-2 h-2 bg-slate-400 rounded-full"
+                          animate={{ y: [0, -8, 0] }}
+                          transition={{ 
+                            repeat: Infinity, 
+                            duration: 0.6,
+                            delay: i * 0.1
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
             
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 bg-white border-t-2 border-purple-200">
+          {/* Input Area - Modern Design */}
+          <div className="p-5 bg-white/95 backdrop-blur-sm border-t border-slate-200/50">
             <div className="flex gap-3">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder={`Message ${selectedAgent.name}...`}
-                className="flex-1 min-h-[44px] max-h-[120px] resize-none border-purple-200 focus-visible:ring-purple-500"
-                rows={1}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!input.trim() || isSending}
-                className={`bg-gradient-to-r ${selectedAgent.color} hover:opacity-90 text-white px-6 h-11 touch-manipulation`}
-              >
-                {isSending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
+              <div className="flex-1 relative">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={`Ask ${selectedAgent.name} anything...`}
+                  className="flex-1 min-h-[52px] max-h-[120px] resize-none border-slate-200 focus-visible:ring-2 focus-visible:ring-purple-500/50 rounded-2xl bg-white/50 backdrop-blur-sm pr-12"
+                  rows={1}
+                />
+                {input.trim() && (
+                  <motion.button
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    onClick={() => setInput('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
                 )}
-              </Button>
+              </div>
+              
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!input.trim() || isSending}
+                  className={`bg-gradient-to-r ${selectedAgent.color} hover:opacity-90 text-white px-6 h-[52px] rounded-2xl shadow-lg disabled:opacity-50 touch-manipulation relative overflow-hidden`}
+                >
+                  {isSending && (
+                    <motion.div
+                      className="absolute inset-0 bg-white/20"
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                    />
+                  )}
+                  {isSending ? (
+                    <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+                  ) : (
+                    <Send className="w-5 h-5 relative z-10" />
+                  )}
+                </Button>
+              </motion.div>
             </div>
             
-            <p className="text-xs text-slate-500 mt-2">
+            <motion.p 
+              className="text-xs text-slate-500 mt-3 flex items-center gap-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Sparkles className="w-3 h-3" />
               Press Enter to send • Shift+Enter for new line
-            </p>
+            </motion.p>
           </div>
         </div>
 
