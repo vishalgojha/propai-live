@@ -293,7 +293,7 @@ export default function AIHub() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors closeButton />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
@@ -328,10 +328,10 @@ export default function AIHub() {
                 transition={{ delay: idx * 0.1 }}
                 whileHover={{ scale: isActive ? 1 : 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className={`group relative p-6 rounded-3xl border-2 transition-all text-left touch-manipulation overflow-hidden ${
+                className={`group relative p-6 rounded-xl border transition-all text-left touch-manipulation overflow-hidden ${
                   isActive
-                    ? 'bg-white border-purple-300 shadow-2xl'
-                    : 'bg-white/60 backdrop-blur-sm border-slate-200 hover:border-purple-200 hover:shadow-lg'
+                    ? 'bg-white border-slate-900 shadow-lg'
+                    : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
                 }`}
               >
                 {/* Gradient Overlay for Active */}
@@ -395,17 +395,17 @@ export default function AIHub() {
           })}
         </div>
 
-        {/* Chat Interface - Modern Glass Design */}
+        {/* Chat Interface - Professional */}
         <motion.div 
-          className="bg-white/90 backdrop-blur-2xl rounded-3xl border border-purple-200/50 shadow-2xl overflow-hidden"
+          className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
           
-          {/* Chat Header - Glassmorphism */}
+          {/* Chat Header */}
           <motion.div 
-            className={`bg-gradient-to-r ${selectedAgent.color} p-5 relative overflow-hidden`}
+            className="bg-slate-900 p-5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >

@@ -120,7 +120,7 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors closeButton />
 
       <SEO
@@ -132,35 +132,9 @@ export default function Home() {
         canonical={typeof window !== 'undefined' ? window.location.origin : 'https://propai.live'}
       />
 
-      {/* Hero Section - Enhanced Animations */}
-      <section className="relative bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50 overflow-hidden">
-        <motion.div 
-          className="absolute top-20 right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl"
-          animate={{ 
-            x: [0, 30, 0],
-            y: [0, -20, 0],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: 8,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          className="absolute bottom-20 left-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl"
-          animate={{ 
-            x: [0, -40, 0],
-            y: [0, 30, 0],
-            scale: [1, 1.15, 1]
-          }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: 10,
-            ease: "easeInOut",
-            delay: 1
-          }}
-        />
+      {/* Hero Section - Professional */}
+      <section className="relative bg-white overflow-hidden border-b border-slate-200">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -174,14 +148,8 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
-                <motion.div
-                  animate={{ rotate: [0, 15, -15, 0] }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                >
-                  <Zap className="w-4 h-4" />
-                </motion.div>
-                Real-time property data > pretty pictures
+              <Badge variant="outline" className="mb-6 border-slate-300 text-slate-700 px-3 py-1.5 text-xs font-medium">
+                Real-time data • Zero fluff
               </Badge>
             </motion.div>
 
@@ -189,7 +157,7 @@ export default function Home() {
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
               WhatsApp → Deal-ready
               <br />
-              <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-slate-900">
                 property listings
               </span>
             </h1>
@@ -201,33 +169,27 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   onClick={() => navigate(createPageUrl("SmartFeed"))}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group touch-manipulation relative overflow-hidden"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-12 px-8 rounded-lg shadow-sm text-base group touch-manipulation"
                 >
-                  <motion.div
-                    className="absolute inset-0 bg-white/10"
-                    initial={{ x: '-100%' }}
-                    whileHover={{ x: '100%' }}
-                    transition={{ duration: 0.6 }}
-                  />
-                  <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform relative z-10" />
-                  <span className="relative z-10">Explore SmartFeed (Live Listings)</span>
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform relative z-10" />
+                  <Search className="w-5 h-5 mr-2" />
+                  Browse Live Listings
+                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </motion.div>
               <motion.a
                 href={base44.agents.getWhatsAppConnectURL('chariot_master')}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg transition-all touch-manipulation"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-medium h-12 px-8 rounded-lg text-base transition-all touch-manipulation"
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <MessageCircle className="w-5 h-5" />
-                Connect WhatsApp AI
+                WhatsApp AI
               </motion.a>
             </div>
 

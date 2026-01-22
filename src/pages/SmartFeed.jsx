@@ -636,7 +636,7 @@ export default function SmartFeed() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors closeButton />
 
       {/* ✅ Enhanced SEO with structured data for search */}

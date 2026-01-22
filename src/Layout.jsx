@@ -158,61 +158,43 @@ export default function Layout({ children, currentPageName }) {
       <ServiceWorkerSetup />
       
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo - Enhanced Animation */}
+            {/* Logo - Trust-first Design */}
             <Link to={createPageUrl("Home")} className="flex items-center gap-2 group touch-manipulation">
               <motion.div 
-                className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md relative overflow-hidden"
-                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-md"
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <motion.div
-                  className="absolute inset-0 bg-white/20"
-                  animate={{ 
-                    x: ['-100%', '100%'],
-                  }}
-                  transition={{ 
-                    repeat: Infinity, 
-                    duration: 3,
-                    ease: "linear"
-                  }}
-                />
-                <Zap className="w-6 h-6 text-white fill-white relative z-10" />
+                <Zap className="w-6 h-6 text-white" />
               </motion.div>
               <motion.span 
-                className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight"
+                className="text-xl font-bold text-slate-900 tracking-tight"
                 whileHover={{ scale: 1.02 }}
               >
                 PropAI Live
               </motion.span>
             </Link>
 
-            {/* Desktop Navigation - Modern Animations */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop Navigation - Professional */}
+            <nav className="hidden md:flex items-center gap-2">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <motion.div key={item.name} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <motion.div key={item.name} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold touch-manipulation relative overflow-hidden ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium touch-manipulation ${
                         isActive
-                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg"
-                          : "text-slate-700 hover:bg-purple-50"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      {isActive && (
-                        <motion.div
-                          className="absolute inset-0 bg-white/10"
-                          layoutId="activeNav"
-                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                        />
-                      )}
-                      <item.icon className="w-4 h-4 relative z-10" />
-                      <span className="text-sm relative z-10">{item.name}</span>
+                      <item.icon className="w-4 h-4" />
+                      <span className="text-sm">{item.name}</span>
                     </Link>
                   </motion.div>
                 );
@@ -252,7 +234,7 @@ export default function Layout({ children, currentPageName }) {
                   ) : (
                     <Button
                       onClick={handleLogin}
-                      className="ml-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-md touch-manipulation"
+                      className="ml-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm touch-manipulation"
                     >
                       <User className="w-4 h-4 mr-2" />
                       Login
