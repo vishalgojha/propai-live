@@ -1,0 +1,658 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Activity, TrendingUp, Users, Home, FileText, Eye, MessageCircle,
+  RefreshCw, Zap, Clock, MapPin, Star, ArrowUp, ArrowDown, Minus,
+  Calendar, DollarSign, Building2, Target, Shield, AlertCircle
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { format, subDays, startOfDay, endOfDay, formatDistanceToNow } from "date-fns";
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
+} from "recharts";
+import { toast, Toaster } from "sonner";
+import LiveActivityFeed from "../components/dashboard/LiveActivityFeed";
+
+export default function LiveDashboard() {
+  const navigate = useNavigate();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [countdown, setCountdown] = useState(30);
+
+  // Check authorization
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isPasswordAuthed = sessionStorage.getItem('admin_authenticated') === 'true';
+      if (!isPasswordAuthed) {
+        navigate(createPageUrl("AdminLogin"));
+        return;
+      }
+
+      try {
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (error) {
+        navigate(createPageUrl("Home"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  // Countdown timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) return 30;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Real-time data queries (30s refresh)
+  const { data: properties = [], refetch: refetchProperties } = useQuery({
+    queryKey: ['live-properties'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    enabled: isAuthorized,
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  });
+
+  const { data: brokers = [], refetch: refetchBrokers } = useQuery({
+    queryKey: ['live-brokers'],
+    queryFn: () => base44.entities.Broker.list('-last_activity'),
+    enabled: isAuthorized,
+    staleTime: 0,
+    refetchInterval: 30000,
+  });
+
+  const { data: requirements = [], refetch: refetchRequirements } = useQuery({
+    queryKey: ['live-requirements'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    enabled: isAuthorized,
+    staleTime: 0,
+    refetchInterval: 30000,
+  });
+
+  const { data: interactions = [] } = useQuery({
+    queryKey: ['live-interactions'],
+    queryFn: () => base44.entities.PropertyInteraction.list('-created_date'),
+    enabled: isAuthorized,
+    staleTime: 0,
+    refetchInterval: 30000,
+  });
+
+  // Manual refresh
+  const handleManualRefresh = async () => {
+    setLastUpdate(new Date());
+    setCountdown(30);
+    await Promise.all([
+      refetchProperties(),
+      refetchBrokers(),
+      refetchRequirements(),
+    ]);
+    toast.success("Dashboard refreshed!", { duration: 2000 });
+  };
+
+  // Calculate real-time metrics
+  const metrics = useMemo(() => {
+    const activeProperties = properties.filter(p => p.status === "Active" && !p.is_duplicate);
+    const activeBrokers = brokers.filter(b => b.status === "Active");
+    const activeRequirements = requirements.filter(r => r.status === "Active");
+
+    // Today's stats
+    const today = startOfDay(new Date());
+    const todayProperties = properties.filter(p =>
+      new Date(p.created_date) >= today
+    );
+    const todayInteractions = interactions.filter(i =>
+      new Date(i.created_date) >= today
+    );
+
+    // Yesterday's stats for comparison
+    const yesterday = startOfDay(subDays(new Date(), 1));
+    const yesterdayEnd = endOfDay(subDays(new Date(), 1));
+    const yesterdayProperties = properties.filter(p => {
+      const date = new Date(p.created_date);
+      return date >= yesterday && date <= yesterdayEnd;
+    });
+
+    // Calculate trends
+    const propertyTrend = yesterdayProperties.length > 0
+      ? ((todayProperties.length - yesterdayProperties.length) / yesterdayProperties.length) * 100
+      : 0;
+
+    // Total views and inquiries
+    const totalViews = properties.reduce((sum, p) => sum + (p.views_count || 0), 0);
+    const totalInquiries = interactions.filter(i => i.interaction_type === 'whatsapp' || i.interaction_type === 'inquiry').length;
+
+    // High trust brokers
+    const highTrustBrokers = brokers.filter(b => (b.trust_score || 0) >= 85).length;
+
+    // Properties with photos
+    const propertiesWithPhotos = properties.filter(p => p.images && p.images.length > 0).length;
+    const photoCompletionRate = properties.length > 0 ? (propertiesWithPhotos / properties.length) * 100 : 0;
+
+    return {
+      activeProperties: activeProperties.length,
+      totalProperties: properties.length,
+      activeBrokers: activeBrokers.length,
+      totalBrokers: brokers.length,
+      activeRequirements: activeRequirements.length,
+      totalRequirements: requirements.length,
+      todayProperties: todayProperties.length,
+      todayInteractions: todayInteractions.length,
+      propertyTrend,
+      totalViews,
+      totalInquiries,
+      highTrustBrokers,
+      photoCompletionRate,
+    };
+  }, [properties, brokers, requirements, interactions]);
+
+  // Last 7 days activity
+  const weeklyActivity = useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const dayStart = startOfDay(date);
+      const dayEnd = endOfDay(date);
+
+      const dayProperties = properties.filter(p => {
+        const created = new Date(p.created_date);
+        return created >= dayStart && created <= dayEnd;
+      });
+
+      const dayInteractions = interactions.filter(i => {
+        const created = new Date(i.created_date);
+        return created >= dayStart && created <= dayEnd;
+      });
+
+      days.push({
+        date: format(date, 'EEE'),
+        properties: dayProperties.length,
+        interactions: dayInteractions.length,
+      });
+    }
+    return days;
+  }, [properties, interactions]);
+
+  // Top locations
+  const topLocations = useMemo(() => {
+    const locationCounts = {};
+    properties.forEach(p => {
+      if (p.location) {
+        locationCounts[p.location] = (locationCounts[p.location] || 0) + 1;
+      }
+    });
+
+    return Object.entries(locationCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+  }, [properties]);
+
+  // Listing type breakdown
+  const listingTypeBreakdown = useMemo(() => {
+    const types = { Sale: 0, Rent: 0, Lease: 0, 'Pre Leased': 0 };
+    properties.forEach(p => {
+      if (p.listing_type && types.hasOwnProperty(p.listing_type)) {
+        types[p.listing_type]++;
+      }
+    });
+
+    return Object.entries(types).map(([name, value]) => ({ name, value }));
+  }, [properties]);
+
+  // Generate detailed activity feed
+  const detailedActivities = useMemo(() => {
+    const activities = [];
+
+    // Recent properties (last 20)
+    properties.slice(0, 20).forEach(p => {
+      activities.push({
+        id: `prop-${p.id}`,
+        type: 'property_created',
+        description: `${p.bhk || 'N/A'} in ${p.location || 'Unknown'} • ₹${p.price || '?'}${p.price_unit === 'crores' ? 'Cr' : 'L'}`,
+        timestamp: p.created_date,
+        meta: [
+          p.listing_type,
+          p.building_name || p.location,
+          p.broker_name || 'Broker'
+        ].filter(Boolean),
+      });
+    });
+
+    // Recent requirements (last 15)
+    requirements.slice(0, 15).forEach(r => {
+      activities.push({
+        id: `req-${r.id}`,
+        type: 'requirement_created',
+        description: `Looking for ${r.bhk_preference?.join('/') || 'Any'} in ${r.preferred_locations?.[0] || 'Mumbai'}`,
+        timestamp: r.created_date,
+        meta: [
+          r.listing_type,
+          r.urgency || 'Medium',
+          `₹${r.budget_min || '?'}-${r.budget_max || '?'}${r.budget_unit === 'crores' ? 'Cr' : 'L'}`
+        ].filter(Boolean),
+      });
+    });
+
+    // Recent interactions (last 30)
+    interactions.slice(0, 30).forEach(i => {
+      const type = i.interaction_type === 'whatsapp' ? 'whatsapp_contact' : 'property_view';
+      activities.push({
+        id: `int-${i.id}`,
+        type,
+        description: i.interaction_type === 'whatsapp'
+          ? `WhatsApp inquiry from ${i.user_name || 'User'}`
+          : `Property viewed by ${i.user_name || 'User'}`,
+        timestamp: i.created_date,
+        meta: [
+          i.source || 'Direct',
+          i.device_type || 'Unknown device'
+        ].filter(Boolean),
+      });
+    });
+
+    // Check for high-trust broker achievements
+    brokers.forEach(b => {
+      if ((b.trust_score || 0) >= 85 && b.updated_date) {
+        const wasRecentlyUpdated = new Date(b.updated_date) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+        if (wasRecentlyUpdated && b.trust_score !== null && b.trust_score >= 85) {
+          activities.push({
+            id: `broker-trust-${b.id}`,
+            type: 'high_trust_achieved',
+            description: `${b.name || 'A broker'} achieved high trust score`,
+            timestamp: b.updated_date,
+            meta: [
+              `Trust: ${b.trust_score}/100`,
+              `${b.active_listings_count || 0} listings`
+            ],
+          });
+        }
+      }
+    });
+
+    // Sort by timestamp (newest first)
+    return activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [properties, requirements, interactions, brokers]);
+
+  const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Activity className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-slate-600 font-medium">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) return null;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-24 md:pb-8">
+      <Toaster position="top-center" richColors closeButton />
+
+      {/* ✅ FIXED: Responsive Header */}
+      <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg md:text-xl font-bold text-slate-900">Live Dashboard</h1>
+                <p className="text-xs text-slate-500">Real-time platform analytics</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Auto-refresh countdown */}
+              <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600 bg-slate-100 px-2 md:px-3 py-1.5 rounded-lg">
+                <Clock className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="font-mono">{countdown}s</span>
+              </div>
+
+              {/* Manual refresh */}
+              <Button
+                onClick={handleManualRefresh}
+                size="sm"
+                variant="outline"
+                className="border-purple-300 hover:bg-purple-50 text-xs md:text-sm"
+              >
+                <RefreshCw className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Refresh</span>
+              </Button>
+
+              {/* Back to Admin */}
+              <Button
+                onClick={() => navigate(createPageUrl("Admin"))}
+                size="sm"
+                variant="outline"
+                className="text-xs md:text-sm"
+              >
+                Back
+              </Button>
+            </div>
+          </div>
+
+          {/* Last update */}
+          <p className="text-xs text-slate-500 mt-2">
+            Updated: {format(lastUpdate, "HH:mm:ss")}
+          </p>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
+
+        {/* ✅ FIXED: Responsive Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {/* Active Properties */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <Home className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <Badge className="bg-blue-600 text-white text-xs">
+                  {metrics.todayProperties} today
+                </Badge>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+                {metrics.activeProperties}
+              </p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Active Properties</p>
+              <div className="flex items-center gap-2 text-xs">
+                {metrics.propertyTrend > 0 ? (
+                  <>
+                    <ArrowUp className="w-3 h-3 text-green-600" />
+                    <span className="text-green-600 font-semibold">
+                      +{metrics.propertyTrend.toFixed(1)}%
+                    </span>
+                  </>
+                ) : metrics.propertyTrend < 0 ? (
+                  <>
+                    <ArrowDown className="w-3 h-3 text-red-600" />
+                    <span className="text-red-600 font-semibold">
+                      {metrics.propertyTrend.toFixed(1)}%
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Minus className="w-3 h-3 text-slate-400" />
+                    <span className="text-slate-400">No change</span>
+                  </>
+                )}
+                <span className="text-slate-500">vs yesterday</span>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Active Brokers */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                  <Users className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <Badge className="bg-amber-500 text-white text-xs flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  {metrics.highTrustBrokers}
+                </Badge>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+                {metrics.activeBrokers}
+              </p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Active Brokers</p>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Star className="w-3 h-3 text-amber-500" />
+                {((metrics.highTrustBrokers / metrics.totalBrokers) * 100).toFixed(0)}% trusted
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Active Requirements */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <Badge className="bg-emerald-600 text-white text-xs">
+                  Active
+                </Badge>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+                {metrics.activeRequirements}
+              </p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Requirements</p>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <FileText className="w-3 h-3" />
+                {metrics.totalRequirements} total
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Total Interactions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-600 rounded-xl flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <Badge className="bg-orange-600 text-white text-xs">
+                  {metrics.todayInteractions}
+                </Badge>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+                {metrics.totalInquiries}
+              </p>
+              <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">Inquiries</p>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Eye className="w-3 h-3" />
+                {metrics.totalViews.toLocaleString()} views
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* ✅ FIXED: Responsive Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Weekly Activity Chart */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+              <span className="text-sm md:text-base">7-Day Activity</span>
+            </h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={weeklyActivity}>
+                <defs>
+                  <linearGradient id="colorProperties" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorInteractions" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="date" stroke="#64748b" fontSize={10} />
+                <YAxis stroke="#64748b" fontSize={10} />
+                <Tooltip
+                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="properties"
+                  stroke="#3b82f6"
+                  fillOpacity={1}
+                  fill="url(#colorProperties)"
+                  name="Properties"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="interactions"
+                  stroke="#10b981"
+                  fillOpacity={1}
+                  fill="url(#colorInteractions)"
+                  name="Interactions"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Listing Type Breakdown */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+              <span className="text-sm md:text-base">Listing Types</span>
+            </h3>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={listingTypeBreakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {listingTypeBreakdown.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex-1 space-y-2 w-full md:w-auto">
+                {listingTypeBreakdown.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                      />
+                      <span className="text-xs md:text-sm text-slate-700">{item.name}</span>
+                    </div>
+                    <span className="text-xs md:text-sm font-bold text-slate-900">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* ✅ FIXED: Responsive Bottom Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Top Locations */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+              <MapPin className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+              <span className="text-sm md:text-base">Top Locations</span>
+            </h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={topLocations} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis type="number" stroke="#64748b" fontSize={10} />
+                <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} width={80} />
+                <Tooltip
+                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Bar dataKey="count" fill="#10b981" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Live Activity Feed */}
+          <LiveActivityFeed
+            activities={detailedActivities}
+            isLoading={false}
+            lastUpdateTime={formatDistanceToNow(lastUpdate, { addSuffix: true })}
+          />
+        </div>
+
+        {/* ✅ FIXED: Responsive System Health */}
+        <Card className="p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-bold text-slate-900 mb-3 md:mb-4 flex items-center gap-2">
+            <Activity className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+            <span className="text-sm md:text-base">System Health</span>
+          </h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="p-3 md:p-4 bg-blue-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Data Quality</p>
+              <p className="text-xl md:text-2xl font-bold text-blue-600">
+                {metrics.photoCompletionRate.toFixed(0)}%
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Photos</p>
+            </div>
+            <div className="p-3 md:p-4 bg-green-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Active Rate</p>
+              <p className="text-xl md:text-2xl font-bold text-green-600">
+                {((metrics.activeProperties / metrics.totalProperties) * 100).toFixed(0)}%
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Properties</p>
+            </div>
+            <div className="p-3 md:p-4 bg-purple-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Trust</p>
+              <p className="text-xl md:text-2xl font-bold text-purple-600">
+                {((metrics.highTrustBrokers / metrics.totalBrokers) * 100).toFixed(0)}%
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Brokers</p>
+            </div>
+            <div className="p-3 md:p-4 bg-amber-50 rounded-xl">
+              <p className="text-xs md:text-sm text-slate-600 mb-1">Engagement</p>
+              <p className="text-xl md:text-2xl font-bold text-amber-600">
+                {(metrics.totalProperties > 0 ? (metrics.totalViews / metrics.totalProperties) : 0).toFixed(1)}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Views/prop</p>
+            </div>
+          </div>
+        </Card>
+
+      </div>
+    </div>
+  );
+}

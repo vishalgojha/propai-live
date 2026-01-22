@@ -137,16 +137,27 @@ export default function Layout({ children, currentPageName }) {
 
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
-    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "Map Search", icon: MapPin, path: createPageUrl("MapSearch") },
   ];
 
-  // Add features for logged-in brokers only
-  if (user?.broker_id) {
+  // Add features for logged-in users
+  if (user) {
+    if (user.broker_id) {
+        navItems.push(
+          { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
+          { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
+        );
+      }
+      navItems.push(
+        { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
+      );
+    }
+
+    // Market Insights for everyone
     navItems.push(
-      { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
-      { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
+      { name: "Market Insights", icon: BarChart3, path: createPageUrl("MarketInsights") }
     );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -380,10 +391,19 @@ export default function Layout({ children, currentPageName }) {
               </p>
             </div>
 
-            {/* Browse */}
+            {/* Quick Links - Explore */}
             <div className="md:col-span-2">
-              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Browse</h4>
+              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Explore</h4>
               <ul className="space-y-3 text-sm text-slate-600 font-light">
+                <li>
+                  <Link 
+                    to={createPageUrl("SmartFeed")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    SmartFeed
+                  </Link>
+                </li>
                 <li>
                   <Link 
                     to={createPageUrl("SmartFeed") + "?propertyCategory=Residential"} 
@@ -408,7 +428,7 @@ export default function Layout({ children, currentPageName }) {
                     className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    For Rent
+                    Rent
                   </Link>
                 </li>
                 <li>
@@ -417,7 +437,98 @@ export default function Layout({ children, currentPageName }) {
                     className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
                   >
                     <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    For Sale
+                    Buy
+                  </Link>
+                </li>
+
+                <li>
+                  <Link 
+                    to={createPageUrl("DeveloperDirectory")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Developers
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("Blogs")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Blog & Guides
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("BrokerNetwork")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Broker Network
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div className="md:col-span-2">
+              <h4 className="font-bold mb-4 text-slate-900 text-sm uppercase tracking-wider">Resources</h4>
+              <ul className="space-y-3 text-sm text-slate-600 font-light">
+                <li>
+                  <Link 
+                    to={createPageUrl("Home") + "#how-it-works"} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    How It Works
+                  </Link>
+                </li>
+
+                <li>
+                  <Link 
+                    to={createPageUrl("AdminDashboard")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Analytics
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("AboutUs")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("FAQ")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("Blogs") + "?category=Expat%20Series"} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span>Expat Corner</span>
+                    <span className="ml-1 text-xs">🌍</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to={createPageUrl("Sitemap")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Sitemap
                   </Link>
                 </li>
               </ul>
