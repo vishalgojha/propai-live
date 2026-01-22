@@ -248,10 +248,10 @@ export default function Home() {
             <Link
               key={locality.slug}
               to={`${createPageUrl("SmartFeed")}?location_multi=${encodeURIComponent(locality.name)}`}
-              className="bg-white rounded-2xl p-6 border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group"
+              className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all group"
             >
               <div className="text-3xl mb-2">{locality.emoji}</div>
-              <h3 className="font-bold text-slate-900 mb-1 group-hover:text-purple-700 transition-colors">
+              <h3 className="font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
                 {locality.name}
               </h3>
               <p className="text-xs text-slate-600">View properties →</p>
@@ -263,7 +263,7 @@ export default function Home() {
         <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
           <Link
             to={`${createPageUrl("SmartFeed")}?listingType=Rent&propertyCategory=Residential`}
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all text-center group"
+            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
           >
             <HomeIcon className="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-slate-900 mb-1">Rent Flats</h3>
@@ -272,18 +272,18 @@ export default function Home() {
 
           <Link
             to={`${createPageUrl("SmartFeed")}?listingType=Sale&propertyCategory=Residential`}
-            className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all text-center group"
+            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
           >
-            <Building2 className="w-8 h-8 text-purple-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <Building2 className="w-8 h-8 text-slate-700 mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-slate-900 mb-1">Buy Flats</h3>
             <p className="text-xs text-slate-600">Residential sale</p>
           </Link>
 
           <Link
             to={`${createPageUrl("SmartFeed")}?propertyCategory=Commercial`}
-            className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200 hover:border-amber-400 hover:shadow-lg transition-all text-center group"
+            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
           >
-            <Building2 className="w-8 h-8 text-amber-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <Building2 className="w-8 h-8 text-slate-700 mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-slate-900 mb-1">Commercial</h3>
             <p className="text-xs text-slate-600">Offices & retail</p>
           </Link>
@@ -301,7 +301,7 @@ export default function Home() {
           </div>
           <Button
             onClick={() => navigate(createPageUrl("SmartFeed"))}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm"
           >
             View All
             <ArrowRight className="w-4 h-4 ml-2" />
@@ -413,7 +413,7 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50" id="how-it-works">
+      <section className="py-20 bg-white border-t border-slate-200" id="how-it-works">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-slate-900 mb-6">
             How It Works
@@ -471,7 +471,7 @@ export default function Home() {
             </motion.div>
           </div>
 
-          <div className="mt-12 bg-white rounded-2xl p-6 border-2 border-green-200">
+          <div className="mt-12 bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
             <p className="text-slate-700">
               <strong className="text-green-700">Result:</strong> Fresh data, zero spam, full transparency. No manual entry. No duplicate listings.
             </p>
@@ -480,7 +480,7 @@ export default function Home() {
       </section>
 
       {/* Trust Indicators */}
-      <section className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
+      <section className="bg-slate-900 py-16 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <p className="text-white/90 text-sm font-light italic">
@@ -498,7 +498,7 @@ export default function Home() {
                 transition={{ delay: idx * 0.1 }}
               >
                 <div className="text-4xl md:text-5xl font-bold mb-2">{stat.number}</div>
-                <div className="text-blue-100 text-sm">{stat.label}</div>
+                <div className="text-slate-400 text-sm">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -525,7 +525,7 @@ export default function Home() {
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-12 px-8 rounded-lg shadow-sm"
             >
               <Search className="w-5 h-5 mr-2" />
               Browse Properties
@@ -536,7 +536,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50">
+      <section className="py-16 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
             Ready to See the Difference?
@@ -548,7 +548,7 @@ export default function Home() {
             <Button
               onClick={() => setShowInlineChat(true)}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg touch-manipulation"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-12 px-8 rounded-lg shadow-sm touch-manipulation"
             >
               <Bot className="w-5 h-5 mr-2" />
               Chat with AI Assistant
@@ -556,7 +556,7 @@ export default function Home() {
             <Button
               onClick={() => navigate(createPageUrl("SmartFeed"))}
               size="lg"
-              className="bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl touch-manipulation"
+              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-medium h-12 px-8 rounded-lg touch-manipulation"
             >
               <Search className="w-5 h-5 mr-2" />
               Explore Properties

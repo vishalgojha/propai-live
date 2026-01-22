@@ -45,7 +45,7 @@ export default function Layout({ children, currentPageName }) {
 
     // Basic meta tags
     setMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-    setMetaTag('theme-color', '#8B5CF6');
+    setMetaTag('theme-color', '#1e293b');
     setMetaTag('author', 'PropAI Live');
     setMetaTag('robots', 'index, follow');
     
