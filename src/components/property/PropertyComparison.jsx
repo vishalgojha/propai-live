@@ -1,121 +1,120 @@
 import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { X, MapPin, Check, Minus } from "lucide-react";
+import { X, Check, Minus, MapPin, Building2, Maximize2 } from "lucide-react";
 
-export default function PropertyComparison({ properties, onClose }) {
+export default function PropertyComparison({ properties, isOpen, onClose }) {
   if (!properties || properties.length === 0) return null;
 
   const formatPrice = (price, unit) => {
-    if (unit === "crores") return `₹${price} Cr`;
-    if (price >= 100) return `₹${(price / 100).toFixed(2)} Cr`;
-    return `₹${price}L`;
+    if (unit === "crores") {
+      return `₹${price} Cr`;
+    }
+    return price >= 100 ? `₹${(price / 100).toFixed(2)} Cr` : `₹${price} L`;
   };
 
-  const comparisonFields = [
-    { key: 'price', label: 'Price', format: (p) => formatPrice(p.price, p.price_unit) },
-    { key: 'bhk', label: 'Configuration' },
-    { key: 'carpet_area', label: 'Carpet Area', format: (p) => `${p.carpet_area || '-'} sq.ft` },
-    { key: 'built_up_area', label: 'Built-up Area', format: (p) => `${p.built_up_area || '-'} sq.ft` },
-    { key: 'floor', label: 'Floor' },
-    { key: 'furnishing', label: 'Furnishing' },
-    { key: 'parking', label: 'Parking' },
-    { key: 'location', label: 'Location' },
-    { key: 'building_name', label: 'Building' },
-    { key: 'possession', label: 'Possession' },
-    { key: 'broker_trust_score', label: 'Broker Trust', format: (p) => `${p.broker_trust_score || 50}/100` },
+  const compareRows = [
+    { label: "BHK", key: "bhk" },
+    { label: "Price", key: "price", formatter: (p) => formatPrice(p.price, p.price_unit) },
+    { label: "Carpet Area", key: "carpet_area", formatter: (p) => p.carpet_area ? `${p.carpet_area} sq.ft` : "N/A" },
+    { label: "Location", key: "location" },
+    { label: "Building", key: "building_name", formatter: (p) => p.building_name || "N/A" },
+    { label: "Floor", key: "floor", formatter: (p) => p.floor ? `${p.floor}/${p.total_floors || '?'}` : "N/A" },
+    { label: "Furnishing", key: "furnishing" },
+    { label: "Parking", key: "parking", formatter: (p) => p.parking || "N/A" },
+    { label: "Possession", key: "possession", formatter: (p) => p.possession || "N/A" },
+    { label: "Listing Type", key: "listing_type" },
+    { label: "Broker Trust", key: "broker_trust_score", formatter: (p) => p.broker_trust_score ? `${p.broker_trust_score}/100` : "N/A" },
   ];
 
-  const getAllAmenities = () => {
-    const allAmenities = new Set();
-    properties.forEach(p => {
-      p.amenities?.forEach(a => allAmenities.add(a));
-    });
-    return Array.from(allAmenities);
-  };
-
-  const amenities = getAllAmenities();
-
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog open={isOpen} onClose={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Compare Properties ({properties.length})</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Compare Properties ({properties.length})</DialogTitle>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b">
-                <th className="text-left p-4 font-bold sticky left-0 bg-white z-10">Feature</th>
+              <tr className="bg-slate-50">
+                <th className="p-4 text-left font-bold text-slate-900 sticky left-0 bg-slate-50 border-r border-slate-200">
+                  Feature
+                </th>
                 {properties.map((property, idx) => (
-                  <th key={property.id} className="p-4 min-w-[200px]">
-                    <Card className="p-3 text-left">
-                      <Badge className="mb-2">{property.listing_type}</Badge>
-                      <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mb-2">
-                        {property.ai_title || `${property.bhk} in ${property.location}`}
-                      </h3>
-                      <p className="text-lg font-bold text-blue-600">
+                  <th key={property.id} className="p-4 min-w-[250px]">
+                    <div className="text-left">
+                      <p className="font-bold text-slate-900 mb-1">{property.bhk}</p>
+                      <p className="text-sm text-slate-600 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {property.location}
+                      </p>
+                      <p className="text-lg font-bold text-blue-600 mt-2">
                         {formatPrice(property.price, property.price_unit)}
                       </p>
-                    </Card>
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {comparisonFields.map(field => (
-                <tr key={field.key} className="border-b hover:bg-slate-50">
-                  <td className="p-4 font-semibold text-sm text-slate-700 sticky left-0 bg-white">
-                    {field.label}
+              {compareRows.map((row, rowIdx) => (
+                <tr key={rowIdx} className={rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                  <td className="p-4 font-semibold text-slate-700 sticky left-0 bg-inherit border-r border-slate-200">
+                    {row.label}
                   </td>
-                  {properties.map(property => (
-                    <td key={property.id} className="p-4 text-sm">
-                      {field.format ? field.format(property) : (property[field.key] || '-')}
-                    </td>
-                  ))}
+                  {properties.map((property) => {
+                    const value = row.formatter 
+                      ? row.formatter(property)
+                      : property[row.key] || "N/A";
+                    
+                    return (
+                      <td key={property.id} className="p-4 text-slate-900">
+                        {value}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
 
-              {amenities.length > 0 && (
-                <>
-                  <tr className="bg-slate-100">
-                    <td colSpan={properties.length + 1} className="p-4 font-bold text-sm">
-                      Amenities
-                    </td>
-                  </tr>
-                  {amenities.map(amenity => (
-                    <tr key={amenity} className="border-b hover:bg-slate-50">
-                      <td className="p-4 text-sm text-slate-700 sticky left-0 bg-white">
-                        {amenity}
-                      </td>
-                      {properties.map(property => (
-                        <td key={property.id} className="p-4 text-center">
-                          {property.amenities?.includes(amenity) ? (
-                            <Check className="w-5 h-5 text-green-600 mx-auto" />
-                          ) : (
-                            <Minus className="w-5 h-5 text-slate-300 mx-auto" />
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </>
-              )}
+              <tr className="bg-white">
+                <td className="p-4 font-semibold text-slate-700 sticky left-0 bg-white border-r border-slate-200">
+                  Amenities
+                </td>
+                {properties.map((property) => (
+                  <td key={property.id} className="p-4">
+                    <div className="flex flex-wrap gap-1">
+                      {property.amenities && property.amenities.length > 0 ? (
+                        property.amenities.slice(0, 5).map((amenity, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {amenity}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-slate-500 text-sm">None listed</span>
+                      )}
+                      {property.amenities && property.amenities.length > 5 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{property.amenities.length - 5} more
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                ))}
+              </tr>
             </tbody>
           </table>
         </div>
 
-        <div className="flex justify-end mt-4">
-          <Button onClick={onClose} variant="outline">
-            Close Comparison
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-slate-200">
+          <Button variant="outline" onClick={onClose}>
+            Close
           </Button>
         </div>
       </DialogContent>
