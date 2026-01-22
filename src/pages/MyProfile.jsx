@@ -99,8 +99,7 @@ export default function MyProfile() {
               setActiveTab('overview');
               toast.info('👋 Please complete your profile to unlock all features', {
                 description: 'Phone number and agency name are required',
-                duration: 10000,
-                className: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0'
+                duration: 10000
               });
             }
           }
@@ -246,8 +245,7 @@ export default function MyProfile() {
         
         toast.success('✅ Broker Profile Created!', {
           description: 'Welcome to PropAI Live',
-          duration: 3000,
-          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+          duration: 3000
         });
         
         console.log('🔄 Reloading page...');
@@ -353,8 +351,7 @@ export default function MyProfile() {
       
       setEditingProfile(false);
       toast.success('✅ Profile Updated!', {
-        duration: 3000,
-        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
+        duration: 3000
       });
     } catch (error) {
       console.error('❌ UPDATE PROFILE ERROR:', error);
@@ -673,52 +670,52 @@ export default function MyProfile() {
           </Card>
 
           {/* ✅ OPTION 2: CREATE NEW BROKER PROFILE */}
-          <Card className="p-6 bg-white border-2 border-slate-200">
+          <Card className="p-6 bg-white border border-slate-200">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-purple-600" />
+              <Building2 className="w-5 h-5 text-blue-600" />
               Create New Broker Profile
             </h3>
 
             <div className="space-y-4">
-              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
+              <div className="border border-blue-300 rounded-xl p-4 bg-blue-50">
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Your Name <span className="text-purple-600 font-bold">*REQUIRED</span>
+                  Your Name <span className="text-blue-600 font-bold">*REQUIRED</span>
                 </label>
                 <Input
                   type="text"
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                   placeholder="e.g., Ramesh Kumar"
-                  className="text-sm border-purple-400"
+                  className="text-sm"
                 />
               </div>
 
-              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
+              <div className="border border-blue-300 rounded-xl p-4 bg-blue-50">
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Phone Number (WhatsApp) <span className="text-purple-600 font-bold">*REQUIRED</span>
+                  Phone Number (WhatsApp) <span className="text-blue-600 font-bold">*REQUIRED</span>
                 </label>
                 <Input
                   type="tel"
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   placeholder="9820056789"
-                  className="text-sm font-mono border-purple-400"
+                  className="text-sm font-mono"
                 />
-                <p className="text-xs text-purple-600 mt-2 font-semibold">
+                <p className="text-xs text-blue-600 mt-2 font-semibold">
                   ⚠️ Required for WhatsApp AI agent and client contacts
                 </p>
               </div>
 
-              <div className="border-2 border-purple-300 rounded-xl p-4 bg-purple-50">
+              <div className="border border-blue-300 rounded-xl p-4 bg-blue-50">
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Agency Name <span className="text-purple-600 font-bold">*REQUIRED</span>
+                  Agency Name <span className="text-blue-600 font-bold">*REQUIRED</span>
                 </label>
                 <Input
                   type="text"
                   value={profileData.agency_name}
                   onChange={(e) => setProfileData({ ...profileData, agency_name: e.target.value })}
                   placeholder="e.g., Bandra Homes"
-                  className="text-sm border-purple-400"
+                  className="text-sm"
                 />
               </div>
 
@@ -885,25 +882,25 @@ export default function MyProfile() {
 
         {brokerMetrics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Package className="w-4 h-4 text-sky-600" />
+                <Package className="w-4 h-4 text-blue-600" />
                 Active Listings
               </p>
-              <p className="text-3xl font-bold text-sky-600">{brokerMetrics.activeListings}</p>
+              <p className="text-3xl font-bold text-blue-600">{brokerMetrics.activeListings}</p>
               <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalListings} total</p>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Target className="w-4 h-4 text-purple-600" />
+                <Target className="w-4 h-4 text-blue-600" />
                 Active Requirements
               </p>
-              <p className="text-3xl font-bold text-purple-600">{brokerMetrics.activeRequirements}</p>
+              <p className="text-3xl font-bold text-blue-600">{brokerMetrics.activeRequirements}</p>
               <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalRequirements} total</p>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
                 <Users className="w-4 h-4 text-blue-600" />
                 Team Members
@@ -911,21 +908,21 @@ export default function MyProfile() {
               <p className="text-3xl font-bold text-blue-600">{enrichedTeamMembers.length}</p>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Star className="w-4 h-4 text-amber-600" />
+                <Star className="w-4 h-4 text-blue-600" />
                 Trust Score
               </p>
-              <p className="text-3xl font-bold text-amber-600">{brokerProfile.trust_score || 50}</p>
+              <p className="text-3xl font-bold text-blue-600">{brokerProfile.trust_score || 50}</p>
             </Card>
           </div>
         )}
 
         {/* ✅ NEW: PREFERRED AREAS CARD */}
-        <Card className="p-6 bg-white border-2 border-purple-200 mb-6">
+        <Card className="p-6 bg-white border border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-purple-600" />
+              <MapPin className="w-5 h-5 text-blue-600" />
               My Preferred Areas ({selectedAreas.length})
             </h3>
             <Button
@@ -937,7 +934,6 @@ export default function MyProfile() {
               }}
               variant="outline"
               size="sm"
-              className="border-purple-300 text-purple-700"
             >
               {editingAreas ? 'Cancel' : <><Edit className="w-3 h-3 mr-1" /> Edit Areas</>}
             </Button>
@@ -994,7 +990,7 @@ export default function MyProfile() {
                   {selectedAreas.map((area) => (
                     <Badge
                       key={area}
-                      className="bg-purple-100 text-purple-800 border-purple-300 text-sm px-3 py-1.5"
+                      className="bg-blue-100 text-blue-800 border-blue-300 text-sm px-3 py-1.5"
                     >
                       <Star className="w-3 h-3 mr-1" fill="currentColor" />
                       {area}
@@ -1002,8 +998,8 @@ export default function MyProfile() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 bg-purple-50 rounded-xl border-2 border-purple-200">
-                  <MapPin className="w-12 h-12 text-purple-300 mx-auto mb-3" />
+                <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-200">
+                  <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-sm text-slate-600 mb-3">No preferred areas set yet</p>
                   <Button
                     onClick={() => setEditingAreas(true)}
@@ -1019,10 +1015,10 @@ export default function MyProfile() {
         </Card>
 
         {/* ✅ FIXED: PROFILE DETAILS CARD */}
-        <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+        <Card className="p-6 bg-white border border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-purple-600" />
+              <Building2 className="w-5 h-5 text-blue-600" />
               Profile Details
             </h3>
             <Button
@@ -1040,7 +1036,6 @@ export default function MyProfile() {
               }}
               variant="outline"
               size="sm"
-              className="border-purple-300 text-purple-700"
             >
               {editingProfile ? 'Cancel' : <><Edit className="w-3 h-3 mr-1" /> Edit</>}
             </Button>
@@ -1110,29 +1105,29 @@ export default function MyProfile() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <User className="w-5 h-5 text-purple-600" />
+                <User className="w-5 h-5 text-blue-600" />
                 <div>
                   <span className="text-xs text-slate-600 block">Name:</span>
                   <span className="font-semibold text-slate-900">
-                    {brokerProfile.name || <span className="text-purple-600 italic">Not set</span>}
+                    {brokerProfile.name || <span className="text-blue-600 italic">Not set</span>}
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
-                <Phone className="w-6 h-6 text-purple-600" />
+              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
+                <Phone className="w-6 h-6 text-blue-600" />
                 <div>
                   <span className="text-xs text-slate-600 block">WhatsApp:</span>
-                  <span className="text-lg font-bold font-mono text-purple-900">
-                    {brokerProfile.phone || <span className="text-purple-600 italic text-base">Not set</span>}
+                  <span className="text-lg font-bold font-mono text-blue-900">
+                    {brokerProfile.phone || <span className="text-blue-600 italic text-base">Not set</span>}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <Building2 className="w-5 h-5 text-purple-600" />
+                <Building2 className="w-5 h-5 text-blue-600" />
                 <div>
                   <span className="text-xs text-slate-600 block">Agency:</span>
                   <span className="font-semibold text-slate-900">
-                    {brokerProfile.agency_name || <span className="text-purple-600 italic">Not set</span>}
+                    {brokerProfile.agency_name || <span className="text-blue-600 italic">Not set</span>}
                   </span>
                 </div>
               </div>
@@ -1150,7 +1145,7 @@ export default function MyProfile() {
         </Card>
 
         {/* ✅ FIXED: TEAM MEMBERS CARD */}
-        <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+        <Card className="p-6 bg-white border border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
@@ -1166,7 +1161,6 @@ export default function MyProfile() {
               }}
               variant="outline"
               size="sm"
-              className="border-blue-300 text-blue-700"
             >
               {editingTeam ? 'Cancel' : 'Manage Team'}
             </Button>

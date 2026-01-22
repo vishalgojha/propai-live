@@ -209,7 +209,7 @@ export default function Home() {
 
 
       {/* Why PropAI */}
-      <section className="py-20 bg-white/50">
+      <section className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
@@ -288,7 +288,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="bg-white rounded-lg p-6 border border-slate-200"
             >
-              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                 1
               </div>
               <h3 className="font-bold text-slate-900 mb-2 text-lg">Broker Sends Message</h3>
@@ -304,7 +304,7 @@ export default function Home() {
               transition={{ delay: 0.1 }}
               className="bg-white rounded-lg p-6 border border-slate-200"
             >
-              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                 2
               </div>
               <h3 className="font-bold text-slate-900 mb-2 text-lg">AI Parses Instantly</h3>
@@ -320,7 +320,7 @@ export default function Home() {
               transition={{ delay: 0.2 }}
               className="bg-white rounded-lg p-6 border border-slate-200"
             >
-              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                 3
               </div>
               <h3 className="font-bold text-slate-900 mb-2 text-lg">Goes Live</h3>
@@ -371,7 +371,7 @@ export default function Home() {
       </section>
 
       {/* Social Proof */}
-      <section className="py-20 bg-white/50">
+      <section className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-6">
             Built in Mumbai. Powered by AI. Real-time data.

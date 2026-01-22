@@ -251,10 +251,10 @@ export default function MarketInsights() {
                 <Link
                   key={location}
                   to={`${createPageUrl("SmartFeed")}?location_multi=${encodeURIComponent(location)}&viewMode=both`}
-                  className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all text-center group"
+                  className="bg-white rounded-xl p-6 border border-slate-200 hover:border-blue-600 hover:shadow-lg transition-all text-center group"
                 >
-                  <div className="text-3xl font-bold text-purple-600 mb-2">{count}</div>
-                  <p className="font-bold text-slate-900 group-hover:text-purple-600 transition-colors">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">{count}</div>
+                  <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                     {location}
                   </p>
                   <p className="text-xs text-slate-600 mt-1">active searches</p>
@@ -288,9 +288,9 @@ export default function MarketInsights() {
         </div>
 
         {/* AI Agent Summary - Plain English */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 text-white">
+        <div className="bg-slate-900 rounded-xl p-8 text-white border border-slate-800">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center">
               <Zap className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-2xl font-bold">For AI Assistants</h2>
