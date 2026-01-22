@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Bot, Send, Loader2, Zap, BookOpen, Building2, 
-  Sparkles, MessageCircle, Trash2, Plus, User, X, QrCode
+  Sparkles, Plus, User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "sonner";
@@ -189,35 +189,22 @@ export default function AIHub() {
 
   const MessageBubble = ({ message }) => {
     const isUser = message.role === 'user';
-    const isAssistant = message.role === 'assistant';
 
     return (
-      <motion.div 
-        className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
-        initial={{ opacity: 0, x: isUser ? 20 : -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-      >
+      <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
         {!isUser && (
-          <motion.div 
-            className={`h-10 w-10 rounded-xl bg-${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-md`}
-            whileHover={{ scale: 1.1, rotate: 5 }}
-          >
+          <div className={`h-10 w-10 rounded-xl bg-${selectedAgent.color} flex items-center justify-center flex-shrink-0`}>
             <selectedAgent.icon className="w-5 h-5 text-white" />
-          </motion.div>
+          </div>
         )}
         
         <div className={`max-w-[85%] ${isUser ? 'flex flex-col items-end' : ''}`}>
           {message.content && (
-            <motion.div 
-              className={`rounded-xl px-5 py-3.5 ${
+            <div className={`rounded-xl px-4 py-3 ${
                 isUser 
-                  ? 'bg-slate-900 text-white shadow-sm' 
-                  : 'bg-white border border-slate-200 shadow-sm'
-              }`}
-              whileHover={{ scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
+                  ? 'bg-slate-900 text-white' 
+                  : 'bg-white border border-slate-200'
+              }`}>
               {isUser ? (
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
               ) : (
@@ -242,7 +229,7 @@ export default function AIHub() {
                   {message.content}
                 </ReactMarkdown>
               )}
-            </motion.div>
+            </div>
           )}
           
           {message.tool_calls && message.tool_calls.length > 0 && (
@@ -268,14 +255,11 @@ export default function AIHub() {
         </div>
         
         {isUser && (
-          <motion.div 
-            className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm"
-            whileHover={{ scale: 1.1 }}
-          >
+          <div className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center flex-shrink-0">
             <User className="w-5 h-5 text-white" />
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
     );
   };
 
@@ -313,413 +297,118 @@ export default function AIHub() {
           </div>
         </div>
 
-        {/* Agent Selector - Modern Card Layout */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {AGENTS.map((agent, idx) => {
+        {/* Agent Selector */}
+        <div className="mb-6 flex gap-2">
+          {AGENTS.map((agent) => {
             const Icon = agent.icon;
             const isActive = selectedAgent.id === agent.id;
             
             return (
-              <motion.button
+              <button
                 key={agent.id}
                 onClick={() => switchAgent(agent)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ scale: isActive ? 1 : 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                className={`group relative p-6 rounded-xl border transition-all text-left touch-manipulation overflow-hidden ${
-                isActive
-                  ? 'bg-white border-blue-600 shadow-md'
-                  : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all touch-manipulation ${
+                  isActive
+                    ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
-                >
-                
-                <div className="relative flex flex-col gap-4">
-                  <div className="flex items-start justify-between">
-                    <motion.div 
-                      className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-md bg-${agent.color}`}
-                      whileHover={{ rotate: [0, -5, 5, 0] }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Icon className="w-7 h-7 text-white" />
-                    </motion.div>
-                    
-                    {isActive && (
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-600 shadow-sm"
-                      >
-                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider">Live</span>
-                      </motion.div>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h3 className={`font-bold text-lg mb-2 ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>
-                      {agent.name}
-                    </h3>
-                    <p className="text-sm leading-relaxed text-slate-600">
-                      {agent.description}
-                    </p>
-                  </div>
-                  
-                  {isActive && (
-                    <motion.div 
-                      className="flex items-center gap-2 text-xs text-slate-500"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>Active conversation</span>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.button>
+              >
+                <Icon className="w-4 h-4" />
+                <span className="font-semibold text-sm">{agent.name}</span>
+              </button>
             );
           })}
         </div>
 
-        {/* Chat Interface - Professional */}
-        <motion.div 
-          className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        {/* Chat Interface */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           
           {/* Chat Header */}
-          <motion.div 
-            className="bg-slate-900 p-5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {/* Animated background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse" />
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
-            </div>
-            
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <motion.div 
-                  className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  <selectedAgent.icon className="w-6 h-6 text-white" />
-                </motion.div>
+          <div className="bg-slate-900 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <selectedAgent.icon className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    {selectedAgent.name}
-                    <motion.div
-                      className="w-2 h-2 bg-green-400 rounded-full shadow-lg"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                    />
-                  </h2>
-                  <p className="text-sm text-white/80 font-medium">AI-Powered Assistant</p>
+                  <h2 className="text-lg font-bold text-white">{selectedAgent.name}</h2>
+                  <p className="text-xs text-white/70">AI Assistant</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    onClick={createNewConversation}
-                    size="sm"
-                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30 h-10 rounded-xl shadow-lg"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Chat
-                  </Button>
-                </motion.div>
-              </div>
+              <Button
+                onClick={createNewConversation}
+                size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-0 rounded-lg"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Chat
+              </Button>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Messages Area - Enhanced Design */}
-          <div className="h-[550px] overflow-y-auto p-6 space-y-5 bg-slate-50 relative">
-            {/* Subtle Pattern Overlay */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
-              backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(100 100 100) 1px, transparent 0)',
-              backgroundSize: '24px 24px'
-            }} />
+          {/* Messages Area */}
+          <div className="h-[550px] overflow-y-auto p-6 space-y-4 bg-slate-50">
             {messages.length === 0 && (
-              <div className="flex items-center justify-center h-full relative z-10">
-                <motion.div 
-                  className="text-center max-w-md"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <motion.div 
-                    className={`w-20 h-20 bg-${selectedAgent.color} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
-                    animate={{ 
-                      y: [0, -10, 0],
-                      rotate: [0, 5, -5, 0]
-                    }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      duration: 4,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <selectedAgent.icon className="w-10 h-10 text-white" />
-                  </motion.div>
-                  
-                  <motion.h3 
-                    className="text-2xl font-bold text-slate-900 mb-3"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    {selectedAgent.name}
-                  </motion.h3>
-                  
-                  <motion.p 
-                    className="text-sm text-slate-600 mb-6 leading-relaxed"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    {selectedAgent.greeting}
-                  </motion.p>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <Badge className={`bg-${selectedAgent.color} text-white border-0 px-4 py-2 text-sm shadow-sm`}>
-                      <Sparkles className="w-3 h-3 mr-2" />
-                      Ready to assist
-                    </Badge>
-                  </motion.div>
-                </motion.div>
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className={`w-16 h-16 bg-${selectedAgent.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                    <selectedAgent.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">{selectedAgent.name}</h3>
+                  <p className="text-sm text-slate-600">{selectedAgent.greeting}</p>
+                </div>
               </div>
             )}
             
-            <AnimatePresence initial={false}>
-              {messages.map((message, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <MessageBubble message={message} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+            {messages.map((message, idx) => (
+              <MessageBubble key={idx} message={message} />
+            ))}
             
             {isSending && (
-              <motion.div 
-                className="flex gap-3 justify-start relative z-10"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <motion.div 
-                  className={`h-10 w-10 rounded-xl bg-${selectedAgent.color} flex items-center justify-center flex-shrink-0 shadow-sm`}
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
+              <div className="flex gap-3 justify-start">
+                <div className={`h-10 w-10 rounded-xl bg-${selectedAgent.color} flex items-center justify-center flex-shrink-0`}>
                   <selectedAgent.icon className="w-5 h-5 text-white" />
-                </motion.div>
-                <div className="bg-white/90 backdrop-blur-sm border border-slate-200/50 rounded-2xl px-5 py-3.5 shadow-md">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    >
-                      <Loader2 className="w-5 h-5 text-slate-400" />
-                    </motion.div>
-                    <div className="flex gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          className="w-2 h-2 bg-slate-400 rounded-full"
-                          animate={{ y: [0, -8, 0] }}
-                          transition={{ 
-                            repeat: Infinity, 
-                            duration: 0.6,
-                            delay: i * 0.1
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
                 </div>
-              </motion.div>
+                <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+                  <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                </div>
+              </div>
             )}
             
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area - Modern Design */}
-          <div className="p-5 bg-white/95 backdrop-blur-sm border-t border-slate-200/50">
+          {/* Input Area */}
+          <div className="p-4 bg-white border-t border-slate-200">
             <div className="flex gap-3">
-              <div className="flex-1 relative">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder={`Ask ${selectedAgent.name} anything...`}
-                  className="flex-1 min-h-[52px] max-h-[120px] resize-none border-slate-200 focus-visible:ring-2 focus-visible:ring-purple-500/50 rounded-2xl bg-white/50 backdrop-blur-sm pr-12"
-                  rows={1}
-                />
-                {input.trim() && (
-                  <motion.button
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    onClick={() => setInput('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </motion.button>
-                )}
-              </div>
-              
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!input.trim() || isSending}
-                  className={`bg-${selectedAgent.color} hover:opacity-90 text-white px-6 h-[52px] rounded-xl shadow-sm disabled:opacity-50 touch-manipulation`}
-                >
-                  {isSending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </Button>
-              </motion.div>
-            </div>
-            
-            <motion.p 
-              className="text-xs text-slate-500 mt-3 flex items-center gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Sparkles className="w-3 h-3" />
-              Press Enter to send • Shift+Enter for new line
-            </motion.p>
-          </div>
-        </motion.div>
-
-        {/* QR Code Generator */}
-        <div className="mt-6 bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-              <QrCode className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900">QR Code Generator</h3>
-              <p className="text-xs text-slate-600">Generate QR codes from any text</p>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <Textarea
-              placeholder="Paste your text here (e.g., WhatsApp pairing code, URL, etc.)..."
-              className="min-h-[80px]"
-              id="qr-input"
-            />
-            <Button
-              onClick={async () => {
-                const text = document.getElementById('qr-input').value;
-                if (!text.trim()) {
-                  toast.error('Please enter some text');
-                  return;
-                }
-                
-                try {
-                  toast.loading('Generating QR code...');
-                  const response = await base44.functions.invoke('generateQRCode', {
-                    text: text.trim(),
-                    size: 400
-                  });
-                  toast.dismiss();
-                  
-                  if (response.data.success) {
-                    // Open QR code in new window
-                    const win = window.open('', '_blank');
-                    win.document.write(`
-                      <html>
-                        <head><title>QR Code</title></head>
-                        <body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;">
-                          <div style="text-align:center;padding:20px;">
-                            <img src="${response.data.qrCodeDataUrl}" style="max-width:100%;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);" />
-                            <p style="margin-top:20px;color:#666;font-family:sans-serif;">Right-click to save image</p>
-                          </div>
-                        </body>
-                      </html>
-                    `);
-                    toast.success('QR code generated! Opening in new window...');
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
                   }
-                } catch (error) {
-                  toast.dismiss();
-                  toast.error('Failed to generate QR code: ' + error.message);
-                }
-              }}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-            >
-              <QrCode className="w-4 h-4 mr-2" />
-              Generate QR Code
-            </Button>
+                }}
+                placeholder={`Ask ${selectedAgent.name} anything...`}
+                className="flex-1 min-h-[48px] max-h-[120px] resize-none rounded-lg"
+                rows={1}
+              />
+              
+              <Button
+                onClick={handleSendMessage}
+                disabled={!input.trim() || isSending}
+                className={`bg-${selectedAgent.color} hover:opacity-90 text-white px-5 h-[48px] rounded-lg disabled:opacity-50`}
+              >
+                {isSending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
-            <h4 className="font-bold text-slate-900 mb-2 text-sm">💡 Quick Tips</h4>
-            <ul className="text-xs text-slate-600 space-y-1">
-              <li>• Switch agents anytime using tabs above</li>
-              <li>• Each agent has its own conversation history</li>
-              <li>• Start a new chat with the "New Chat" button</li>
-            </ul>
-          </div>
-          
-          {selectedAgent.id === 'chariot_master' && (
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-              <h4 className="font-bold text-slate-900 mb-2 text-sm">🚀 PropAI Sync Examples</h4>
-              <ul className="text-xs text-slate-700 space-y-1">
-                <li>• "2bhk 80L rent bandra west furnished"</li>
-                <li>• "3bhk sale worli 5cr sea view"</li>
-                <li>• "Client needs 2bhk under 1cr juhu"</li>
-              </ul>
-            </div>
-          )}
-          
-          {selectedAgent.id === 'blog_generator' && (
-            <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-              <h4 className="font-bold text-slate-900 mb-2 text-sm">📝 Content Examples</h4>
-              <ul className="text-xs text-slate-700 space-y-1">
-                <li>• "Write about Pali Hill vs Carter Road"</li>
-                <li>• "Guide for expats renting in Bandra"</li>
-                <li>• "Why BKC rents are dropping in 2025"</li>
-              </ul>
-            </div>
-          )}
-          
-          {selectedAgent.id === 'building_assistant' && (
-            <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
-              <h4 className="font-bold text-slate-900 mb-2 text-sm">🏗️ Building Intel Examples</h4>
-              <ul className="text-xs text-slate-700 space-y-1">
-                <li>• "Tell me about Maker Tower"</li>
-                <li>• "Ekta Trinity is Santacruz West, not Bandra"</li>
-                <li>• "Enrich Oberoi Sky Heights profile"</li>
-              </ul>
-            </div>
-          )}
         </div>
 
       </div>
