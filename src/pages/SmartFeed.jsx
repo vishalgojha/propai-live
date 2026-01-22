@@ -6,11 +6,12 @@ import { createPageUrl } from "@/utils";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import RequirementCard from "../components/property/RequirementCard";
-import SavedSearchesManager from "../components/property/SavedSearchesManager";
+import SavedSearchManager from "../components/property/SavedSearchManager";
 import PropertyComparison from "../components/property/PropertyComparison";
+import MapView from "../components/property/MapView";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, Brain, X, MapPin, Settings, Star } from "lucide-react";
+import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, Brain, X, MapPin, Settings, Star, Map, Grid3x3, GitCompare } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "../components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
@@ -924,7 +925,8 @@ export default function SmartFeed() {
           </motion.div>
         )}
 
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Content View Toggle */}
           <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
             <Button
               onClick={() => setFilters({ ...filters, viewMode: "properties" })}
@@ -952,39 +954,53 @@ export default function SmartFeed() {
             </Button>
           </div>
 
-          <div className="flex gap-2">
-            {compareProperties.length > 0 && (
-              <Button
-                onClick={() => setShowComparison(true)}
-                variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50 touch-manipulation"
-              >
-                Compare ({compareProperties.length})
-              </Button>
+          <div className="flex flex-wrap gap-2">
+            {/* Display Mode Toggle (Grid/Map) - Only for Properties */}
+            {filters.viewMode === "properties" && (
+              <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
+                <Button
+                  onClick={() => setDisplayMode("grid")}
+                  variant={displayMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  className={`rounded-xl touch-manipulation ${displayMode === "grid" ? "bg-blue-600 text-white" : "text-slate-600"}`}
+                >
+                  <Grid3x3 className="w-4 h-4 mr-1" />
+                  Grid
+                </Button>
+                <Button
+                  onClick={() => setDisplayMode("map")}
+                  variant={displayMode === "map" ? "default" : "ghost"}
+                  size="sm"
+                  className={`rounded-xl touch-manipulation ${displayMode === "map" ? "bg-blue-600 text-white" : "text-slate-600"}`}
+                >
+                  <Map className="w-4 h-4 mr-1" />
+                  Map
+                </Button>
+              </div>
             )}
-            {user && (
+
+            {/* Saved Searches */}
+            {user && filters.viewMode === "properties" && (
+              <SavedSearchManager
+                user={user}
+                currentFilters={filters}
+                onLoadSearch={handleLoadSearch}
+              />
+            )}
+
+            {/* Compare Button */}
+            {compareList.length > 0 && (
               <Button
-                onClick={() => setShowSavedSearches(!showSavedSearches)}
-                variant="outline"
-                className="touch-manipulation"
+                onClick={() => setSelectedProperty('compare')}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl shadow-sm"
+                size="sm"
               >
-                {showSavedSearches ? 'Hide' : 'Show'} Saved Searches
+                <GitCompare className="w-4 h-4 mr-2" />
+                Compare ({compareList.length})
               </Button>
             )}
           </div>
         </div>
-
-        {showSavedSearches && user && (
-          <div className="mb-6">
-            <SavedSearchesManager
-              currentFilters={filters}
-              onApplySearch={(savedFilters) => {
-                setFilters({ ...filters, ...savedFilters });
-                setShowSavedSearches(false);
-              }}
-            />
-          </div>
-        )}
 
         <PropertyFilters
           filters={filters}
@@ -1146,85 +1162,86 @@ export default function SmartFeed() {
 
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {displayedItems.map((item) => {
-                if (displayType === "both") {
-                  return item.itemType === 'property' ? (
-                    <div key={`prop-${item.id}`} className="relative">
-                      {filters.viewMode === "properties" && (
-                        <input
-                          type="checkbox"
-                          checked={compareProperties.some(p => p.id === item.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              if (compareProperties.length >= 4) {
-                                toast.error('You can compare up to 4 properties');
-                                return;
-                              }
-                              setCompareProperties([...compareProperties, item]);
-                            } else {
-                              setCompareProperties(compareProperties.filter(p => p.id !== item.id));
-                            }
+            {/* Map View */}
+            {displayMode === "map" && filters.viewMode === "properties" ? (
+              <div className="mb-8">
+                <MapView
+                  properties={filteredProperties}
+                  onPropertySelect={(prop) => {
+                    trackPropertyView(prop);
+                    setSelectedProperty(prop);
+                  }}
+                />
+                <p className="text-center text-sm text-slate-600 mt-4">
+                  Showing {filteredProperties.length} properties on map • Switch to grid view to browse all
+                </p>
+              </div>
+            ) : (
+              /* Grid View */
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {displayedItems.map((item) => {
+                  const isInCompare = compareList.find(p => p.id === item.id);
+                  
+                  if (displayType === "both") {
+                    return item.itemType === 'property' ? (
+                      <div key={`prop-${item.id}`} className="relative">
+                        <Button
+                          onClick={() => toggleCompare(item)}
+                          variant={isInCompare ? "default" : "outline"}
+                          size="sm"
+                          className={`absolute top-2 right-2 z-10 ${isInCompare ? 'bg-purple-600' : ''}`}
+                        >
+                          <GitCompare className="w-3 h-3" />
+                        </Button>
+                        <PropertyCard
+                          property={item}
+                          user={user}
+                          onViewDetails={(prop) => {
+                            trackPropertyView(prop);
+                            setSelectedProperty(prop);
                           }}
-                          className="absolute top-2 right-2 z-10 w-5 h-5 rounded border-2 border-white shadow-lg cursor-pointer"
                         />
-                      )}
-                      <PropertyCard
-                        property={item}
-                        user={user}
-                        onViewDetails={(prop) => {
-                          trackPropertyView(prop);
-                          setSelectedProperty(prop);
-                        }}
+                      </div>
+                    ) : (
+                      <RequirementCard
+                        key={`req-${item.id}`}
+                        requirement={item}
+                        allProperties={properties}
                       />
-                    </div>
-                  ) : (
-                    <RequirementCard
-                      key={`req-${item.id}`}
-                      requirement={item}
-                      allProperties={properties}
-                    />
-                  );
-                } else if (displayType === "requirements") {
-                  return (
-                    <RequirementCard
-                      key={item.id}
-                      requirement={item}
-                      allProperties={properties}
-                    />
-                  );
-                } else {
-                  return (
-                    <div key={item.id} className="relative">
-                      <input
-                        type="checkbox"
-                        checked={compareProperties.some(p => p.id === item.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            if (compareProperties.length >= 4) {
-                              toast.error('You can compare up to 4 properties');
-                              return;
-                            }
-                            setCompareProperties([...compareProperties, item]);
-                          } else {
-                            setCompareProperties(compareProperties.filter(p => p.id !== item.id));
-                          }
-                        }}
-                        className="absolute top-2 right-2 z-10 w-5 h-5 rounded border-2 border-white shadow-lg cursor-pointer"
+                    );
+                  } else if (displayType === "requirements") {
+                    return (
+                      <RequirementCard
+                        key={item.id}
+                        requirement={item}
+                        allProperties={properties}
                       />
-                      <PropertyCard
-                        property={item}
-                        user={user}
-                        onViewDetails={(prop) => {
-                          trackPropertyView(prop);
-                          setSelectedProperty(prop);
-                        }}
-                      />
-                    </div>
-                  );
-                }
-              })}
-            </div>
+                    );
+                  } else {
+                    return (
+                      <div key={item.id} className="relative">
+                        <Button
+                          onClick={() => toggleCompare(item)}
+                          variant={isInCompare ? "default" : "outline"}
+                          size="sm"
+                          className={`absolute top-2 right-2 z-10 ${isInCompare ? 'bg-purple-600' : ''}`}
+                        >
+                          <GitCompare className="w-3 h-3" />
+                        </Button>
+                        <PropertyCard
+                          property={item}
+                          user={user}
+                          onViewDetails={(prop) => {
+                            trackPropertyView(prop);
+                            setSelectedProperty(prop);
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+            )}
 
             {hasMore && (
               <div className="mt-12 flex justify-center">
@@ -1287,15 +1304,7 @@ export default function SmartFeed() {
           )}
         </Suspense>
 
-        {showComparison && compareProperties.length > 0 && (
-          <PropertyComparison
-            properties={compareProperties}
-            onClose={() => {
-              setShowComparison(false);
-              setCompareProperties([]);
-            }}
-          />
-        )}
+
       </div>
     </div>
   );
