@@ -6,6 +6,8 @@ import { createPageUrl } from "@/utils";
 import PropertyCard from "../components/property/PropertyCard";
 import PropertyFilters from "../components/property/PropertyFilters";
 import RequirementCard from "../components/property/RequirementCard";
+import SavedSearchesManager from "../components/property/SavedSearchesManager";
+import PropertyComparison from "../components/property/PropertyComparison";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Sparkles, ChevronDown, RefreshCw, Bell, TrendingUp, Eye, Brain, X, MapPin, Settings, Star } from "lucide-react";
@@ -67,6 +69,9 @@ export default function SmartFeed() {
   const previousCountsRef = useRef(getInitialCounts());
   
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
+  const [compareProperties, setCompareProperties] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const [showSavedSearches, setShowSavedSearches] = useState(false);
 
   const ITEMS_PER_PAGE = 24;
   const REFRESH_INTERVAL = 10000;
@@ -888,7 +893,7 @@ export default function SmartFeed() {
           </motion.div>
         )}
 
-        <div className="mb-6 flex justify-center">
+        <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
             <Button
               onClick={() => setFilters({ ...filters, viewMode: "properties" })}
@@ -915,7 +920,40 @@ export default function SmartFeed() {
               ✨ Both
             </Button>
           </div>
+
+          <div className="flex gap-2">
+            {compareProperties.length > 0 && (
+              <Button
+                onClick={() => setShowComparison(true)}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 touch-manipulation"
+              >
+                Compare ({compareProperties.length})
+              </Button>
+            )}
+            {user && (
+              <Button
+                onClick={() => setShowSavedSearches(!showSavedSearches)}
+                variant="outline"
+                className="touch-manipulation"
+              >
+                {showSavedSearches ? 'Hide' : 'Show'} Saved Searches
+              </Button>
+            )}
+          </div>
         </div>
+
+        {showSavedSearches && user && (
+          <div className="mb-6">
+            <SavedSearchesManager
+              currentFilters={filters}
+              onApplySearch={(savedFilters) => {
+                setFilters({ ...filters, ...savedFilters });
+                setShowSavedSearches(false);
+              }}
+            />
+          </div>
+        )}
 
         <PropertyFilters
           filters={filters}
@@ -1081,15 +1119,34 @@ export default function SmartFeed() {
               {displayedItems.map((item) => {
                 if (displayType === "both") {
                   return item.itemType === 'property' ? (
-                    <PropertyCard
-                      key={`prop-${item.id}`}
-                      property={item}
-                      user={user}
-                      onViewDetails={(prop) => {
-                        trackPropertyView(prop);
-                        setSelectedProperty(prop);
-                      }}
-                    />
+                    <div key={`prop-${item.id}`} className="relative">
+                      {filters.viewMode === "properties" && (
+                        <input
+                          type="checkbox"
+                          checked={compareProperties.some(p => p.id === item.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              if (compareProperties.length >= 4) {
+                                toast.error('You can compare up to 4 properties');
+                                return;
+                              }
+                              setCompareProperties([...compareProperties, item]);
+                            } else {
+                              setCompareProperties(compareProperties.filter(p => p.id !== item.id));
+                            }
+                          }}
+                          className="absolute top-2 right-2 z-10 w-5 h-5 rounded border-2 border-white shadow-lg cursor-pointer"
+                        />
+                      )}
+                      <PropertyCard
+                        property={item}
+                        user={user}
+                        onViewDetails={(prop) => {
+                          trackPropertyView(prop);
+                          setSelectedProperty(prop);
+                        }}
+                      />
+                    </div>
                   ) : (
                     <RequirementCard
                       key={`req-${item.id}`}
@@ -1107,15 +1164,32 @@ export default function SmartFeed() {
                   );
                 } else {
                   return (
-                    <PropertyCard
-                      key={item.id}
-                      property={item}
-                      user={user}
-                      onViewDetails={(prop) => {
-                        trackPropertyView(prop);
-                        setSelectedProperty(prop);
-                      }}
-                    />
+                    <div key={item.id} className="relative">
+                      <input
+                        type="checkbox"
+                        checked={compareProperties.some(p => p.id === item.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            if (compareProperties.length >= 4) {
+                              toast.error('You can compare up to 4 properties');
+                              return;
+                            }
+                            setCompareProperties([...compareProperties, item]);
+                          } else {
+                            setCompareProperties(compareProperties.filter(p => p.id !== item.id));
+                          }
+                        }}
+                        className="absolute top-2 right-2 z-10 w-5 h-5 rounded border-2 border-white shadow-lg cursor-pointer"
+                      />
+                      <PropertyCard
+                        property={item}
+                        user={user}
+                        onViewDetails={(prop) => {
+                          trackPropertyView(prop);
+                          setSelectedProperty(prop);
+                        }}
+                      />
+                    </div>
                   );
                 }
               })}
@@ -1173,6 +1247,16 @@ export default function SmartFeed() {
             onClose={() => setSelectedProperty(null)}
           />
         </Suspense>
+
+        {showComparison && compareProperties.length > 0 && (
+          <PropertyComparison
+            properties={compareProperties}
+            onClose={() => {
+              setShowComparison(false);
+              setCompareProperties([]);
+            }}
+          />
+        )}
       </div>
     </div>
   );

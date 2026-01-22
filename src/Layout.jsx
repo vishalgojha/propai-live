@@ -138,6 +138,7 @@ export default function Layout({ children, currentPageName }) {
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
     { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
+    { name: "Map Search", icon: MapPin, path: createPageUrl("MapSearch") },
   ];
 
   // Add features for logged-in users

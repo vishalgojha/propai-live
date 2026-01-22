@@ -41,6 +41,7 @@ import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
 import MarketInsights from './pages/MarketInsights';
+import MapSearch from './pages/MapSearch';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +89,7 @@ export const PAGES = {
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
     "MarketInsights": MarketInsights,
+    "MapSearch": MapSearch,
 }
 
 export const pagesConfig = {
