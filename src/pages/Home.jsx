@@ -257,31 +257,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ✅ SEO Content Block - Popular Localities */}
+      {/* ✅ SEO: Category Links */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-slate-50">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-slate-900 mb-3">Find Properties in Mumbai's Top Localities</h2>
-          <p className="text-slate-600">Browse verified listings from popular areas across Mumbai. Real-time data from trusted brokers.</p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {topLocalities.map((locality) => (
-            <Link
-              key={locality.slug}
-              to={`${createPageUrl("SmartFeed")}?location_multi=${encodeURIComponent(locality.name)}`}
-              className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all group"
-            >
-              <div className="text-3xl mb-2">{locality.emoji}</div>
-              <h3 className="font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-                {locality.name}
-              </h3>
-              <p className="text-xs text-slate-600">View properties →</p>
-            </Link>
-          ))}
-        </div>
-
-        {/* ✅ SEO: Category Links */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Link
             to={`${createPageUrl("SmartFeed")}?listingType=Rent&propertyCategory=Residential`}
             className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
