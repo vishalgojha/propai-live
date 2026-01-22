@@ -478,7 +478,6 @@ export default function SmartFeed() {
       .slice(0, 6);
   }, [properties, userPreferences]);
 
-  // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
     let results = properties.filter(property => {
       if (property.status !== "Active" || property.is_duplicate === true) {
