@@ -658,10 +658,10 @@ export default function SmartFeed() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6"
           >
-            <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-4 border-2 border-amber-300">
+            <div className="bg-amber-50 rounded-2xl p-4 border-2 border-amber-300">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Brain className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -674,7 +674,7 @@ export default function SmartFeed() {
                 <Button
                   onClick={injectSampleHistory}
                   size="sm"
-                  className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold touch-manipulation"
+                  className="bg-amber-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold touch-manipulation"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Test Auto-Match
@@ -692,7 +692,7 @@ export default function SmartFeed() {
               exit={{ opacity: 0, y: -20, height: 0 }}
               className="mb-6"
             >
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl p-4 shadow-lg border-2 border-white">
+              <div className="bg-green-600 text-white rounded-2xl p-4 shadow-lg border-2 border-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -723,12 +723,12 @@ export default function SmartFeed() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
+              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1>
+                  <h1 className="text-3xl font-bold bg-blue-600 bg-clip-text text-transparent tracking-tight">SmartFeed</h1>
                   <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="font-semibold">Live</span>
@@ -742,7 +742,7 @@ export default function SmartFeed() {
                 onClick={() => navigate(createPageUrl("MyProfile"))}
                 variant="outline"
                 size="sm"
-                className="border-purple-300 text-purple-700 hover:bg-purple-50 touch-manipulation"
+                className="border-slate-300 text-blue-700 hover:bg-slate-50 touch-manipulation"
               >
                 <Settings className="w-4 h-4 mr-2" />
                 My Areas
@@ -751,12 +751,12 @@ export default function SmartFeed() {
           </div>
         </div>
 
-        <div className="mb-6 bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-purple-200">
+        <div className="mb-6 bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200">
           <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-4 h-4 text-purple-600" />
+            <MapPin className="w-4 h-4 text-blue-600" />
             <h3 className="text-sm font-bold text-slate-900">Quick Area Filters</h3>
             {user?.preferred_areas && user.preferred_areas.length > 0 && (
-              <Badge className="bg-purple-100 text-purple-700 border-purple-300 text-xs">
+              <Badge className="bg-blue-50 text-blue-700 border-slate-300 text-xs">
                 Your Areas
               </Badge>
             )}
@@ -775,10 +775,10 @@ export default function SmartFeed() {
                   size="sm"
                   className={`rounded-xl touch-manipulation ${
                     isSelected
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 shadow-md"
+                      ? "bg-blue-600 text-white border-0 shadow-md"
                       : isPreferred
-                        ? "border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100"
-                        : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                        ? "border-purple-400 bg-slate-50 text-blue-700 hover:bg-blue-50"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-700"
                   }`}
                 >
                   {isPreferred && <Star className="w-3 h-3 mr-1" fill="currentColor" />}
@@ -789,7 +789,7 @@ export default function SmartFeed() {
           </div>
 
           {user?.preferred_areas && user.preferred_areas.length > 0 && (
-            <p className="text-xs text-purple-600 mt-2">
+            <p className="text-xs text-blue-600 mt-2">
               ⭐ Starred areas are from your preferences
             </p>
           )}
@@ -799,11 +799,11 @@ export default function SmartFeed() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl p-4 border-2 border-purple-300"
+            className="mb-6 bg-blue-50 rounded-2xl p-4 border-2 border-slate-300"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Brain className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -814,7 +814,7 @@ export default function SmartFeed() {
                     Your feed learns from your {userPreferences.totalViews} views & {userPreferences.totalContacts} contacts.
                     Properties matching your preferences are ranked higher automatically.
                   </p>
-                  <p className="text-xs text-purple-700 mt-2 font-semibold">
+                  <p className="text-xs text-blue-700 mt-2 font-semibold">
                     💡 Keep browsing → Better recommendations
                   </p>
                 </div>
@@ -823,7 +823,7 @@ export default function SmartFeed() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowAutoMatchBanner(false)}
-                className="h-8 w-8 hover:bg-purple-200 flex-shrink-0 touch-manipulation"
+                className="h-8 w-8 hover:bg-slate-100 flex-shrink-0 touch-manipulation"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -837,11 +837,11 @@ export default function SmartFeed() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <div className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-3xl p-6 border-2 border-purple-300">
+            <div className="bg-blue-50 rounded-3xl p-6 border-2 border-slate-300">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
                     <h2 className="text-xl font-bold text-slate-900">For You</h2>
                   </div>
                   <p className="text-sm text-slate-600">
@@ -889,12 +889,12 @@ export default function SmartFeed() {
         )}
 
         <div className="mb-6 flex justify-center">
-          <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-purple-200">
+          <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm border border-slate-200">
             <Button
               onClick={() => setFilters({ ...filters, viewMode: "properties" })}
               variant={filters.viewMode === "properties" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl touch-manipulation ${filters.viewMode === "properties" ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "text-slate-600"}`}
+              className={`rounded-xl touch-manipulation ${filters.viewMode === "properties" ? "bg-blue-600 text-white" : "text-slate-600"}`}
             >
               🏠 Properties ({filteredProperties.length})
             </Button>
@@ -902,7 +902,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "requirements" })}
               variant={filters.viewMode === "requirements" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl touch-manipulation ${filters.viewMode === "requirements" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : "text-slate-600"}`}
+              className={`rounded-xl touch-manipulation ${filters.viewMode === "requirements" ? "bg-cyan-600 text-white" : "text-slate-600"}`}
             >
               🔍 Requirements ({filteredRequirements.length})
             </Button>
@@ -910,7 +910,7 @@ export default function SmartFeed() {
               onClick={() => setFilters({ ...filters, viewMode: "both" })}
               variant={filters.viewMode === "both" ? "default" : "ghost"}
               size="sm"
-              className={`rounded-xl touch-manipulation ${filters.viewMode === "both" ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white" : "text-slate-600"}`}
+              className={`rounded-xl touch-manipulation ${filters.viewMode === "both" ? "bg-slate-700 text-white" : "text-slate-600"}`}
             >
               ✨ Both
             </Button>
@@ -943,8 +943,8 @@ export default function SmartFeed() {
                   size="sm"
                   className={`rounded-xl touch-manipulation ${
                     filters.sortBy === 'latest'
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
-                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                      ? "bg-blue-600 text-white border-0"
+                      : "border-slate-200 hover:bg-slate-50 text-slate-700"
                   }`}
                 >
                   📅 Latest
@@ -957,22 +957,22 @@ export default function SmartFeed() {
                     size="sm"
                     className={`rounded-xl touch-manipulation ${
                       filters.sortBy === 'brokertrust'
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
-                        : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                        ? "bg-blue-600 text-white border-0"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-700"
                   }`}
                   >
                     🛡️ BrokerTrust™
                   </Button>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-5 h-5 rounded-full bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-colors touch-manipulation">
-                        <Info className="w-3 h-3 text-purple-600" />
+                      <button className="w-5 h-5 rounded-full bg-blue-50 hover:bg-slate-100 flex items-center justify-center transition-colors touch-manipulation">
+                        <Info className="w-3 h-3 text-blue-600" />
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80" align="end">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-sm">🛡️</span>
                           </div>
                           <h4 className="font-bold text-slate-900">How BrokerTrust™ Works</h4>
@@ -1014,8 +1014,8 @@ export default function SmartFeed() {
                   size="sm"
                   className={`rounded-xl touch-manipulation ${
                     filters.sortBy === 'price_low'
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
-                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                      ? "bg-blue-600 text-white border-0"
+                      : "border-slate-200 hover:bg-slate-50 text-slate-700"
                   }`}
                 >
                   💰 Price ↑
@@ -1026,8 +1026,8 @@ export default function SmartFeed() {
                   size="sm"
                   className={`rounded-xl touch-manipulation ${
                     filters.sortBy === 'price_high'
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0"
-                      : "border-purple-200 hover:bg-purple-50 text-slate-700"
+                      ? "bg-blue-600 text-white border-0"
+                      : "border-slate-200 hover:bg-slate-50 text-slate-700"
                   }`}
                 >
                   💰 Price ↓
@@ -1049,8 +1049,8 @@ export default function SmartFeed() {
         {(isLoading || requirementsLoading) && (
           <>
             <div className="mb-6 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-xl border border-purple-300">
-                <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl border border-slate-300">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 <p className="text-sm font-semibold text-purple-900">
                   Loading properties... (typically 100-200 active listings)
                 </p>
@@ -1126,7 +1126,7 @@ export default function SmartFeed() {
                 <Button
                   onClick={loadMore}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all touch-manipulation"
+                  className="bg-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-2xl px-8 h-14 shadow-lg hover:shadow-xl transition-all touch-manipulation"
                 >
                   <ChevronDown className="w-5 h-5 mr-2" />
                   Load More {displayType === "properties" ? "Properties" : displayType === "requirements" ? "Requirements" : "Items"}
@@ -1166,7 +1166,7 @@ export default function SmartFeed() {
           </div>
         )}
 
-        <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
+        <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div></div>}>
           <PropertyDetailsModal
             property={selectedProperty}
             isOpen={!!selectedProperty}

@@ -311,7 +311,7 @@ export default function Home() {
         {isLoadingProperties ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-96 rounded-3xl" />
+              <Skeleton key={i} className="h-96 rounded-xl" />
             ))}
           </div>
         ) : (
@@ -322,7 +322,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-white rounded-3xl overflow-hidden border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all cursor-pointer"
+                className="bg-white rounded-xl overflow-hidden border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all cursor-pointer"
                 onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`)}
               >
                 <div className="p-6">
@@ -366,9 +366,9 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="bg-white rounded-3xl p-8 border-2 border-purple-200 hover:shadow-xl transition-all text-center"
+              className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-xl transition-all text-center"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-6">
                 <Brain className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Building Memory™</h3>
@@ -382,9 +382,9 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-3xl p-8 border-2 border-purple-200 hover:shadow-xl transition-all text-center"
+              className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-xl transition-all text-center"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-6">
                 <Shield className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">BrokerTrust™ Scores</h3>
@@ -398,9 +398,9 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-3xl p-8 border-2 border-purple-200 hover:shadow-xl transition-all text-center"
+              className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-xl transition-all text-center"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-6">
                 <Zap className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">WhatsApp → Database</h3>
@@ -427,7 +427,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="bg-white rounded-2xl p-6 border-2 border-purple-200"
+              className="bg-white rounded-lg p-6 border border-slate-200"
             >
               <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                 1
@@ -443,7 +443,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-2xl p-6 border-2 border-purple-200"
+              className="bg-white rounded-lg p-6 border border-slate-200"
             >
               <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                 2
@@ -459,7 +459,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl p-6 border-2 border-purple-200"
+              className="bg-white rounded-lg p-6 border border-slate-200"
             >
               <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                 3

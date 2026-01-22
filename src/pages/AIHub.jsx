@@ -212,7 +212,7 @@ export default function AIHub() {
             <motion.div 
               className={`rounded-2xl px-5 py-3.5 ${
                 isUser 
-                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg' 
+                  ? 'bg-blue-600 text-white shadow-lg' 
                   : 'bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-md'
               }`}
               whileHover={{ scale: 1.01 }}
@@ -269,7 +269,7 @@ export default function AIHub() {
         
         {isUser && (
           <motion.div 
-            className="h-10 w-10 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0 shadow-md"
+            className="h-10 w-10 rounded-2xl bg-slate-700 flex items-center justify-center flex-shrink-0 shadow-md"
             whileHover={{ scale: 1.1 }}
           >
             <User className="w-5 h-5 text-white" />
@@ -283,7 +283,7 @@ export default function AIHub() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
             <Bot className="w-8 h-8 text-white" />
           </div>
           <p className="text-slate-600 font-medium">Loading AI Hub...</p>
@@ -301,11 +301,11 @@ export default function AIHub() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md">
               <Bot className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-blue-600 bg-clip-text text-transparent">
                 AI Hub
               </h1>
               <p className="text-sm text-slate-600">All your AI agents in one place</p>
@@ -361,7 +361,7 @@ export default function AIHub() {
                       <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 shadow-md"
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-600 shadow-md"
                       >
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
                         <span className="text-[10px] font-bold text-white uppercase tracking-wider">Live</span>
@@ -636,7 +636,7 @@ export default function AIHub() {
         {/* QR Code Generator */}
         <div className="mt-6 bg-white/80 backdrop-blur-xl rounded-2xl border-2 border-purple-200 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
               <QrCode className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -688,7 +688,7 @@ export default function AIHub() {
                   toast.error('Failed to generate QR code: ' + error.message);
                 }
               }}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              className="w-full bg-green-600 hover:from-green-700 hover:to-emerald-700 text-white"
             >
               <QrCode className="w-4 h-4 mr-2" />
               Generate QR Code
