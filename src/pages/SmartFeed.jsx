@@ -54,6 +54,7 @@ export default function SmartFeed() {
     maxPrice: "",
     viewMode: "properties",
     sortBy: "brokertrust",
+    amenities: [],
   });
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -61,6 +62,8 @@ export default function SmartFeed() {
   const [userPreferences, setUserPreferences] = useState(null);
   const [showAutoMatchBanner, setShowAutoMatchBanner] = useState(true);
   const [user, setUser] = useState(null);
+  const [displayMode, setDisplayMode] = useState("grid"); // "grid" or "map"
+  const [compareList, setCompareList] = useState([]);
 
   const [newItemsCount, setNewItemsCount] = useState({ properties: 0, requirements: 0 });
   const [showNewItemsBanner, setShowNewItemsBanner] = useState(false);
@@ -77,28 +80,6 @@ export default function SmartFeed() {
   const REFRESH_INTERVAL = 10000;
 
   const navigate = useNavigate();
-
-  // ✅ FIXED: Reduced caching, faster refresh
-  const { data: properties, isLoading, error } = useQuery({
-    queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.list('-created_date'),
-    initialData: [],
-    staleTime: 0,
-    cacheTime: 30 * 1000,
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true,
-  });
-
-  // ✅ FIXED: Reduced caching for requirements
-  const { data: requirements, isLoading: requirementsLoading } = useQuery({
-    queryKey: ['requirements'],
-    queryFn: () => base44.entities.Requirement.list('-created_date'),
-    initialData: [],
-    staleTime: 0,
-    cacheTime: 30 * 1000,
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true,
-  });
 
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
@@ -171,6 +152,14 @@ export default function SmartFeed() {
 
         if (filters.minPrice && propertyPriceNormalized < parseFloat(filters.minPrice)) return false;
         if (filters.maxPrice && propertyPriceNormalized > parseFloat(filters.maxPrice)) return false;
+      }
+
+      if (filters.amenities && filters.amenities.length > 0) {
+        const propertyAmenities = property.amenities || [];
+        const hasAllAmenities = filters.amenities.every(amenity => 
+          propertyAmenities.some(pa => pa.toLowerCase().includes(amenity.toLowerCase()))
+        );
+        if (!hasAllAmenities) return false;
       }
 
       return true;
@@ -405,7 +394,27 @@ export default function SmartFeed() {
     setItemsToShow(ITEMS_PER_PAGE);
   }, [filters]);
 
+  // ✅ FIXED: Reduced caching, faster refresh
+  const { data: properties, isLoading, error } = useQuery({
+    queryKey: ['properties'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    initialData: [],
+    staleTime: 0, // ✅ CHANGED
+    cacheTime: 30 * 1000, // ✅ CHANGED
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true, // ✅ ENABLED: Refresh when user returns to tab
+  });
 
+  // ✅ FIXED: Reduced caching for requirements
+  const { data: requirements, isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    initialData: [],
+    staleTime: 0, // ✅ CHANGED
+    cacheTime: 30 * 1000, // ✅ CHANGED
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true, // ✅ ENABLED
+  });
 
   // ✅ FIXED: Only show banner for TRULY new items, persist counts in localStorage
   useEffect(() => {
@@ -608,7 +617,27 @@ export default function SmartFeed() {
       maxPrice: "",
       viewMode: "properties",
       sortBy: "brokertrust",
+      amenities: [],
     });
+  };
+
+  const toggleCompare = (property) => {
+    setCompareList(prev => {
+      const exists = prev.find(p => p.id === property.id);
+      if (exists) {
+        return prev.filter(p => p.id !== property.id);
+      } else {
+        if (prev.length >= 4) {
+          toast.error('You can compare up to 4 properties at a time');
+          return prev;
+        }
+        return [...prev, property];
+      }
+    });
+  };
+
+  const handleLoadSearch = (savedFilters) => {
+    setFilters({ ...filters, ...savedFilters });
   };
 
   const handleRefresh = () => {
@@ -1243,11 +1272,19 @@ export default function SmartFeed() {
         )}
 
         <Suspense fallback={<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>}>
-          <PropertyDetailsModal
-            property={selectedProperty}
-            isOpen={!!selectedProperty}
-            onClose={() => setSelectedProperty(null)}
-          />
+          {selectedProperty === 'compare' ? (
+            <PropertyComparison
+              properties={compareList}
+              isOpen={true}
+              onClose={() => setSelectedProperty(null)}
+            />
+          ) : (
+            <PropertyDetailsModal
+              property={selectedProperty}
+              isOpen={!!selectedProperty}
+              onClose={() => setSelectedProperty(null)}
+            />
+          )}
         </Suspense>
 
         {showComparison && compareProperties.length > 0 && (
