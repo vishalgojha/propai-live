@@ -137,27 +137,16 @@ export default function Layout({ children, currentPageName }) {
 
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
-    { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
-    { name: "Map Search", icon: MapPin, path: createPageUrl("MapSearch") },
+    { name: "Properties", icon: Search, path: createPageUrl("SmartFeed") },
   ];
 
-  // Add features for logged-in users
-  if (user) {
-    if (user.broker_id) {
-        navItems.push(
-          { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
-          { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
-        );
-      }
-      navItems.push(
-        { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
-      );
-    }
-
-    // Market Insights for everyone
+  // Add features for logged-in brokers only
+  if (user?.broker_id) {
     navItems.push(
-      { name: "Market Insights", icon: BarChart3, path: createPageUrl("MarketInsights") }
+      { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
+      { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
     );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
