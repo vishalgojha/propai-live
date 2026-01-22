@@ -23,8 +23,6 @@ import {
 export default function Home() {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(null);
-  const [featuredProperties, setFeaturedProperties] = useState([]);
-  const [isLoadingProperties, setIsLoadingProperties] = useState(true);
   const [showInlineChat, setShowInlineChat] = useState(false);
 
   const homeSchema = {
@@ -40,58 +38,7 @@ export default function Home() {
     "priceRange": "$$"
   };
 
-  useEffect(() => {
-    const fetchFeaturedProperties = async () => {
-      setIsLoadingProperties(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockProperties = [
-        {
-          id: "1",
-          ai_title: "Luxurious 3 BHK Apartment in Bandra West",
-          bhk: "3 BHK",
-          location: "Bandra West, Mumbai",
-          price: "6.50",
-          price_unit: "crores",
-          listing_type: "Sale",
-          images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8MHxwaG90by1wYWdlfHx8fA%3D%3D"],
-        },
-        {
-          id: "2",
-          ai_title: "Spacious 2 BHK Flat with Sea View in Worli",
-          bhk: "2 BHK",
-          location: "Worli, Mumbai",
-          price: "3.20",
-          price_unit: "crores",
-          listing_type: "Rent",
-          images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8MHxwaG90by1wYWdlfHx8fA%3D%3D"],
-        },
-        {
-          id: "3",
-          ai_title: "Modern Office Space in BKC",
-          bhk: "Office",
-          location: "Bandra Kurla Complex, Mumbai",
-          price: "1.80",
-          price_unit: "crores",
-          listing_type: "Sale",
-          images: ["https://images.unsplash.com/photo-1549887534-1541e932662f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8MHxwaG90by1wYWdlfHx8fA%3D%3D"],
-        },
-        {
-          id: "4",
-          ai_title: "1 BHK for rent in Andheri East",
-          bhk: "1 BHK",
-          location: "Andheri East, Mumbai",
-          price: "50000",
-          price_unit: "L",
-          listing_type: "Rent",
-          images: [],
-        }
-      ];
-      setFeaturedProperties(mockProperties);
-      setIsLoadingProperties(false);
-    };
 
-    fetchFeaturedProperties();
-  }, []);
 
   const stats = [
     { number: "250+", label: "Buildings Mapped" },
@@ -259,62 +206,7 @@ export default function Home() {
 
 
 
-      {/* Featured Properties Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">Featured Properties</h2>
-            <p className="text-slate-600">Handpicked listings • Verified availability</p>
-          </div>
-          <Button
-            onClick={() => navigate(createPageUrl("SmartFeed"))}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm"
-          >
-            View All
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
 
-        {isLoadingProperties ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-96 rounded-xl" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredProperties.slice(0, 3).map((property) => (
-              <motion.div
-                key={property.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="bg-white rounded-xl overflow-hidden border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all cursor-pointer"
-                onClick={() => navigate(createPageUrl("PropertyDetails") + `?id=${property.id}`)}
-              >
-                <div className="p-6">
-                  <Badge className="mb-3 bg-sky-600 text-white border-0">
-                    {property.listing_type}
-                  </Badge>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
-                    {property.ai_title || `${property.bhk} in ${property.location}`}
-                  </h3>
-                  <div className="flex items-center gap-2 text-slate-600 mb-4">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{property.location}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-sky-600">
-                      ₹{property.price}{property.price_unit === 'crores' ? ' Cr' : 'L'}
-                    </span>
-                    <Badge variant="outline">{property.bhk}</Badge>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </section>
 
       {/* Why PropAI */}
       <section className="py-20 bg-white/50">
