@@ -184,7 +184,7 @@ export default function Home() {
                 href={base44.agents.getWhatsAppConnectURL('chariot_master')}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-medium h-12 px-8 rounded-lg text-base transition-all touch-manipulation"
+                className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold h-12 px-8 rounded-lg text-base shadow-sm transition-all touch-manipulation"
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
               >
