@@ -20,6 +20,8 @@ import {
 import { usePropertyAIEnrichment } from "../hooks/usePropertyAIEnrichment";
 import { useAutoSlugGeneration } from "../hooks/useAutoSlugGeneration";
 import { useAutoGenerateCustomId } from "../hooks/useAutoGenerateCustomId";
+import LeadShareButton from "../broker/LeadShareButton";
+import CoListingManager from "../broker/CoListingManager";
 
 const createPageUrl = (pageName) => {
   switch (pageName) {
@@ -445,10 +447,10 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
 
   const getTierBadgeClass = (tier) => {
     switch (tier) {
-      case "Tier 1": return "bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0";
-      case "Tier 2": return "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0";
-      case "Tier 3": return "bg-gradient-to-r from-emerald-500 to-green-500 text-white border-0";
-      default: return "bg-gray-500 text-white border-0";
+      case "Tier 1": return "bg-amber-500 text-white border-0";
+      case "Tier 2": return "bg-blue-600 text-white border-0";
+      case "Tier 3": return "bg-green-600 text-white border-0";
+      default: return "bg-slate-500 text-white border-0";
     }
   };
 
@@ -461,7 +463,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4 }}
         transition={{ duration: 0.2 }}
-        className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden border-2 border-purple-200/50 hover:border-purple-400 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+        className="bg-white rounded-xl overflow-hidden border border-slate-200 hover:border-blue-600 hover:shadow-lg transition-all duration-300 cursor-pointer group"
         onClick={handleCardClick}
       >
         <div className="p-4">
@@ -469,7 +471,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
           <div className="flex items-start justify-between mb-3">
             <div className="flex flex-wrap gap-1.5">
               {property.listing_type && (
-                <Badge className="bg-purple-100 border border-purple-300 text-purple-700 font-semibold text-xs">
+                <Badge className="bg-blue-50 border border-blue-200 text-blue-700 font-semibold text-xs">
                   {property.listing_type}
                 </Badge>
               )}
@@ -489,7 +491,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
             <div className="flex items-center gap-1">
               <button
                 onClick={handleShare}
-                className="flex items-center text-xs text-slate-600 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors touch-manipulation"
+                className="flex items-center text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors touch-manipulation"
                 title="Share property"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -512,23 +514,23 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
             </div>
           </div>
 
-          <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-purple-700 transition-colors">
+          <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-blue-700 transition-colors">
             {property.ai_title || `${property.bhk} in ${property.location}`}
-            {isEnriching && <Sparkles className="w-3 h-3 inline ml-1 text-purple-400 animate-pulse" />}
+            {isEnriching && <Sparkles className="w-3 h-3 inline ml-1 text-blue-400 animate-pulse" />}
           </h3>
 
           {property.building_name && property.building_id && (
             <button
               onClick={(e) => handleBuildingClick(e, property.building_id)}
-              className="flex items-center gap-1.5 mb-3 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-xl border border-indigo-200 hover:border-indigo-300 transition-all group/building touch-manipulation"
+              className="flex items-center gap-1.5 mb-3 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 hover:border-slate-300 transition-all group/building touch-manipulation"
             >
-              <Building2 className="w-3.5 h-3.5 text-indigo-600 group-hover/building:scale-110 transition-transform" />
+              <Building2 className="w-3.5 h-3.5 text-slate-700 group-hover/building:scale-110 transition-transform" />
               <div className="flex flex-col items-start">
-                <span className="text-xs font-semibold text-indigo-700 group-hover/building:text-indigo-800">
+                <span className="text-xs font-semibold text-slate-900 group-hover/building:text-blue-700">
                   {property.building_name}
                 </span>
                 {developer?.name && (
-                  <span className="text-xs text-indigo-600/70">
+                  <span className="text-xs text-slate-600">
                     by {developer.name}
                   </span>
                 )}
@@ -537,7 +539,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
           )}
 
           <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-3">
-            <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
+            <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
             <span className="truncate">
               {property.pocket ? (
                 <>
@@ -551,9 +553,9 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
             </span>
           </div>
 
-          <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-purple-100">
+          <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-slate-100">
             <div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold text-slate-900">
                 {formatPrice()}
               </span>
             </div>
@@ -575,7 +577,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
                     e.stopPropagation();
                     setDescriptionExpanded(!descriptionExpanded);
                   }}
-                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold mt-1 flex items-center gap-1 touch-manipulation"
+                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold mt-1 flex items-center gap-1 touch-manipulation"
                 >
                   {descriptionExpanded ? (
                     <>
@@ -595,9 +597,9 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
 
           {property.amenities && property.amenities.length > 0 && (
             <div className="mb-3 flex items-center gap-1.5 flex-wrap">
-              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
               {property.amenities.slice(0, 3).map((amenity, idx) => (
-                <Badge key={idx} variant="outline" className="text-xs bg-purple-50 border-purple-200 text-purple-700">
+                <Badge key={idx} variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
                   {amenity}
                 </Badge>
               ))}
@@ -610,16 +612,16 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
           )}
 
           <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
-              <Home className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+            <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+              <Home className="w-4 h-4 text-slate-700 mx-auto mb-1" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.bhk}</p>
             </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
-              <Maximize2 className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+            <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+              <Maximize2 className="w-4 h-4 text-slate-700 mx-auto mb-1" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.carpet_area || 'N/A'}</p>
             </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2 text-center border border-purple-100">
-              <Armchair className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+            <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
+              <Armchair className="w-4 h-4 text-slate-700 mx-auto mb-1" />
               <p className="text-xs font-bold text-slate-900 truncate">{property.furnishing || 'N/A'}</p>
             </div>
           </div>
@@ -669,15 +671,36 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
             </div>
           )}
 
-          <Button
-            onClick={handleWhatsAppContact}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl h-10 flex items-center justify-center gap-2 shadow-md touch-manipulation"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>WhatsApp {contactButtonLabel}</span>
-          </Button>
+          <div className="space-y-2">
+            {currentUser?.broker_id && (
+              <div className="flex gap-2">
+                <LeadShareButton property={property} currentBrokerId={currentUser.broker_id} />
+                {property.broker_id === currentUser.broker_id && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Trigger modal or inline co-listing UI
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 text-xs"
+                  >
+                    Co-List
+                  </Button>
+                )}
+              </div>
+            )}
 
-          <div className="mt-3 pt-3 border-t border-purple-100 flex items-center justify-between text-xs text-slate-500">
+            <Button
+              onClick={handleWhatsAppContact}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg h-10 flex items-center justify-center gap-2 shadow-sm touch-manipulation"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>WhatsApp {contactButtonLabel}</span>
+            </Button>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             {property.created_date && (
               <span className="flex items-center gap-1 truncate">
                 <Calendar className="w-3 h-3 flex-shrink-0" />
@@ -695,7 +718,7 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
                 </span>
               )}
               {property.custom_id && (
-                <span className="font-mono text-purple-600 text-xs truncate">{property.custom_id}</span>
+                <span className="font-mono text-blue-600 text-xs truncate">{property.custom_id}</span>
               )}
             </div>
           </div>
