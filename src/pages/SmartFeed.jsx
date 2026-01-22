@@ -78,6 +78,28 @@ export default function SmartFeed() {
 
   const navigate = useNavigate();
 
+  // ✅ FIXED: Reduced caching, faster refresh
+  const { data: properties, isLoading, error } = useQuery({
+    queryKey: ['properties'],
+    queryFn: () => base44.entities.Property.list('-created_date'),
+    initialData: [],
+    staleTime: 0,
+    cacheTime: 30 * 1000,
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true,
+  });
+
+  // ✅ FIXED: Reduced caching for requirements
+  const { data: requirements, isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
+    initialData: [],
+    staleTime: 0,
+    cacheTime: 30 * 1000,
+    refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: true,
+  });
+
   const popularAreas = [
     "Bandra West", "Juhu", "Andheri West", "Khar West",
     "BKC", "Worli", "Lower Parel", "Powai"
@@ -383,27 +405,7 @@ export default function SmartFeed() {
     setItemsToShow(ITEMS_PER_PAGE);
   }, [filters]);
 
-  // ✅ FIXED: Reduced caching, faster refresh
-  const { data: properties, isLoading, error } = useQuery({
-    queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.list('-created_date'),
-    initialData: [],
-    staleTime: 0, // ✅ CHANGED
-    cacheTime: 30 * 1000, // ✅ CHANGED
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true, // ✅ ENABLED: Refresh when user returns to tab
-  });
 
-  // ✅ FIXED: Reduced caching for requirements
-  const { data: requirements, isLoading: requirementsLoading } = useQuery({
-    queryKey: ['requirements'],
-    queryFn: () => base44.entities.Requirement.list('-created_date'),
-    initialData: [],
-    staleTime: 0, // ✅ CHANGED
-    cacheTime: 30 * 1000, // ✅ CHANGED
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true, // ✅ ENABLED
-  });
 
   // ✅ FIXED: Only show banner for TRULY new items, persist counts in localStorage
   useEffect(() => {
