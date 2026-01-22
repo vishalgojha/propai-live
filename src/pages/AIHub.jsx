@@ -242,7 +242,7 @@ export default function AIHub() {
                   {message.content}
                 </ReactMarkdown>
               )}
-            </div>
+            </motion.div>
           )}
           
           {message.tool_calls && message.tool_calls.length > 0 && (
@@ -631,7 +631,7 @@ export default function AIHub() {
               Press Enter to send • Shift+Enter for new line
             </motion.p>
           </div>
-        </div>
+        </motion.div>
 
         {/* QR Code Generator */}
         <div className="mt-6 bg-white/80 backdrop-blur-xl rounded-2xl border-2 border-purple-200 p-6">
