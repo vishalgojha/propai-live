@@ -165,7 +165,7 @@ export default function Home() {
             <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
               Paste a real broker WhatsApp message.
               <br className="hidden md:block" />
-              <span className="text-slate-700 font-medium">PropAI converts it into a verified, searchable listing with price band, intent, and trust score — in seconds.</span>
+              <span className="text-slate-700 font-medium">PropAI converts it into a verified, searchable listing with search intent tracking, broker trust scores, and smart matching — in seconds.</span>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -242,16 +242,16 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-slate-900 mb-4">What PropAI Live Does</h2>
           <div className="max-w-3xl mx-auto text-left space-y-4 text-slate-700">
             <p>
-              PropAI Live is a real-time property intelligence platform for Mumbai. We track active residential and commercial properties 
-              with verified availability, broker trust scores, and building-level market data.
+              PropAI Live is a real-time property intelligence platform. We track active residential and commercial properties 
+              with verified availability, broker trust scores, and demand analytics.
             </p>
             <p>
               Our AI parses WhatsApp broker messages to create structured listings with price bands, location details, BHK configurations, 
               furnishing status, and amenities. Every property is ranked by BrokerTrust™—a score based on broker reliability, response time, and data accuracy.
             </p>
             <p>
-              <strong>Key features:</strong> Real-time listings from Mumbai brokers, BrokerTrust™ scoring (0-100), building-level intelligence 
-              for 250+ buildings, smart property-requirement matching, and transparent pricing. All data updates automatically as brokers send new listings.
+              <strong>Key features:</strong> Real-time WhatsApp parsing, BrokerTrust™ scoring (0-100), search intent tracking from user behavior, 
+              smart property-requirement matching, developer tier classification, and broker collaboration tools. All data updates automatically as brokers send new listings.
             </p>
           </div>
         </div>
@@ -377,9 +377,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-6">
                 <Brain className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Building Memory™</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart Intent Tracking</h3>
               <p className="text-slate-700 leading-relaxed">
-                Every building learns from past listings. See pricing trends, broker activity, and market intelligence—instantly.
+                AI learns what you search for and auto-matches new properties. Your feed gets smarter with every search and inquiry.
               </p>
             </motion.div>
 
