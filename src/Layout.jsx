@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -160,31 +161,60 @@ export default function Layout({ children, currentPageName }) {
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
+            {/* Logo - Enhanced Animation */}
             <Link to={createPageUrl("Home")} className="flex items-center gap-2 group touch-manipulation">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
-                <Zap className="w-6 h-6 text-white fill-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">PropAI Live</span>
+              <motion.div 
+                className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-md relative overflow-hidden"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <motion.div
+                  className="absolute inset-0 bg-white/20"
+                  animate={{ 
+                    x: ['-100%', '100%'],
+                  }}
+                  transition={{ 
+                    repeat: Infinity, 
+                    duration: 3,
+                    ease: "linear"
+                  }}
+                />
+                <Zap className="w-6 h-6 text-white fill-white relative z-10" />
+              </motion.div>
+              <motion.span 
+                className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight"
+                whileHover={{ scale: 1.02 }}
+              >
+                PropAI Live
+              </motion.span>
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - Modern Animations */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold touch-manipulation ${
-                      isActive
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
-                        : "text-slate-700 hover:bg-purple-50"
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="text-sm">{item.name}</span>
-                  </Link>
+                  <motion.div key={item.name} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all font-semibold touch-manipulation relative overflow-hidden ${
+                        isActive
+                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg"
+                          : "text-slate-700 hover:bg-purple-50"
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          className="absolute inset-0 bg-white/10"
+                          layoutId="activeNav"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                      <item.icon className="w-4 h-4 relative z-10" />
+                      <span className="text-sm relative z-10">{item.name}</span>
+                    </Link>
+                  </motion.div>
                 );
               })}
 
@@ -248,25 +278,38 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-purple-100 bg-white/95 backdrop-blur-xl">
-            <nav className="px-4 py-4 space-y-2">
-              {navItems.map((item) => {
+        {/* Mobile Menu Dropdown - Animated */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div 
+              className="md:hidden border-t border-purple-100 bg-white/95 backdrop-blur-xl overflow-hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <nav className="px-4 py-4 space-y-2">
+              {navItems.map((item, idx) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <Link
+                  <motion.div
                     key={item.name}
-                    to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-semibold touch-manipulation min-h-[44px] ${
-                      isActive
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
-                        : "text-slate-700 active:bg-purple-100"
-                    }`}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: idx * 0.05 }}
                   >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.name}</span>
-                  </Link>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-semibold touch-manipulation min-h-[44px] ${
+                        isActive
+                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md"
+                          : "text-slate-700 active:bg-purple-100"
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </motion.div>
                 );
               })}
 
@@ -319,14 +362,23 @@ export default function Layout({ children, currentPageName }) {
                   )}
                 </div>
               )}
-            </nav>
-          </div>
-        )}
+              </nav>
+              </motion.div>
+              )}
+              </AnimatePresence>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Page Transitions */}
       <main className="min-h-[calc(100vh-4rem)]">
-        {children}
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          {children}
+        </motion.div>
       </main>
 
       {/* Light Modern Footer */}

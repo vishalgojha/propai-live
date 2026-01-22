@@ -132,10 +132,35 @@ export default function Home() {
         canonical={typeof window !== 'undefined' ? window.location.origin : 'https://propai.live'}
       />
 
-      {/* Hero Section */}
+      {/* Hero Section - Enhanced Animations */}
       <section className="relative bg-gradient-to-br from-purple-100 via-blue-50 to-purple-50 overflow-hidden">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl"></div>
+        <motion.div 
+          className="absolute top-20 right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl"
+          animate={{ 
+            x: [0, 30, 0],
+            y: [0, -20, 0],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ 
+            repeat: Infinity, 
+            duration: 8,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-20 left-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl"
+          animate={{ 
+            x: [0, -40, 0],
+            y: [0, 30, 0],
+            scale: [1, 1.15, 1]
+          }}
+          transition={{ 
+            repeat: Infinity, 
+            duration: 10,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
@@ -144,10 +169,21 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
-              <Zap className="w-4 h-4" />
-              Real-time property data > pretty pictures
-            </Badge>
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Badge className="mb-6 bg-white border-2 border-purple-200 text-purple-700 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 shadow-sm">
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                >
+                  <Zap className="w-4 h-4" />
+                </motion.div>
+                Real-time property data > pretty pictures
+              </Badge>
+            </motion.div>
 
             {/* ✅ SEO: Proper H1 with longtail keywords */}
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
@@ -165,24 +201,34 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button
-                onClick={() => navigate(createPageUrl("SmartFeed"))}
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group touch-manipulation"
-              >
-                <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Explore SmartFeed (Live Listings)
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <a
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  onClick={() => navigate(createPageUrl("SmartFeed"))}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold h-14 px-8 rounded-2xl shadow-lg text-lg group touch-manipulation relative overflow-hidden"
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-white/10"
+                    initial={{ x: '-100%' }}
+                    whileHover={{ x: '100%' }}
+                    transition={{ duration: 0.6 }}
+                  />
+                  <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform relative z-10" />
+                  <span className="relative z-10">Explore SmartFeed (Live Listings)</span>
+                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform relative z-10" />
+                </Button>
+              </motion.div>
+              <motion.a
                 href={base44.agents.getWhatsAppConnectURL('chariot_master')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-white hover:bg-purple-50 border-2 border-purple-200 text-purple-700 font-semibold h-14 px-8 rounded-2xl text-lg transition-all touch-manipulation"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <MessageCircle className="w-5 h-5" />
                 Connect WhatsApp AI
-              </a>
+              </motion.a>
             </div>
 
             <p className="text-sm text-slate-500 mb-8 italic">
