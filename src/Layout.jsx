@@ -143,15 +143,20 @@ export default function Layout({ children, currentPageName }) {
   // Add features for logged-in users
   if (user) {
     if (user.broker_id) {
+        navItems.push(
+          { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
+          { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
+        );
+      }
       navItems.push(
-        { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
-        { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
+        { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
       );
     }
+
+    // Market Insights for everyone
     navItems.push(
-      { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
+      { name: "Market Insights", icon: BarChart3, path: createPageUrl("MarketInsights") }
     );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">

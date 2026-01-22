@@ -236,11 +236,32 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ✅ NEW: SEO Content Block - Popular Localities */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white/50">
+      {/* ✅ AI-READABLE: What PropAI Does */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">What PropAI Live Does</h2>
+          <div className="max-w-3xl mx-auto text-left space-y-4 text-slate-700">
+            <p>
+              PropAI Live is a real-time property intelligence platform for Mumbai. We track active residential and commercial properties 
+              with verified availability, broker trust scores, and building-level market data.
+            </p>
+            <p>
+              Our AI parses WhatsApp broker messages to create structured listings with price bands, location details, BHK configurations, 
+              furnishing status, and amenities. Every property is ranked by BrokerTrust™—a score based on broker reliability, response time, and data accuracy.
+            </p>
+            <p>
+              <strong>Key features:</strong> Real-time listings from Mumbai brokers, BrokerTrust™ scoring (0-100), building-level intelligence 
+              for 250+ buildings, smart property-requirement matching, and transparent pricing. All data updates automatically as brokers send new listings.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ✅ SEO Content Block - Popular Localities */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-slate-50">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-slate-900 mb-3">Find Properties in Mumbai's Top Localities</h2>
-          <p className="text-slate-600">Browse verified listings from popular areas across Mumbai</p>
+          <p className="text-slate-600">Browse verified listings from popular areas across Mumbai. Real-time data from trusted brokers.</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -288,9 +309,16 @@ export default function Home() {
             <p className="text-xs text-slate-600">Offices & retail</p>
           </Link>
 
-
-        </div>
-      </section>
+          <Link
+            to={createPageUrl("MarketInsights")}
+            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all text-center group"
+          >
+            <Brain className="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-slate-900 mb-1">Market Insights</h3>
+            <p className="text-xs text-slate-600">Live data & trends</p>
+          </Link>
+          </div>
+          </section>
 
       {/* Featured Properties Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
