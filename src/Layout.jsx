@@ -578,9 +578,14 @@ export default function Layout({ children, currentPageName }) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                  <a href="tel:+919819471310" className="hover:text-blue-700 transition-colors touch-manipulation">
-                    +91 98194 71310
-                  </a>
+                  <div className="flex flex-col gap-1">
+                    <a href="tel:+918850163450" className="hover:text-blue-700 transition-colors touch-manipulation">
+                      +91 88501 63450
+                    </a>
+                    <a href="tel:+919820056180" className="hover:text-blue-700 transition-colors touch-manipulation">
+                      +91 98200 56180
+                    </a>
+                  </div>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-blue-600 flex-shrink-0" />
