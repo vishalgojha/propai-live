@@ -99,33 +99,50 @@ export default function SmartFeed() {
     debouncedSearch(filters.search);
   }, [filters.search, debouncedSearch]);
 
-  // ✅ FIXED: Reduced caching, faster refresh
+  // ⚡ OPTIMIZED: Fetch only first 100 properties initially for faster load
   const { data: properties = [], isLoading, error } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.list('-created_date'),
-    staleTime: 0,
-    cacheTime: 30 * 1000,
+    queryFn: () => base44.entities.Property.list('-created_date', 100),
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    cacheTime: 10 * 60 * 1000, // 10 minutes
     refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Reduce unnecessary refetches
   });
 
-  // ✅ FIXED: Reduced caching for requirements
+  // ⚡ OPTIMIZED: Fetch requirements with limit
   const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
     queryKey: ['requirements'],
-    queryFn: () => base44.entities.Requirement.list('-created_date'),
-    staleTime: 0,
-    cacheTime: 30 * 1000,
+    queryFn: () => base44.entities.Requirement.list('-created_date', 50),
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
     refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
+
+  // ⚡ OPTIMIZED: Cache active properties to avoid re-filtering
+  const activeProperties = useMemo(() => {
+    return properties.filter(p => p.status === "Active" && !p.is_duplicate);
+  }, [properties]);
 
   // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
-    let results = properties.filter(property => {
-      if (property.status !== "Active" || property.is_duplicate === true) {
-        return false;
-      }
+    let results = activeProperties;
 
+    // Early return if no filters applied
+    if (!debouncedSearchQuery && 
+        (!filters.bhk_multi || filters.bhk_multi.length === 0) &&
+        (!filters.location_multi || filters.location_multi.length === 0) &&
+        filters.listingType === 'all' &&
+        filters.propertyCategory === 'all' &&
+        filters.furnishing === 'all' &&
+        !filters.minPrice &&
+        !filters.maxPrice &&
+        (!filters.amenities || filters.amenities.length === 0)) {
+      // No filters, just sort and return
+      return sortProperties(results, filters.sortBy);
+    }
+
+    results = results.filter(property => {
       // ⚡ Use debounced search query
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
@@ -186,12 +203,15 @@ export default function SmartFeed() {
       return true;
     });
 
-    results.sort((a, b) => {
-      switch (filters.sortBy) {
+    return sortProperties(results, filters.sortBy);
+  }, [activeProperties, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, filters.sortBy, debouncedSearchQuery, filters.amenities]);
+
+  // ⚡ Extracted sorting function for reuse
+  const sortProperties = (props, sortBy) => {
+    return [...props].sort((a, b) => {
+      switch (sortBy) {
         case 'latest':
-          const dateA = new Date(a.last_refreshed || a.created_date);
-          const dateB = new Date(b.last_refreshed || b.created_date);
-          return dateB.getTime() - dateA.getTime();
+          return new Date(b.last_refreshed || b.created_date) - new Date(a.last_refreshed || a.created_date);
 
         case 'price_low':
           const priceA = a.price_unit === 'crores' ? a.price * 100 : a.price;
@@ -212,14 +232,10 @@ export default function SmartFeed() {
             return trustScoreB - trustScoreA;
           }
 
-          const dateAT = new Date(a.last_refreshed || a.created_date);
-          const dateBT = new Date(b.last_refreshed || b.created_date);
-          return dateBT.getTime() - dateAT.getTime();
+          return new Date(b.last_refreshed || b.created_date) - new Date(a.last_refreshed || a.created_date);
       }
     });
-
-    return results;
-  }, [properties, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, filters.sortBy, debouncedSearchQuery]);
+  };
 
   // Track search intent when filters change
   useEffect(() => {
@@ -419,8 +435,8 @@ export default function SmartFeed() {
   useEffect(() => {
     if (!isLoading && !requirementsLoading && properties.length > 0) {
       const currentCounts = {
-        properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
-        requirements: requirements.filter(r => r.status === "Active").length
+        properties: activeProperties.length,
+        requirements: activeRequirements.length
       };
 
       // ✅ CRITICAL FIX: Only show banner if we have a baseline AND there are new items
@@ -465,13 +481,12 @@ export default function SmartFeed() {
         localStorage.setItem('propai_last_seen_counts', JSON.stringify(currentCounts));
       }
     }
-  }, [properties, requirements, isLoading, requirementsLoading]);
+  }, [activeProperties, activeRequirements, isLoading, requirementsLoading]);
 
   const personalizedProperties = useMemo(() => {
-    if (!userPreferences || !properties.length) return [];
+    if (!userPreferences || !activeProperties.length) return [];
 
-    return properties
-      .filter(p => p.status === "Active" && !p.is_duplicate)
+    return activeProperties
       .map(property => {
         let score = 0;
 
@@ -491,11 +506,15 @@ export default function SmartFeed() {
       .filter(p => p.matchScore >= 30)
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 6);
-  }, [properties, userPreferences]);
+  }, [activeProperties, userPreferences]);
+
+  // ⚡ OPTIMIZED: Cache active requirements
+  const activeRequirements = useMemo(() => {
+    return requirements.filter(r => r.status === "Active");
+  }, [requirements]);
 
   const filteredRequirements = useMemo(() => {
-    let results = requirements.filter(requirement => {
-      if (requirement.status !== "Active") return false;
+    let results = activeRequirements.filter(requirement => {
 
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
@@ -547,7 +566,7 @@ export default function SmartFeed() {
     });
 
     return results;
-  }, [requirements, filters.bhk_multi, filters.location_multi, filters.listingType, filters.furnishing, debouncedSearchQuery]);
+  }, [activeRequirements, filters.bhk_multi, filters.location_multi, filters.listingType, filters.furnishing, debouncedSearchQuery]);
 
   const getDisplayItems = () => {
     if (filters.viewMode === "requirements") {
@@ -646,8 +665,8 @@ export default function SmartFeed() {
     
     // ✅ Update localStorage when user acknowledges new items
     const currentCounts = {
-      properties: properties.filter(p => p.status === "Active" && !p.is_duplicate).length,
-      requirements: requirements.filter(r => r.status === "Active").length
+      properties: activeProperties.length,
+      requirements: activeRequirements.length
     };
     localStorage.setItem('propai_last_seen_counts', JSON.stringify(currentCounts));
     previousCountsRef.current = currentCounts;
@@ -1132,10 +1151,10 @@ export default function SmartFeed() {
         {(isLoading || requirementsLoading) && (
           <>
             <div className="mb-6 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-xl border border-purple-300">
-                <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-semibold text-purple-900">
-                  Loading properties... (typically 100-200 active listings)
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl border border-slate-200">
+                <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-semibold text-slate-900">
+                  Loading feed...
                 </p>
               </div>
             </div>
