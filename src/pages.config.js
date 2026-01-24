@@ -13,7 +13,6 @@ import Blogs from './pages/Blogs';
 import BrokerAnalytics from './pages/BrokerAnalytics';
 import BrokerAssistant from './pages/BrokerAssistant';
 import BrokerInbox from './pages/BrokerInbox';
-import BrokerNetwork from './pages/BrokerNetwork';
 import BrokerPerformance from './pages/BrokerPerformance';
 import BrokerProfile from './pages/BrokerProfile';
 import BuildingBlog from './pages/BuildingBlog';
@@ -60,7 +59,6 @@ export const PAGES = {
     "BrokerAnalytics": BrokerAnalytics,
     "BrokerAssistant": BrokerAssistant,
     "BrokerInbox": BrokerInbox,
-    "BrokerNetwork": BrokerNetwork,
     "BrokerPerformance": BrokerPerformance,
     "BrokerProfile": BrokerProfile,
     "BuildingBlog": BuildingBlog,

@@ -149,9 +149,6 @@ export default function Layout({ children, currentPageName }) {
           { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
         );
       }
-      navItems.push(
-        { name: "Network", icon: Users, path: createPageUrl("BrokerNetwork") }
-      );
     }
 
     // Market Insights for everyone
@@ -459,15 +456,7 @@ export default function Layout({ children, currentPageName }) {
                     Blog & Guides
                   </Link>
                 </li>
-                <li>
-                  <Link 
-                    to={createPageUrl("BrokerNetwork")} 
-                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
-                  >
-                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    Broker Network
-                  </Link>
-                </li>
+
               </ul>
             </div>
 
