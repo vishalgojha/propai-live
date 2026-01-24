@@ -78,7 +78,7 @@ export default function SmartFeed() {
   const [showSavedSearches, setShowSavedSearches] = useState(false);
 
   const ITEMS_PER_PAGE = 24;
-  const REFRESH_INTERVAL = 10000;
+  const REFRESH_INTERVAL = 60000; // Reduced to 60 seconds for better performance
 
   const navigate = useNavigate();
 
@@ -99,30 +99,28 @@ export default function SmartFeed() {
     debouncedSearch(filters.search);
   }, [filters.search, debouncedSearch]);
 
-  // ⚡ OPTIMIZED: Fetch only first 100 properties initially for faster load
+  // ⚡ OPTIMIZED: Fetch only 50 properties initially, lazy load more
   const { data: properties = [], isLoading, error } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.list('-created_date', 100),
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    refetchInterval: REFRESH_INTERVAL,
-    refetchOnWindowFocus: false, // Reduce unnecessary refetches
-  });
-
-  // ⚡ OPTIMIZED: Fetch requirements with limit
-  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
-    queryKey: ['requirements'],
-    queryFn: () => base44.entities.Requirement.list('-created_date', 50),
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
-    refetchInterval: REFRESH_INTERVAL,
+    queryFn: () => base44.entities.Property.filter({ status: "Active", is_duplicate: false }, '-created_date', 50),
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
+    refetchInterval: false, // Disable auto-refetch for performance
     refetchOnWindowFocus: false,
   });
 
-  // ⚡ OPTIMIZED: Cache active properties to avoid re-filtering
-  const activeProperties = useMemo(() => {
-    return properties.filter(p => p.status === "Active" && !p.is_duplicate);
-  }, [properties]);
+  // ⚡ OPTIMIZED: Fetch fewer requirements
+  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
+    queryKey: ['requirements'],
+    queryFn: () => base44.entities.Requirement.filter({ status: "Active" }, '-created_date', 30),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // ⚡ OPTIMIZED: Properties already filtered by query, no need to re-filter
+  const activeProperties = properties;
 
   // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
@@ -237,41 +235,8 @@ export default function SmartFeed() {
     });
   };
 
-  // Track search intent when filters change
+  // ⚡ OPTIMIZED: Debounced search intent tracking (only after 2 seconds of inactivity)
   useEffect(() => {
-    const trackSearchIntent = async () => {
-      try {
-        let sessionId = sessionStorage.getItem('propai_session_id');
-        if (!sessionId) {
-          sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          sessionStorage.setItem('propai_session_id', sessionId);
-        }
-
-        const deviceType = window.innerWidth < 768 ? 'mobile' : 
-                          window.innerWidth < 1024 ? 'tablet' : 'desktop';
-
-        await base44.entities.SearchIntent.create({
-          user_id: user?.id,
-          session_id: sessionId,
-          search_query: debouncedSearchQuery || '',
-          filters_applied: {
-            bhk_multi: filters.bhk_multi,
-            location_multi: filters.location_multi,
-            listingType: filters.listingType,
-            propertyCategory: filters.propertyCategory,
-            furnishing: filters.furnishing,
-            minPrice: filters.minPrice ? parseFloat(filters.minPrice) : null,
-            maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : null
-          },
-          results_count: filteredProperties.length,
-          device_type: deviceType,
-          user_agent: navigator.userAgent
-        });
-      } catch (error) {
-        console.error('Failed to track search intent:', error);
-      }
-    };
-
     const hasActiveFilters = 
       debouncedSearchQuery || 
       filters.bhk_multi?.length > 0 || 
@@ -280,10 +245,45 @@ export default function SmartFeed() {
       filters.minPrice || 
       filters.maxPrice;
 
-    if (hasActiveFilters) {
-      trackSearchIntent();
-    }
-  }, [debouncedSearchQuery, filters, filteredProperties, user]);
+    if (!hasActiveFilters) return;
+
+    const timeoutId = setTimeout(() => {
+      (async () => {
+        try {
+          let sessionId = sessionStorage.getItem('propai_session_id');
+          if (!sessionId) {
+            sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionStorage.setItem('propai_session_id', sessionId);
+          }
+
+          const deviceType = window.innerWidth < 768 ? 'mobile' : 
+                            window.innerWidth < 1024 ? 'tablet' : 'desktop';
+
+          await base44.entities.SearchIntent.create({
+            user_id: user?.id,
+            session_id: sessionId,
+            search_query: debouncedSearchQuery || '',
+            filters_applied: {
+              bhk_multi: filters.bhk_multi,
+              location_multi: filters.location_multi,
+              listingType: filters.listingType,
+              propertyCategory: filters.propertyCategory,
+              furnishing: filters.furnishing,
+              minPrice: filters.minPrice ? parseFloat(filters.minPrice) : null,
+              maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : null
+            },
+            results_count: filteredProperties.length,
+            device_type: deviceType,
+            user_agent: navigator.userAgent
+          });
+        } catch (error) {
+          console.error('Failed to track search intent:', error);
+        }
+      })();
+    }, 2000); // Only track after 2 seconds of no changes
+
+    return () => clearTimeout(timeoutId);
+  }, [debouncedSearchQuery, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, user?.id]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -508,10 +508,8 @@ export default function SmartFeed() {
       .slice(0, 6);
   }, [activeProperties, userPreferences]);
 
-  // ⚡ OPTIMIZED: Cache active requirements
-  const activeRequirements = useMemo(() => {
-    return requirements.filter(r => r.status === "Active");
-  }, [requirements]);
+  // ⚡ OPTIMIZED: Requirements already filtered by query
+  const activeRequirements = requirements;
 
   const filteredRequirements = useMemo(() => {
     let results = activeRequirements.filter(requirement => {
@@ -588,36 +586,7 @@ export default function SmartFeed() {
   const displayedItems = allItems.slice(0, itemsToShow);
   const hasMore = itemsToShow < allItems.length;
 
-  // ✅ NEW: Add pagination link tags for Google
-  useEffect(() => {
-    // Calculate current page number
-    const currentPage = Math.ceil(itemsToShow / ITEMS_PER_PAGE);
-    const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
-    
-    // Remove existing pagination link tags
-    document.querySelectorAll('link[rel="next"], link[rel="prev"]').forEach(link => link.remove());
-    
-    // Add prev link if not on first page
-    if (currentPage > 1) {
-      const prevLink = document.createElement('link');
-      prevLink.rel = 'prev';
-      prevLink.href = `${window.location.origin}/smartfeed?page=${currentPage - 1}`;
-      document.head.appendChild(prevLink);
-    }
-    
-    // Add next link if more items available and not on the last page
-    if (hasMore && currentPage < totalPages) {
-      const nextLink = document.createElement('link');
-      nextLink.rel = 'next';
-      nextLink.href = `${window.location.origin}/smartfeed?page=${currentPage + 1}`;
-      document.head.appendChild(nextLink);
-    }
-    
-    // Cleanup on unmount or dependency change
-    return () => {
-      document.querySelectorAll('link[rel="next"], link[rel="prev"]').forEach(link => link.remove());
-    };
-  }, [itemsToShow, hasMore, allItems.length, ITEMS_PER_PAGE]); // Added ITEMS_PER_PAGE as a dependency
+  // Removed pagination links for performance - not critical for initial load
 
   const loadMore = () => {
     setItemsToShow(prev => Math.min(prev + ITEMS_PER_PAGE, allItems.length));
@@ -788,7 +757,7 @@ export default function SmartFeed() {
                     <span className="font-semibold">Live</span>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™ • Auto-refresh every 10s</p>
+                <p className="text-sm text-slate-600 font-light">AI-ranked by BrokerTrust™</p>
               </div>
             </div>
             {user && (
