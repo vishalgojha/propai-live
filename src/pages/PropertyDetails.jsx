@@ -339,7 +339,7 @@ export default function PropertyDetails() {
 
   if (!propertySlug) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Property not found</h2>
           <Button onClick={() => navigate(createPageUrl("SmartFeed"))}>
@@ -352,7 +352,7 @@ export default function PropertyDetails() {
 
   if (isLoading || !property) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-96 w-full mb-8 rounded-3xl" />
           <Skeleton className="h-12 w-3/4 mb-4" />
@@ -363,7 +363,7 @@ export default function PropertyDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors closeButton />
 
       {/* ✅ ENHANCED: Longtail SEO with rich meta tags */}
@@ -397,17 +397,17 @@ export default function PropertyDetails() {
             exit={{ opacity: 0, height: 0 }}
             className="mb-6"
           >
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border-2 border-indigo-200">
+            <div className="bg-blue-50 rounded-2xl p-4 border-2 border-blue-200">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 mb-1 text-sm">📸 Why This Listing Has No Photos</h3>
                     <p className="text-xs text-slate-700 leading-relaxed">
                       This property was just listed—likely within seconds of being posted by the broker. PropAI prioritizes <strong>real-time data over static images</strong> to ensure you see the freshest inventory first. Photos will appear automatically when the broker shares them.
-                      <a href={createPageUrl("FAQ")} className="text-indigo-700 font-semibold hover:underline ml-1">Learn more →</a>
+                      <a href={createPageUrl("FAQ")} className="text-blue-700 font-semibold hover:underline ml-1">Learn more →</a>
                     </p>
                   </div>
                 </div>
@@ -415,7 +415,7 @@ export default function PropertyDetails() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowPhotoDisclaimer(false)}
-                  className="h-6 w-6 hover:bg-indigo-100 flex-shrink-0 text-slate-500 hover:text-slate-700"
+                  className="h-6 w-6 hover:bg-blue-100 flex-shrink-0 text-slate-500 hover:text-slate-700"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -424,17 +424,17 @@ export default function PropertyDetails() {
           </motion.div>
         )}
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-purple-200/50 overflow-hidden mb-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200 overflow-hidden mb-8">
 
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 md:px-8 py-6 border-b border-purple-100">
+          <div className="bg-slate-50 px-6 md:px-8 py-6 border-b border-slate-200">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
               <div className="flex-1">
                 <div className="flex items-center flex-wrap gap-2 mb-3">
-                  <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs px-3 py-1 rounded-full border-0">
+                  <Badge className="bg-blue-600 text-white font-bold text-xs px-3 py-1 rounded-full border-0">
                     {property.bhk}
                   </Badge>
                   {property.jodi_flag && (
-                    <Badge className="bg-purple-500/20 text-purple-900 border-purple-500 font-bold text-xs px-3 py-1 rounded-full">
+                    <Badge className="bg-blue-500/20 text-blue-900 border-blue-500 font-bold text-xs px-3 py-1 rounded-full">
                       JODI
                     </Badge>
                   )}
@@ -447,13 +447,13 @@ export default function PropertyDetails() {
                 </div>
 
                 {property.ai_title && (
-                  <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 leading-tight">
+                  <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3 leading-tight">
                     {property.ai_title}
                   </h1>
                 )}
 
                 <div className="flex items-center gap-2 text-slate-600 mb-3">
-                  <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
                   <p className="text-sm md:text-base">{getLocationDisplay()}</p>
                 </div>
 
@@ -463,13 +463,13 @@ export default function PropertyDetails() {
                     {property.views_count || 0} views
                   </span>
                   {property.custom_id && (
-                    <span className="font-mono text-purple-600">{property.custom_id}</span>
+                    <span className="font-mono text-blue-600">{property.custom_id}</span>
                   )}
                 </div>
               </div>
 
               <div className="text-left md:text-right">
-                <p className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                <p className="text-3xl md:text-5xl font-bold text-blue-600 mb-2">
                   {formatPrice()}
                 </p>
                 <p className="text-xs md:text-sm text-slate-500 uppercase tracking-wide font-medium">
@@ -483,7 +483,7 @@ export default function PropertyDetails() {
                 onClick={handleShare}
                 variant="outline"
                 size="sm"
-                className="border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
+                className="border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs md:text-sm"
               >
                 <Share2 className="w-3.5 h-3.5 mr-1.5" />
                 Share
@@ -494,9 +494,9 @@ export default function PropertyDetails() {
           <div className="p-6 md:p-8">
 
             {property.ai_description && (
-              <div className="mb-8 p-4 md:p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200">
+              <div className="mb-8 p-4 md:p-5 bg-blue-50 rounded-2xl border border-blue-200">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <p className="text-sm md:text-base text-slate-700 leading-relaxed">
                     {property.ai_description}
                   </p>
@@ -531,9 +531,9 @@ export default function PropertyDetails() {
 
             <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
               {property.floor && (
-                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <Layers className="w-4 h-4 text-purple-500" />
+                    <Layers className="w-4 h-4 text-blue-600" />
                     <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Floor</p>
                   </div>
                   <p className="text-sm md:text-base font-bold text-slate-900">
@@ -543,27 +543,27 @@ export default function PropertyDetails() {
                 </div>
               )}
               {property.possession && (
-                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-purple-500" />
+                    <Calendar className="w-4 h-4 text-blue-600" />
                     <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Possession</p>
                   </div>
                   <p className="text-sm md:text-base font-bold text-slate-900">{property.possession}</p>
                 </div>
               )}
               {property.veg_nonveg && (
-                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <Utensils className="w-4 h-4 text-purple-500" />
+                    <Utensils className="w-4 h-4 text-blue-600" />
                     <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Food Preference</p>
                   </div>
                   <p className="text-sm md:text-base font-bold text-slate-900">{property.veg_nonveg}</p>
                 </div>
               )}
               {property.built_up_area && (
-                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <Maximize2 className="w-4 h-4 text-purple-500" />
+                    <Maximize2 className="w-4 h-4 text-blue-600" />
                     <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Built-up Area</p>
                   </div>
                   <p className="text-sm md:text-base font-bold text-slate-900">{property.built_up_area} sq ft</p>
@@ -585,8 +585,8 @@ export default function PropertyDetails() {
                 <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4 uppercase tracking-wide">Amenities</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {property.amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs md:text-sm text-slate-700 bg-purple-50 p-3 rounded-xl border border-purple-100">
-                      <Check className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <div key={idx} className="flex items-center gap-2 text-xs md:text-sm text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
                       <span className="line-clamp-1">{amenity}</span>
                     </div>
                   ))}
@@ -607,7 +607,7 @@ export default function PropertyDetails() {
               <Button
                 onClick={handleShare}
                 variant="outline"
-                className="w-full border-2 border-purple-300 hover:bg-purple-50 text-purple-700 font-semibold rounded-xl text-xs md:text-sm"
+                className="w-full border-2 border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs md:text-sm"
               >
                 <Share2 className="w-3 h-3 md:w-4 h-4 mr-2" />
                 Share Property
@@ -615,9 +615,9 @@ export default function PropertyDetails() {
             </div>
           </div>
 
-          <div className="px-6 md:px-8 py-4 md:py-5 bg-purple-50 border-t border-purple-100">
+          <div className="px-6 md:px-8 py-4 md:py-5 bg-slate-50 border-t border-slate-200">
             <div className="text-center text-xs md:text-sm text-slate-500">
-              Listed by <a href="https://propai.live" target="_blank" rel="noopener" className="font-semibold text-purple-700 hover:text-purple-800 transition-colors">PropAI Live</a>
+              Listed by <a href="https://propai.live" target="_blank" rel="noopener" className="font-semibold text-blue-700 hover:text-blue-800 transition-colors">PropAI Live</a>
               {property.created_date && (
                 <span className="ml-2">• {format(new Date(property.created_date), "MMM dd, yyyy")}</span>
               )}
