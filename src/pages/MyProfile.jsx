@@ -11,8 +11,9 @@ import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Award, BarChart3, Eye, MessageCircle, Target,
   Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search,
-  ExternalLink, Share2, Palette
+  ExternalLink, Share2, Palette, Upload
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -37,7 +38,10 @@ export default function MyProfile() {
     agency_name: "",
     email: "",
     phone: "",
-    name: ""
+    name: "",
+    tagline: "",
+    bio: "",
+    experience_years: ""
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [creatingBrokerProfile, setCreatingBrokerProfile] = useState(false);
@@ -90,7 +94,10 @@ export default function MyProfile() {
               agency_name: broker.agency_name || "",
               email: broker.email || "",
               phone: broker.phone || "",
-              name: broker.name || user.full_name || ""
+              name: broker.name || user.full_name || "",
+              tagline: broker.tagline || "",
+              bio: broker.bio || "",
+              experience_years: broker.performance_metrics?.experience_years || ""
             });
             
             const isProfileIncomplete = !broker.phone || !broker.agency_name;
@@ -112,7 +119,10 @@ export default function MyProfile() {
             agency_name: "",
             email: user.email || "",
             phone: "",
-            name: user.full_name || ""
+            name: user.full_name || "",
+            tagline: "",
+            bio: "",
+            experience_years: ""
           });
         }
       } catch (error) {
@@ -333,7 +343,13 @@ export default function MyProfile() {
         name: profileData.name.trim() || brokerProfile.name,
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
-        phone: normalizedPhone || brokerProfile.phone
+        phone: normalizedPhone || brokerProfile.phone,
+        tagline: profileData.tagline.trim() || null,
+        bio: profileData.bio.trim() || null,
+        performance_metrics: {
+          ...(brokerProfile.performance_metrics || {}),
+          experience_years: profileData.experience_years ? parseInt(profileData.experience_years) : null
+        }
       };
 
       console.log('📝 Updating broker with data:', updateData);
@@ -346,7 +362,13 @@ export default function MyProfile() {
         name: profileData.name.trim() || prev.name,
         agency_name: profileData.agency_name.trim() || null,
         email: profileData.email.trim() || null,
-        phone: normalizedPhone || prev.phone
+        phone: normalizedPhone || prev.phone,
+        tagline: profileData.tagline.trim() || null,
+        bio: profileData.bio.trim() || null,
+        performance_metrics: {
+          ...(prev.performance_metrics || {}),
+          experience_years: profileData.experience_years ? parseInt(profileData.experience_years) : null
+        }
       }));
       
       setEditingProfile(false);
@@ -1014,22 +1036,178 @@ export default function MyProfile() {
           )}
         </Card>
 
-        {/* ✅ FIXED: PROFILE DETAILS CARD */}
+        {/* ✅ PROFILE PHOTOS CARD */}
+        <Card className="p-6 bg-white border border-slate-200 mb-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-600" />
+            Profile Photos
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Profile Photo */}
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-2 block">Profile Photo</label>
+              {brokerProfile.profile_photo ? (
+                <div className="relative">
+                  <img 
+                    src={brokerProfile.profile_photo} 
+                    alt="Profile" 
+                    className="w-32 h-32 rounded-xl object-cover border-2 border-slate-200"
+                  />
+                  <Button
+                    onClick={async () => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          try {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            await base44.entities.Broker.update(brokerProfile.id, { profile_photo: file_url });
+                            setBrokerProfile(prev => ({ ...prev, profile_photo: file_url }));
+                            toast.success('Profile photo updated!');
+                          } catch (error) {
+                            toast.error('Upload failed', { description: error.message });
+                          }
+                        }
+                      };
+                      input.click();
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Change Photo
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <div className="w-32 h-32 bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-300">
+                    <User className="w-12 h-12 text-slate-400" />
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          try {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            await base44.entities.Broker.update(brokerProfile.id, { profile_photo: file_url });
+                            setBrokerProfile(prev => ({ ...prev, profile_photo: file_url }));
+                            toast.success('Profile photo uploaded!');
+                          } catch (error) {
+                            toast.error('Upload failed', { description: error.message });
+                          }
+                        }
+                      };
+                      input.click();
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Upload Photo
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Cover Photo */}
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-2 block">Cover Photo</label>
+              {brokerProfile.cover_photo ? (
+                <div className="relative">
+                  <img 
+                    src={brokerProfile.cover_photo} 
+                    alt="Cover" 
+                    className="w-full h-32 rounded-xl object-cover border-2 border-slate-200"
+                  />
+                  <Button
+                    onClick={async () => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          try {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            await base44.entities.Broker.update(brokerProfile.id, { cover_photo: file_url });
+                            setBrokerProfile(prev => ({ ...prev, cover_photo: file_url }));
+                            toast.success('Cover photo updated!');
+                          } catch (error) {
+                            toast.error('Upload failed', { description: error.message });
+                          }
+                        }
+                      };
+                      input.click();
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Change Cover
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <div className="w-full h-32 bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-300">
+                    <Building2 className="w-12 h-12 text-slate-400" />
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          try {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            await base44.entities.Broker.update(brokerProfile.id, { cover_photo: file_url });
+                            setBrokerProfile(prev => ({ ...prev, cover_photo: file_url }));
+                            toast.success('Cover photo uploaded!');
+                          } catch (error) {
+                            toast.error('Upload failed', { description: error.message });
+                          }
+                        }
+                      };
+                      input.click();
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Upload Cover
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* ✅ PROFESSIONAL DETAILS CARD */}
         <Card className="p-6 bg-white border border-slate-200 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-blue-600" />
-              Profile Details
+              <Award className="w-5 h-5 text-blue-600" />
+              Professional Details
             </h3>
             <Button
               onClick={() => {
                 if (editingProfile) {
-                  // ✅ FIX: Reset to original data when canceling
                   setProfileData({
                     agency_name: brokerProfile.agency_name || "",
                     email: brokerProfile.email || "",
                     phone: brokerProfile.phone || "",
-                    name: brokerProfile.name || currentUser.full_name || ""
+                    name: brokerProfile.name || currentUser.full_name || "",
+                    tagline: brokerProfile.tagline || "",
+                    bio: brokerProfile.bio || "",
+                    experience_years: brokerProfile.performance_metrics?.experience_years || ""
                   });
                 }
                 setEditingProfile(!editingProfile);
@@ -1051,6 +1229,41 @@ export default function MyProfile() {
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                   placeholder="Your full name"
                   className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Tagline</label>
+                <Input
+                  type="text"
+                  value={profileData.tagline}
+                  onChange={(e) => setProfileData({ ...profileData, tagline: e.target.value })}
+                  placeholder="e.g., Luxury Real Estate Specialist in Bandra"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Professional Bio</label>
+                <Textarea
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                  placeholder="Tell us about your experience, specializations, and what makes you unique..."
+                  className="text-sm min-h-[100px]"
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Years of Experience</label>
+                <Input
+                  type="number"
+                  value={profileData.experience_years}
+                  onChange={(e) => setProfileData({ ...profileData, experience_years: e.target.value })}
+                  placeholder="e.g., 5"
+                  className="text-sm"
+                  min="0"
+                  max="50"
                 />
               </div>
 
@@ -1113,6 +1326,36 @@ export default function MyProfile() {
                   </span>
                 </div>
               </div>
+
+              {brokerProfile.tagline && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                  <Star className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <span className="text-xs text-slate-600 block">Tagline:</span>
+                    <span className="font-semibold text-slate-900 italic">"{brokerProfile.tagline}"</span>
+                  </div>
+                </div>
+              )}
+
+              {brokerProfile.bio && (
+                <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+                  <span className="text-xs text-slate-600 block mb-2">Professional Bio:</span>
+                  <p className="text-sm text-slate-700 leading-relaxed">{brokerProfile.bio}</p>
+                </div>
+              )}
+
+              {brokerProfile.performance_metrics?.experience_years && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <span className="text-xs text-slate-600 block">Experience:</span>
+                    <span className="font-semibold text-slate-900">
+                      {brokerProfile.performance_metrics.experience_years} years
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
                 <Phone className="w-6 h-6 text-blue-600" />
                 <div>

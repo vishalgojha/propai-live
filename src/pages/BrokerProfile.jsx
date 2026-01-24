@@ -113,7 +113,7 @@ export default function BrokerProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         
         {/* Back Button */}
@@ -126,15 +126,37 @@ export default function BrokerProfile() {
           Back to Network
         </Button>
 
+        {/* Cover Photo */}
+        {broker.cover_photo && (
+          <div className="h-48 rounded-xl overflow-hidden mb-6">
+            <img 
+              src={broker.cover_photo} 
+              alt="Cover" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Header */}
         <div className="bg-white rounded-xl p-6 border border-slate-200 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                <Users className="w-8 h-8 text-slate-700" />
-              </div>
+              {broker.profile_photo ? (
+                <img 
+                  src={broker.profile_photo} 
+                  alt={broker.name}
+                  className="w-16 h-16 rounded-xl object-cover border-2 border-slate-200"
+                />
+              ) : (
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <Users className="w-8 h-8 text-slate-700" />
+                </div>
+              )}
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">{broker.name}</h1>
+                {broker.tagline && (
+                  <p className="text-base text-slate-600 italic mt-1">{broker.tagline}</p>
+                )}
                 {broker.agency_name && (
                   <div className="flex items-center gap-2 mt-1">
                     <Building2 className="w-4 h-4 text-blue-600" />
@@ -168,7 +190,7 @@ export default function BrokerProfile() {
         {/* Key Metrics */}
         {brokerMetrics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <div className="flex items-center gap-2 mb-2">
                 <Package className="w-4 h-4 text-sky-600" />
                 <p className="text-xs text-slate-600 font-semibold">Active Listings</p>
@@ -177,21 +199,21 @@ export default function BrokerProfile() {
               <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalListings} total</p>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <div className="flex items-center gap-2 mb-2">
-                <Target className="w-4 h-4 text-purple-600" />
+                <Target className="w-4 h-4 text-blue-600" />
                 <p className="text-xs text-slate-600 font-semibold">Requirements</p>
               </div>
-              <p className="text-3xl font-bold text-purple-600">{brokerMetrics.activeRequirements}</p>
+              <p className="text-3xl font-bold text-blue-600">{brokerMetrics.activeRequirements}</p>
               <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalRequirements} total</p>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-slate-200">
+            <Card className="p-4 bg-white border border-slate-200">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="w-4 h-4 text-green-600" />
                 <p className="text-xs text-slate-600 font-semibold">Areas Covered</p>
               </div>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-3xl font-bold text-blue-600">
                 {broker.specializations?.primary_locations?.length || broker.areas_covered?.length || 0}
               </p>
             </Card>
@@ -208,11 +230,36 @@ export default function BrokerProfile() {
           </div>
         )}
 
+        {/* Professional Bio & Experience */}
+        {(broker.bio || broker.performance_metrics?.experience_years) && (
+          <Card className="p-6 bg-white border border-slate-200 mb-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-blue-600" />
+              Professional Profile
+            </h3>
+            
+            {broker.performance_metrics?.experience_years && (
+              <div className="mb-4 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <span className="text-sm font-semibold text-slate-900">
+                  {broker.performance_metrics.experience_years} years of experience
+                </span>
+              </div>
+            )}
+            
+            {broker.bio && (
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {broker.bio}
+              </p>
+            )}
+          </Card>
+        )}
+
         {/* Contact Info - Show if connected */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card className="p-6 bg-white border-2 border-slate-200">
+          <Card className="p-6 bg-white border border-slate-200">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Phone className="w-5 h-5 text-purple-600" />
+              <Phone className="w-5 h-5 text-blue-600" />
               Contact Information
             </h3>
             
@@ -259,8 +306,11 @@ export default function BrokerProfile() {
 
           {/* Specializations */}
           {broker.specializations && (
-            <Card className="p-6 bg-white border-2 border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Specializations</h3>
+            <Card className="p-6 bg-white border border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-blue-600" />
+                Specializations
+              </h3>
               {broker.specializations.primary_locations && broker.specializations.primary_locations.length > 0 && (
                 <div className="mb-4">
                   <p className="text-xs text-slate-600 mb-2">Primary Areas:</p>
@@ -301,7 +351,7 @@ export default function BrokerProfile() {
 
         {/* Team Members */}
         {broker.team_members && broker.team_members.length > 0 && (
-          <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+          <Card className="p-6 bg-white border border-slate-200 mb-6">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
               Team ({broker.team_members.length})
