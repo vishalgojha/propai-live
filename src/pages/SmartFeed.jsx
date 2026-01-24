@@ -122,6 +122,37 @@ export default function SmartFeed() {
   // ⚡ OPTIMIZED: Properties already filtered by query, no need to re-filter
   const activeProperties = properties;
 
+  // ⚡ Extracted sorting function for reuse
+  const sortProperties = (props, sortBy) => {
+    return [...props].sort((a, b) => {
+      switch (sortBy) {
+        case 'latest':
+          return new Date(b.last_refreshed || b.created_date) - new Date(a.last_refreshed || a.created_date);
+
+        case 'price_low':
+          const priceA = a.price_unit === 'crores' ? a.price * 100 : a.price;
+          const priceB = b.price_unit === 'crores' ? b.price * 100 : b.price;
+          return priceA - priceB;
+
+        case 'price_high':
+          const priceAH = a.price_unit === 'crores' ? a.price * 100 : a.price;
+          const priceBH = b.price_unit === 'crores' ? b.price * 100 : b.price;
+          return priceBH - priceAH;
+
+        case 'brokertrust':
+        default:
+          const trustScoreA = a.broker_trust_score || 50;
+          const trustScoreB = b.broker_trust_score || 50;
+
+          if (trustScoreB !== trustScoreA) {
+            return trustScoreB - trustScoreA;
+          }
+
+          return new Date(b.last_refreshed || b.created_date) - new Date(a.last_refreshed || a.created_date);
+      }
+    });
+  };
+
   // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
     let results = activeProperties;
@@ -203,37 +234,6 @@ export default function SmartFeed() {
 
     return sortProperties(results, filters.sortBy);
   }, [activeProperties, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, filters.sortBy, debouncedSearchQuery, filters.amenities]);
-
-  // ⚡ Extracted sorting function for reuse
-  const sortProperties = (props, sortBy) => {
-    return [...props].sort((a, b) => {
-      switch (sortBy) {
-        case 'latest':
-          return new Date(b.last_refreshed || b.created_date) - new Date(a.last_refreshed || a.created_date);
-
-        case 'price_low':
-          const priceA = a.price_unit === 'crores' ? a.price * 100 : a.price;
-          const priceB = b.price_unit === 'crores' ? b.price * 100 : b.price;
-          return priceA - priceB;
-
-        case 'price_high':
-          const priceAH = a.price_unit === 'crores' ? a.price * 100 : a.price;
-          const priceBH = b.price_unit === 'crores' ? b.price * 100 : b.price;
-          return priceBH - priceAH;
-
-        case 'brokertrust':
-        default:
-          const trustScoreA = a.broker_trust_score || 50;
-          const trustScoreB = b.broker_trust_score || 50;
-
-          if (trustScoreB !== trustScoreA) {
-            return trustScoreB - trustScoreA;
-          }
-
-          return new Date(b.last_refreshed || b.created_date) - new Date(a.last_refreshed || a.created_date);
-      }
-    });
-  };
 
   // ⚡ OPTIMIZED: Debounced search intent tracking (only after 2 seconds of inactivity)
   useEffect(() => {
