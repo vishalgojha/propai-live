@@ -634,7 +634,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </footer>
 
-      <style jsx>{`
+      <style>{`
         /* ✅ Base font size reduction */
         html {
           font-size: 14px;
