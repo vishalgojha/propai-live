@@ -13,14 +13,14 @@ export default function MarketInsights() {
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ['market-properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active" }),
+    queryFn: () => base44.entities.Property.list('-created_date'),
     initialData: [],
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: requirements = [] } = useQuery({
     queryKey: ['market-requirements'],
-    queryFn: () => base44.entities.Requirement.filter({ status: "Active" }),
+    queryFn: () => base44.entities.Requirement.list('-created_date'),
     initialData: [],
     staleTime: 5 * 60 * 1000,
   });
@@ -32,6 +32,9 @@ export default function MarketInsights() {
     const locationMap = {};
 
     properties.forEach(p => {
+      // Filter active properties only
+      if (p.status !== "Active" || p.is_duplicate) return;
+      
       const loc = p.location;
       if (!loc) return;
 
@@ -156,7 +159,9 @@ export default function MarketInsights() {
               <Shield className="w-6 h-6 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-slate-900 mb-1">
-              {Math.round((properties.filter(p => p.broker_trust_score >= 85).length / properties.length) * 100)}%
+              {properties.filter(p => p.status === "Active" && !p.is_duplicate).length > 0 
+                ? Math.round((properties.filter(p => p.status === "Active" && !p.is_duplicate && p.broker_trust_score >= 85).length / properties.filter(p => p.status === "Active" && !p.is_duplicate).length) * 100)
+                : 0}%
             </p>
             <p className="text-sm text-slate-600">High-Trust Listings</p>
           </div>
