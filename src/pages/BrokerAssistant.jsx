@@ -120,7 +120,7 @@ export default function BrokerAssistant() {
             <Button
               onClick={handleRefresh}
               variant="outline"
-              className="border-purple-300"
+              className="border-slate-300"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
@@ -157,7 +157,7 @@ export default function BrokerAssistant() {
           >
             <Card className="p-6 bg-white border border-slate-200">
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -171,14 +171,14 @@ export default function BrokerAssistant() {
               {/* Top Locations */}
               <div className="mb-6">
                 <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-purple-600" />
+                  <MapPin className="w-4 h-4 text-blue-600" />
                   High-Demand Locations
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {marketDemand.top_locations.slice(0, 5).map((loc, idx) => {
                     const trendData = marketDemand.google_trends.find(t => t.location === loc.location);
                     return (
-                      <div key={idx} className="bg-white rounded-xl p-3 border border-purple-200">
+                      <div key={idx} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                         <p className="font-semibold text-slate-900 text-sm mb-1">{loc.location}</p>
                         <p className="text-xs text-slate-600">{loc.searches} searches</p>
                         {trendData && (
@@ -202,12 +202,12 @@ export default function BrokerAssistant() {
               {marketDemand.ai_insights?.length > 0 && (
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    <Sparkles className="w-4 h-4 text-blue-600" />
                     AI Market Analysis
                   </h4>
                   <div className="space-y-2">
                     {marketDemand.ai_insights.map((insight, idx) => (
-                      <div key={idx} className="p-3 bg-white rounded-xl border border-purple-200">
+                      <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                         <div className="flex items-start gap-3">
                           <Badge className={
                             insight.priority === 'high' ? 'bg-red-600 text-white' :
