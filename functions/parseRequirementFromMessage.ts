@@ -1,11 +1,9 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
  * REQUIREMENT PARSER - Extracts client requirements from broker messages
  * Properly identifies broker vs direct client and sets client_name correctly
  * ✅ FIX: Ensures broker_id is NEVER null (required field)
- * ✅ FIXED: Agent authentication - allows both admin users AND agent calls
- * ✅ NEW: Auto-triggers automatch after requirement creation
  */
 
 const ADMIN_NUMBERS = ['919819471310', '9102269622278'];
@@ -14,24 +12,11 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // ✅ FIXED: Allow both admin users AND agent calls
-    let isAuthorized = false;
-    try {
-      const user = await base44.auth.me();
-      if (user && user.role === 'admin') {
-        isAuthorized = true;
-        console.log('✓ Authenticated as admin user');
-      }
-    } catch (authError) {
-      // If user auth fails, this might be an agent call
-      console.log('✓ No user auth - allowing agent call');
-      isAuthorized = true;
-    }
-    
-    if (!isAuthorized) {
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
       return Response.json({ 
         success: false,
-        error: 'Unauthorized - neither admin user nor valid agent call' 
+        error: 'Unauthorized' 
       }, { status: 401 });
     }
 
@@ -324,9 +309,8 @@ Return ONLY valid JSON, no markdown`;
       }, { status: 500 });
     }
 
-    // STEP 7: ✅ BACKGROUND TASKS - NOW INCLUDES AUTOMATCH
+    // STEP 7: BACKGROUND TASKS
     Promise.all([
-      // Sync to PropAI
       base44.asServiceRole.functions.invoke('sendToPropAI', {
         data_type: 'requirement',
         data: {
@@ -334,15 +318,10 @@ Return ONLY valid JSON, no markdown`;
           broker_name: brokerRecord.name,
           broker_phone: brokerContact
         }
-      }).catch(err => console.warn('PropAI sync failed:', err.message)),
-      
-      // ✅ NEW: Trigger automatch for this requirement
-      base44.asServiceRole.functions.invoke('autoMatchRequirements', {})
-        .then(() => console.log(`✓ Automatch triggered for ${customId}`))
-        .catch(err => console.warn('Automatch failed:', err.message))
+      }).catch(err => console.warn('PropAI sync failed:', err.message))
     ]).catch(err => console.warn('Background tasks failed:', err.message));
 
-    console.log(`✅ Requirement parsed successfully with automatch triggered`);
+    console.log(`✅ Requirement parsed successfully`);
 
     return Response.json({
       success: true,
@@ -353,8 +332,7 @@ Return ONLY valid JSON, no markdown`;
         broker_custom_id: brokerRecord.custom_id,
         broker_name: brokerRecord.name,
         client_name: requirement.client_name
-      },
-      automatch_triggered: true
+      }
     });
 
   } catch (error) {
