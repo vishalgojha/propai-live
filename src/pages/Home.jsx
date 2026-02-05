@@ -128,7 +128,7 @@ export default function Home() {
                 </Button>
               </motion.div>
               <motion.a
-                href={base44.agents.getWhatsAppConnectURL('chariot_master')}
+                href={base44.agents.getWhatsAppConnectURL('propai_live')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold h-12 px-8 rounded-lg text-base shadow-sm transition-all touch-manipulation"
