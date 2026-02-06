@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -11,13 +11,11 @@ import {
   User, Shield, Star, Package, TrendingUp, Users, Building2,
   MapPin, Award, BarChart3, Eye, MessageCircle, Target,
   Calendar, Phone, Mail, Edit, Settings, AlertCircle, X, Loader2, Bot, Search,
-  ExternalLink, Share2, Palette, Upload
+  ExternalLink, Share2, Palette, Upload, CheckCircle2, XCircle, Info
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { toast } from "sonner";
-import { Toaster } from "@/components/ui/sonner";
+import gsap from "gsap";
 
 import {
   Dialog,
@@ -26,6 +24,47 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
+// Custom toast component
+const showToast = (type, title, description = '') => {
+  const toastEl = document.createElement('div');
+  toastEl.className = `fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 max-w-sm backdrop-blur-xl border ${
+    type === 'success' ? 'bg-emerald-500/95 border-emerald-400 text-white' :
+    type === 'error' ? 'bg-red-500/95 border-red-400 text-white' :
+    'bg-slate-800/95 border-slate-700 text-white'
+  }`;
+  toastEl.style.transform = 'translate(-50%, -100px)';
+  toastEl.style.opacity = '0';
+  
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  toastEl.innerHTML = `
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold ${
+      type === 'success' ? 'bg-white/20' : type === 'error' ? 'bg-white/20' : 'bg-white/20'
+    }">${icon}</div>
+    <div class="flex-1">
+      <p class="font-semibold text-sm">${title}</p>
+      ${description ? `<p class="text-xs opacity-90 mt-0.5">${description}</p>` : ''}
+    </div>
+  `;
+  
+  document.body.appendChild(toastEl);
+  
+  gsap.to(toastEl, {
+    y: 100,
+    opacity: 1,
+    duration: 0.5,
+    ease: 'back.out(1.7)'
+  });
+  
+  gsap.to(toastEl, {
+    y: -100,
+    opacity: 0,
+    duration: 0.4,
+    ease: 'power2.in',
+    delay: 3.5,
+    onComplete: () => toastEl.remove()
+  });
+};
 
 export default function MyProfile() {
   const navigate = useNavigate();
@@ -53,6 +92,12 @@ export default function MyProfile() {
   const [addingTeamMember, setAddingTeamMember] = useState(false);
 
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // GSAP refs
+  const pageRef = useRef(null);
+  const headerRef = useRef(null);
+  const cardsRef = useRef([]);
+  const statsRef = useRef([]);
 
   // ✅ NEW: Preferred Areas state
   const [editingAreas, setEditingAreas] = useState(false);
