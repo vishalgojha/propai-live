@@ -149,10 +149,7 @@ export default function MyProfile() {
             if (isProfileIncomplete || shouldCompleteProfile) {
               setEditingProfile(true);
               setActiveTab('overview');
-              toast.info('👋 Please complete your profile to unlock all features', {
-                description: 'Phone number and agency name are required',
-                duration: 10000
-              });
+              showToast('info', '👋 Complete your profile', 'Phone number and agency name required');
             }
           }
         } 
@@ -180,6 +177,54 @@ export default function MyProfile() {
     loadUser();
   }, [navigate]);
 
+  // GSAP Animations
+  useLayoutEffect(() => {
+    if (!isLoading && pageRef.current) {
+      const ctx = gsap.context(() => {
+        // Header animation
+        if (headerRef.current) {
+          gsap.fromTo(headerRef.current,
+            { y: -30, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }
+          );
+        }
+        
+        // Stats cards stagger
+        if (statsRef.current.length > 0) {
+          gsap.fromTo(statsRef.current,
+            { y: 40, opacity: 0, scale: 0.95 },
+            { 
+              y: 0, 
+              opacity: 1, 
+              scale: 1,
+              duration: 0.5, 
+              stagger: 0.1, 
+              ease: 'back.out(1.2)',
+              delay: 0.2
+            }
+          );
+        }
+        
+        // Cards stagger
+        if (cardsRef.current.length > 0) {
+          gsap.fromTo(cardsRef.current,
+            { y: 50, opacity: 0 },
+            { 
+              y: 0, 
+              opacity: 1, 
+              duration: 0.6, 
+              stagger: 0.15, 
+              ease: 'power2.out',
+              delay: 0.4
+            }
+          );
+        }
+      }, pageRef);
+      
+      return () => ctx.revert();
+    }
+  }, [isLoading, brokerProfile]);
+
   // ✅ SEARCH FOR EXISTING BROKER BY PHONE
   const handleSearchBrokerByPhone = async () => {
     if (!phoneSearchQuery.trim()) {
@@ -202,15 +247,13 @@ export default function MyProfile() {
       if (foundBroker) {
         // ✅ LINK USER TO EXISTING BROKER
         await base44.auth.updateMe({ broker_id: foundBroker.id });
-        toast.success(`✅ Linked to existing broker profile: ${foundBroker.name}`);
+        showToast('success', `Linked to ${foundBroker.name}`, 'Reloading...');
         window.location.reload();
       } else {
-        toast.error('❌ No broker found with this phone number', {
-          description: 'Create a new profile instead'
-        });
+        showToast('error', 'No broker found', 'Create a new profile instead');
       }
     } catch (error) {
-      toast.error('Search failed', { description: error.message });
+      showToast('error', 'Search failed', error.message);
       console.error('Search broker by phone error:', error);
     } finally {
       setLinkingBroker(false);
@@ -229,21 +272,13 @@ export default function MyProfile() {
       // ✅ ENHANCED: Validate phone number format
       const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
       if (cleanPhone.length !== 10) {
-        toast.error('❌ Invalid Phone Number', {
-          description: `Must be 10 digits (you entered ${cleanPhone.length} digits)`,
-          duration: 5000,
-          className: 'bg-red-600 text-white border-0'
-        });
+        showToast('error', 'Invalid Phone Number', `Must be 10 digits (you entered ${cleanPhone.length})`);
         return;
       }
 
       // ✅ Check if phone starts with valid Indian prefix
       if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
-        toast.error('❌ Invalid Indian Mobile Number', {
-          description: 'Must start with 6, 7, 8, or 9',
-          duration: 5000,
-          className: 'bg-red-600 text-white border-0'
-        });
+        showToast('error', 'Invalid Mobile Number', 'Must start with 6, 7, 8, or 9');
         return;
       }
 
@@ -269,11 +304,7 @@ export default function MyProfile() {
 
         if (existingBroker) {
           console.log('⚠️ Phone number already exists:', existingBroker.name);
-          toast.error('❌ Phone Number Already Exists', {
-            description: `This number is already linked to broker: ${existingBroker.name}`,
-            duration: 6000,
-            className: 'bg-orange-600 text-white border-0'
-          });
+          showToast('error', 'Phone Already Exists', `Linked to: ${existingBroker.name}`);
           setCreatingBrokerProfile(false);
           return;
         }
@@ -298,10 +329,7 @@ export default function MyProfile() {
         await base44.auth.updateMe({ broker_id: newBroker.id });
         console.log('✅ User linked to broker');
         
-        toast.success('✅ Broker Profile Created!', {
-          description: 'Welcome to PropAI Live',
-          duration: 3000
-        });
+        showToast('success', 'Profile Created!', 'Welcome to PropAI Live');
         
         console.log('🔄 Reloading page...');
         setTimeout(() => {
@@ -340,11 +368,7 @@ export default function MyProfile() {
           errorDescription = 'Permission denied';
         }
         
-        toast.error(`❌ ${errorMessage}`, {
-          description: errorDescription,
-          duration: 10000,
-          className: 'bg-red-600 text-white border-0'
-        });
+        showToast('error', errorMessage, errorDescription);
       } finally {
         setCreatingBrokerProfile(false);
       }
@@ -363,21 +387,13 @@ export default function MyProfile() {
       // ✅ ENHANCED: Validate phone number format for updates too
       const cleanPhone = profileData.phone.trim().replace(/\D/g, '');
       if (cleanPhone.length !== 10) {
-        toast.error('❌ Invalid Phone Number', {
-          description: `Must be 10 digits (you entered ${cleanPhone.length} digits)`,
-          duration: 5000,
-          className: 'bg-red-600 text-white border-0'
-        });
+        showToast('error', 'Invalid Phone Number', `Must be 10 digits (you entered ${cleanPhone.length})`);
         setSavingProfile(false);
         return;
       }
 
       if (!['6', '7', '8', '9'].includes(cleanPhone[0])) {
-        toast.error('❌ Invalid Indian Mobile Number', {
-          description: 'Must start with 6, 7, 8, or 9',
-          duration: 5000,
-          className: 'bg-red-600 text-white border-0'
-        });
+        showToast('error', 'Invalid Mobile Number', 'Must start with 6, 7, 8, or 9');
         setSavingProfile(false);
         return;
       }
@@ -417,9 +433,7 @@ export default function MyProfile() {
       }));
       
       setEditingProfile(false);
-      toast.success('✅ Profile Updated!', {
-        duration: 3000
-      });
+      showToast('success', 'Profile Updated!');
     } catch (error) {
       console.error('❌ UPDATE PROFILE ERROR:', error);
       console.error('Error details:', {
@@ -452,11 +466,7 @@ export default function MyProfile() {
         errorDescription = 'Permission denied';
       }
       
-      toast.error(`❌ ${errorMessage}`, {
-        description: errorDescription,
-        duration: 8000,
-        className: 'bg-red-600 text-white border-0'
-      });
+      showToast('error', errorMessage, errorDescription);
     } finally {
       setSavingProfile(false);
     }
@@ -469,14 +479,9 @@ export default function MyProfile() {
       await base44.auth.updateMe({ preferred_areas: selectedAreas });
       setCurrentUser(prev => ({ ...prev, preferred_areas: selectedAreas }));
       setEditingAreas(false);
-      toast.success('✅ Preferred areas saved!', {
-        description: 'SmartFeed will prioritize properties from these areas',
-        duration: 3000
-      });
+      showToast('success', 'Areas Saved!', 'SmartFeed will prioritize these areas');
     } catch (error) {
-      toast.error('Failed to save areas', {
-        description: error.message
-      });
+      showToast('error', 'Failed to save areas', error.message);
       console.error('Save areas error:', error);
     } finally {
       setSavingAreas(false);
@@ -495,7 +500,7 @@ export default function MyProfile() {
   // ✅ TEAM MEMBER MANAGEMENT
   const handleAddTeamMember = async () => {
     if (!teamMemberPhone.trim() || !brokerProfile) {
-      toast.error('Please enter a phone number');
+      showToast('error', 'Enter a phone number');
       return;
     }
     
@@ -505,7 +510,7 @@ export default function MyProfile() {
       const normalized = normalizePhone(teamMemberPhone);
       
       if (normalized.length !== 10) {
-        toast.error('Invalid Phone - must be 10 digits');
+        showToast('error', 'Invalid Phone', 'Must be 10 digits');
         setAddingTeamMember(false);
         return;
       }
@@ -514,22 +519,20 @@ export default function MyProfile() {
       const teamMemberBroker = brokers.find(b => normalizePhone(b.phone || '') === normalized);
       
       if (!teamMemberBroker) {
-        toast.error('❌ Broker Not Found', {
-          description: 'No broker with this phone number exists'
-        });
+        showToast('error', 'Broker Not Found', 'No broker with this phone exists');
         setAddingTeamMember(false);
         return;
       }
       
       if (teamMemberBroker.id === brokerProfile.id) {
-        toast.error('Cannot add yourself to your team');
+        showToast('error', 'Cannot add yourself');
         setAddingTeamMember(false);
         return;
       }
       
       const currentTeam = brokerProfile.team_members || [];
       if (currentTeam.some(m => m.broker_id === teamMemberBroker.id)) {
-        toast.error(`${teamMemberBroker.name} is already in your team`);
+        showToast('error', 'Already in team', teamMemberBroker.name);
         setAddingTeamMember(false);
         return;
       }
@@ -564,13 +567,11 @@ export default function MyProfile() {
         team_leader_of: updatedTeamLeaderOf,
       }));
 
-      toast.success(`✅ ${teamMemberBroker.name} joined your team!`);
+      showToast('success', `${teamMemberBroker.name} joined!`, 'Team member added');
       setTeamMemberPhone('');
       setEditingTeam(false);
     } catch (error) {
-      toast.error('Failed to add team member', {
-        description: error.message
-      });
+      showToast('error', 'Failed to add member', error.message);
       console.error('Add team member error:', error);
     } finally {
       setAddingTeamMember(false);
@@ -597,11 +598,9 @@ export default function MyProfile() {
         team_leader_of: updatedTeamLeaderOf,
       }));
       
-      toast.success('Team member removed');
+      showToast('success', 'Member removed');
     } catch (error) {
-      toast.error('Failed to remove team member', {
-        description: error.message
-      });
+      showToast('error', 'Failed to remove', error.message);
       console.error('Remove team member error:', error);
     }
   };
@@ -1111,9 +1110,9 @@ export default function MyProfile() {
                             const { file_url } = await base44.integrations.Core.UploadFile({ file });
                             await base44.entities.Broker.update(brokerProfile.id, { profile_photo: file_url });
                             setBrokerProfile(prev => ({ ...prev, profile_photo: file_url }));
-                            toast.success('Profile photo updated!');
+                            showToast('success', 'Photo updated!');
                           } catch (error) {
-                            toast.error('Upload failed', { description: error.message });
+                            showToast('error', 'Upload failed', error.message);
                           }
                         }
                       };
@@ -1143,9 +1142,9 @@ export default function MyProfile() {
                             const { file_url } = await base44.integrations.Core.UploadFile({ file });
                             await base44.entities.Broker.update(brokerProfile.id, { profile_photo: file_url });
                             setBrokerProfile(prev => ({ ...prev, profile_photo: file_url }));
-                            toast.success('Profile photo uploaded!');
+                            showToast('success', 'Photo uploaded!');
                           } catch (error) {
-                            toast.error('Upload failed', { description: error.message });
+                            showToast('error', 'Upload failed', error.message);
                           }
                         }
                       };
@@ -1183,9 +1182,9 @@ export default function MyProfile() {
                             const { file_url } = await base44.integrations.Core.UploadFile({ file });
                             await base44.entities.Broker.update(brokerProfile.id, { cover_photo: file_url });
                             setBrokerProfile(prev => ({ ...prev, cover_photo: file_url }));
-                            toast.success('Cover photo updated!');
+                            showToast('success', 'Cover updated!');
                           } catch (error) {
-                            toast.error('Upload failed', { description: error.message });
+                            showToast('error', 'Upload failed', error.message);
                           }
                         }
                       };
@@ -1215,9 +1214,9 @@ export default function MyProfile() {
                             const { file_url } = await base44.integrations.Core.UploadFile({ file });
                             await base44.entities.Broker.update(brokerProfile.id, { cover_photo: file_url });
                             setBrokerProfile(prev => ({ ...prev, cover_photo: file_url }));
-                            toast.success('Cover photo uploaded!');
+                            showToast('success', 'Cover uploaded!');
                           } catch (error) {
-                            toast.error('Upload failed', { description: error.message });
+                            showToast('error', 'Upload failed', error.message);
                           }
                         }
                       };
