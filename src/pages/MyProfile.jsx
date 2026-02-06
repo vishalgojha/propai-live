@@ -679,33 +679,32 @@ export default function MyProfile() {
   // ✅ NO BROKER PROFILE - SHOW LINK OR CREATE OPTIONS
   if (!brokerProfile) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Toaster position="top-center" richColors closeButton />
-
+      <div ref={pageRef} className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-blue-600 text-white rounded-xl p-6 shadow-md border border-blue-700"
+          <div
+            ref={headerRef}
+            className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 shadow-xl border border-blue-500/20"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
-                <AlertCircle className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
+                <User className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-2">👋 Welcome to PropAI!</h2>
-                <p className="text-blue-100 leading-relaxed">
-                  Let's set up your broker profile. You can link to an existing profile or create a new one.
+                <h2 className="text-2xl font-bold mb-2">Welcome to PropAI!</h2>
+                <p className="text-blue-100/90 leading-relaxed">
+                  Let's set up your broker profile. Link existing or create new.
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* ✅ OPTION 1: LINK TO EXISTING BROKER */}
-          <Card className="p-6 bg-white border-2 border-slate-200 mb-6">
+          <Card ref={el => cardsRef.current[0] = el} className="p-6 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg mb-6 hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Search className="w-5 h-5 text-blue-600" />
-              Already have listings? Link your phone number
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Search className="w-5 h-5 text-blue-600" />
+              </div>
+              Already have listings?
             </h3>
             <p className="text-sm text-slate-600 mb-4">
               If your phone number is already in our system (from WhatsApp AI messages), enter it to link your account.
@@ -736,10 +735,12 @@ export default function MyProfile() {
           </Card>
 
           {/* ✅ OPTION 2: CREATE NEW BROKER PROFILE */}
-          <Card className="p-6 bg-white border border-slate-200">
+          <Card ref={el => cardsRef.current[1] = el} className="p-6 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-blue-600" />
-              Create New Broker Profile
+              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-emerald-600" />
+              </div>
+              Create New Profile
             </h3>
 
             <div className="space-y-4">
@@ -821,36 +822,33 @@ export default function MyProfile() {
 
   // ✅ BROKER PROFILE EXISTS - SHOW FULL PROFILE PAGE
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Toaster position="top-center" richColors closeButton />
-
+    <div ref={pageRef} className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {(!brokerProfile.phone || !brokerProfile.agency_name) && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-blue-600 text-white rounded-xl p-6 shadow-md border border-blue-700"
+          <div
+            ref={headerRef}
+            className="mb-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl p-6 shadow-xl border border-amber-400/20"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
-                <AlertCircle className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-2">⚠️ Profile Incomplete</h3>
-                <p className="text-purple-100 mb-3">
-                  Please add these details to unlock full access:
+                <h3 className="text-xl font-bold mb-2">Profile Incomplete</h3>
+                <p className="text-amber-100/90 mb-3">
+                  Add these details for full access:
                 </p>
-                <div className="space-y-2 text-sm text-purple-100">
+                <div className="space-y-2 text-sm text-amber-100/90">
                   {!brokerProfile.phone && (
-                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
                       <Phone className="w-4 h-4" />
-                      <span><strong>Phone</strong> - WhatsApp integration</span>
+                      <span><strong>Phone</strong> - WhatsApp</span>
                     </div>
                   )}
                   {!brokerProfile.agency_name && (
-                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
                       <Building2 className="w-4 h-4" />
-                      <span><strong>Agency</strong> - Displayed on listings</span>
+                      <span><strong>Agency</strong> - Listings</span>
                     </div>
                   )}
                 </div>
@@ -859,42 +857,30 @@ export default function MyProfile() {
                     setActiveTab('overview');
                     setEditingProfile(true);
                   }}
-                  className="mt-4 bg-white text-blue-600 hover:bg-blue-50 font-semibold"
+                  className="mt-4 bg-white text-amber-600 hover:bg-amber-50 font-semibold rounded-xl shadow-lg"
                 >
-                  Complete Profile Now
+                  Complete Profile
                 </Button>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
-        <div className="mb-6">
+        <div ref={!(!brokerProfile.phone || !brokerProfile.agency_name) ? headerRef : null} className="mb-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                <Users className="w-8 h-8 text-slate-700" />
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Users className="w-8 h-8 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">{brokerProfile.name}</h1>
-                <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600">
-                  <span>{brokerProfile.custom_id}</span>
+                <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600 mt-1">
+                  <span className="bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-xs">{brokerProfile.custom_id}</span>
                   {brokerProfile.phone && (
-                    <>
-                      <span>•</span>
-                      <span className="font-mono text-purple-700">{brokerProfile.phone}</span>
-                    </>
-                  )}
-                  {brokerProfile.agency_name && (
-                    <>
-                      <span>•</span>
-                      <span className="font-semibold text-purple-700">{brokerProfile.agency_name}</span>
-                    </>
+                    <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg">{brokerProfile.phone}</span>
                   )}
                   {currentUser.role === 'admin' && (
-                    <>
-                      <span>•</span>
-                      <Badge className="bg-purple-600 text-white">Admin</Badge>
-                    </>
+                    <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-sm">Admin</Badge>
                   )}
                 </div>
               </div>
@@ -906,41 +892,43 @@ export default function MyProfile() {
 
         {/* ✅ Admin Quick Actions */}
         {currentUser.role === 'admin' && (
-          <Card className="p-4 bg-slate-900 border-0 mb-6">
-            <div className="flex items-center justify-between mb-3">
+          <Card ref={el => cardsRef.current[0] = el} className="p-5 bg-gradient-to-r from-slate-900 to-slate-800 border-0 rounded-2xl mb-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold flex items-center gap-2">
-                <Shield className="w-5 h-5" />
+                <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                  <Shield className="w-4 h-4" />
+                </div>
                 Admin Shortcuts
               </h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Button
                 onClick={() => navigate(createPageUrl("Admin"))}
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm rounded-xl h-11"
               >
                 <Shield className="w-4 h-4 mr-2" />
-                Admin Panel
+                Admin
               </Button>
               <Button
                 onClick={() => navigate(createPageUrl("AdminDashboard"))}
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm rounded-xl h-11"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Analytics
               </Button>
               <Button
                 onClick={() => navigate(createPageUrl("BrokerNetwork"))}
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm rounded-xl h-11"
               >
                 <Users className="w-4 h-4 mr-2" />
                 Network
               </Button>
               <Button
                 onClick={() => navigate(createPageUrl("BrokerProfile") + `?id=${brokerProfile.id}`)}
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm rounded-xl h-11"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                My Profile
+                View Profile
               </Button>
             </div>
           </Card>
@@ -948,44 +936,50 @@ export default function MyProfile() {
 
         {brokerMetrics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="p-4 bg-white border border-slate-200">
-              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Package className="w-4 h-4 text-blue-600" />
-                Active Listings
-              </p>
-              <p className="text-3xl font-bold text-blue-600">{brokerMetrics.activeListings}</p>
-              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalListings} total</p>
+            <Card ref={el => statsRef.current[0] = el} className="p-5 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900">{brokerMetrics.activeListings}</p>
+              <p className="text-xs text-slate-500 mt-1">Active Listings</p>
             </Card>
 
-            <Card className="p-4 bg-white border border-slate-200">
-              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Target className="w-4 h-4 text-blue-600" />
-                Active Requirements
-              </p>
-              <p className="text-3xl font-bold text-blue-600">{brokerMetrics.activeRequirements}</p>
-              <p className="text-xs text-slate-500 mt-1">{brokerMetrics.totalRequirements} total</p>
+            <Card ref={el => statsRef.current[1] = el} className="p-5 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 text-emerald-600" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900">{brokerMetrics.activeRequirements}</p>
+              <p className="text-xs text-slate-500 mt-1">Requirements</p>
             </Card>
 
-            <Card className="p-4 bg-white border border-slate-200">
-              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Users className="w-4 h-4 text-blue-600" />
-                Team Members
-              </p>
-              <p className="text-3xl font-bold text-blue-600">{enrichedTeamMembers.length}</p>
+            <Card ref={el => statsRef.current[2] = el} className="p-5 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <Users className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900">{enrichedTeamMembers.length}</p>
+              <p className="text-xs text-slate-500 mt-1">Team Members</p>
             </Card>
 
-            <Card className="p-4 bg-white border border-slate-200">
-              <p className="text-xs text-slate-600 mb-2 font-semibold flex items-center gap-1">
-                <Star className="w-4 h-4 text-blue-600" />
-                Trust Score
-              </p>
-              <p className="text-3xl font-bold text-blue-600">{brokerProfile.trust_score || 50}</p>
+            <Card ref={el => statsRef.current[3] = el} className="p-5 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                  <Star className="w-5 h-5 text-amber-600" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900">{brokerProfile.trust_score || 50}</p>
+              <p className="text-xs text-slate-500 mt-1">Trust Score</p>
             </Card>
           </div>
         )}
 
         {/* ✅ NEW: PREFERRED AREAS CARD */}
-        <Card className="p-6 bg-white border border-slate-200 mb-6">
+        <Card ref={el => cardsRef.current[1] = el} className="p-6 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-blue-600" />
@@ -1081,7 +1075,7 @@ export default function MyProfile() {
         </Card>
 
         {/* ✅ PROFILE PHOTOS CARD */}
-        <Card className="p-6 bg-white border border-slate-200 mb-6">
+        <Card ref={el => cardsRef.current[2] = el} className="p-6 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg mb-6">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <User className="w-5 h-5 text-blue-600" />
             Profile Photos
@@ -1235,7 +1229,7 @@ export default function MyProfile() {
         </Card>
 
         {/* ✅ PROFESSIONAL DETAILS CARD */}
-        <Card className="p-6 bg-white border border-slate-200 mb-6">
+        <Card ref={el => cardsRef.current[3] = el} className="p-6 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Award className="w-5 h-5 text-blue-600" />
@@ -1432,7 +1426,7 @@ export default function MyProfile() {
         </Card>
 
         {/* ✅ FIXED: TEAM MEMBERS CARD */}
-        <Card className="p-6 bg-white border border-slate-200 mb-6">
+        <Card ref={el => cardsRef.current[4] = el} className="p-6 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-lg mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
