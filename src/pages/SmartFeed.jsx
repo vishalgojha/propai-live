@@ -286,15 +286,21 @@ export default function SmartFeed() {
   }, [debouncedSearchQuery, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, user?.id]);
 
   useEffect(() => {
+    let mounted = true;
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        if (mounted) {
+          setUser(currentUser);
+        }
       } catch (error) {
-        setUser(null);
+        if (mounted) {
+          setUser(null);
+        }
       }
     };
     loadUser();
+    return () => { mounted = false; };
   }, []);
 
   // Extracted function to calculate and set user preferences
