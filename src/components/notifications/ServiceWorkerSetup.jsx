@@ -6,8 +6,8 @@ import { useEffect } from "react";
  */
 export default function ServiceWorkerSetup() {
   useEffect(() => {
-    // Register service worker if supported
-    if ('serviceWorker' in navigator) {
+    // Skip service worker in preview/development environments (blob URLs not supported)
+    if ('serviceWorker' in navigator && !window.location.hostname.includes('preview-sandbox') && window.location.protocol === 'https:') {
       // Create service worker inline
       const swCode = `
 /**
