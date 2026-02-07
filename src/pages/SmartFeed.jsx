@@ -442,7 +442,7 @@ export default function SmartFeed() {
     if (!isLoading && !requirementsLoading && properties.length > 0) {
       const currentCounts = {
         properties: activeProperties.length,
-        requirements: activeRequirements.length
+        requirements: requirements.length
       };
 
       // ✅ CRITICAL FIX: Only show banner if we have a baseline AND there are new items
