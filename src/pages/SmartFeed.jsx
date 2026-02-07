@@ -364,32 +364,7 @@ export default function SmartFeed() {
     calculateAndSetUserPreferences();
   }, [calculateAndSetUserPreferences]);
 
-  // ✅ NEW: Inject sample history for testing auto-match
-  const injectSampleHistory = () => {
-    const sampleHistory = [
-      { id: '1', bhk: '2 BHK', location: 'Bandra West', price: 220, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
-      { id: '2', bhk: '2 BHK', location: 'Khar West', price: 180, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
-      { id: '3', bhk: '3 BHK', location: 'Bandra West', price: 350, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
-      { id: '4', bhk: '2 BHK', location: 'Juhu', price: 200, price_unit: 'lakhs', listing_type: 'Rent', timestamp: new Date().toISOString() },
-      { id: '5', bhk: '3 BHK', location: 'Bandra West', price: 280, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
-    ];
 
-    const sampleContacts = [
-      { id: '1', bhk: '2 BHK', location: 'Bandra West', price: 220, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
-      { id: '3', bhk: '3 BHK', location: 'Bandra West', price: 350, price_unit: 'lakhs', listing_type: 'Sale', timestamp: new Date().toISOString() },
-    ];
-
-    localStorage.setItem('propai_view_history', JSON.stringify(sampleHistory));
-    localStorage.setItem('propai_contact_history', JSON.stringify(sampleContacts));
-
-    // After injecting, recalculate and set preferences
-    calculateAndSetUserPreferences();
-
-    toast.success('🎯 Sample History Injected!', {
-      description: 'Auto-match now active. Scroll down to see "For You" section.',
-      duration: 5000
-    });
-  };
 
   const trackPropertyView = (property) => {
     try {
@@ -679,39 +654,6 @@ export default function SmartFeed() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-
-        {/* ✅ NEW: Auto-Match Testing Panel (Admin Only) */}
-        {user?.role === 'admin' && !userPreferences && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1">🧪 Auto-Match Testing Mode</h3>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      No viewing history detected. Want to test the auto-match feature with sample data?
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={injectSampleHistory}
-                  size="sm"
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold touch-manipulation"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Test Auto-Match
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         <AnimatePresence>
           {showNewItemsBanner && (
