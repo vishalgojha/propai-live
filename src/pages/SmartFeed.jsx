@@ -487,7 +487,7 @@ export default function SmartFeed() {
         localStorage.setItem('propai_last_seen_counts', JSON.stringify(currentCounts));
       }
     }
-  }, [activeProperties, activeRequirements, isLoading, requirementsLoading]);
+  }, [activeProperties, requirements, isLoading, requirementsLoading]);
 
   const personalizedProperties = useMemo(() => {
     if (!userPreferences || !activeProperties.length) return [];
