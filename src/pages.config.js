@@ -70,6 +70,7 @@ import CronScheduler from './pages/CronScheduler';
 import DeveloperDirectory from './pages/DeveloperDirectory';
 import DeveloperProfile from './pages/DeveloperProfile';
 import Disclaimer from './pages/Disclaimer';
+import Docs from './pages/Docs';
 import FAQ from './pages/FAQ';
 import Home from './pages/Home';
 import InteractionLogs from './pages/InteractionLogs';
@@ -89,7 +90,6 @@ import SmartFeed from './pages/SmartFeed';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
-import Docs from './pages/Docs';
 import __Layout from './Layout.jsx';
 
 
@@ -117,6 +117,7 @@ export const PAGES = {
     "DeveloperDirectory": DeveloperDirectory,
     "DeveloperProfile": DeveloperProfile,
     "Disclaimer": Disclaimer,
+    "Docs": Docs,
     "FAQ": FAQ,
     "Home": Home,
     "InteractionLogs": InteractionLogs,
@@ -136,7 +137,6 @@ export const PAGES = {
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
-    "Docs": Docs,
 }
 
 export const pagesConfig = {

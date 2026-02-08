@@ -96,8 +96,8 @@ export default function MarketInsights() {
   return (
     <div className="min-h-screen bg-slate-50">
       <SEO
-        title="Mumbai Real Estate Market Insights - Live Property Data | PropAI Live"
-        description="Real-time Mumbai property market intelligence. See supply, demand, average prices, and trust scores across top locations. AI-powered real estate data for buyers, renters, and brokers."
+        title="Real Estate Market Insights - Live Property Data | PropAI Live"
+        description="Real-time property market intelligence. See supply, demand, average prices, and trust scores across top locations. AI-powered real estate data for buyers, renters, and brokers."
         canonical={typeof window !== 'undefined' ? `${window.location.origin}/marketinsights` : 'https://propai.live/marketinsights'}
       />
 
@@ -109,7 +109,7 @@ export default function MarketInsights() {
             <span className="text-sm font-semibold text-blue-900">Real-time Market Intelligence</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Mumbai Property Market Insights
+            Property Market Insights
           </h1>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
             PropAI Live tracks {properties.length} active properties and {requirements.length} buyer requirements in real-time. 
