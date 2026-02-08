@@ -7,13 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Sparkles, TrendingUp, Shield, Building2,
   CheckCircle2, ArrowRight, MessageCircle, Eye, Brain,
-  Zap, BookOpen, Globe, Bot, Home as HomeIcon, MapPin
+  Zap, BookOpen, Globe, Bot, Home as HomeIcon, MapPin, Terminal, Copy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 import InlineChatWidget from "../components/InlineChatWidget";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import {
   generateWebSiteJsonLd,
   generateOrganizationJsonLd,
@@ -24,6 +24,12 @@ export default function Home() {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [showInlineChat, setShowInlineChat] = useState(false);
+  const [selectedInstallCmd, setSelectedInstallCmd] = useState('npm');
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -138,6 +144,48 @@ export default function Home() {
                 <MessageCircle className="w-5 h-5" />
                 WhatsApp AI
               </motion.a>
+            </div>
+
+            {/* Install Buttons */}
+            <div className="flex flex-col items-center gap-4 mt-6">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setSelectedInstallCmd('npm')}
+                  variant={selectedInstallCmd === 'npm' ? 'default' : 'outline'}
+                  size="sm"
+                  className="touch-manipulation"
+                >
+                  <Terminal className="w-4 h-4 mr-2" />
+                  Install with npm
+                </Button>
+                <Button
+                  onClick={() => setSelectedInstallCmd('pnpm')}
+                  variant={selectedInstallCmd === 'pnpm' ? 'default' : 'outline'}
+                  size="sm"
+                  className="touch-manipulation"
+                >
+                  <Terminal className="w-4 h-4 mr-2" />
+                  Install with pnpm
+                </Button>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md"
+              >
+                <div className="bg-slate-900 rounded-lg p-4 relative">
+                  <code className="text-green-400 text-sm font-mono">
+                    {selectedInstallCmd === 'npm' ? 'npm install -g propai' : 'pnpm add -g propai'}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(selectedInstallCmd === 'npm' ? 'npm install -g propai' : 'pnpm add -g propai')}
+                    className="absolute top-3 right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
+                  >
+                    <Copy className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+              </motion.div>
             </div>
 
             <p className="text-sm text-slate-500 mb-8 italic">
