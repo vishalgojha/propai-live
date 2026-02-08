@@ -236,21 +236,22 @@ export default function Docs() {
                 className="bg-white rounded-xl border border-slate-200 p-8"
               >
                 <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-3">
-                  <Terminal className="w-6 h-6 text-blue-600" />
+                  <Terminal className="w-6 h-6 text-slate-600" />
                   CLI Cheat Sheet
                 </h2>
                 <p className="text-slate-600 mb-6">WhatsApp to deal-ready property intelligence</p>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {/* Install */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Install</h3>
+                    <h3 className="font-bold text-slate-900 mb-2">Install</h3>
+                    <p className="text-sm text-slate-600 mb-3">Installs PropAI CLI globally on your system. Use npm or pnpm depending on your preference.</p>
                     <div className="space-y-2">
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">npm install -g propai</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">npm install -g propai</code>
                       </div>
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">pnpm add -g propai</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">pnpm add -g propai</code>
                       </div>
                     </div>
                   </div>
@@ -259,9 +260,10 @@ export default function Docs() {
 
                   {/* Onboarding */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Onboarding</h3>
-                    <div className="bg-slate-900 rounded-lg p-4">
-                      <code className="text-green-400 text-sm font-mono">propai onboard --install-daemon</code>
+                    <h3 className="font-bold text-slate-900 mb-2">Onboarding</h3>
+                    <p className="text-sm text-slate-600 mb-3">First-time setup. Creates config files, installs system daemon, and prepares PropAI for use.</p>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <code className="text-slate-900 text-sm font-mono">propai onboard --install-daemon</code>
                     </div>
                   </div>
 
@@ -269,16 +271,17 @@ export default function Docs() {
 
                   {/* Gateway */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Gateway</h3>
+                    <h3 className="font-bold text-slate-900 mb-2">Gateway</h3>
+                    <p className="text-sm text-slate-600 mb-3">Control the PropAI gateway service (local web UI + webhook server). Start on boot or manually control.</p>
                     <div className="space-y-2">
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai gateway start</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai gateway start</code>
                       </div>
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai gateway stop</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai gateway stop</code>
                       </div>
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai gateway restart</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai gateway restart</code>
                       </div>
                     </div>
                   </div>
@@ -287,13 +290,14 @@ export default function Docs() {
 
                   {/* WhatsApp */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">WhatsApp</h3>
+                    <h3 className="font-bold text-slate-900 mb-2">WhatsApp</h3>
+                    <p className="text-sm text-slate-600 mb-3">Link or unlink your WhatsApp account. After login, scan QR code in the dashboard to connect.</p>
                     <div className="space-y-2">
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai channels login whatsapp</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai channels login whatsapp</code>
                       </div>
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai channels logout whatsapp</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai channels logout whatsapp</code>
                       </div>
                     </div>
                   </div>
@@ -302,13 +306,14 @@ export default function Docs() {
 
                   {/* Status & Logs */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Status & Logs</h3>
+                    <h3 className="font-bold text-slate-900 mb-2">Status & Logs</h3>
+                    <p className="text-sm text-slate-600 mb-3">Check if PropAI is running and view real-time logs for debugging. Use --follow to stream logs continuously.</p>
                     <div className="space-y-2">
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai status</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai status</code>
                       </div>
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai logs --follow</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai logs --follow</code>
                       </div>
                     </div>
                   </div>
@@ -317,17 +322,18 @@ export default function Docs() {
 
                   {/* Dashboard */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Dashboard</h3>
+                    <h3 className="font-bold text-slate-900 mb-2">Dashboard</h3>
+                    <p className="text-sm text-slate-600 mb-3">Access the local web interface. Add ?role=owner for full admin view or ?role=team for operations view.</p>
                     <div className="space-y-2">
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">http://127.0.0.1:18789/propai</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">http://127.0.0.1:18789/propai</code>
                       </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1 bg-slate-900 rounded-lg p-4">
-                          <code className="text-green-400 text-xs font-mono">?role=owner</code>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                          <code className="text-slate-900 text-xs font-mono">?role=owner</code>
                         </div>
-                        <div className="flex-1 bg-slate-900 rounded-lg p-4">
-                          <code className="text-green-400 text-xs font-mono">?role=team</code>
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                          <code className="text-slate-900 text-xs font-mono">?role=team</code>
                         </div>
                       </div>
                     </div>
@@ -337,13 +343,14 @@ export default function Docs() {
 
                   {/* Quick Fixes */}
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Quick Fixes</h3>
+                    <h3 className="font-bold text-slate-900 mb-2">Quick Fixes</h3>
+                    <p className="text-sm text-slate-600 mb-3">Common troubleshooting commands. Re-login WhatsApp if disconnected, restart gateway if unresponsive.</p>
                     <div className="space-y-2">
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">propai channels login whatsapp</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">propai channels login whatsapp</code>
                       </div>
-                      <div className="bg-slate-900 rounded-lg p-4">
-                        <code className="text-green-400 text-sm font-mono">systemctl --user restart propai-gateway.service</code>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <code className="text-slate-900 text-sm font-mono">systemctl --user restart propai-gateway.service</code>
                       </div>
                     </div>
                   </div>
