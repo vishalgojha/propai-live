@@ -24,7 +24,6 @@ export default function Home() {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [showInlineChat, setShowInlineChat] = useState(false);
-  const [selectedInstallCmd, setSelectedInstallCmd] = useState('npm');
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -146,47 +145,26 @@ export default function Home() {
               </motion.a>
             </div>
 
-            {/* Install Buttons */}
-            <div className="flex flex-col items-center gap-4 mt-6">
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setSelectedInstallCmd('npm')}
-                  variant={selectedInstallCmd === 'npm' ? 'default' : 'outline'}
-                  size="sm"
-                  className="touch-manipulation"
-                >
-                  <Terminal className="w-4 h-4 mr-2" />
-                  Install with npm
-                </Button>
-                <Button
-                  onClick={() => setSelectedInstallCmd('pnpm')}
-                  variant={selectedInstallCmd === 'pnpm' ? 'default' : 'outline'}
-                  size="sm"
-                  className="touch-manipulation"
-                >
-                  <Terminal className="w-4 h-4 mr-2" />
-                  Install with pnpm
-                </Button>
-              </div>
-
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md"
-              >
+            {/* Install Command */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-3 mt-6"
+            >
+              <div className="w-full max-w-md">
                 <div className="bg-slate-900 rounded-lg p-4 relative">
                   <code className="text-green-400 text-sm font-mono">
-                    {selectedInstallCmd === 'npm' ? 'npm install -g propai' : 'pnpm add -g propai'}
+                    npm install -g propai
                   </code>
                   <button
-                    onClick={() => copyToClipboard(selectedInstallCmd === 'npm' ? 'npm install -g propai' : 'pnpm add -g propai')}
+                    onClick={() => copyToClipboard('npm install -g propai')}
                     className="absolute top-3 right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
                   >
                     <Copy className="w-4 h-4 text-slate-400" />
                   </button>
                 </div>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
 
             <p className="text-sm text-slate-500 mb-8 italic">
               WhatsApp access is limited to verified users to prevent spam and fake listings.
