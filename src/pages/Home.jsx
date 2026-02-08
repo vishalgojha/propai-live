@@ -211,6 +211,29 @@ export default function Home() {
               </div>
             </motion.div>
 
+            {/* Windows Installer Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="max-w-3xl mx-auto mt-8"
+            >
+              <div className="bg-white border border-slate-200 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">One-click installer (Windows)</h3>
+                <p className="text-sm text-slate-600 mb-4">Download and run the installer to set up PropAI in minutes.</p>
+                <a
+                  href="https://github.com/vishalgojha/propai-tech/releases/latest/download/PropAI-Setup.exe"
+                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors touch-manipulation"
+                  download
+                >
+                  Download PropAI for Windows
+                </a>
+                <p className="text-xs text-slate-500 mt-3">
+                  Direct link: https://github.com/vishalgojha/propai-tech/releases/latest/download/PropAI-Setup.exe
+                </p>
+              </div>
+            </motion.div>
+
             <p className="text-sm text-slate-500 mb-8 italic">
               WhatsApp access is limited to verified users to prevent spam and fake listings.
             </p>
