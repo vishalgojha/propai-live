@@ -145,23 +145,62 @@ export default function Home() {
               </motion.a>
             </div>
 
-            {/* Install Command */}
+            {/* Install Steps */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center gap-3 mt-6"
+              className="flex flex-col items-center gap-4 mt-6"
             >
-              <div className="w-full max-w-md">
-                <div className="bg-slate-900 rounded-lg p-4 relative">
-                  <code className="text-green-400 text-sm font-mono">
-                    npm install -g propai
-                  </code>
-                  <button
-                    onClick={() => copyToClipboard('npm install -g propai')}
-                    className="absolute top-3 right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
-                  >
-                    <Copy className="w-4 h-4 text-slate-400" />
-                  </button>
+              <div className="w-full max-w-lg space-y-4">
+                <div>
+                  <p className="text-sm text-slate-600 mb-2 font-medium">Install PropAI Live (1-minute setup)</p>
+                  <div className="bg-slate-900 rounded-lg p-3 relative">
+                    <code className="text-green-400 text-sm font-mono">npm install -g propai</code>
+                    <button
+                      onClick={() => copyToClipboard('npm install -g propai')}
+                      className="absolute top-2 right-2 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
+                    >
+                      <Copy className="w-4 h-4 text-slate-400" />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-slate-600 mb-2 font-medium">Start the gateway</p>
+                  <div className="bg-slate-900 rounded-lg p-3 relative">
+                    <code className="text-green-400 text-sm font-mono">propai gateway start</code>
+                    <button
+                      onClick={() => copyToClipboard('propai gateway start')}
+                      className="absolute top-2 right-2 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
+                    >
+                      <Copy className="w-4 h-4 text-slate-400" />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-slate-600 mb-2 font-medium">Open your dashboard</p>
+                  <div className="bg-slate-900 rounded-lg p-3 relative">
+                    <code className="text-green-400 text-sm font-mono">http://127.0.0.1:18789/propai</code>
+                    <button
+                      onClick={() => copyToClipboard('http://127.0.0.1:18789/propai')}
+                      className="absolute top-2 right-2 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
+                    >
+                      <Copy className="w-4 h-4 text-slate-400" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-center pt-2">
+                  <p className="text-sm text-slate-600">
+                    Need advanced setup?{' '}
+                    <Link 
+                      to={createPageUrl("Docs")} 
+                      className="text-blue-600 hover:text-blue-700 font-medium underline"
+                    >
+                      Docs
+                    </Link>
+                  </p>
                 </div>
               </div>
             </motion.div>
