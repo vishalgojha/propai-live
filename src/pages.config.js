@@ -89,6 +89,7 @@ import SmartFeed from './pages/SmartFeed';
 import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
+import Docs from './pages/Docs';
 import __Layout from './Layout.jsx';
 
 
@@ -135,6 +136,7 @@ export const PAGES = {
     "SmartFeedAnalytics": SmartFeedAnalytics,
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
+    "Docs": Docs,
 }
 
 export const pagesConfig = {
