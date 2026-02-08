@@ -139,6 +139,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Home", icon: Home, path: createPageUrl("Home") },
     { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
     { name: "Map Search", icon: MapPin, path: createPageUrl("MapSearch") },
+    { name: "Docs", icon: BookOpen, path: createPageUrl("Docs") },
   ];
 
   // Add features for logged-in users
