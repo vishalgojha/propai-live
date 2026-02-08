@@ -466,6 +466,15 @@ export default function Layout({ children, currentPageName }) {
               <ul className="space-y-3 text-sm text-slate-600 font-light">
                 <li>
                   <Link 
+                    to={createPageUrl("Docs")} 
+                    className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
+                  >
+                    <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     to={createPageUrl("Home") + "#how-it-works"} 
                     className="hover:text-blue-600 transition-colors flex items-center group touch-manipulation"
                   >
