@@ -138,25 +138,10 @@ export default function Layout({ children, currentPageName }) {
   const navItems = [
     { name: "Home", icon: Home, path: createPageUrl("Home") },
     { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
-    { name: "Map Search", icon: MapPin, path: createPageUrl("MapSearch") },
     { name: "Transactions", icon: FileText, path: createPageUrl("Transactions") },
+    { name: "Market Insights", icon: BarChart3, path: createPageUrl("MarketInsights") },
     { name: "Docs", icon: BookOpen, path: createPageUrl("Docs") },
   ];
-
-  // Add features for logged-in users
-  if (user) {
-    if (user.broker_id) {
-        navItems.push(
-          { name: "AI Assistant", icon: Sparkles, path: createPageUrl("BrokerAssistant") },
-          { name: "Inbox", icon: MessageCircle, path: createPageUrl("BrokerInbox") }
-        );
-      }
-    }
-
-    // Market Insights for everyone
-    navItems.push(
-      { name: "Market Insights", icon: BarChart3, path: createPageUrl("MarketInsights") }
-    );
 
   return (
     <div className="min-h-screen bg-slate-50">

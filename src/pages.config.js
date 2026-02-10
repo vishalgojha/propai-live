@@ -51,19 +51,12 @@ import AIHub from './pages/AIHub';
 import AIUsageMonitor from './pages/AIUsageMonitor';
 import AboutUs from './pages/AboutUs';
 import Admin from './pages/Admin';
-import AdminBrokers from './pages/AdminBrokers';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
-import AdminRequirements from './pages/AdminRequirements';
 import AgentHub from './pages/AgentHub';
 import AutomationHub from './pages/AutomationHub';
 import BlogPost from './pages/BlogPost';
 import Blogs from './pages/Blogs';
-import BrokerAnalytics from './pages/BrokerAnalytics';
-import BrokerAssistant from './pages/BrokerAssistant';
-import BrokerInbox from './pages/BrokerInbox';
-import BrokerPerformance from './pages/BrokerPerformance';
-import BrokerProfile from './pages/BrokerProfile';
 import BuildingBlog from './pages/BuildingBlog';
 import BuildingProfile from './pages/BuildingProfile';
 import CronScheduler from './pages/CronScheduler';
@@ -78,7 +71,6 @@ import LiveDashboard from './pages/LiveDashboard';
 import LocationProperties from './pages/LocationProperties';
 import MapSearch from './pages/MapSearch';
 import MarketInsights from './pages/MarketInsights';
-import MyProfile from './pages/MyProfile';
 import ParityReport from './pages/ParityReport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PropertyDetails from './pages/PropertyDetails';
@@ -99,19 +91,12 @@ export const PAGES = {
     "AIUsageMonitor": AIUsageMonitor,
     "AboutUs": AboutUs,
     "Admin": Admin,
-    "AdminBrokers": AdminBrokers,
     "AdminDashboard": AdminDashboard,
     "AdminLogin": AdminLogin,
-    "AdminRequirements": AdminRequirements,
     "AgentHub": AgentHub,
     "AutomationHub": AutomationHub,
     "BlogPost": BlogPost,
     "Blogs": Blogs,
-    "BrokerAnalytics": BrokerAnalytics,
-    "BrokerAssistant": BrokerAssistant,
-    "BrokerInbox": BrokerInbox,
-    "BrokerPerformance": BrokerPerformance,
-    "BrokerProfile": BrokerProfile,
     "BuildingBlog": BuildingBlog,
     "BuildingProfile": BuildingProfile,
     "CronScheduler": CronScheduler,
@@ -126,7 +111,6 @@ export const PAGES = {
     "LocationProperties": LocationProperties,
     "MapSearch": MapSearch,
     "MarketInsights": MarketInsights,
-    "MyProfile": MyProfile,
     "ParityReport": ParityReport,
     "PrivacyPolicy": PrivacyPolicy,
     "PropertyDetails": PropertyDetails,
