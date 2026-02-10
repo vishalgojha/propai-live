@@ -20,8 +20,6 @@ import {
 import { usePropertyAIEnrichment } from "../hooks/usePropertyAIEnrichment";
 import { useAutoSlugGeneration } from "../hooks/useAutoSlugGeneration";
 import { useAutoGenerateCustomId } from "../hooks/useAutoGenerateCustomId";
-import LeadShareButton from "../broker/LeadShareButton";
-import CoListingManager from "../broker/CoListingManager";
 
 const createPageUrl = (pageName) => {
   switch (pageName) {
@@ -672,25 +670,6 @@ export default function PropertyCard({ property: initialProperty, onViewDetails,
           )}
 
           <div className="space-y-2">
-            {currentUser?.broker_id && (
-              <div className="flex gap-2">
-                <LeadShareButton property={property} currentBrokerId={currentUser.broker_id} />
-                {property.broker_id === currentUser.broker_id && (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Trigger modal or inline co-listing UI
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50 text-xs"
-                  >
-                    Co-List
-                  </Button>
-                )}
-              </div>
-            )}
-
             <Button
               onClick={handleWhatsAppContact}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg h-10 flex items-center justify-center gap-2 shadow-sm touch-manipulation"
