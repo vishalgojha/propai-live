@@ -9,32 +9,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 import SEO from "../components/SEO";
 
 export default function MarketInsights() {
-  const [locationStats, setLocationStats] = useState([]);
-
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: properties = [], isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['market-properties'],
-    queryFn: () => base44.entities.Property.list('-created_date'),
-    initialData: [],
-    staleTime: 5 * 60 * 1000,
+    queryFn: () => base44.entities.Property.filter({ status: "Active", is_duplicate: false }, '-created_date', 200),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
   });
 
-  const { data: requirements = [] } = useQuery({
+  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
     queryKey: ['market-requirements'],
-    queryFn: () => base44.entities.Requirement.list('-created_date'),
-    initialData: [],
-    staleTime: 5 * 60 * 1000,
+    queryFn: () => base44.entities.Requirement.filter({ status: "Active" }, '-created_date', 100),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
   });
 
-  useEffect(() => {
-    if (properties.length === 0) return;
+  const isLoading = propertiesLoading || requirementsLoading;
+  const error = propertiesError;
 
-    // Calculate location-wise stats
+  const locationStats = React.useMemo(() => {
+    if (!properties.length) return [];
+
     const locationMap = {};
 
     properties.forEach(p => {
-      // Filter active properties only
-      if (p.status !== "Active" || p.is_duplicate) return;
-      
       const loc = p.location;
       if (!loc) return;
 
@@ -42,10 +41,8 @@ export default function MarketInsights() {
         locationMap[loc] = {
           location: loc,
           total_listings: 0,
-          avg_price_lakhs: 0,
           prices: [],
           bhk_breakdown: {},
-          listing_types: { Sale: 0, Rent: 0, Lease: 0 },
           high_trust_count: 0,
         };
       }
@@ -53,45 +50,54 @@ export default function MarketInsights() {
       locationMap[loc].total_listings++;
       
       const priceInLakhs = p.price_unit === 'crores' ? p.price * 100 : p.price;
-      locationMap[loc].prices.push(priceInLakhs);
+      if (p.price) locationMap[loc].prices.push(priceInLakhs);
 
-      locationMap[loc].bhk_breakdown[p.bhk] = (locationMap[loc].bhk_breakdown[p.bhk] || 0) + 1;
-      locationMap[loc].listing_types[p.listing_type] = (locationMap[loc].listing_types[p.listing_type] || 0) + 1;
+      if (p.bhk) {
+        locationMap[loc].bhk_breakdown[p.bhk] = (locationMap[loc].bhk_breakdown[p.bhk] || 0) + 1;
+      }
       
       if (p.broker_trust_score >= 85) {
         locationMap[loc].high_trust_count++;
       }
     });
 
-    // Calculate averages and sort
-    const stats = Object.values(locationMap).map(loc => {
-      const avgPrice = loc.prices.reduce((a, b) => a + b, 0) / loc.prices.length;
-      const topBhk = Object.entries(loc.bhk_breakdown)
-        .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Mixed';
+    const stats = Object.values(locationMap)
+      .filter(loc => loc.total_listings >= 2)
+      .map(loc => {
+        const avgPrice = loc.prices.length > 0 
+          ? Math.round(loc.prices.reduce((a, b) => a + b, 0) / loc.prices.length)
+          : 0;
+        const topBhk = Object.entries(loc.bhk_breakdown)
+          .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Mixed';
 
-      return {
-        ...loc,
-        avg_price_lakhs: Math.round(avgPrice),
-        top_bhk: topBhk,
-        trust_percentage: Math.round((loc.high_trust_count / loc.total_listings) * 100)
-      };
-    }).sort((a, b) => b.total_listings - a.total_listings);
+        return {
+          ...loc,
+          avg_price_lakhs: avgPrice,
+          top_bhk: topBhk,
+          trust_percentage: Math.round((loc.high_trust_count / loc.total_listings) * 100)
+        };
+      })
+      .sort((a, b) => b.total_listings - a.total_listings)
+      .slice(0, 12);
 
-    setLocationStats(stats.slice(0, 12));
+    return stats;
   }, [properties]);
 
-  // Calculate demand signals
-  const demandSignals = requirements.reduce((acc, req) => {
-    req.preferred_locations?.forEach(loc => {
-      if (!acc[loc]) acc[loc] = 0;
-      acc[loc]++;
-    });
-    return acc;
-  }, {});
+  const { demandSignals, topDemandLocations } = React.useMemo(() => {
+    const signals = requirements.reduce((acc, req) => {
+      req.preferred_locations?.forEach(loc => {
+        if (!acc[loc]) acc[loc] = 0;
+        acc[loc]++;
+      });
+      return acc;
+    }, {});
 
-  const topDemandLocations = Object.entries(demandSignals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
+    const topLocations = Object.entries(signals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    return { demandSignals: signals, topDemandLocations: topLocations };
+  }, [requirements]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -182,9 +188,29 @@ export default function MarketInsights() {
             See where properties are available and where buyers are searching. Higher demand signals indicate competitive markets.
           </p>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+              <p className="text-red-600 font-semibold">Failed to load market data</p>
+              <p className="text-sm text-red-500 mt-1">Please refresh the page</p>
+            </div>
+          )}
+
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
+            <div className="space-y-4">
+              <div className="text-center py-6">
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-xl border border-slate-200">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm font-semibold text-slate-900">Loading market insights...</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
+              </div>
+            </div>
+          ) : locationStats.length === 0 ? (
+            <div className="bg-white rounded-xl p-12 border border-slate-200 text-center">
+              <p className="text-slate-600 font-semibold">No market data available</p>
+              <p className="text-sm text-slate-500 mt-1">Check back later</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

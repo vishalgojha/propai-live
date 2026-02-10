@@ -87,7 +87,29 @@ export default function SmartFeed() {
     "BKC", "Worli", "Lower Parel", "Powai"
   ];
 
-  // ⚡ OPTIMIZATION: Debounced search - only trigger filtering after user stops typing
+  // ⚡ Data fetching with deterministic loading states
+  const { data: properties = [], isLoading: propertiesLoading, error: propertiesError } = useQuery({
+    queryKey: ['active-properties'],
+    queryFn: () => base44.entities.Property.filter({ status: "Active", is_duplicate: false }, '-created_date', 100),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  const { data: requirements = [], isLoading: requirementsLoading, error: requirementsError } = useQuery({
+    queryKey: ['active-requirements'],
+    queryFn: () => base44.entities.Requirement.filter({ status: "Active" }, '-created_date', 50),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  const isLoading = propertiesLoading || requirementsLoading;
+  const error = propertiesError || requirementsError;
+
+  // ⚡ Debounced search
   const debouncedSearch = useCallback(
     debounce((searchValue) => {
       setDebouncedSearchQuery(searchValue);
@@ -99,27 +121,6 @@ export default function SmartFeed() {
     debouncedSearch(filters.search);
   }, [filters.search, debouncedSearch]);
 
-  // ⚡ OPTIMIZED: Fetch only 50 properties initially, lazy load more
-  const { data: properties = [], isLoading, error } = useQuery({
-    queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.filter({ status: "Active", is_duplicate: false }, '-created_date', 50),
-    staleTime: 10 * 60 * 1000, // 10 minutes cache
-    gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
-    refetchInterval: false, // Disable auto-refetch for performance
-    refetchOnWindowFocus: false,
-  });
-
-  // ⚡ OPTIMIZED: Fetch fewer requirements
-  const { data: requirements = [], isLoading: requirementsLoading } = useQuery({
-    queryKey: ['requirements'],
-    queryFn: () => base44.entities.Requirement.filter({ status: "Active" }, '-created_date', 30),
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
-  });
-
-  // ⚡ OPTIMIZED: Properties already filtered by query, no need to re-filter
   const activeProperties = properties;
 
   // ⚡ Extracted sorting function for reuse
@@ -153,26 +154,27 @@ export default function SmartFeed() {
     });
   };
 
-  // ⚡ OPTIMIZATION: Use debounced search query instead of filters.search
   const filteredProperties = useMemo(() => {
+    if (!activeProperties.length) return [];
+
     let results = activeProperties;
 
-    // Early return if no filters applied
-    if (!debouncedSearchQuery && 
-        (!filters.bhk_multi || filters.bhk_multi.length === 0) &&
-        (!filters.location_multi || filters.location_multi.length === 0) &&
-        filters.listingType === 'all' &&
-        filters.propertyCategory === 'all' &&
-        filters.furnishing === 'all' &&
-        !filters.minPrice &&
-        !filters.maxPrice &&
-        (!filters.amenities || filters.amenities.length === 0)) {
-      // No filters, just sort and return
+    // Early return if no filters
+    const hasFilters = debouncedSearchQuery || 
+        filters.bhk_multi?.length > 0 ||
+        filters.location_multi?.length > 0 ||
+        filters.listingType !== 'all' ||
+        filters.propertyCategory !== 'all' ||
+        filters.furnishing !== 'all' ||
+        filters.minPrice ||
+        filters.maxPrice ||
+        filters.amenities?.length > 0;
+
+    if (!hasFilters) {
       return sortProperties(results, filters.sortBy);
     }
 
     results = results.filter(property => {
-      // ⚡ Use debounced search query
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
         const matchesSearch =
@@ -235,7 +237,7 @@ export default function SmartFeed() {
     return sortProperties(results, filters.sortBy);
   }, [activeProperties, filters.bhk_multi, filters.location_multi, filters.listingType, filters.propertyCategory, filters.furnishing, filters.minPrice, filters.maxPrice, filters.sortBy, debouncedSearchQuery, filters.amenities]);
 
-  // ⚡ OPTIMIZED: Debounced search intent tracking (only after 2 seconds of inactivity)
+  // Search intent tracking
   useEffect(() => {
     const hasActiveFilters = 
       debouncedSearchQuery || 
@@ -489,12 +491,12 @@ export default function SmartFeed() {
       .slice(0, 6);
   }, [activeProperties, userPreferences]);
 
-  // ⚡ OPTIMIZED: Requirements already filtered by query
   const activeRequirements = requirements;
 
   const filteredRequirements = useMemo(() => {
-    let results = activeRequirements.filter(requirement => {
+    if (!activeRequirements.length) return [];
 
+    let results = activeRequirements.filter(requirement => {
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
         const matchesSearch =
@@ -1065,33 +1067,26 @@ export default function SmartFeed() {
           </Alert>
         )}
 
-        {(isLoading || requirementsLoading) && (
-          <>
-            <div className="mb-6 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl border border-slate-200">
-                <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-semibold text-slate-900">
-                  Loading feed...
-                </p>
+        {isLoading && (
+          <div className="space-y-6">
+            <div className="text-center py-8">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-semibold text-slate-900">Loading SmartFeed...</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-[22px] p-6 shadow-sm border-2 border-[#F7F7F7]">
-                  <Skeleton className="h-48 w-full mb-4 rounded-2xl" />
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2 mb-4" />
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <Skeleton className="h-12" />
-                    <Skeleton className="h-12" />
-                    <Skeleton className="h-12" />
-                  </div>
-                  <Skeleton className="h-12 w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 border border-slate-200">
+                  <Skeleton className="h-40 w-full mb-3 rounded-lg" />
+                  <Skeleton className="h-5 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-3" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {!isLoading && !requirementsLoading && displayedItems.length > 0 && (

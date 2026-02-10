@@ -25,36 +25,39 @@ export default function Transactions() {
     max_amount: ""
   });
 
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['transactions', filters],
-    queryFn: async () => {
-      const query = {};
-      if (filters.transaction_type !== 'all') query.transaction_type = filters.transaction_type;
-      if (filters.location) query.location = filters.location;
-      
-      const data = await base44.entities.TransactionRecord.filter(query, '-transaction_date', 100);
-      
-      return data.filter(t => {
-        if (filters.from_date && t.transaction_date < filters.from_date) return false;
-        if (filters.to_date && t.transaction_date > filters.to_date) return false;
-        if (filters.min_amount && t.amount < parseFloat(filters.min_amount) * 10000000) return false;
-        if (filters.max_amount && t.amount > parseFloat(filters.max_amount) * 10000000) return false;
-        return true;
-      });
-    }
+  const { data: allTransactions = [], isLoading, error } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: () => base44.entities.TransactionRecord.list('-transaction_date'),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
   });
+
+  const transactions = React.useMemo(() => {
+    if (!allTransactions.length) return [];
+    
+    return allTransactions.filter(t => {
+      if (filters.transaction_type !== 'all' && t.transaction_type !== filters.transaction_type) return false;
+      if (filters.location && !t.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
+      if (filters.from_date && t.transaction_date < filters.from_date) return false;
+      if (filters.to_date && t.transaction_date > filters.to_date) return false;
+      if (filters.min_amount && t.amount < parseFloat(filters.min_amount) * 10000000) return false;
+      if (filters.max_amount && t.amount > parseFloat(filters.max_amount) * 10000000) return false;
+      return true;
+    });
+  }, [allTransactions, filters]);
 
   const formatAmount = (amount, unit = 'crores') => {
     if (unit === 'crores') return `₹${(amount / 10000000).toFixed(2)} Cr`;
     return `₹${(amount / 100000).toFixed(2)} L`;
   };
 
-  const stats = {
+  const stats = React.useMemo(() => ({
     total: transactions.length,
-    totalValue: transactions.reduce((sum, t) => sum + t.amount, 0),
+    totalValue: transactions.reduce((sum, t) => sum + (t.amount || 0), 0),
     avgPrice: transactions.length > 0 ? 
       transactions.reduce((sum, t) => sum + (t.price_per_sqft || 0), 0) / transactions.length : 0
-  };
+  }), [transactions]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -195,12 +198,35 @@ export default function Transactions() {
         </Card>
 
         {/* Transactions List */}
+        {error && (
+          <Card className="bg-red-50 border-red-200">
+            <CardContent className="py-8 text-center">
+              <p className="text-red-600 font-semibold">Failed to load transactions</p>
+              <p className="text-sm text-red-500 mt-1">Please refresh the page</p>
+            </CardContent>
+          </Card>
+        )}
+
         {isLoading ? (
-          <div className="grid gap-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+          <div className="space-y-4">
+            <div className="text-center py-6">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-xl border border-slate-200">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-semibold text-slate-900">Loading transactions...</p>
+              </div>
+            </div>
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
             ))}
           </div>
+        ) : transactions.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-600 font-semibold">No transactions found</p>
+              <p className="text-sm text-slate-500 mt-1">Try adjusting your filters</p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-4">
             {transactions.map((txn) => (
@@ -300,15 +326,6 @@ export default function Transactions() {
                 </Card>
               </motion.div>
             ))}
-
-            {transactions.length === 0 && (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-600">No transactions found. Try adjusting your filters.</p>
-                </CardContent>
-              </Card>
-            )}
           </div>
         )}
 
