@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, Routes, Route, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3, Sparkles, MessageCircle } from "lucide-react";
+import { Home, Search, Settings, Zap, BookOpen, Building2, MapPin, Phone, Mail, Instagram, Linkedin, Menu, X, User, LogOut, Users, BarChart3, Sparkles, MessageCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -139,6 +139,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Home", icon: Home, path: createPageUrl("Home") },
     { name: "SmartFeed", icon: Search, path: createPageUrl("SmartFeed") },
     { name: "Map Search", icon: MapPin, path: createPageUrl("MapSearch") },
+    { name: "Transactions", icon: FileText, path: createPageUrl("Transactions") },
     { name: "Docs", icon: BookOpen, path: createPageUrl("Docs") },
   ];
 
