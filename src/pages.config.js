@@ -47,14 +47,11 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import AIHub from './pages/AIHub';
 import AIUsageMonitor from './pages/AIUsageMonitor';
 import AboutUs from './pages/AboutUs';
 import Admin from './pages/Admin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
-import AgentHub from './pages/AgentHub';
-import AutomationHub from './pages/AutomationHub';
 import BlogPost from './pages/BlogPost';
 import Blogs from './pages/Blogs';
 import BuildingBlog from './pages/BuildingBlog';
@@ -66,7 +63,6 @@ import Disclaimer from './pages/Disclaimer';
 import Docs from './pages/Docs';
 import FAQ from './pages/FAQ';
 import Home from './pages/Home';
-import InteractionLogs from './pages/InteractionLogs';
 import LiveDashboard from './pages/LiveDashboard';
 import LocationProperties from './pages/LocationProperties';
 import MapSearch from './pages/MapSearch';
@@ -75,7 +71,6 @@ import ParityReport from './pages/ParityReport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PropertyDetails from './pages/PropertyDetails';
 import QRGenerator from './pages/QRGenerator';
-import RealtorPage from './pages/RealtorPage';
 import RequirementDetails from './pages/RequirementDetails';
 import Sitemap from './pages/Sitemap';
 import SmartFeed from './pages/SmartFeed';
@@ -87,14 +82,11 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AIHub": AIHub,
     "AIUsageMonitor": AIUsageMonitor,
     "AboutUs": AboutUs,
     "Admin": Admin,
     "AdminDashboard": AdminDashboard,
     "AdminLogin": AdminLogin,
-    "AgentHub": AgentHub,
-    "AutomationHub": AutomationHub,
     "BlogPost": BlogPost,
     "Blogs": Blogs,
     "BuildingBlog": BuildingBlog,
@@ -106,7 +98,6 @@ export const PAGES = {
     "Docs": Docs,
     "FAQ": FAQ,
     "Home": Home,
-    "InteractionLogs": InteractionLogs,
     "LiveDashboard": LiveDashboard,
     "LocationProperties": LocationProperties,
     "MapSearch": MapSearch,
@@ -115,7 +106,6 @@ export const PAGES = {
     "PrivacyPolicy": PrivacyPolicy,
     "PropertyDetails": PropertyDetails,
     "QRGenerator": QRGenerator,
-    "RealtorPage": RealtorPage,
     "RequirementDetails": RequirementDetails,
     "Sitemap": Sitemap,
     "SmartFeed": SmartFeed,
