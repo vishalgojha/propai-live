@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin, Home, Maximize2, Car, MessageCircle, Building2,
-  Calendar, Armchair, Check, Utensils, ArrowRight, Zap, Info
+  Calendar, Armchair, Check, Utensils, ArrowRight, Zap, Info, FileText, TrendingUp
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { format } from "date-fns";
 import {
   Tooltip,
   TooltipContent,
@@ -30,6 +33,13 @@ const createPageUrl = (pageName) => {
 
 export default function PropertyDetailsModal({ property, isOpen, onClose }) {
   const navigate = useNavigate();
+
+  // Fetch transaction history for this property
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['property-transactions', property?.id],
+    queryFn: () => property?.id ? base44.entities.TransactionRecord.filter({ property_id: property.id }, '-transaction_date', 10) : [],
+    enabled: !!property?.id && isOpen
+  });
 
   useEffect(() => {
     if (property && isOpen) {
@@ -302,6 +312,68 @@ export default function PropertyDetailsModal({ property, isOpen, onClose }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Transaction History */}
+        {transactions.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <h4 className="text-sm font-bold text-[#111111] uppercase tracking-wide">Transaction History</h4>
+              <Badge className="bg-green-100 text-green-800 text-xs">
+                Verified
+              </Badge>
+            </div>
+            
+            <div className="space-y-3">
+              {transactions.slice(0, 3).map((txn) => (
+                <div key={txn.id} className="bg-white border border-slate-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge className={
+                          txn.transaction_type === 'Sale' ? 'bg-green-100 text-green-800' :
+                          'bg-blue-100 text-blue-800'
+                        }>
+                          {txn.transaction_type}
+                        </Badge>
+                        <span className="text-xs text-slate-500">
+                          {format(new Date(txn.transaction_date), 'MMM yyyy')}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-slate-900">
+                        ₹{(txn.amount / 10000000).toFixed(2)} Cr
+                      </p>
+                    </div>
+                    {txn.price_per_sqft && (
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">Price/sqft</p>
+                        <p className="text-sm font-semibold text-slate-900">₹{txn.price_per_sqft.toFixed(0)}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {txn.ai_insights?.market_comparison && (
+                    <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-100">
+                      <TrendingUp className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-slate-600">{txn.ai_insights.market_comparison}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {transactions.length > 3 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-3"
+                onClick={() => navigate(`/transactions?location=${property.location}`)}
+              >
+                View all {transactions.length} transactions
+              </Button>
+            )}
           </div>
         )}
 
