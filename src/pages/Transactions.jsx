@@ -63,7 +63,7 @@ export default function Transactions() {
     <div className="min-h-screen bg-slate-50">
       <SEO 
         title="Transaction Records - Real Estate Market Data | PropAI Live"
-        description="Access verified real estate transaction records from government sources. Market trends, pricing insights, and investment analytics for Mumbai properties."
+        description="Access verified real estate transaction records from government sources. Market trends, pricing insights, and investment analytics across India."
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

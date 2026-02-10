@@ -82,10 +82,18 @@ export default function SmartFeed() {
 
   const navigate = useNavigate();
 
-  const popularAreas = [
-    "Bandra West", "Juhu", "Andheri West", "Khar West",
-    "BKC", "Worli", "Lower Parel", "Powai"
-  ];
+  // Dynamic popular areas - loaded from data, not hardcoded
+  const popularAreas = React.useMemo(() => {
+    if (!properties.length) return [];
+    const locationCounts = {};
+    properties.forEach(p => {
+      if (p.location) locationCounts[p.location] = (locationCounts[p.location] || 0) + 1;
+    });
+    return Object.entries(locationCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([loc]) => loc);
+  }, [properties]);
 
   // ⚡ Data fetching with deterministic loading states
   const { data: properties = [], isLoading: propertiesLoading, error: propertiesError } = useQuery({

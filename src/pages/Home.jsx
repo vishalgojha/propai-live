@@ -34,11 +34,11 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "PropAI Live",
-    "description": "AI-powered real estate intelligence platform for Mumbai, delivering real-time property data and smart matching.",
+    "description": "AI-powered real estate intelligence platform for India, delivering real-time property data and smart matching.",
     "url": "https://propai.live",
     "areaServed": {
-      "@type": "City",
-      "name": "Mumbai"
+      "@type": "Country",
+      "name": "India"
     },
     "priceRange": "$$"
   };
@@ -52,17 +52,7 @@ export default function Home() {
     { number: "24/7", label: "AI Monitoring" },
   ];
 
-  // ✅ Popular Mumbai localities for SEO linking
-  const topLocalities = [
-    { name: "Bandra West", slug: "bandra-west", emoji: "⭐" },
-    { name: "Juhu", slug: "juhu", emoji: "🌊" },
-    { name: "Andheri West", slug: "andheri-west", emoji: "🏢" },
-    { name: "Worli", slug: "worli", emoji: "🌆" },
-    { name: "BKC", slug: "bkc", emoji: "💼" },
-    { name: "Lower Parel", slug: "lower-parel", emoji: "🏗️" },
-    { name: "Powai", slug: "powai", emoji: "🌳" },
-    { name: "Khar West", slug: "khar-west", emoji: "✨" }
-  ];
+
 
   const webSiteJsonLd = generateWebSiteJsonLd();
   const organizationJsonLd = generateOrganizationJsonLd();
@@ -76,7 +66,7 @@ export default function Home() {
       <Toaster position="top-center" richColors closeButton />
 
       <SEO
-        title="Rent & Buy Flats in Mumbai — 1,500+ Verified WhatsApp Listings | PropAI Live"
+        title="PropAI Live — AI Real Estate Intelligence | Verified WhatsApp Listings"
         description="Stop losing deals in WhatsApp chaos. AI turns messy broker chats into structured listings in seconds. Powered by Building-Level Intelligence."
         schema={Array.isArray(homeSchema) ? [...homeSchema, webSiteJsonLd] : [homeSchema, webSiteJsonLd]}
         organization={organizationJsonLd}
@@ -300,7 +290,7 @@ export default function Home() {
               </div>
               <h3 className="font-bold text-slate-900 mb-2 text-lg">Broker Sends Message</h3>
               <p className="text-slate-600 text-sm">
-                "2bhk Bandra 1L rent" gets forwarded to our WhatsApp AI
+                Broker forwards property text to our WhatsApp AI
               </p>
             </motion.div>
 
@@ -381,10 +371,10 @@ export default function Home() {
       <section className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-6">
-            Built in Mumbai. Powered by AI. Real-time data.
+            Pan-India. Powered by AI. Real-time data.
           </h2>
           <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto">
-            We're not a portal dumping 10,000 listings. We're an intelligence platform that uses AI to understand Mumbai real estate at a <span className="font-semibold text-slate-900">contextual, street-level depth</span>—then shows you the 3 properties that actually fit.
+            We're not a portal dumping 10,000 listings. We're an intelligence platform that uses AI to understand real estate at a <span className="font-semibold text-slate-900">contextual, street-level depth</span>—then shows you the 3 properties that actually fit.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

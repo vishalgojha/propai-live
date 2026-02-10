@@ -62,7 +62,7 @@ export default function Layout({ children, currentPageName }) {
       setMetaTag('og:image', defaultImage, true);
       setMetaTag('og:image:width', '1200', true);
       setMetaTag('og:image:height', '630', true);
-      setMetaTag('og:image:alt', 'PropAI Live - AI-powered Mumbai real estate intelligence platform', true);
+      setMetaTag('og:image:alt', 'PropAI Live - AI-powered real estate intelligence platform', true);
       setMetaTag('twitter:card', 'summary_large_image');
       setMetaTag('twitter:title', defaultTitle);
       setMetaTag('twitter:description', defaultDescription);
@@ -76,11 +76,7 @@ export default function Layout({ children, currentPageName }) {
     setMetaTag('og:url', window.location.href, true);
     
     // Additional SEO tags
-    setMetaTag('keywords', 'Mumbai real estate, property Mumbai, Bandra properties, AI property search, Mumbai flats, Mumbai commercial real estate, property intelligence');
-    setMetaTag('geo.region', 'IN-MH');
-    setMetaTag('geo.placename', 'Mumbai');
-    setMetaTag('geo.position', '19.0760;72.8777');
-    setMetaTag('ICBM', '19.0760, 72.8777');
+    setMetaTag('keywords', 'India real estate, property India, AI property search, real estate intelligence, commercial properties, residential flats');
     
     // Preconnect hints
     const addPreconnect = (href, crossorigin = false) => {
@@ -352,7 +348,7 @@ export default function Layout({ children, currentPageName }) {
                 <span className="text-2xl font-bold text-slate-900 tracking-tight">PropAI Live</span>
               </div>
               <p className="text-slate-700 text-base font-light leading-relaxed mb-4">
-                AI-powered property intelligence platform for Mumbai real estate.
+                AI-powered property intelligence platform for Indian real estate.
               </p>
               <p className="text-slate-500 text-sm font-light italic">
                 Real-time data. Smart matching. Zero noise.
@@ -543,7 +539,7 @@ export default function Layout({ children, currentPageName }) {
               <ul className="space-y-3 text-sm text-slate-600 font-light mb-6">
                 <li className="flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <span>Mumbai, Maharashtra<br />India</span>
+                  <span>India</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -596,7 +592,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-slate-600">Made with</span>
                 <span className="text-red-500 text-lg">❤️</span>
-                <span className="text-slate-600">in Mumbai</span>
+                <span className="text-slate-600">in India</span>
               </div>
             </div>
           </div>
