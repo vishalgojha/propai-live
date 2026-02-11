@@ -30,13 +30,6 @@ Deno.serve(async (req) => {
       }, { status: 401 });
     }
 
-    if (!rawKey.startsWith('propai_')) {
-      return Response.json({ 
-        valid: false, 
-        error: 'Invalid key format' 
-      }, { status: 401 });
-    }
-
     // Hash the incoming key
     const secret = Deno.env.get('API_KEY_SECRET') || 'propai-default-secret-change-in-production';
     const keyHash = createHmac('sha256', secret)
