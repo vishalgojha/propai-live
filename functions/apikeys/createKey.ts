@@ -31,12 +31,30 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Verify broker exists
-    const broker = await base44.asServiceRole.entities.Person.get(broker_person_id);
+    // Verify broker/user exists (check Person first, then User)
+    let broker;
+    try {
+      broker = await base44.asServiceRole.entities.Person.get(broker_person_id);
+    } catch (error) {
+      // If not a Person, try User entity
+      try {
+        const user = await base44.asServiceRole.entities.User.get(broker_person_id);
+        if (user) {
+          broker = {
+            id: user.id,
+            name: user.full_name || user.email,
+            email: user.email
+          };
+        }
+      } catch (userError) {
+        // Not found in either entity
+      }
+    }
+    
     if (!broker) {
       return Response.json({ 
         success: false, 
-        error: 'Broker not found' 
+        error: 'Broker/User not found' 
       }, { status: 404 });
     }
 
