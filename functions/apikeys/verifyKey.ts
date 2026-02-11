@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createHmac } from 'node:crypto';
 
 /**
- * POST /api/keys/verify
+ * POST /verifyKey
  * Verify an API key and return broker profile
  * Used by CLI clients to authenticate
  * 
@@ -13,21 +13,20 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Extract key from Authorization header
+    // Extract key from Authorization header OR api_key header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const apiKeyHeader = req.headers.get('api_key');
+    
+    let rawKey;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      rawKey = authHeader.substring(7); // Remove "Bearer "
+    } else if (apiKeyHeader) {
+      rawKey = apiKeyHeader;
+    } else {
       return Response.json({ 
         valid: false, 
-        error: 'Missing or invalid Authorization header' 
-      }, { status: 401 });
-    }
-
-    const rawKey = authHeader.substring(7); // Remove "Bearer "
-
-    if (!rawKey.startsWith('propai_')) {
-      return Response.json({ 
-        valid: false, 
-        error: 'Invalid key format' 
+        error: 'Missing API key. Provide either Authorization: Bearer <key> or api_key: <key>' 
       }, { status: 401 });
     }
 
@@ -68,8 +67,32 @@ Deno.serve(async (req) => {
       usage_count: (apiKey.usage_count || 0) + 1
     });
 
-    // Fetch full broker profile
-    const broker = await base44.asServiceRole.entities.Person.get(apiKey.broker_person_id);
+    // Fetch full broker/user profile (try Person first, then User)
+    let broker;
+    try {
+      broker = await base44.asServiceRole.entities.Person.get(apiKey.broker_person_id);
+    } catch (error) {
+      // If not a Person, try User entity
+      try {
+        const user = await base44.asServiceRole.entities.User.get(apiKey.broker_person_id);
+        if (user) {
+          broker = {
+            id: user.id,
+            name: user.full_name || user.email,
+            email: user.email,
+            agency_name: null,
+            trust_score: null,
+            status: 'active'
+          };
+        }
+      } catch (userError) {
+        console.error('Broker/User not found:', apiKey.broker_person_id);
+        return Response.json({ 
+          valid: false, 
+          error: 'Associated broker/user not found' 
+        }, { status: 404 });
+      }
+    }
 
     return Response.json({
       valid: true,
@@ -77,9 +100,9 @@ Deno.serve(async (req) => {
         id: broker.id,
         name: broker.name,
         email: broker.email,
-        agency_name: broker.agency_name,
-        trust_score: broker.trust_score,
-        status: broker.status
+        agency_name: broker.agency_name || null,
+        trust_score: broker.trust_score || null,
+        status: broker.status || 'active'
       },
       scopes: apiKey.scopes,
       key_id: apiKey.id
