@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AIUsageMonitor from './pages/AIUsageMonitor';
+import APIKeyManager from './pages/APIKeyManager';
 import AboutUs from './pages/AboutUs';
 import Admin from './pages/Admin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -78,12 +79,12 @@ import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
 import Transactions from './pages/Transactions';
-import APIKeyManager from './pages/APIKeyManager';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIUsageMonitor": AIUsageMonitor,
+    "APIKeyManager": APIKeyManager,
     "AboutUs": AboutUs,
     "Admin": Admin,
     "AdminDashboard": AdminDashboard,
@@ -114,7 +115,6 @@ export const PAGES = {
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
     "Transactions": Transactions,
-    "APIKeyManager": APIKeyManager,
 }
 
 export const pagesConfig = {

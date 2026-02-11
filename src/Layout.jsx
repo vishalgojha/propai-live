@@ -137,6 +137,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Transactions", icon: FileText, path: createPageUrl("Transactions") },
     { name: "Market Insights", icon: BarChart3, path: createPageUrl("MarketInsights") },
     { name: "Docs", icon: BookOpen, path: createPageUrl("Docs") },
+    ...(user?.role === 'admin' ? [{ name: "API Keys", icon: User, path: createPageUrl("APIKeyManager") }] : []),
   ];
 
   return (
