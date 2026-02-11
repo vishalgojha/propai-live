@@ -13,16 +13,22 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Extract key from Authorization header
+    // Extract key from Authorization header OR api_key header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const apiKeyHeader = req.headers.get('api_key');
+    
+    let rawKey;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      rawKey = authHeader.substring(7); // Remove "Bearer "
+    } else if (apiKeyHeader) {
+      rawKey = apiKeyHeader;
+    } else {
       return Response.json({ 
         valid: false, 
-        error: 'Missing or invalid Authorization header' 
+        error: 'Missing API key. Provide either Authorization: Bearer <key> or api_key: <key>' 
       }, { status: 401 });
     }
-
-    const rawKey = authHeader.substring(7); // Remove "Bearer "
 
     if (!rawKey.startsWith('propai_')) {
       return Response.json({ 
