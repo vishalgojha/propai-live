@@ -35,10 +35,21 @@ export default function APIKeyManager() {
     enabled: user?.role === 'admin'
   });
 
-  // Fetch brokers for dropdown
+  // Fetch brokers for dropdown + current admin user
   const { data: brokers = [] } = useQuery({
     queryKey: ['brokers-for-keys'],
-    queryFn: () => base44.entities.Person.list('-created_date', 100),
+    queryFn: async () => {
+      const persons = await base44.entities.Person.list('-created_date', 100);
+      const users = await base44.entities.User.list();
+      
+      // Combine Person entities with User entities (admins)
+      const allOptions = [
+        ...persons.map(p => ({ id: p.id, name: p.name, email: p.email, type: 'Person' })),
+        ...users.map(u => ({ id: u.id, name: u.full_name || u.email, email: u.email, type: 'User' }))
+      ];
+      
+      return allOptions;
+    },
     enabled: user?.role === 'admin'
   });
 
@@ -255,9 +266,10 @@ export default function APIKeyManager() {
                   <SelectValue placeholder="Select broker..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {brokers.map(broker => (
-                    <SelectItem key={broker.id} value={broker.id}>
-                      {broker.name} {broker.email && `(${broker.email})`}
+                  {brokers.map(option => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.name} {option.email && `(${option.email})`}
+                      {option.type === 'User' && <Badge className="ml-2 text-xs">Admin</Badge>}
                     </SelectItem>
                   ))}
                 </SelectContent>
