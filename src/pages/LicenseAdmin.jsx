@@ -52,9 +52,11 @@ export default function LicenseAdmin() {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (searchTerm) params.append('search', searchTerm);
 
-      const { data } = await base44.functions.invoke('licenses/list', {}, {
+      const url = `${window.location.origin}/api/licenses/list?${params.toString()}`;
+      const response = await fetch(url, {
         headers: { 'x-admin-secret': adminSecret }
       });
+      const data = await response.json();
 
       if (!data.ok) throw new Error(data.error);
       return data.licenses || [];
@@ -64,9 +66,15 @@ export default function LicenseAdmin() {
 
   const createLicenseMutation = useMutation({
     mutationFn: async (licenseData) => {
-      const { data } = await base44.functions.invoke('licenses/create', licenseData, {
-        headers: { 'x-admin-secret': adminSecret }
+      const response = await fetch(`${window.location.origin}/api/licenses/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': adminSecret
+        },
+        body: JSON.stringify(licenseData)
       });
+      const data = await response.json();
       return data;
     },
     onSuccess: (data) => {
@@ -91,9 +99,15 @@ export default function LicenseAdmin() {
 
   const revokeLicenseMutation = useMutation({
     mutationFn: async (license_id) => {
-      const { data } = await base44.functions.invoke('licenses/revoke', { license_id }, {
-        headers: { 'x-admin-secret': adminSecret }
+      const response = await fetch(`${window.location.origin}/api/licenses/revoke`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': adminSecret
+        },
+        body: JSON.stringify({ license_id })
       });
+      const data = await response.json();
       return data;
     },
     onSuccess: (data) => {
