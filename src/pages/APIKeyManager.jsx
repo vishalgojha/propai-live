@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Key, Copy, RefreshCw, Trash2, Eye, EyeOff, Shield, AlertTriangle } from "lucide-react";
+import { Key, Copy, RefreshCw, Trash2, Eye, EyeOff, Shield, AlertTriangle, Search } from "lucide-react";
 import { toast } from "sonner";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function APIKeyManager() {
   const [user, setUser] = useState(null);
@@ -19,6 +20,7 @@ export default function APIKeyManager() {
   const [notes, setNotes] = useState("");
   const [generatedKey, setGeneratedKey] = useState(null);
   const [showKey, setShowKey] = useState(false);
+  const [brokerSearchOpen, setBrokerSearchOpen] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -261,19 +263,50 @@ export default function APIKeyManager() {
           <div className="space-y-4 mt-4">
             <div>
               <Label>Broker</Label>
-              <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select broker..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {brokers.map(option => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.name} {option.email && `(${option.email})`}
-                      {option.type === 'User' && <Badge className="ml-2 text-xs">Admin</Badge>}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={brokerSearchOpen} onOpenChange={setBrokerSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                  >
+                    {selectedBrokerId
+                      ? brokers.find(b => b.id === selectedBrokerId)?.name || "Select broker..."
+                      : "Search broker..."}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search brokers..." />
+                    <CommandList>
+                      <CommandEmpty>No broker found.</CommandEmpty>
+                      <CommandGroup>
+                        {brokers.map(option => (
+                          <CommandItem
+                            key={option.id}
+                            value={`${option.name} ${option.email || ''}`}
+                            onSelect={() => {
+                              setSelectedBrokerId(option.id);
+                              setBrokerSearchOpen(false);
+                            }}
+                          >
+                            <div className="flex items-center gap-2 flex-1">
+                              <span>{option.name}</span>
+                              {option.email && (
+                                <span className="text-xs text-slate-500">({option.email})</span>
+                              )}
+                              {option.type === 'User' && (
+                                <Badge variant="secondary" className="text-xs">Admin</Badge>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label>Notes (Optional)</Label>
