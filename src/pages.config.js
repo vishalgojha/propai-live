@@ -78,6 +78,7 @@ import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
 import Transactions from './pages/Transactions';
+import APIKeyManager from './pages/APIKeyManager';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +114,7 @@ export const PAGES = {
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
     "Transactions": Transactions,
+    "APIKeyManager": APIKeyManager,
 }
 
 export const pagesConfig = {
