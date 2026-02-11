@@ -79,6 +79,8 @@ import SmartFeedAnalytics from './pages/SmartFeedAnalytics';
 import SocialListing from './pages/SocialListing';
 import TermsOfService from './pages/TermsOfService';
 import Transactions from './pages/Transactions';
+import LicenseActivation from './pages/LicenseActivation';
+import LicenseAdmin from './pages/LicenseAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -115,6 +117,8 @@ export const PAGES = {
     "SocialListing": SocialListing,
     "TermsOfService": TermsOfService,
     "Transactions": Transactions,
+    "LicenseActivation": LicenseActivation,
+    "LicenseAdmin": LicenseAdmin,
 }
 
 export const pagesConfig = {
